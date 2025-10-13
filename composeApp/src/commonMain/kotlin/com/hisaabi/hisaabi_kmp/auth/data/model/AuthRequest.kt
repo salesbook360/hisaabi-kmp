@@ -10,10 +10,12 @@ data class LoginRequest(
 
 @Serializable
 data class RegisterRequest(
+    val name: String,
     val email: String,
+    val address: String,
     val password: String,
-    val firstName: String,
-    val lastName: String
+    val phone: String,
+    val pic: String = ""
 )
 
 @Serializable
@@ -30,4 +32,9 @@ data class ForgotPasswordRequest(
 data class ResetPasswordRequest(
     val token: String,
     val newPassword: String
+)
+
+@Serializable
+data class GoogleSignInRequest(
+    val authToken: String
 )

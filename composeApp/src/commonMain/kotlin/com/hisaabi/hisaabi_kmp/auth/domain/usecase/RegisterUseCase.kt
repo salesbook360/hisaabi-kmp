@@ -8,37 +8,57 @@ class RegisterUseCase(
     private val authRepository: AuthRepository
 ) {
     suspend operator fun invoke(
+        name: String,
         email: String,
+        address: String,
         password: String,
-        firstName: String,
-        lastName: String
+        phone: String,
+        pic: String = ""
     ): AuthResult<User> {
         // Validate input
-        if (email.isBlank() || password.isBlank() || firstName.isBlank() || lastName.isBlank()) {
-            return AuthResult.Error("All fields are required")
+        if (name.isBlank()) {
+            return AuthResult.Error("Name is required")
+        }
+        
+        if (email.isBlank()) {
+            return AuthResult.Error("Email is required")
+        }
+        
+        if (address.isBlank()) {
+            return AuthResult.Error("Address is required")
+        }
+        
+        if (password.isBlank()) {
+            return AuthResult.Error("Password is required")
+        }
+        
+        if (phone.isBlank()) {
+            return AuthResult.Error("Phone number is required")
         }
         
         if (!isValidEmail(email)) {
             return AuthResult.Error("Please enter a valid email address")
         }
         
-        if (password.length < 8) {
-            return AuthResult.Error("Password must be at least 8 characters long")
+        if (password.length < 6) {
+            return AuthResult.Error("Password must be at least 6 characters long")
         }
         
-        if (!isValidPassword(password)) {
-            return AuthResult.Error("Password must contain at least one uppercase letter, one lowercase letter, and one number")
+        if (!isValidPhone(phone)) {
+            return AuthResult.Error("Please enter a valid phone number (e.g., +923464889821)")
         }
         
-        if (firstName.length < 2 || lastName.length < 2) {
-            return AuthResult.Error("First and last names must be at least 2 characters long")
+        if (name.length < 2) {
+            return AuthResult.Error("Name must be at least 2 characters long")
         }
         
         return authRepository.register(
+            name = name.trim(),
             email = email.trim(),
+            address = address.trim(),
             password = password,
-            firstName = firstName.trim(),
-            lastName = lastName.trim()
+            phone = phone.trim(),
+            pic = pic
         )
     }
     
@@ -47,10 +67,9 @@ class RegisterUseCase(
         return emailRegex.matches(email)
     }
     
-    private fun isValidPassword(password: String): Boolean {
-        val hasUpperCase = password.any { it.isUpperCase() }
-        val hasLowerCase = password.any { it.isLowerCase() }
-        val hasDigit = password.any { it.isDigit() }
-        return hasUpperCase && hasLowerCase && hasDigit
+    private fun isValidPhone(phone: String): Boolean {
+        // Basic phone validation - starts with + and contains digits
+        val phoneRegex = "^\\+?[0-9]{10,15}$".toRegex()
+        return phoneRegex.matches(phone.replace(" ", "").replace("-", ""))
     }
 }

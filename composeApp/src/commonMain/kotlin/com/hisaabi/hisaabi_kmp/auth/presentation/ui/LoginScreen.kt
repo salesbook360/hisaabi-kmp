@@ -1,8 +1,11 @@
 package com.hisaabi.hisaabi_kmp.auth.presentation.ui
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Visibility
@@ -18,6 +21,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.hisaabi.hisaabi_kmp.auth.presentation.GoogleSignInHelper
 import com.hisaabi.hisaabi_kmp.auth.presentation.viewmodel.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -25,7 +29,10 @@ import com.hisaabi.hisaabi_kmp.auth.presentation.viewmodel.AuthViewModel
 fun LoginScreen(
     viewModel: AuthViewModel,
     onNavigateToRegister: () -> Unit,
-    onLoginSuccess: () -> Unit
+    onNavigateToForgotPassword: () -> Unit = {},
+    onLoginSuccess: () -> Unit,
+    onNavigateBack: (() -> Unit)? = null,
+    googleSignInHelper: GoogleSignInHelper? = null
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -40,13 +47,52 @@ fun LoginScreen(
         }
     }
     
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
+    // Handle Google Sign-In
+    val handleGoogleSignIn: () -> Unit = {
+        println("=== Google Sign-In Button Clicked ===")
+        println("GoogleSignInHelper available: ${googleSignInHelper != null}")
+        
+        googleSignInHelper?.signIn(
+            onSuccess = { idToken ->
+                println("Google Sign-In Success! ID Token received: ${idToken.take(50)}...")
+                println("Calling viewModel.loginWithGoogle()")
+                viewModel.loginWithGoogle(idToken)
+            },
+            onFailure = { error ->
+                println("Google Sign-In Failure: $error")
+                // TODO: Show error in UI
+            }
+        ) ?: run {
+            println("GoogleSignInHelper is null!")
+        }
+    }
+    
+    Scaffold(
+        topBar = {
+            if (onNavigateBack != null) {
+                TopAppBar(
+                    title = { Text("Sign In") },
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back"
+                            )
+                        }
+                    }
+                )
+            }
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(24.dp)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
         // Title
         Text(
             text = "Welcome Back",
@@ -103,7 +149,22 @@ fun LoginScreen(
             singleLine = true
         )
         
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        // Forgot Password Link
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End
+        ) {
+            TextButton(onClick = onNavigateToForgotPassword) {
+                Text(
+                    text = "Forgot Password?",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
         
         // Login Button
         Button(
@@ -141,6 +202,42 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(16.dp))
         }
         
+        // Divider with "OR"
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            HorizontalDivider(modifier = Modifier.weight(1f))
+            Text(
+                text = " OR ",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 8.dp)
+            )
+            HorizontalDivider(modifier = Modifier.weight(1f))
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Google Sign-In Button
+        OutlinedButton(
+            onClick = handleGoogleSignIn,
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !uiState.isLoading && googleSignInHelper != null
+        ) {
+            // Google icon placeholder - you can replace this with actual Google icon
+            Text(
+                text = "G",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(end = 8.dp)
+            )
+            Text("Sign in with Google")
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
         // Register Link
         Row(
             verticalAlignment = Alignment.CenterVertically
@@ -152,6 +249,7 @@ fun LoginScreen(
             TextButton(onClick = onNavigateToRegister) {
                 Text("Sign Up")
             }
+        }
         }
     }
 }

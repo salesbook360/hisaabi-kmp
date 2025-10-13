@@ -8,9 +8,10 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 
 interface AuthRemoteDataSource {
-    suspend fun login(request: LoginRequest): AuthResponse
-    suspend fun register(request: RegisterRequest): AuthResponse
-    suspend fun refreshToken(request: RefreshTokenRequest): AuthResponse
+    suspend fun login(request: LoginRequest): RegisterResponse
+    suspend fun register(request: RegisterRequest): RegisterResponse
+    suspend fun loginWithGoogle(request: GoogleSignInRequest): RegisterResponse
+    suspend fun refreshToken(request: RefreshTokenRequest): RegisterResponse
     suspend fun forgotPassword(request: ForgotPasswordRequest): Unit
     suspend fun resetPassword(request: ResetPasswordRequest): Unit
     suspend fun logout(): Unit
@@ -21,40 +22,86 @@ class AuthRemoteDataSourceImpl(
 ) : AuthRemoteDataSource {
     
     companion object {
-        private const val BASE_URL = "https://api.hisaabi.com/v1"
-        private const val LOGIN_ENDPOINT = "$BASE_URL/auth/login"
-        private const val REGISTER_ENDPOINT = "$BASE_URL/auth/register"
-        private const val REFRESH_ENDPOINT = "$BASE_URL/auth/refresh"
-        private const val FORGOT_PASSWORD_ENDPOINT = "$BASE_URL/auth/forgot-password"
-        private const val RESET_PASSWORD_ENDPOINT = "$BASE_URL/auth/reset-password"
-        private const val LOGOUT_ENDPOINT = "$BASE_URL/auth/logout"
+        private const val BASE_URL = "http://52.20.167.4:5000"
+        private const val LOGIN_ENDPOINT = "$BASE_URL/login"
+        private const val REGISTER_ENDPOINT = "$BASE_URL/register"
+        private const val LOGIN_WITH_GOOGLE_ENDPOINT = "$BASE_URL/login-with-google"
+        private const val REFRESH_ENDPOINT = "$BASE_URL/refresh"
+        private const val FORGOT_PASSWORD_ENDPOINT = "$BASE_URL/forgot-password"
+        private const val RESET_PASSWORD_ENDPOINT = "$BASE_URL/reset-password"
+        private const val LOGOUT_ENDPOINT = "$BASE_URL/logout"
     }
     
-    override suspend fun login(request: LoginRequest): AuthResponse {
-        return httpClient.post(LOGIN_ENDPOINT) {
+    override suspend fun login(request: LoginRequest): RegisterResponse {
+        println("=== LOGIN API CALL ===")
+        println("Endpoint: $LOGIN_ENDPOINT")
+        println("Request Body: $request")
+        
+        return try {
+            val response = httpClient.post(LOGIN_ENDPOINT) {
+                contentType(ContentType.Application.Json)
+                setBody(request)
+            }
+            println("Login Response Status: ${response.status}")
+            response.body<RegisterResponse>()
+        } catch (e: Exception) {
+            println("Login API Error: ${e.message}")
+            e.printStackTrace()
+            throw e
+        }
+    }
+    
+    override suspend fun register(request: RegisterRequest): RegisterResponse {
+        println("=== REGISTER API CALL ===")
+        println("Endpoint: $REGISTER_ENDPOINT")
+        println("Request Body: $request")
+        println("Headers: Content-Type=application/json, auth=BiVrDgQKR2BR52UF1")
+        
+        val response = httpClient.post(REGISTER_ENDPOINT) {
             contentType(ContentType.Application.Json)
+            header("auth", "BiVrDgQKR2BR52UF1")
             setBody(request)
-        }.body<ApiResponse<AuthResponse>>().data ?: throw Exception("Login failed")
+        }
+        
+        println("Response Status: ${response.status}")
+        val registerResponse = response.body<RegisterResponse>()
+        println("Response Body: $registerResponse")
+        
+        return registerResponse
     }
     
-    override suspend fun register(request: RegisterRequest): AuthResponse {
-        return httpClient.post(REGISTER_ENDPOINT) {
+    override suspend fun loginWithGoogle(request: GoogleSignInRequest): RegisterResponse {
+        println("=== GOOGLE SIGN-IN API CALL ===")
+        println("Endpoint: $LOGIN_WITH_GOOGLE_ENDPOINT")
+        println("Headers: Content-Type=application/json, auth=aaa")
+        
+        val response = httpClient.post(LOGIN_WITH_GOOGLE_ENDPOINT) {
             contentType(ContentType.Application.Json)
+            header("auth", "aaa")
             setBody(request)
-        }.body<ApiResponse<AuthResponse>>().data ?: throw Exception("Registration failed")
+        }
+        
+        println("Response Status: ${response.status}")
+        val loginResponse = response.body<RegisterResponse>()
+        println("Response Body: $loginResponse")
+        
+        return loginResponse
     }
     
-    override suspend fun refreshToken(request: RefreshTokenRequest): AuthResponse {
+    override suspend fun refreshToken(request: RefreshTokenRequest): RegisterResponse {
         return httpClient.post(REFRESH_ENDPOINT) {
             contentType(ContentType.Application.Json)
             setBody(request)
-        }.body<ApiResponse<AuthResponse>>().data ?: throw Exception("Token refresh failed")
+        }.body<RegisterResponse>()
     }
     
     override suspend fun forgotPassword(request: ForgotPasswordRequest): Unit {
         httpClient.post(FORGOT_PASSWORD_ENDPOINT) {
             contentType(ContentType.Application.Json)
-            setBody(request)
+            header("auth", "aaa")
+            url {
+                parameters.append("email", request.email)
+            }
         }
     }
     

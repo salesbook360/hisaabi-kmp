@@ -1,11 +1,16 @@
 package com.hisaabi.hisaabi_kmp.auth.presentation.ui
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
@@ -28,11 +33,12 @@ fun RegisterScreen(
     onNavigateToLogin: () -> Unit,
     onRegisterSuccess: () -> Unit
 ) {
+    var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
+    var address by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
-    var firstName by remember { mutableStateOf("") }
-    var lastName by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
     
@@ -45,13 +51,30 @@ fun RegisterScreen(
         }
     }
     
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Create Account") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateToLogin) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back"
+                        )
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(24.dp)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
         // Title
         Text(
             text = "Create Account",
@@ -71,27 +94,13 @@ fun RegisterScreen(
         
         Spacer(modifier = Modifier.height(32.dp))
         
-        // First Name Field
+        // Name Field
         OutlinedTextField(
-            value = firstName,
-            onValueChange = { firstName = it },
-            label = { Text("First Name") },
+            value = name,
+            onValueChange = { name = it },
+            label = { Text("Full Name") },
             leadingIcon = {
-                Icon(Icons.Default.Person, contentDescription = "First Name")
-            },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
-        )
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        // Last Name Field
-        OutlinedTextField(
-            value = lastName,
-            onValueChange = { lastName = it },
-            label = { Text("Last Name") },
-            leadingIcon = {
-                Icon(Icons.Default.Person, contentDescription = "Last Name")
+                Icon(Icons.Default.Person, contentDescription = "Full Name")
             },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
@@ -108,6 +117,36 @@ fun RegisterScreen(
                 Icon(Icons.Default.Email, contentDescription = "Email")
             },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
+        )
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Address Field
+        OutlinedTextField(
+            value = address,
+            onValueChange = { address = it },
+            label = { Text("Address") },
+            leadingIcon = {
+                Icon(Icons.Default.LocationOn, contentDescription = "Address")
+            },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
+        )
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Phone Field
+        OutlinedTextField(
+            value = phone,
+            onValueChange = { phone = it },
+            label = { Text("Phone Number") },
+            placeholder = { Text("+923464889821") },
+            leadingIcon = {
+                Icon(Icons.Default.Phone, contentDescription = "Phone")
+            },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
         )
@@ -176,15 +215,16 @@ fun RegisterScreen(
         Button(
             onClick = { 
                 if (password == confirmPassword) {
-                    viewModel.register(email, password, firstName, lastName)
+                    viewModel.register(name, email, address, password, phone)
                 }
             },
             modifier = Modifier.fillMaxWidth(),
             enabled = !uiState.isLoading && 
+                     name.isNotBlank() && 
                      email.isNotBlank() && 
+                     address.isNotBlank() && 
                      password.isNotBlank() && 
-                     firstName.isNotBlank() && 
-                     lastName.isNotBlank() &&
+                     phone.isNotBlank() &&
                      password == confirmPassword
         ) {
             if (uiState.isLoading) {
@@ -228,6 +268,7 @@ fun RegisterScreen(
             TextButton(onClick = onNavigateToLogin) {
                 Text("Sign In")
             }
+        }
         }
     }
 }

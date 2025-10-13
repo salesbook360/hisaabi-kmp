@@ -22,6 +22,9 @@ import org.koin.dsl.module
 
 val authModule = module {
     
+    // Data Sources - Create local datasource first to avoid circular dependency
+    single<AuthLocalDataSource> { AuthLocalDataSourceImpl() }
+    
     // HTTP Client
     single<HttpClient> {
         HttpClient {
@@ -65,8 +68,7 @@ val authModule = module {
         }
     }
     
-    // Data Sources
-    single<AuthLocalDataSource> { AuthLocalDataSourceImpl() }
+    // Remote Data Source
     single<AuthRemoteDataSource> { AuthRemoteDataSourceImpl(get()) }
     
     // Repository
@@ -75,9 +77,11 @@ val authModule = module {
     // Use Cases
     singleOf(::LoginUseCase)
     singleOf(::RegisterUseCase)
+    singleOf(::LoginWithGoogleUseCase)
     singleOf(::LogoutUseCase)
     singleOf(::GetCurrentUserUseCase)
     singleOf(::IsLoggedInUseCase)
+    singleOf(::ForgotPasswordUseCase)
     
     // ViewModel
     singleOf(::AuthViewModel)

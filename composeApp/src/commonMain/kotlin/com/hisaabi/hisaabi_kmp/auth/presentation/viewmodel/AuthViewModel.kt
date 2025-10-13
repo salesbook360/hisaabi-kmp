@@ -13,9 +13,11 @@ import kotlinx.coroutines.launch
 class AuthViewModel(
     private val loginUseCase: LoginUseCase,
     private val registerUseCase: RegisterUseCase,
+    private val loginWithGoogleUseCase: LoginWithGoogleUseCase,
     private val logoutUseCase: LogoutUseCase,
     private val getCurrentUserUseCase: GetCurrentUserUseCase,
-    private val isLoggedInUseCase: IsLoggedInUseCase
+    private val isLoggedInUseCase: IsLoggedInUseCase,
+    private val forgotPasswordUseCase: ForgotPasswordUseCase
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(AuthUiState())
@@ -51,11 +53,11 @@ class AuthViewModel(
         }
     }
     
-    fun register(email: String, password: String, firstName: String, lastName: String) {
+    fun register(name: String, email: String, address: String, password: String, phone: String, pic: String = "") {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             
-            registerUseCase(email, password, firstName, lastName)
+            registerUseCase(name, email, address, password, phone, pic)
                 .onSuccess { user ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
@@ -91,6 +93,47 @@ class AuthViewModel(
                         isLoading = false,
                         error = error
                     )
+                }
+        }
+    }
+    
+    fun loginWithGoogle(authToken: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            
+            loginWithGoogleUseCase(authToken)
+                .onSuccess { user ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        currentUser = user,
+                        isLoggedIn = true
+                    )
+                    _isLoggedIn.value = true
+                }
+                .onError { error ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = error
+                    )
+                }
+        }
+    }
+    
+    fun forgotPassword(email: String, onComplete: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            
+            forgotPasswordUseCase(email)
+                .onSuccess {
+                    _uiState.value = _uiState.value.copy(isLoading = false)
+                    onComplete(true)
+                }
+                .onError { error ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = error
+                    )
+                    onComplete(false)
                 }
         }
     }

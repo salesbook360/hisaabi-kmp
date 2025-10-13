@@ -15,6 +15,12 @@ interface AuthLocalDataSource {
 
 class AuthLocalDataSourceImpl : AuthLocalDataSource {
     
+    // NOTE: This is currently an in-memory implementation
+    // For true persistence across app restarts, consider using:
+    // - multiplatform-settings library
+    // - DataStore (Jetpack)
+    // - Platform-specific storage solutions
+    
     private var accessToken: String? = null
     private var refreshToken: String? = null
     private var currentUser: UserDto? = null
@@ -53,3 +59,5 @@ class AuthLocalDataSourceImpl : AuthLocalDataSource {
         return accessToken != null && currentUser != null
     }
 }
+
+

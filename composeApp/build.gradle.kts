@@ -44,6 +44,9 @@ kotlin {
             implementation(libs.koin.android)
             implementation(libs.koin.androidx.compose)
             implementation(libs.ktor.client.cio)
+            
+            // Google Sign-In
+            implementation("com.google.android.gms:play-services-auth:20.7.0")
         }
         commonMain.dependencies {
             implementation(compose.runtime)

@@ -2,3 +2,6 @@
 /composeApp/build/generated
 /composeApp/build/intermediates
 /composeApp/build
+/.kotlin
+/.gradle
+/.idea
