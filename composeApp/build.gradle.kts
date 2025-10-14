@@ -8,8 +8,10 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
-    alias(libs.plugins.composeHotReload)
+    // alias(libs.plugins.composeHotReload) // Temporarily disabled due to compatibility issues
     alias(libs.plugins.kotlinx.serialization)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.room)
 }
 
 kotlin {
@@ -47,6 +49,10 @@ kotlin {
             
             // Google Sign-In
             implementation("com.google.android.gms:play-services-auth:20.7.0")
+            
+            // Room Database (Android-specific)
+            implementation(libs.room.runtime)
+            implementation(libs.sqlite.bundled)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -81,11 +87,35 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
+        iosMain.dependencies {
+            // Room Database (iOS-specific)
+            implementation(libs.room.runtime)
+            implementation(libs.sqlite.bundled)
+        }
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
+            
+            // Room Database (JVM-specific)
+            implementation(libs.room.runtime)
+            implementation(libs.sqlite.bundled)
         }
     }
+}
+
+// Room configuration
+room {
+    schemaDirectory("$projectDir/schemas")
+}
+
+dependencies {
+    // KSP for Room - apply to supported targets only (not WasmJS)
+    add("kspCommonMainMetadata", libs.room.compiler)
+    add("kspAndroid", libs.room.compiler)
+    add("kspIosArm64", libs.room.compiler)
+    add("kspIosSimulatorArm64", libs.room.compiler)
+    add("kspJvm", libs.room.compiler)
+    // Note: WasmJS not supported by Room yet
 }
 
 android {
@@ -130,3 +160,4 @@ compose.desktop {
         }
     }
 }
+
