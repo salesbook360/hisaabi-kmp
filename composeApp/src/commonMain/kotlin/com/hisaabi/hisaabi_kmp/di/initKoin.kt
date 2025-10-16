@@ -1,7 +1,9 @@
 package com.hisaabi.hisaabi_kmp.di
 
 import com.hisaabi.hisaabi_kmp.auth.di.authModule
+import com.hisaabi.hisaabi_kmp.categories.di.categoriesModule
 import com.hisaabi.hisaabi_kmp.database.di.databaseModule
+import com.hisaabi.hisaabi_kmp.parties.di.partiesModule
 import org.koin.core.context.startKoin
 import org.koin.dsl.KoinAppDeclaration
 
@@ -11,6 +13,8 @@ fun initKoin(config: KoinAppDeclaration? = null) {
         modules(
             authModule,
             databaseModule,
+            partiesModule,
+            categoriesModule,
             platformModule()
         )
     }

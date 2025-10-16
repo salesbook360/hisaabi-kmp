@@ -58,5 +58,100 @@ interface PartyDao {
         AND business_slug = :businessSlug
     """)
     suspend fun getTotalBalance(roleIds: List<Int>, businessSlug: String): Double?
+    
+    // Parties List Screen Queries
+    @Query("""
+        SELECT * FROM Party 
+        WHERE role_id IN (:roleIds)
+        AND person_status != 3
+        AND business_slug = :businessSlug
+        AND (:searchQuery IS NULL OR name LIKE '%' || :searchQuery || '%' 
+             OR address LIKE '%' || :searchQuery || '%' 
+             OR phone LIKE '%' || :searchQuery || '%')
+        ORDER BY name ASC
+        LIMIT :limit OFFSET :offset
+    """)
+    suspend fun searchParties(
+        roleIds: List<Int>,
+        businessSlug: String,
+        searchQuery: String?,
+        limit: Int,
+        offset: Int
+    ): List<PartyEntity>
+    
+    @Query("""
+        SELECT * FROM Party 
+        WHERE role_id IN (:roleIds)
+        AND person_status != 3
+        AND business_slug = :businessSlug
+        AND balance > 0
+        AND (:searchQuery IS NULL OR name LIKE '%' || :searchQuery || '%' 
+             OR address LIKE '%' || :searchQuery || '%' 
+             OR phone LIKE '%' || :searchQuery || '%')
+        ORDER BY name ASC
+        LIMIT :limit OFFSET :offset
+    """)
+    suspend fun searchPartiesPayable(
+        roleIds: List<Int>,
+        businessSlug: String,
+        searchQuery: String?,
+        limit: Int,
+        offset: Int
+    ): List<PartyEntity>
+    
+    @Query("""
+        SELECT * FROM Party 
+        WHERE role_id IN (:roleIds)
+        AND person_status != 3
+        AND business_slug = :businessSlug
+        AND balance < 0
+        AND (:searchQuery IS NULL OR name LIKE '%' || :searchQuery || '%' 
+             OR address LIKE '%' || :searchQuery || '%' 
+             OR phone LIKE '%' || :searchQuery || '%')
+        ORDER BY name ASC
+        LIMIT :limit OFFSET :offset
+    """)
+    suspend fun searchPartiesReceivable(
+        roleIds: List<Int>,
+        businessSlug: String,
+        searchQuery: String?,
+        limit: Int,
+        offset: Int
+    ): List<PartyEntity>
+    
+    @Query("""
+        SELECT * FROM Party 
+        WHERE role_id IN (:roleIds)
+        AND person_status != 3
+        AND business_slug = :businessSlug
+        AND balance = 0
+        AND (:searchQuery IS NULL OR name LIKE '%' || :searchQuery || '%' 
+             OR address LIKE '%' || :searchQuery || '%' 
+             OR phone LIKE '%' || :searchQuery || '%')
+        ORDER BY name ASC
+        LIMIT :limit OFFSET :offset
+    """)
+    suspend fun searchPartiesZeroBalance(
+        roleIds: List<Int>,
+        businessSlug: String,
+        searchQuery: String?,
+        limit: Int,
+        offset: Int
+    ): List<PartyEntity>
+    
+    @Query("""
+        SELECT COUNT(*) FROM Party 
+        WHERE role_id IN (:roleIds)
+        AND person_status != 3
+        AND business_slug = :businessSlug
+        AND (:searchQuery IS NULL OR name LIKE '%' || :searchQuery || '%' 
+             OR address LIKE '%' || :searchQuery || '%' 
+             OR phone LIKE '%' || :searchQuery || '%')
+    """)
+    suspend fun getPartiesCount(
+        roleIds: List<Int>,
+        businessSlug: String,
+        searchQuery: String?
+    ): Int
 }
 

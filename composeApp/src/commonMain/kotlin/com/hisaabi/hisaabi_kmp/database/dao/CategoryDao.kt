@@ -50,5 +50,14 @@ interface CategoryDao {
         AND business_slug = :businessSlug
     """)
     suspend fun getTotalProductCategories(businessSlug: String): Int?
+    
+    // Get categories by type and business
+    @Query("""
+        SELECT * FROM Category 
+        WHERE type_id = :typeId 
+        AND business_slug = :businessSlug
+        ORDER BY title ASC
+    """)
+    suspend fun getCategoriesByTypeAndBusiness(typeId: Int, businessSlug: String): List<CategoryEntity>
 }
 

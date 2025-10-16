@@ -20,7 +20,9 @@ import androidx.compose.ui.unit.sp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeMenuScreen() {
+fun HomeMenuScreen(
+    onNavigateToParties: (com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment) -> Unit = {}
+) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -77,9 +79,17 @@ fun HomeMenuScreen() {
             }
             
             items(otherOptions.size) { index ->
+                val option = otherOptions[index]
                 HomeGridCell(
-                    option = otherOptions[index],
-                    onClick = { /* Handle click */ }
+                    option = option,
+                    onClick = {
+                        when (option.title) {
+                            "Customers" -> onNavigateToParties(com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.CUSTOMER)
+                            "Vendors" -> onNavigateToParties(com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.VENDOR)
+                            "Investors" -> onNavigateToParties(com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.INVESTOR)
+                            else -> { /* Handle other clicks */ }
+                        }
+                    }
                 )
             }
         }
@@ -149,6 +159,7 @@ val otherOptions = listOf(
     MenuOption("Transactions", Icons.Default.Receipt),
     MenuOption("Customers", Icons.Default.People),
     MenuOption("Vendors", Icons.Default.Store),
+    MenuOption("Investors", Icons.Default.TrendingUp),
     MenuOption("Products", Icons.Default.Inventory2),
     MenuOption("Services", Icons.Default.Build),
     MenuOption("Recipes", Icons.Default.Restaurant),

@@ -10,7 +10,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 
 @Composable
 fun HomeScreen(
-    onNavigateToAuth: () -> Unit = {}
+    onNavigateToAuth: () -> Unit = {},
+    onNavigateToParties: (com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment) -> Unit = {}
 ) {
     var selectedTab by remember { mutableStateOf(0) }
     
@@ -31,7 +32,7 @@ fun HomeScreen(
         Box(modifier = Modifier.padding(paddingValues)) {
             when (selectedTab) {
                 0 -> DashboardScreen()
-                1 -> HomeMenuScreen()
+                1 -> HomeMenuScreen(onNavigateToParties = onNavigateToParties)
                 2 -> MoreScreen(onNavigateToAuth = onNavigateToAuth)
             }
         }
