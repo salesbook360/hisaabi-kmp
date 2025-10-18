@@ -61,6 +61,10 @@ fun App() {
                             currentScreen = AppScreen.ADD_PARTY
                         },
                         onNavigateBack = { currentScreen = AppScreen.HOME },
+                        onSegmentChanged = { segment ->
+                            // Update the selected segment when user switches tabs
+                            selectedPartySegment = segment
+                        },
                         initialSegment = selectedPartySegment,
                         refreshTrigger = partiesRefreshTrigger
                     )

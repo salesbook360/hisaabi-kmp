@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hisaabi.hisaabi_kmp.parties.domain.model.*
 import com.hisaabi.hisaabi_kmp.parties.presentation.viewmodel.PartiesViewModel
+import com.hisaabi.hisaabi_kmp.utils.format
 import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -32,6 +33,7 @@ fun PartiesScreen(
     onPartyClick: (Party) -> Unit = {},
     onAddPartyClick: () -> Unit = {},
     onNavigateBack: () -> Unit = {},
+    onSegmentChanged: (PartySegment) -> Unit = {},  // Callback to notify parent of segment changes
     initialSegment: PartySegment? = null,
     refreshTrigger: Int = 0  // Increment this to trigger a refresh
 ) {
@@ -122,7 +124,10 @@ fun PartiesScreen(
             // Segment Control
             SegmentedControl(
                 selected = uiState.selectedSegment,
-                onSegmentSelected = { viewModel.onSegmentChanged(it) },
+                onSegmentSelected = { segment ->
+                    viewModel.onSegmentChanged(segment)
+                    onSegmentChanged(segment)  // Notify parent of segment change
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)

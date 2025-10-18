@@ -22,3 +22,4 @@ val categoriesModule = module {
     singleOf(::AddCategoryViewModel)
 }
 
+

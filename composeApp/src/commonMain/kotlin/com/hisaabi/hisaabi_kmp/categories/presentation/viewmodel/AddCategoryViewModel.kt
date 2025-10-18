@@ -20,6 +20,10 @@ class AddCategoryViewModel(
     private val _uiState = MutableStateFlow(AddCategoryUiState())
     val uiState: StateFlow<AddCategoryUiState> = _uiState.asStateFlow()
     
+    fun resetState() {
+        _uiState.value = AddCategoryUiState()
+    }
+    
     fun addCategory(
         title: String,
         description: String?,
@@ -67,4 +71,5 @@ data class AddCategoryUiState(
     val isSuccess: Boolean = false,
     val error: String? = null
 )
+
 

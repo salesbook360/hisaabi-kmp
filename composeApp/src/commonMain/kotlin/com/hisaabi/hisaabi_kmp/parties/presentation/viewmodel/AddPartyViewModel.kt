@@ -34,6 +34,10 @@ class AddPartyViewModel(
         loadAreas()
     }
     
+    fun resetState() {
+        _uiState.value = AddPartyUiState()
+    }
+    
     private fun loadCategories() {
         viewModelScope.launch {
             try {

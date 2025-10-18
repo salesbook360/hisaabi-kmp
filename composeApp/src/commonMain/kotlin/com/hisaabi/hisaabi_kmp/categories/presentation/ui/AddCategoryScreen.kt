@@ -27,6 +27,11 @@ fun AddCategoryScreen(
     
     val uiState by viewModel.uiState.collectAsState()
     
+    // Reset state when screen is first opened
+    LaunchedEffect(Unit) {
+        viewModel.resetState()
+    }
+    
     // Navigate back on success
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
@@ -127,4 +132,5 @@ fun AddCategoryScreen(
         }
     }
 }
+
 

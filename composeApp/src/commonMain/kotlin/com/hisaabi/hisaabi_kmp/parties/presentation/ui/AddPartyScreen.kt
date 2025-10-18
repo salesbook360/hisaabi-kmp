@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import com.hisaabi.hisaabi_kmp.database.entity.CategoryEntity
 import com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType
 import com.hisaabi.hisaabi_kmp.parties.presentation.viewmodel.AddPartyViewModel
+import com.hisaabi.hisaabi_kmp.utils.format
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,6 +53,11 @@ fun AddPartyScreen(
     val uiState by viewModel.uiState.collectAsState()
     val categories by viewModel.categories.collectAsState()
     val areas by viewModel.areas.collectAsState()
+    
+    // Reset state when screen is first opened
+    LaunchedEffect(Unit) {
+        viewModel.resetState()
+    }
     
     // Navigate back on success
     LaunchedEffect(uiState.isSuccess) {

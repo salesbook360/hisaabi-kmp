@@ -52,3 +52,4 @@ data class CategoriesUiState(
     val error: String? = null
 )
 
+
