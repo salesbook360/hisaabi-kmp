@@ -5,6 +5,8 @@ import com.hisaabi.hisaabi_kmp.transactions.data.repository.TransactionsReposito
 import com.hisaabi.hisaabi_kmp.transactions.domain.usecase.*
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddTransactionViewModel
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionsListViewModel
+import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddRecordViewModel
+import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.PayGetCashViewModel
 import org.koin.core.module.dsl.singleOf
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
@@ -40,5 +42,7 @@ val transactionsModule = module {
     // ViewModels
     viewModel { AddTransactionViewModel(get()) }
     viewModel { TransactionsListViewModel(get()) }
+    viewModel { AddRecordViewModel(get()) }
+    viewModel { PayGetCashViewModel(get()) }
 }
 

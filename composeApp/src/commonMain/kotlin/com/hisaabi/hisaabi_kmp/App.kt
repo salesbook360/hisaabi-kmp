@@ -70,6 +70,7 @@ fun App() {
             var transactionType by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType?>(null) }
             var selectingPartyForTransaction by remember { mutableStateOf(false) }
             var selectedPartyForTransaction by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.parties.domain.model.Party?>(null) }
+            var returnToScreenAfterPartySelection by remember { mutableStateOf<AppScreen?>(null) }
             var selectingWarehouseForTransaction by remember { mutableStateOf(false) }
             var selectedWarehouseForTransaction by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse?>(null) }
             var selectingProductsForTransaction by remember { mutableStateOf(false) }
@@ -81,6 +82,12 @@ fun App() {
             val koin = org.koin.compose.getKoin()
             val transactionViewModel = remember(koin) {
                 koin.get<com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddTransactionViewModel>()
+            }
+            val recordViewModel = remember(koin) {
+                koin.get<com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddRecordViewModel>()
+            }
+            val payGetCashViewModel = remember(koin) {
+                koin.get<com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.PayGetCashViewModel>()
             }
 
             when (currentScreen) {
@@ -116,6 +123,12 @@ fun App() {
                         onNavigateToTransactions = {
                             currentScreen = AppScreen.TRANSACTIONS_LIST
                         },
+                        onNavigateToAddRecord = {
+                            currentScreen = AppScreen.ADD_RECORD
+                        },
+                        onNavigateToPayGetCash = {
+                            currentScreen = AppScreen.PAY_GET_CASH
+                        },
                         onNavigateToAddTransaction = { type ->
                             transactionType = type
                             currentScreen = AppScreen.ADD_TRANSACTION_STEP1
@@ -132,10 +145,12 @@ fun App() {
                         viewModel = org.koin.compose.koinInject(),
                         onPartyClick = { party ->
                             if (selectingPartyForTransaction) {
-                                // Store selected party and return to transaction
+                                // Store selected party and return to transaction or record
                                 selectedPartyForTransaction = party
                                 selectingPartyForTransaction = false
-                                currentScreen = AppScreen.ADD_TRANSACTION_STEP1
+                                // Return to the appropriate screen
+                                currentScreen = returnToScreenAfterPartySelection ?: AppScreen.ADD_TRANSACTION_STEP1
+                                returnToScreenAfterPartySelection = null
                             } else {
                                 // TODO: Navigate to party details
                             }
@@ -331,10 +346,11 @@ fun App() {
                         viewModel = org.koin.compose.koinInject(),
                         onPaymentMethodClick = { paymentMethod ->
                             if (selectingPaymentMethodForTransaction) {
-                                // Store selected payment method and return to transaction
+                                // Store selected payment method and return to appropriate screen
                                 selectedPaymentMethodForTransaction = paymentMethod
                                 selectingPaymentMethodForTransaction = false
-                                currentScreen = AppScreen.ADD_TRANSACTION_STEP2
+                                currentScreen = returnToScreenAfterPartySelection ?: AppScreen.ADD_TRANSACTION_STEP2
+                                returnToScreenAfterPartySelection = null
                             } else {
                                 selectedPaymentMethodForEdit = paymentMethod
                                 currentScreen = AppScreen.ADD_PAYMENT_METHOD
@@ -347,7 +363,8 @@ fun App() {
                         onNavigateBack = { 
                             if (selectingPaymentMethodForTransaction) {
                                 selectingPaymentMethodForTransaction = false
-                                currentScreen = AppScreen.ADD_TRANSACTION_STEP2
+                                currentScreen = returnToScreenAfterPartySelection ?: AppScreen.ADD_TRANSACTION_STEP2
+                                returnToScreenAfterPartySelection = null
                             } else {
                                 currentScreen = AppScreen.HOME
                             }
@@ -524,6 +541,69 @@ fun App() {
                         }
                     )
                 }
+                
+                AppScreen.ADD_RECORD -> {
+                    // Handle party selection for record
+                    LaunchedEffect(selectedPartyForTransaction) {
+                        selectedPartyForTransaction?.let { party ->
+                            recordViewModel.selectParty(party)
+                            selectedPartyForTransaction = null
+                        }
+                    }
+                    
+                    com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddRecordScreen(
+                        viewModel = recordViewModel,
+                        onNavigateBack = { currentScreen = AppScreen.HOME },
+                        onSelectParty = {
+                            selectingPartyForTransaction = true
+                            returnToScreenAfterPartySelection = AppScreen.ADD_RECORD
+                            selectedPartySegment = com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.CUSTOMER
+                            currentScreen = AppScreen.PARTIES
+                        }
+                    )
+                }
+                
+                AppScreen.PAY_GET_CASH -> {
+                    // Handle party selection for pay/get cash
+                    LaunchedEffect(selectedPartyForTransaction) {
+                        selectedPartyForTransaction?.let { party ->
+                            payGetCashViewModel.selectParty(party)
+                            selectedPartyForTransaction = null
+                        }
+                    }
+                    
+                    // Handle payment method selection
+                    LaunchedEffect(selectedPaymentMethodForTransaction) {
+                        selectedPaymentMethodForTransaction?.let { paymentMethod ->
+                            payGetCashViewModel.selectPaymentMethod(paymentMethod)
+                            selectedPaymentMethodForTransaction = null
+                        }
+                    }
+                    
+                    com.hisaabi.hisaabi_kmp.transactions.presentation.ui.PayGetCashScreen(
+                        viewModel = payGetCashViewModel,
+                        onNavigateBack = { currentScreen = AppScreen.HOME },
+                        onSelectParty = { partyType ->
+                            selectingPartyForTransaction = true
+                            returnToScreenAfterPartySelection = AppScreen.PAY_GET_CASH
+                            selectedPartySegment = when (partyType) {
+                                com.hisaabi.hisaabi_kmp.transactions.domain.model.PartyTypeForCash.CUSTOMER -> 
+                                    com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.CUSTOMER
+                                com.hisaabi.hisaabi_kmp.transactions.domain.model.PartyTypeForCash.VENDOR -> 
+                                    com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.VENDOR
+                                com.hisaabi.hisaabi_kmp.transactions.domain.model.PartyTypeForCash.INVESTOR -> 
+                                    com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.INVESTOR
+                            }
+                            currentScreen = AppScreen.PARTIES
+                        },
+                        onSelectPaymentMethod = {
+                            selectingPaymentMethodForTransaction = true
+                            returnToScreenAfterPartySelection = AppScreen.PAY_GET_CASH
+                            currentScreen = AppScreen.PAYMENT_METHODS
+                        }
+                    )
+                }
+                
                 AppScreen.ADD_TRANSACTION_STEP1 -> {
                     // Set transaction type if provided
                     LaunchedEffect(transactionType) {
@@ -572,6 +652,7 @@ fun App() {
                                 com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.CUSTOMER
                             }
                             selectingPartyForTransaction = true
+                            returnToScreenAfterPartySelection = AppScreen.ADD_TRANSACTION_STEP1
                             currentScreen = AppScreen.PARTIES
                         },
                         onSelectProducts = { 
@@ -634,6 +715,8 @@ enum class AppScreen {
     ADD_TEMPLATE,
     UPDATE_PROFILE,
     TRANSACTIONS_LIST,
+    ADD_RECORD,
+    PAY_GET_CASH,
     ADD_TRANSACTION_STEP1,
     ADD_TRANSACTION_STEP2
 }

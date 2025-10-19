@@ -80,6 +80,26 @@ data class Transaction(
     }
     
     fun getTransactionTypeName(): String {
+        // Check if it's a record type first
+        RecordType.fromValue(transactionType)?.let { recordType ->
+            return recordType.displayName
+        }
+        
+        // Check if it's a Pay/Get Payment transaction
+        val payGetCashName = when (transactionType) {
+            4 -> "Pay Payment to Vendor"
+            5 -> "Get Payment from Vendor"
+            6 -> "Pay Payment to Customer"
+            7 -> "Get Payment from Customer"
+            11 -> "Investment Deposit"
+            12 -> "Investment Withdraw"
+            else -> null
+        }
+        if (payGetCashName != null) {
+            return payGetCashName
+        }
+        
+        // Otherwise check if it's a transaction type
         return TransactionType.fromValue(transactionType)?.displayName ?: "Unknown"
     }
     

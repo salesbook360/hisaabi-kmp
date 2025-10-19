@@ -24,6 +24,8 @@ fun HomeScreen(
     onNavigateToWarehouses: () -> Unit = {},
     onNavigateToMyBusiness: () -> Unit = {},
     onNavigateToTransactions: () -> Unit = {},
+    onNavigateToAddRecord: () -> Unit = {},
+    onNavigateToPayGetCash: () -> Unit = {},
     onNavigateToAddTransaction: (com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType) -> Unit = {}
 ) {
     var selectedTab by remember { mutableStateOf(0) }
@@ -53,6 +55,8 @@ fun HomeScreen(
                     onNavigateToWarehouses = onNavigateToWarehouses,
                     onNavigateToMyBusiness = onNavigateToMyBusiness,
                     onNavigateToTransactions = onNavigateToTransactions,
+                    onNavigateToAddRecord = onNavigateToAddRecord,
+                    onNavigateToPayGetCash = onNavigateToPayGetCash,
                     onNavigateToAddTransaction = onNavigateToAddTransaction
                 )
                 2 -> MoreScreen(

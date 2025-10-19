@@ -13,7 +13,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.hisaabi.hisaabi_kmp.transactions.domain.model.RecordType
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction
+import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionState
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionsListViewModel
 
@@ -300,6 +302,8 @@ private fun TransactionCard(
     onDeleteClick: () -> Unit
 ) {
     var showOptions by remember { mutableStateOf(false) }
+    val isRecordType = RecordType.fromValue(transaction.transactionType) != null
+    val isPayGetCashType = transaction.transactionType in listOf(4, 5, 6, 7, 11, 12)
     
     Card(
         modifier = Modifier
@@ -316,12 +320,32 @@ private fun TransactionCard(
             ) {
                 // Transaction type badge
                 Surface(
-                    color = when (TransactionType.fromValue(transaction.transactionType)) {
-                        TransactionType.SALE -> MaterialTheme.colorScheme.primaryContainer
-                        TransactionType.PURCHASE -> MaterialTheme.colorScheme.secondaryContainer
-                        TransactionType.CUSTOMER_RETURN -> MaterialTheme.colorScheme.errorContainer
-                        TransactionType.VENDOR_RETURN -> MaterialTheme.colorScheme.tertiaryContainer
-                        else -> MaterialTheme.colorScheme.surfaceVariant
+                    color = if (isRecordType) {
+                        // Different colors for record types
+                        when (RecordType.fromValue(transaction.transactionType)) {
+                            RecordType.MEETING -> MaterialTheme.colorScheme.tertiaryContainer
+                            RecordType.TASK -> MaterialTheme.colorScheme.secondaryContainer
+                            RecordType.CLIENT_NOTE -> MaterialTheme.colorScheme.primaryContainer
+                            RecordType.SELF_NOTE -> MaterialTheme.colorScheme.surfaceVariant
+                            RecordType.CASH_REMINDER -> MaterialTheme.colorScheme.errorContainer
+                            else -> MaterialTheme.colorScheme.surfaceVariant
+                        }
+                    } else if (isPayGetCashType) {
+                        // Colors for Pay/Get Cash transactions
+                        when (transaction.transactionType) {
+                            5, 7, 12 -> MaterialTheme.colorScheme.primaryContainer // Get Cash (incoming)
+                            4, 6, 11 -> MaterialTheme.colorScheme.secondaryContainer // Pay Cash (outgoing)
+                            else -> MaterialTheme.colorScheme.surfaceVariant
+                        }
+                    } else {
+                        // Original colors for transaction types
+                        when (TransactionType.fromValue(transaction.transactionType)) {
+                            TransactionType.SALE -> MaterialTheme.colorScheme.primaryContainer
+                            TransactionType.PURCHASE -> MaterialTheme.colorScheme.secondaryContainer
+                            TransactionType.CUSTOMER_RETURN -> MaterialTheme.colorScheme.errorContainer
+                            TransactionType.VENDOR_RETURN -> MaterialTheme.colorScheme.tertiaryContainer
+                            else -> MaterialTheme.colorScheme.surfaceVariant
+                        }
                     },
                     shape = MaterialTheme.shapes.small
                 ) {
@@ -375,70 +399,187 @@ private fun TransactionCard(
                 Spacer(Modifier.height(12.dp))
             }
             
-            // Transaction details
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column {
-                    Text(
-                        "Total Bill",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        "₨ ${String.format("%.2f", transaction.totalBill)}",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+            // Transaction details - different for records vs pay/get cash vs regular transactions
+            if (isRecordType) {
+                // For records, show description prominently
+                transaction.description?.let { desc ->
+                    if (desc.isNotBlank()) {
+                        Text(
+                            desc,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 3
+                        )
+                        Spacer(Modifier.height(8.dp))
+                    }
                 }
                 
-                if (transaction.totalPaid > 0) {
-                    Column(horizontalAlignment = Alignment.End) {
+                // Show amount only for Cash Reminder
+                if (RecordType.fromValue(transaction.transactionType) == RecordType.CASH_REMINDER && transaction.totalPaid > 0) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Text(
-                            "Paid",
+                            "Promised Amount:",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
                             "₨ ${String.format("%.2f", transaction.totalPaid)}",
                             style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+                
+                // Show state
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Status:",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        transaction.getStateName(),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = when (transaction.stateId) {
+                            TransactionState.COMPLETED.value -> MaterialTheme.colorScheme.primary
+                            TransactionState.PENDING.value -> MaterialTheme.colorScheme.tertiary
+                            TransactionState.CANCELLED.value -> MaterialTheme.colorScheme.error
+                            else -> MaterialTheme.colorScheme.onSurface
+                        }
+                    )
+                }
+            } else if (isPayGetCashType) {
+                // For Pay/Get Cash transactions, show amount prominently
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        if (transaction.transactionType in listOf(5, 7, 12)) "Received:" else "Paid:",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        "₨ ${"%.2f".format(transaction.totalPaid)}",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = if (transaction.transactionType in listOf(5, 7, 12)) 
+                            MaterialTheme.colorScheme.primary 
+                        else 
+                            MaterialTheme.colorScheme.secondary
+                    )
+                }
+                
+                // Show payment method if available
+                transaction.paymentMethodTo?.let { paymentMethod ->
+                    Spacer(Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Payment Method:",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            paymentMethod.title,
+                            style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold
                         )
                     }
                 }
-            }
-            
-            // Additional details
-            if (transaction.flatDiscount > 0 || transaction.flatTax > 0 || transaction.additionalCharges > 0) {
-                Spacer(Modifier.height(8.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    if (transaction.flatDiscount > 0) {
-                        DetailChip("Discount: ₨${String.format("%.2f", transaction.flatDiscount)}")
-                    }
-                    if (transaction.flatTax > 0) {
-                        DetailChip("Tax: ₨${String.format("%.2f", transaction.flatTax)}")
-                    }
-                    if (transaction.additionalCharges > 0) {
-                        DetailChip("Charges: ₨${String.format("%.2f", transaction.additionalCharges)}")
+                
+                // Show description if available
+                transaction.description?.let { desc ->
+                    if (desc.isNotBlank()) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            "Remarks: $desc",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2
+                        )
                     }
                 }
-            }
-            
-            // Description
-            transaction.description?.let { desc ->
-                if (desc.isNotBlank()) {
+            } else {
+                // Original transaction display
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column {
+                        Text(
+                            "Total Bill",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            "₨ ${String.format("%.2f", transaction.totalBill)}",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    
+                    if (transaction.totalPaid > 0) {
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(
+                                "Paid",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                "₨ ${String.format("%.2f", transaction.totalPaid)}",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+                
+                // Additional details
+                if (transaction.flatDiscount > 0 || transaction.flatTax > 0 || transaction.additionalCharges > 0) {
                     Spacer(Modifier.height(8.dp))
-                    Text(
-                        desc,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        if (transaction.flatDiscount > 0) {
+                            DetailChip("Discount: ₨${String.format("%.2f", transaction.flatDiscount)}")
+                        }
+                        if (transaction.flatTax > 0) {
+                            DetailChip("Tax: ₨${String.format("%.2f", transaction.flatTax)}")
+                        }
+                        if (transaction.additionalCharges > 0) {
+                            DetailChip("Charges: ₨${String.format("%.2f", transaction.additionalCharges)}")
+                        }
+                    }
+                }
+                
+                // Description for transactions
+                transaction.description?.let { desc ->
+                    if (desc.isNotBlank()) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            desc,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2
+                        )
+                    }
                 }
             }
             

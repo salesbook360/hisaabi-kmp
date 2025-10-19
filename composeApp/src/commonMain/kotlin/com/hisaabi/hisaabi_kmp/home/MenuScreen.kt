@@ -28,6 +28,8 @@ fun HomeMenuScreen(
     onNavigateToWarehouses: () -> Unit = {},
     onNavigateToMyBusiness: () -> Unit = {},
     onNavigateToTransactions: () -> Unit = {},
+    onNavigateToAddRecord: () -> Unit = {},
+    onNavigateToPayGetCash: () -> Unit = {},
     onNavigateToAddTransaction: (com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType) -> Unit = {}
 ) {
     var showProductTypeDialog by remember { mutableStateOf(false) }
@@ -74,6 +76,8 @@ fun HomeMenuScreen(
                     option = option,
                     onClick = {
                         when (option.title) {
+                            "New Record" -> onNavigateToAddRecord()
+                            "Payment In/Out" -> onNavigateToPayGetCash()
                             "Sale" -> onNavigateToAddTransaction(com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType.SALE)
                             "Sale Order" -> onNavigateToAddTransaction(com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType.SALE_ORDER)
                             "Purchase" -> onNavigateToAddTransaction(com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType.PURCHASE)
