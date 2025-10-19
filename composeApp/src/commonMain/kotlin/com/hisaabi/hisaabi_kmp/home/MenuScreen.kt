@@ -30,6 +30,10 @@ fun HomeMenuScreen(
     onNavigateToTransactions: () -> Unit = {},
     onNavigateToAddRecord: () -> Unit = {},
     onNavigateToPayGetCash: () -> Unit = {},
+    onNavigateToExpense: () -> Unit = {},
+    onNavigateToExtraIncome: () -> Unit = {},
+    onNavigateToPaymentTransfer: () -> Unit = {},
+    onNavigateToJournalVoucher: () -> Unit = {},
     onNavigateToAddTransaction: (com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType) -> Unit = {}
 ) {
     var showProductTypeDialog by remember { mutableStateOf(false) }
@@ -78,6 +82,10 @@ fun HomeMenuScreen(
                         when (option.title) {
                             "New Record" -> onNavigateToAddRecord()
                             "Payment In/Out" -> onNavigateToPayGetCash()
+                            "Expense" -> onNavigateToExpense()
+                            "Extra Income" -> onNavigateToExtraIncome()
+                            "Payment Transfer" -> onNavigateToPaymentTransfer()
+                            "Journal Voucher" -> onNavigateToJournalVoucher()
                             "Sale" -> onNavigateToAddTransaction(com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType.SALE)
                             "Sale Order" -> onNavigateToAddTransaction(com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType.SALE_ORDER)
                             "Purchase" -> onNavigateToAddTransaction(com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType.PURCHASE)
@@ -195,8 +203,10 @@ val newTransactionOptions = listOf(
     MenuOption("Customer Return", Icons.Default.AssignmentReturn),
     MenuOption("Vendor Return", Icons.Default.Undo),
     MenuOption("Payment In/Out", Icons.Default.Payment),
-    MenuOption("Cash Transfer", Icons.Default.SwapHoriz),
+    MenuOption("Payment Transfer", Icons.Default.SwapHoriz),
+    MenuOption("Journal Voucher", Icons.Default.AccountBalance),
     MenuOption("Expense", Icons.Default.MoneyOff),
+    MenuOption("Extra Income", Icons.Default.AttachMoney),
     MenuOption("Quotation", Icons.Default.Description),
     MenuOption("Stock Adjustment", Icons.Default.Tune)
 )

@@ -7,8 +7,10 @@ import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddTransactio
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionsListViewModel
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddRecordViewModel
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.PayGetCashViewModel
+import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddExpenseIncomeViewModel
+import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.PaymentTransferViewModel
+import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddJournalVoucherViewModel
 import org.koin.core.module.dsl.singleOf
-import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val transactionsModule = module {
@@ -40,9 +42,12 @@ val transactionsModule = module {
     }
     
     // ViewModels
-    viewModel { AddTransactionViewModel(get()) }
-    viewModel { TransactionsListViewModel(get()) }
-    viewModel { AddRecordViewModel(get()) }
-    viewModel { PayGetCashViewModel(get()) }
+    singleOf(::AddTransactionViewModel)
+    singleOf(::TransactionsListViewModel)
+    singleOf(::AddRecordViewModel)
+    singleOf(::PayGetCashViewModel)
+    singleOf(::AddExpenseIncomeViewModel)
+    singleOf(::PaymentTransferViewModel)
+    singleOf(::AddJournalVoucherViewModel)
 }
 

@@ -21,7 +21,8 @@ import com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.PayGetCashType
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.PartyTypeForCash
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.PayGetCashViewModel
-import kotlinx.datetime.*
+import com.hisaabi.hisaabi_kmp.utils.SimpleDateTimePickerDialog
+import com.hisaabi.hisaabi_kmp.utils.formatDateTime
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -432,10 +433,3 @@ private fun PaymentMethodCard(
         }
     }
 }
-
-private fun formatDateTime(timestamp: Long): String {
-    val instant = Instant.fromEpochMilliseconds(timestamp)
-    val dateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
-    return "${dateTime.dayOfMonth}/${dateTime.monthNumber}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padStart(2, '0')}"
-}
-

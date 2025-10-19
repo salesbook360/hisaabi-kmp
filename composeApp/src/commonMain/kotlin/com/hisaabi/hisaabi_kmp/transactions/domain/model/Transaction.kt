@@ -99,6 +99,21 @@ data class Transaction(
             return payGetCashName
         }
         
+        // Check if it's an Expense or Extra Income transaction
+        ExpenseIncomeType.fromValue(transactionType)?.let { expenseIncomeType ->
+            return expenseIncomeType.displayName
+        }
+        
+        // Check if it's a Payment Transfer transaction
+        if (transactionType == 10) {
+            return "Payment Transfer"
+        }
+        
+        // Check if it's a Journal Voucher transaction
+        if (transactionType == 19) {
+            return "Journal Voucher"
+        }
+        
         // Otherwise check if it's a transaction type
         return TransactionType.fromValue(transactionType)?.displayName ?: "Unknown"
     }

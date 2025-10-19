@@ -35,7 +35,8 @@ fun PartiesScreen(
     onNavigateBack: () -> Unit = {},
     onSegmentChanged: (PartySegment) -> Unit = {},  // Callback to notify parent of segment changes
     initialSegment: PartySegment? = null,
-    refreshTrigger: Int = 0  // Increment this to trigger a refresh
+    refreshTrigger: Int = 0,  // Increment this to trigger a refresh
+    isExpenseIncomeContext: Boolean = false  // Flag to show only Expense/Income segments
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val listState = rememberLazyListState()
@@ -128,6 +129,7 @@ fun PartiesScreen(
                     viewModel.onSegmentChanged(segment)
                     onSegmentChanged(segment)  // Notify parent of segment change
                 },
+                isExpenseIncomeContext = isExpenseIncomeContext,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
@@ -274,8 +276,16 @@ fun PartiesScreen(
 private fun SegmentedControl(
     selected: PartySegment,
     onSegmentSelected: (PartySegment) -> Unit,
+    isExpenseIncomeContext: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    // Filter segments based on context
+    val visibleSegments = if (isExpenseIncomeContext) {
+        listOf(PartySegment.EXPENSE, PartySegment.EXTRA_INCOME)
+    } else {
+        listOf(PartySegment.CUSTOMER, PartySegment.VENDOR, PartySegment.INVESTOR)
+    }
+    
     Row(
         modifier = modifier
             .clip(RoundedCornerShape(8.dp))
@@ -283,7 +293,7 @@ private fun SegmentedControl(
             .padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        PartySegment.entries.forEach { segment ->
+        visibleSegments.forEach { segment ->
             val isSelected = selected == segment
             Box(
                 modifier = Modifier
@@ -298,7 +308,11 @@ private fun SegmentedControl(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = segment.name,
+                    text = when (segment) {
+                        PartySegment.EXPENSE -> "Expense"
+                        PartySegment.EXTRA_INCOME -> "Extra Income"
+                        else -> segment.name
+                    },
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                     color = if (isSelected) MaterialTheme.colorScheme.onPrimary
@@ -314,6 +328,9 @@ private fun PartyItem(
     party: Party,
     onClick: () -> Unit
 ) {
+    // Check if this is an expense/income type (roleId 14 or 15)
+    val isExpenseIncomeType = party.roleId in listOf(14, 15)
+    
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -331,15 +348,33 @@ private fun PartyItem(
                 modifier = Modifier
                     .size(48.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
+                    .background(
+                        if (isExpenseIncomeType) {
+                            if (party.roleId == 14) MaterialTheme.colorScheme.errorContainer
+                            else MaterialTheme.colorScheme.primaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.primaryContainer
+                        }
+                    ),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = party.name.firstOrNull()?.uppercase()?.toString() ?: "?",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+                if (isExpenseIncomeType) {
+                    Icon(
+                        imageVector = if (party.roleId == 14) Icons.Default.TrendingDown else Icons.Default.TrendingUp,
+                        contentDescription = null,
+                        tint = if (party.roleId == 14) 
+                            MaterialTheme.colorScheme.onErrorContainer 
+                        else 
+                            MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                } else {
+                    Text(
+                        text = party.name.firstOrNull()?.uppercase()?.toString() ?: "?",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
             }
             
             Spacer(modifier = Modifier.width(16.dp))
@@ -354,55 +389,67 @@ private fun PartyItem(
                     overflow = TextOverflow.Ellipsis
                 )
                 
-                if (!party.phone.isNullOrBlank()) {
+                // For expense/income types, show type label instead of phone/address
+                if (isExpenseIncomeType) {
                     Text(
-                        text = party.phone,
+                        text = if (party.roleId == 14) "Expense Type" else "Income Type",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                }
-                
-                if (!party.address.isNullOrBlank()) {
-                    Text(
-                        text = party.address,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                } else {
+                    if (!party.phone.isNullOrBlank()) {
+                        Text(
+                            text = party.phone,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    
+                    if (!party.address.isNullOrBlank()) {
+                        Text(
+                            text = party.address,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
             }
             
-            Spacer(modifier = Modifier.width(16.dp))
-            
-            // Balance
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = formatBalance(abs(party.balance)),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = when (party.balanceStatus) {
-                        BalanceStatus.PAYABLE -> Color(0xFF4CAF50)  // Green - you will pay
-                        BalanceStatus.RECEIVABLE -> Color(0xFFF44336)  // Red - you will get
-                        BalanceStatus.ZERO -> MaterialTheme.colorScheme.onSurfaceVariant
-                    }
-                )
+            // Show balance only for regular parties (not expense/income types)
+            if (!isExpenseIncomeType) {
+                Spacer(modifier = Modifier.width(16.dp))
                 
-                Text(
-                    text = when (party.balanceStatus) {
-                        BalanceStatus.PAYABLE -> "You'll Pay"
-                        BalanceStatus.RECEIVABLE -> "You'll Get"
-                        BalanceStatus.ZERO -> "Settled"
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = when (party.balanceStatus) {
-                        BalanceStatus.PAYABLE -> Color(0xFF4CAF50)
-                        BalanceStatus.RECEIVABLE -> Color(0xFFF44336)
-                        BalanceStatus.ZERO -> MaterialTheme.colorScheme.onSurfaceVariant
-                    }
-                )
+                // Balance
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = formatBalance(abs(party.balance)),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = when (party.balanceStatus) {
+                            BalanceStatus.PAYABLE -> Color(0xFF4CAF50)  // Green - you will pay
+                            BalanceStatus.RECEIVABLE -> Color(0xFFF44336)  // Red - you will get
+                            BalanceStatus.ZERO -> MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+                    )
+                    
+                    Text(
+                        text = when (party.balanceStatus) {
+                            BalanceStatus.PAYABLE -> "You'll Pay"
+                            BalanceStatus.RECEIVABLE -> "You'll Get"
+                            BalanceStatus.ZERO -> "Settled"
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = when (party.balanceStatus) {
+                            BalanceStatus.PAYABLE -> Color(0xFF4CAF50)
+                            BalanceStatus.RECEIVABLE -> Color(0xFFF44336)
+                            BalanceStatus.ZERO -> MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+                    )
+                }
             }
         }
     }

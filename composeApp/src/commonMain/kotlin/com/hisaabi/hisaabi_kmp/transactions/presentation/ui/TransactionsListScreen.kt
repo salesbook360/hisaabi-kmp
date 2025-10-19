@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.hisaabi.hisaabi_kmp.transactions.domain.model.ExpenseIncomeType
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.RecordType
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionState
@@ -304,6 +305,9 @@ private fun TransactionCard(
     var showOptions by remember { mutableStateOf(false) }
     val isRecordType = RecordType.fromValue(transaction.transactionType) != null
     val isPayGetCashType = transaction.transactionType in listOf(4, 5, 6, 7, 11, 12)
+    val isExpenseIncomeType = ExpenseIncomeType.fromValue(transaction.transactionType) != null
+    val isPaymentTransferType = transaction.transactionType == 10
+    val isJournalVoucherType = transaction.transactionType == 19
     
     Card(
         modifier = Modifier
@@ -337,6 +341,19 @@ private fun TransactionCard(
                             4, 6, 11 -> MaterialTheme.colorScheme.secondaryContainer // Pay Cash (outgoing)
                             else -> MaterialTheme.colorScheme.surfaceVariant
                         }
+                    } else if (isExpenseIncomeType) {
+                        // Colors for Expense/Income transactions
+                        when (ExpenseIncomeType.fromValue(transaction.transactionType)) {
+                            ExpenseIncomeType.EXPENSE -> MaterialTheme.colorScheme.errorContainer
+                            ExpenseIncomeType.EXTRA_INCOME -> MaterialTheme.colorScheme.primaryContainer
+                            else -> MaterialTheme.colorScheme.surfaceVariant
+                        }
+                    } else if (isPaymentTransferType) {
+                        // Color for Payment Transfer
+                        MaterialTheme.colorScheme.tertiaryContainer
+                    } else if (isJournalVoucherType) {
+                        // Color for Journal Voucher
+                        MaterialTheme.colorScheme.secondaryContainer
                     } else {
                         // Original colors for transaction types
                         when (TransactionType.fromValue(transaction.transactionType)) {
@@ -399,7 +416,7 @@ private fun TransactionCard(
                 Spacer(Modifier.height(12.dp))
             }
             
-            // Transaction details - different for records vs pay/get cash vs regular transactions
+            // Transaction details - different for records vs pay/get cash vs expense/income vs payment transfer vs regular transactions
             if (isRecordType) {
                 // For records, show description prominently
                 transaction.description?.let { desc ->
@@ -508,6 +525,206 @@ private fun TransactionCard(
                         Spacer(Modifier.height(8.dp))
                         Text(
                             "Remarks: $desc",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2
+                        )
+                    }
+                }
+            } else if (isExpenseIncomeType) {
+                // For Expense/Income transactions, show amount prominently
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        if (transaction.transactionType == ExpenseIncomeType.EXPENSE.value) "Expense:" else "Income:",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        "₨ ${"%.2f".format(transaction.totalPaid)}",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = if (transaction.transactionType == ExpenseIncomeType.EXPENSE.value) 
+                            MaterialTheme.colorScheme.error 
+                        else 
+                            MaterialTheme.colorScheme.primary
+                    )
+                }
+                
+                // Show payment method if available
+                transaction.paymentMethodTo?.let { paymentMethod ->
+                    Spacer(Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Payment Method:",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            paymentMethod.title,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+                
+                // Show description if available
+                transaction.description?.let { desc ->
+                    if (desc.isNotBlank()) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            "Description: $desc",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2
+                        )
+                    }
+                }
+            } else if (isPaymentTransferType) {
+                // For Payment Transfer, show From and To payment methods with amount
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Transfer Amount:",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        "₨ ${"%.2f".format(transaction.totalPaid)}",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.tertiary
+                    )
+                }
+                
+                Spacer(Modifier.height(8.dp))
+                
+                // Show From payment method
+                transaction.paymentMethodFrom?.let { paymentMethodFrom ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "From:",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            paymentMethodFrom.title,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                
+                Spacer(Modifier.height(4.dp))
+                
+                // Show To payment method
+                transaction.paymentMethodTo?.let { paymentMethodTo ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "To:",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            paymentMethodTo.title,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                
+                // Show description if available
+                transaction.description?.let { desc ->
+                    if (desc.isNotBlank()) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            "Description: $desc",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2
+                        )
+                    }
+                }
+            } else if (isJournalVoucherType) {
+                // For Journal Voucher, show debit/credit totals
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            "Debit:",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            "₨ ${"%.2f".format(transaction.totalPaid)}",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            "Credit:",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            "₨ ${"%.2f".format(transaction.totalPaid)}",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+                
+                // Show payment method if available
+                transaction.paymentMethodTo?.let { paymentMethod ->
+                    Spacer(Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Payment Method:",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            paymentMethod.title,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                
+                // Show description if available
+                transaction.description?.let { desc ->
+                    if (desc.isNotBlank()) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            "Description: $desc",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 2

@@ -71,6 +71,8 @@ fun App() {
             var selectingPartyForTransaction by remember { mutableStateOf(false) }
             var selectedPartyForTransaction by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.parties.domain.model.Party?>(null) }
             var returnToScreenAfterPartySelection by remember { mutableStateOf<AppScreen?>(null) }
+            var isExpenseIncomePartySelection by remember { mutableStateOf(false) }  // Flag for expense/income context
+            var isSelectingPaymentMethodFrom by remember { mutableStateOf(false) }  // Flag for payment transfer From/To
             var selectingWarehouseForTransaction by remember { mutableStateOf(false) }
             var selectedWarehouseForTransaction by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse?>(null) }
             var selectingProductsForTransaction by remember { mutableStateOf(false) }
@@ -89,6 +91,18 @@ fun App() {
             val payGetCashViewModel = remember(koin) {
                 koin.get<com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.PayGetCashViewModel>()
             }
+            val expenseIncomeViewModel = remember(koin) {
+                koin.get<com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddExpenseIncomeViewModel>()
+            }
+            val paymentTransferViewModel = remember(koin) {
+                koin.get<com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.PaymentTransferViewModel>()
+            }
+            val journalVoucherViewModel = remember(koin) {
+                koin.get<com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddJournalVoucherViewModel>()
+            }
+
+            // Journal Voucher state
+            var showJournalAccountTypeDialog by remember { mutableStateOf(false) }
 
             when (currentScreen) {
                 AppScreen.HOME -> {
@@ -129,6 +143,20 @@ fun App() {
                         onNavigateToPayGetCash = {
                             currentScreen = AppScreen.PAY_GET_CASH
                         },
+                        onNavigateToExpense = {
+                            expenseIncomeViewModel.setTransactionType(com.hisaabi.hisaabi_kmp.transactions.domain.model.ExpenseIncomeType.EXPENSE)
+                            currentScreen = AppScreen.ADD_EXPENSE_INCOME
+                        },
+                        onNavigateToExtraIncome = {
+                            expenseIncomeViewModel.setTransactionType(com.hisaabi.hisaabi_kmp.transactions.domain.model.ExpenseIncomeType.EXTRA_INCOME)
+                            currentScreen = AppScreen.ADD_EXPENSE_INCOME
+                        },
+                        onNavigateToPaymentTransfer = {
+                            currentScreen = AppScreen.PAYMENT_TRANSFER
+                        },
+                        onNavigateToJournalVoucher = {
+                            currentScreen = AppScreen.JOURNAL_VOUCHER
+                        },
                         onNavigateToAddTransaction = { type ->
                             transactionType = type
                             currentScreen = AppScreen.ADD_TRANSACTION_STEP1
@@ -147,10 +175,9 @@ fun App() {
                             if (selectingPartyForTransaction) {
                                 // Store selected party and return to transaction or record
                                 selectedPartyForTransaction = party
-                                selectingPartyForTransaction = false
+                                // Don't reset flags here - let the target screen handle it
                                 // Return to the appropriate screen
                                 currentScreen = returnToScreenAfterPartySelection ?: AppScreen.ADD_TRANSACTION_STEP1
-                                returnToScreenAfterPartySelection = null
                             } else {
                                 // TODO: Navigate to party details
                             }
@@ -164,17 +191,33 @@ fun App() {
                                     com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType.VENDOR
                                 com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.INVESTOR -> 
                                     com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType.INVESTOR
+                                com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.EXPENSE -> 
+                                    com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType.EXPENSE
+                                com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.EXTRA_INCOME -> 
+                                    com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType.EXTRA_INCOME
                                 else -> com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType.CUSTOMER
                             }
                             currentScreen = AppScreen.ADD_PARTY
                         },
-                        onNavigateBack = { currentScreen = AppScreen.HOME },
+                        onNavigateBack = { 
+                            if (selectingPartyForTransaction) {
+                                // User cancelled party selection - navigate back to the screen they came from
+                                val targetScreen = returnToScreenAfterPartySelection ?: AppScreen.HOME
+                                selectingPartyForTransaction = false
+                                returnToScreenAfterPartySelection = null
+                                isExpenseIncomePartySelection = false
+                                currentScreen = targetScreen
+                            } else {
+                                currentScreen = AppScreen.HOME
+                            }
+                        },
                         onSegmentChanged = { segment ->
                             // Update the selected segment when user switches tabs
                             selectedPartySegment = segment
                         },
                         initialSegment = selectedPartySegment,
-                        refreshTrigger = partiesRefreshTrigger
+                        refreshTrigger = partiesRefreshTrigger,
+                        isExpenseIncomeContext = isExpenseIncomePartySelection  // Pass the flag
                     )
                 }
                 AppScreen.ADD_PARTY -> {
@@ -348,9 +391,9 @@ fun App() {
                             if (selectingPaymentMethodForTransaction) {
                                 // Store selected payment method and return to appropriate screen
                                 selectedPaymentMethodForTransaction = paymentMethod
-                                selectingPaymentMethodForTransaction = false
+                                // Don't reset selectingPaymentMethodForTransaction here - let the target screen handle it
                                 currentScreen = returnToScreenAfterPartySelection ?: AppScreen.ADD_TRANSACTION_STEP2
-                                returnToScreenAfterPartySelection = null
+                                // Don't reset returnToScreenAfterPartySelection here either
                             } else {
                                 selectedPaymentMethodForEdit = paymentMethod
                                 currentScreen = AppScreen.ADD_PAYMENT_METHOD
@@ -362,9 +405,12 @@ fun App() {
                         },
                         onNavigateBack = { 
                             if (selectingPaymentMethodForTransaction) {
+                                // Navigate back without selecting - clear the selection state
+                                val targetScreen = returnToScreenAfterPartySelection ?: AppScreen.ADD_TRANSACTION_STEP2
                                 selectingPaymentMethodForTransaction = false
-                                currentScreen = returnToScreenAfterPartySelection ?: AppScreen.ADD_TRANSACTION_STEP2
                                 returnToScreenAfterPartySelection = null
+                                isSelectingPaymentMethodFrom = false
+                                currentScreen = targetScreen
                             } else {
                                 currentScreen = AppScreen.HOME
                             }
@@ -604,6 +650,188 @@ fun App() {
                     )
                 }
                 
+                AppScreen.ADD_EXPENSE_INCOME -> {
+                    // Handle party selection for expense/income (these are expense/income types stored as parties with roleId 14 or 15)
+                    LaunchedEffect(selectedPartyForTransaction) {
+                        selectedPartyForTransaction?.let { party ->
+                            expenseIncomeViewModel.selectParty(party)
+                            selectedPartyForTransaction = null
+                        }
+                    }
+                    
+                    // Handle payment method selection
+                    LaunchedEffect(selectedPaymentMethodForTransaction) {
+                        selectedPaymentMethodForTransaction?.let { paymentMethod ->
+                            expenseIncomeViewModel.selectPaymentMethod(paymentMethod)
+                            selectedPaymentMethodForTransaction = null
+                        }
+                    }
+                    
+                    com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddExpenseIncomeScreen(
+                        viewModel = expenseIncomeViewModel,
+                        onNavigateBack = { currentScreen = AppScreen.HOME },
+                        onSelectParty = {
+                            selectingPartyForTransaction = true
+                            returnToScreenAfterPartySelection = AppScreen.ADD_EXPENSE_INCOME
+                            isExpenseIncomePartySelection = true  // Set expense/income context
+                            // Set initial segment based on transaction type
+                            val state = expenseIncomeViewModel.state.value
+                            selectedPartySegment = if (state.transactionType == com.hisaabi.hisaabi_kmp.transactions.domain.model.ExpenseIncomeType.EXPENSE) {
+                                com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.EXPENSE
+                            } else {
+                                com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.EXTRA_INCOME
+                            }
+                            currentScreen = AppScreen.PARTIES
+                        },
+                        onSelectPaymentMethod = {
+                            selectingPaymentMethodForTransaction = true
+                            returnToScreenAfterPartySelection = AppScreen.ADD_EXPENSE_INCOME
+                            currentScreen = AppScreen.PAYMENT_METHODS
+                        }
+                    )
+                }
+                
+                AppScreen.PAYMENT_TRANSFER -> {
+                    // Handle payment method selection (From or To)
+                    LaunchedEffect(selectedPaymentMethodForTransaction) {
+                        selectedPaymentMethodForTransaction?.let { paymentMethod ->
+                            if (selectingPaymentMethodForTransaction && returnToScreenAfterPartySelection == AppScreen.PAYMENT_TRANSFER) {
+                                // Use the flag to determine which payment method to set
+                                if (isSelectingPaymentMethodFrom) {
+                                    paymentTransferViewModel.selectPaymentMethodFrom(paymentMethod)
+                                } else {
+                                    paymentTransferViewModel.selectPaymentMethodTo(paymentMethod)
+                                }
+                                // Clear all selection states
+                                selectedPaymentMethodForTransaction = null
+                                selectingPaymentMethodForTransaction = false
+                                returnToScreenAfterPartySelection = null
+                                isSelectingPaymentMethodFrom = false
+                            }
+                        }
+                    }
+                    
+                    com.hisaabi.hisaabi_kmp.transactions.presentation.ui.PaymentTransferScreen(
+                        viewModel = paymentTransferViewModel,
+                        onNavigateBack = { currentScreen = AppScreen.HOME },
+                        onSelectPaymentMethodFrom = {
+                            selectingPaymentMethodForTransaction = true
+                            returnToScreenAfterPartySelection = AppScreen.PAYMENT_TRANSFER
+                            isSelectingPaymentMethodFrom = true  // Set flag for "From"
+                            currentScreen = AppScreen.PAYMENT_METHODS
+                        },
+                        onSelectPaymentMethodTo = {
+                            selectingPaymentMethodForTransaction = true
+                            returnToScreenAfterPartySelection = AppScreen.PAYMENT_TRANSFER
+                            isSelectingPaymentMethodFrom = false  // Set flag for "To"
+                            currentScreen = AppScreen.PAYMENT_METHODS
+                        }
+                    )
+                }
+                
+                AppScreen.JOURNAL_VOUCHER -> {
+                    // Handle party selection for journal voucher
+                    LaunchedEffect(selectedPartyForTransaction) {
+                        selectedPartyForTransaction?.let { party ->
+                            if (selectingPartyForTransaction && returnToScreenAfterPartySelection == AppScreen.JOURNAL_VOUCHER) {
+                                journalVoucherViewModel.addParty(party)
+                                selectedPartyForTransaction = null
+                                selectingPartyForTransaction = false
+                                returnToScreenAfterPartySelection = null
+                                isExpenseIncomePartySelection = false
+                            }
+                        }
+                    }
+
+                    // Handle payment method selection for journal voucher
+                    LaunchedEffect(selectedPaymentMethodForTransaction) {
+                        selectedPaymentMethodForTransaction?.let { paymentMethod ->
+                            if (selectingPaymentMethodForTransaction && returnToScreenAfterPartySelection == AppScreen.JOURNAL_VOUCHER) {
+                                // Check if it's for the voucher payment method or for adding as account
+                                if (isSelectingPaymentMethodFrom) {
+                                    // Adding payment method as an account
+                                    journalVoucherViewModel.addPaymentMethod(paymentMethod)
+                                } else {
+                                    // Selecting payment method for the voucher
+                                    journalVoucherViewModel.selectPaymentMethod(paymentMethod)
+                                }
+                                selectedPaymentMethodForTransaction = null
+                                selectingPaymentMethodForTransaction = false
+                                returnToScreenAfterPartySelection = null
+                                isSelectingPaymentMethodFrom = false
+                            }
+                        }
+                    }
+
+                    com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddJournalVoucherScreen(
+                        viewModel = journalVoucherViewModel,
+                        onNavigateBack = { currentScreen = AppScreen.HOME },
+                        onSelectAccountType = {
+                            showJournalAccountTypeDialog = true
+                        },
+                        onSelectPaymentMethod = {
+                            selectingPaymentMethodForTransaction = true
+                            returnToScreenAfterPartySelection = AppScreen.JOURNAL_VOUCHER
+                            isSelectingPaymentMethodFrom = false // For voucher payment method
+                            currentScreen = AppScreen.PAYMENT_METHODS
+                        }
+                    )
+
+                    // Account Type Selection Dialog
+                    if (showJournalAccountTypeDialog) {
+                        com.hisaabi.hisaabi_kmp.transactions.presentation.ui.JournalAccountTypeDialog(
+                            onDismiss = { showJournalAccountTypeDialog = false },
+                            onSelectExpense = {
+                                showJournalAccountTypeDialog = false
+                                selectingPartyForTransaction = true
+                                returnToScreenAfterPartySelection = AppScreen.JOURNAL_VOUCHER
+                                isExpenseIncomePartySelection = true
+                                selectedPartySegment = com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.EXPENSE
+                                currentScreen = AppScreen.PARTIES
+                            },
+                            onSelectExtraIncome = {
+                                showJournalAccountTypeDialog = false
+                                selectingPartyForTransaction = true
+                                returnToScreenAfterPartySelection = AppScreen.JOURNAL_VOUCHER
+                                isExpenseIncomePartySelection = true
+                                selectedPartySegment = com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.EXTRA_INCOME
+                                currentScreen = AppScreen.PARTIES
+                            },
+                            onSelectCustomer = {
+                                showJournalAccountTypeDialog = false
+                                selectingPartyForTransaction = true
+                                returnToScreenAfterPartySelection = AppScreen.JOURNAL_VOUCHER
+                                isExpenseIncomePartySelection = false
+                                selectedPartySegment = com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.CUSTOMER
+                                currentScreen = AppScreen.PARTIES
+                            },
+                            onSelectVendor = {
+                                showJournalAccountTypeDialog = false
+                                selectingPartyForTransaction = true
+                                returnToScreenAfterPartySelection = AppScreen.JOURNAL_VOUCHER
+                                isExpenseIncomePartySelection = false
+                                selectedPartySegment = com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.VENDOR
+                                currentScreen = AppScreen.PARTIES
+                            },
+                            onSelectInvestor = {
+                                showJournalAccountTypeDialog = false
+                                selectingPartyForTransaction = true
+                                returnToScreenAfterPartySelection = AppScreen.JOURNAL_VOUCHER
+                                isExpenseIncomePartySelection = false
+                                selectedPartySegment = com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.INVESTOR
+                                currentScreen = AppScreen.PARTIES
+                            },
+                            onSelectPaymentMethod = {
+                                showJournalAccountTypeDialog = false
+                                selectingPaymentMethodForTransaction = true
+                                returnToScreenAfterPartySelection = AppScreen.JOURNAL_VOUCHER
+                                isSelectingPaymentMethodFrom = true // For adding as account
+                                currentScreen = AppScreen.PAYMENT_METHODS
+                            }
+                        )
+                    }
+                }
+                
                 AppScreen.ADD_TRANSACTION_STEP1 -> {
                     // Set transaction type if provided
                     LaunchedEffect(transactionType) {
@@ -717,6 +945,9 @@ enum class AppScreen {
     TRANSACTIONS_LIST,
     ADD_RECORD,
     PAY_GET_CASH,
+    ADD_EXPENSE_INCOME,
+    PAYMENT_TRANSFER,
+    JOURNAL_VOUCHER,
     ADD_TRANSACTION_STEP1,
     ADD_TRANSACTION_STEP2
 }

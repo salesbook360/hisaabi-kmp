@@ -76,6 +76,9 @@ fun AddPartyScreen(
         selectedAreaFromNav?.let { selectedArea = it }
     }
     
+    // Check if this is an expense/income type
+    val isExpenseIncomeType = partyType == PartyType.EXPENSE || partyType == PartyType.EXTRA_INCOME
+    
     Scaffold(
         topBar = {
             TopAppBar(
@@ -85,6 +88,8 @@ fun AddPartyScreen(
                             PartyType.CUSTOMER -> "Add New Customer"
                             PartyType.VENDOR -> "Add New Vendor"
                             PartyType.INVESTOR -> "Add New Investor"
+                            PartyType.EXPENSE -> "Add Expense Type"
+                            PartyType.EXTRA_INCOME -> "Add Income Type"
                             else -> "Add New Party"
                         }
                     ) 
@@ -111,9 +116,24 @@ fun AddPartyScreen(
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Name *") },
+                label = { 
+                    Text(
+                        if (isExpenseIncomeType) {
+                            if (partyType == PartyType.EXPENSE) "Expense Type Name *" else "Income Type Name *"
+                        } else {
+                            "Name *"
+                        }
+                    ) 
+                },
                 leadingIcon = {
-                    Icon(Icons.Default.Person, contentDescription = "Name")
+                    Icon(
+                        if (isExpenseIncomeType) {
+                            if (partyType == PartyType.EXPENSE) Icons.Default.TrendingDown else Icons.Default.TrendingUp
+                        } else {
+                            Icons.Default.Person
+                        },
+                        contentDescription = "Name"
+                    )
                 },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
@@ -122,55 +142,11 @@ fun AddPartyScreen(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Phone Field
-            OutlinedTextField(
-                value = phone,
-                onValueChange = { phone = it },
-                label = { Text("Phone") },
-                leadingIcon = {
-                    Icon(Icons.Default.Phone, contentDescription = "Phone")
-                },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Address Field
-            OutlinedTextField(
-                value = address,
-                onValueChange = { address = it },
-                label = { Text("Address") },
-                leadingIcon = {
-                    Icon(Icons.Default.LocationOn, contentDescription = "Address")
-                },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Email Field
-            OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
-                label = { Text("Email") },
-                leadingIcon = {
-                    Icon(Icons.Default.Email, contentDescription = "Email")
-                },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Description Field
+            // Description Field (always shown)
             OutlinedTextField(
                 value = description,
                 onValueChange = { description = it },
-                label = { Text("Description") },
+                label = { Text("Description${if (isExpenseIncomeType) " (Optional)" else ""}") },
                 leadingIcon = {
                     Icon(Icons.Default.Description, contentDescription = "Description")
                 },
@@ -179,109 +155,156 @@ fun AddPartyScreen(
                 maxLines = 5
             )
             
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Category Field
-            OutlinedTextField(
-                value = selectedCategory?.title ?: "",
-                onValueChange = { },
-                label = { Text("Category") },
-                placeholder = { Text("Tap to select or add") },
-                leadingIcon = {
-                    Icon(Icons.Default.Category, contentDescription = "Category")
-                },
-                trailingIcon = {
-                    if (categories.isNotEmpty()) {
-                        IconButton(onClick = { showCategoryPicker = true }) {
-                            Icon(Icons.Default.ArrowDropDown, contentDescription = "Select Category")
-                        }
-                    } else {
-                        IconButton(onClick = onNavigateToCategories) {
-                            Icon(Icons.Default.Add, contentDescription = "Add Category")
-                        }
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
+            // Show additional fields only for regular parties (not expense/income)
+            if (!isExpenseIncomeType) {
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Phone Field
+                OutlinedTextField(
+                    value = phone,
+                    onValueChange = { phone = it },
+                    label = { Text("Phone") },
+                    leadingIcon = {
+                        Icon(Icons.Default.Phone, contentDescription = "Phone")
+                    },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Address Field
+                OutlinedTextField(
+                    value = address,
+                    onValueChange = { address = it },
+                    label = { Text("Address") },
+                    leadingIcon = {
+                        Icon(Icons.Default.LocationOn, contentDescription = "Address")
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Email Field
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Email") },
+                    leadingIcon = {
+                        Icon(Icons.Default.Email, contentDescription = "Email")
+                    },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Category Field
+                OutlinedTextField(
+                    value = selectedCategory?.title ?: "",
+                    onValueChange = { },
+                    label = { Text("Category") },
+                    placeholder = { Text("Tap to select or add") },
+                    leadingIcon = {
+                        Icon(Icons.Default.Category, contentDescription = "Category")
+                    },
+                    trailingIcon = {
                         if (categories.isNotEmpty()) {
-                            showCategoryPicker = true
+                            IconButton(onClick = { showCategoryPicker = true }) {
+                                Icon(Icons.Default.ArrowDropDown, contentDescription = "Select Category")
+                            }
                         } else {
-                            onNavigateToCategories()
-                        }
-                    },
-                readOnly = true,
-                enabled = true
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Area Field
-            OutlinedTextField(
-                value = selectedArea?.title ?: "",
-                onValueChange = { },
-                label = { Text("Area") },
-                placeholder = { Text("Tap to select or add") },
-                leadingIcon = {
-                    Icon(Icons.Default.Place, contentDescription = "Area")
-                },
-                trailingIcon = {
-                    if (areas.isNotEmpty()) {
-                        IconButton(onClick = { showAreaPicker = true }) {
-                            Icon(Icons.Default.ArrowDropDown, contentDescription = "Select Area")
-                        }
-                    } else {
-                        IconButton(onClick = onNavigateToAreas) {
-                            Icon(Icons.Default.Add, contentDescription = "Add Area")
-                        }
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        if (areas.isNotEmpty()) {
-                            showAreaPicker = true
-                        } else {
-                            onNavigateToAreas()
-                        }
-                    },
-                readOnly = true,
-                enabled = true
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Map Coordinates Field
-            OutlinedTextField(
-                value = if (latitude != null && longitude != null) 
-                    "Lat: %.6f, Long: %.6f".format(latitude, longitude)
-                else "",
-                onValueChange = { },
-                label = { Text("Location") },
-                leadingIcon = {
-                    Icon(Icons.Default.MyLocation, contentDescription = "Location")
-                },
-                trailingIcon = {
-                    Row {
-                        if (latitude != null && longitude != null) {
-                            IconButton(onClick = { 
-                                latitude = null
-                                longitude = null
-                            }) {
-                                Icon(Icons.Default.Clear, contentDescription = "Clear Location")
+                            IconButton(onClick = onNavigateToCategories) {
+                                Icon(Icons.Default.Add, contentDescription = "Add Category")
                             }
                         }
-                        IconButton(onClick = { showLocationPicker = true }) {
-                            Icon(Icons.Default.Map, contentDescription = "Pick Location")
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            if (categories.isNotEmpty()) {
+                                showCategoryPicker = true
+                            } else {
+                                onNavigateToCategories()
+                            }
+                        },
+                    readOnly = true,
+                    enabled = true
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Area Field
+                OutlinedTextField(
+                    value = selectedArea?.title ?: "",
+                    onValueChange = { },
+                    label = { Text("Area") },
+                    placeholder = { Text("Tap to select or add") },
+                    leadingIcon = {
+                        Icon(Icons.Default.Place, contentDescription = "Area")
+                    },
+                    trailingIcon = {
+                        if (areas.isNotEmpty()) {
+                            IconButton(onClick = { showAreaPicker = true }) {
+                                Icon(Icons.Default.ArrowDropDown, contentDescription = "Select Area")
+                            }
+                        } else {
+                            IconButton(onClick = onNavigateToAreas) {
+                                Icon(Icons.Default.Add, contentDescription = "Add Area")
+                            }
                         }
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                readOnly = true
-            )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            if (areas.isNotEmpty()) {
+                                showAreaPicker = true
+                            } else {
+                                onNavigateToAreas()
+                            }
+                        },
+                    readOnly = true,
+                    enabled = true
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Map Coordinates Field
+                OutlinedTextField(
+                    value = if (latitude != null && longitude != null) 
+                        "Lat: %.6f, Long: %.6f".format(latitude, longitude)
+                    else "",
+                    onValueChange = { },
+                    label = { Text("Location") },
+                    leadingIcon = {
+                        Icon(Icons.Default.MyLocation, contentDescription = "Location")
+                    },
+                    trailingIcon = {
+                        Row {
+                            if (latitude != null && longitude != null) {
+                                IconButton(onClick = { 
+                                    latitude = null
+                                    longitude = null
+                                }) {
+                                    Icon(Icons.Default.Clear, contentDescription = "Clear Location")
+                                }
+                            }
+                            IconButton(onClick = { showLocationPicker = true }) {
+                                Icon(Icons.Default.Map, contentDescription = "Pick Location")
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    readOnly = true
+                )
+            }
             
-            // Opening Balance Section (Hidden for Investors)
-            if (partyType != PartyType.INVESTOR) {
+            // Opening Balance Section (Hidden for Investors and Expense/Income types)
+            if (partyType != PartyType.INVESTOR && !isExpenseIncomeType) {
                 Spacer(modifier = Modifier.height(24.dp))
                 
                 Text(
