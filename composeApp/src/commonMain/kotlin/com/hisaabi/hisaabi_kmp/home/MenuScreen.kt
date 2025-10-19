@@ -26,7 +26,9 @@ fun HomeMenuScreen(
     onNavigateToAddProduct: (com.hisaabi.hisaabi_kmp.products.domain.model.ProductType) -> Unit = {},
     onNavigateToPaymentMethods: () -> Unit = {},
     onNavigateToWarehouses: () -> Unit = {},
-    onNavigateToMyBusiness: () -> Unit = {}
+    onNavigateToMyBusiness: () -> Unit = {},
+    onNavigateToTransactions: () -> Unit = {},
+    onNavigateToAddTransaction: (com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType) -> Unit = {}
 ) {
     var showProductTypeDialog by remember { mutableStateOf(false) }
     
@@ -67,9 +69,22 @@ fun HomeMenuScreen(
             }
             
             items(newTransactionOptions.size) { index ->
+                val option = newTransactionOptions[index]
                 HomeGridCell(
-                    option = newTransactionOptions[index],
-                    onClick = { /* Handle click */ }
+                    option = option,
+                    onClick = {
+                        when (option.title) {
+                            "Sale" -> onNavigateToAddTransaction(com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType.SALE)
+                            "Sale Order" -> onNavigateToAddTransaction(com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType.SALE_ORDER)
+                            "Purchase" -> onNavigateToAddTransaction(com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType.PURCHASE)
+                            "Purchase Order" -> onNavigateToAddTransaction(com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType.PURCHASE_ORDER)
+                            "Customer Return" -> onNavigateToAddTransaction(com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType.CUSTOMER_RETURN)
+                            "Vendor Return" -> onNavigateToAddTransaction(com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType.VENDOR_RETURN)
+                            "Stock Adjustment" -> onNavigateToAddTransaction(com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType.STOCK_ADJUSTMENT)
+                            "Quotation" -> onNavigateToAddTransaction(com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType.QUOTATION)
+                            else -> { /* Handle other transaction types later */ }
+                        }
+                    }
                 )
             }
             
@@ -91,6 +106,7 @@ fun HomeMenuScreen(
                     option = option,
                     onClick = {
                         when (option.title) {
+                            "Transactions" -> onNavigateToTransactions()
                             "Customers" -> onNavigateToParties(com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.CUSTOMER)
                             "Vendors" -> onNavigateToParties(com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.VENDOR)
                             "Investors" -> onNavigateToParties(com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.INVESTOR)

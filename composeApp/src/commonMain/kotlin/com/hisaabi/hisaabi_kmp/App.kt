@@ -2,6 +2,7 @@ package com.hisaabi.hisaabi_kmp
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -64,6 +65,23 @@ fun App() {
             
             // Profile navigation state
             // No specific state needed
+            
+            // Transactions navigation state
+            var transactionType by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType?>(null) }
+            var selectingPartyForTransaction by remember { mutableStateOf(false) }
+            var selectedPartyForTransaction by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.parties.domain.model.Party?>(null) }
+            var selectingWarehouseForTransaction by remember { mutableStateOf(false) }
+            var selectedWarehouseForTransaction by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse?>(null) }
+            var selectingProductsForTransaction by remember { mutableStateOf(false) }
+            var selectedProductsForTransaction by remember { mutableStateOf<List<com.hisaabi.hisaabi_kmp.products.domain.model.Product>>(emptyList()) }
+            var selectingPaymentMethodForTransaction by remember { mutableStateOf(false) }
+            var selectedPaymentMethodForTransaction by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod?>(null) }
+            
+            // Create transaction ViewModel once and reuse it across both steps
+            val koin = org.koin.compose.getKoin()
+            val transactionViewModel = remember(koin) {
+                koin.get<com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddTransactionViewModel>()
+            }
 
             when (currentScreen) {
                 AppScreen.HOME -> {
@@ -94,6 +112,13 @@ fun App() {
                         },
                         onNavigateToMyBusiness = {
                             currentScreen = AppScreen.MY_BUSINESS
+                        },
+                        onNavigateToTransactions = {
+                            currentScreen = AppScreen.TRANSACTIONS_LIST
+                        },
+                        onNavigateToAddTransaction = { type ->
+                            transactionType = type
+                            currentScreen = AppScreen.ADD_TRANSACTION_STEP1
                         }
                     )
                 }
@@ -105,7 +130,16 @@ fun App() {
                 AppScreen.PARTIES -> {
                     com.hisaabi.hisaabi_kmp.parties.presentation.ui.PartiesScreen(
                         viewModel = org.koin.compose.koinInject(),
-                        onPartyClick = { /* TODO: Navigate to party details */ },
+                        onPartyClick = { party ->
+                            if (selectingPartyForTransaction) {
+                                // Store selected party and return to transaction
+                                selectedPartyForTransaction = party
+                                selectingPartyForTransaction = false
+                                currentScreen = AppScreen.ADD_TRANSACTION_STEP1
+                            } else {
+                                // TODO: Navigate to party details
+                            }
+                        },
                         onAddPartyClick = {
                             // Determine party type based on current segment
                             addPartyType = when (selectedPartySegment) {
@@ -230,12 +264,20 @@ fun App() {
                     com.hisaabi.hisaabi_kmp.products.presentation.ui.ProductsScreen(
                         viewModel = org.koin.compose.koinInject(),
                         onProductClick = { product ->
-                            // If it's a recipe, navigate to ingredients screen
-                            if (product.isRecipe) {
-                                selectedRecipeProduct = product
-                                currentScreen = AppScreen.MANAGE_RECIPE_INGREDIENTS
+                            if (selectingProductsForTransaction) {
+                                // Add product to selection list
+                                selectedProductsForTransaction = selectedProductsForTransaction + product
+                                // Return to transaction screen
+                                selectingProductsForTransaction = false
+                                currentScreen = AppScreen.ADD_TRANSACTION_STEP1
                             } else {
-                                // TODO: Navigate to product details
+                                // If it's a recipe, navigate to ingredients screen
+                                if (product.isRecipe) {
+                                    selectedRecipeProduct = product
+                                    currentScreen = AppScreen.MANAGE_RECIPE_INGREDIENTS
+                                } else {
+                                    // TODO: Navigate to product details
+                                }
                             }
                         },
                         onAddProductClick = { selectedType ->
@@ -243,7 +285,14 @@ fun App() {
                             addProductType = selectedType ?: com.hisaabi.hisaabi_kmp.products.domain.model.ProductType.SIMPLE_PRODUCT
                             currentScreen = AppScreen.ADD_PRODUCT
                         },
-                        onNavigateBack = { currentScreen = AppScreen.HOME },
+                        onNavigateBack = { 
+                            if (selectingProductsForTransaction) {
+                                selectingProductsForTransaction = false
+                                currentScreen = AppScreen.ADD_TRANSACTION_STEP1
+                            } else {
+                                currentScreen = AppScreen.HOME
+                            }
+                        },
                         refreshTrigger = productsRefreshTrigger
                     )
                 }
@@ -281,14 +330,28 @@ fun App() {
                     com.hisaabi.hisaabi_kmp.paymentmethods.presentation.ui.PaymentMethodsScreen(
                         viewModel = org.koin.compose.koinInject(),
                         onPaymentMethodClick = { paymentMethod ->
-                            selectedPaymentMethodForEdit = paymentMethod
-                            currentScreen = AppScreen.ADD_PAYMENT_METHOD
+                            if (selectingPaymentMethodForTransaction) {
+                                // Store selected payment method and return to transaction
+                                selectedPaymentMethodForTransaction = paymentMethod
+                                selectingPaymentMethodForTransaction = false
+                                currentScreen = AppScreen.ADD_TRANSACTION_STEP2
+                            } else {
+                                selectedPaymentMethodForEdit = paymentMethod
+                                currentScreen = AppScreen.ADD_PAYMENT_METHOD
+                            }
                         },
                         onAddPaymentMethodClick = {
                             selectedPaymentMethodForEdit = null
                             currentScreen = AppScreen.ADD_PAYMENT_METHOD
                         },
-                        onNavigateBack = { currentScreen = AppScreen.HOME },
+                        onNavigateBack = { 
+                            if (selectingPaymentMethodForTransaction) {
+                                selectingPaymentMethodForTransaction = false
+                                currentScreen = AppScreen.ADD_TRANSACTION_STEP2
+                            } else {
+                                currentScreen = AppScreen.HOME
+                            }
+                        },
                         refreshTrigger = paymentMethodsRefreshTrigger
                     )
                 }
@@ -308,14 +371,28 @@ fun App() {
                     com.hisaabi.hisaabi_kmp.warehouses.presentation.ui.WarehousesScreen(
                         viewModel = org.koin.compose.koinInject(),
                         onWarehouseClick = { warehouse ->
-                            selectedWarehouseForEdit = warehouse
-                            currentScreen = AppScreen.ADD_WAREHOUSE
+                            if (selectingWarehouseForTransaction) {
+                                // Store selected warehouse and return to transaction
+                                selectedWarehouseForTransaction = warehouse
+                                selectingWarehouseForTransaction = false
+                                currentScreen = AppScreen.ADD_TRANSACTION_STEP1
+                            } else {
+                                selectedWarehouseForEdit = warehouse
+                                currentScreen = AppScreen.ADD_WAREHOUSE
+                            }
                         },
                         onAddWarehouseClick = {
                             selectedWarehouseForEdit = null
                             currentScreen = AppScreen.ADD_WAREHOUSE
                         },
-                        onNavigateBack = { currentScreen = AppScreen.HOME },
+                        onNavigateBack = { 
+                            if (selectingWarehouseForTransaction) {
+                                selectingWarehouseForTransaction = false
+                                currentScreen = AppScreen.ADD_TRANSACTION_STEP1
+                            } else {
+                                currentScreen = AppScreen.HOME
+                            }
+                        },
                         refreshTrigger = warehousesRefreshTrigger
                     )
                 }
@@ -434,6 +511,99 @@ fun App() {
                         onNavigateBack = { currentScreen = AppScreen.HOME }
                     )
                 }
+                AppScreen.TRANSACTIONS_LIST -> {
+                    com.hisaabi.hisaabi_kmp.transactions.presentation.ui.TransactionsListScreen(
+                        viewModel = org.koin.compose.koinInject(),
+                        onNavigateBack = { currentScreen = AppScreen.HOME },
+                        onTransactionClick = { transaction ->
+                            // TODO: Navigate to transaction detail
+                        },
+                        onAddTransactionClick = {
+                            transactionType = null
+                            currentScreen = AppScreen.ADD_TRANSACTION_STEP1
+                        }
+                    )
+                }
+                AppScreen.ADD_TRANSACTION_STEP1 -> {
+                    // Set transaction type if provided
+                    LaunchedEffect(transactionType) {
+                        transactionType?.let { type ->
+                            transactionViewModel.setTransactionType(type)
+                        }
+                    }
+                    
+                    // Set selected party if returned from party selection
+                    LaunchedEffect(selectedPartyForTransaction) {
+                        selectedPartyForTransaction?.let { party ->
+                            transactionViewModel.selectParty(party)
+                            selectedPartyForTransaction = null // Clear after setting
+                        }
+                    }
+                    
+                    // Set selected warehouse if returned from warehouse selection
+                    LaunchedEffect(selectedWarehouseForTransaction) {
+                        selectedWarehouseForTransaction?.let { warehouse ->
+                            transactionViewModel.selectWarehouse(warehouse)
+                            selectedWarehouseForTransaction = null // Clear after setting
+                        }
+                    }
+                    
+                    // Add selected products if returned from product selection
+                    LaunchedEffect(selectedProductsForTransaction.size) {
+                        if (selectedProductsForTransaction.isNotEmpty()) {
+                            selectedProductsForTransaction.forEach { product ->
+                                // Get default unit for the product
+                                val defaultUnit = null // TODO: Fetch from quantity units
+                                transactionViewModel.addProduct(product, defaultUnit)
+                            }
+                            selectedProductsForTransaction = emptyList() // Clear after adding
+                        }
+                    }
+                    
+                    com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddTransactionStep1Screen(
+                        viewModel = transactionViewModel,
+                        onNavigateBack = { currentScreen = AppScreen.HOME },
+                        onSelectParty = { 
+                            // Determine party segment based on transaction type
+                            val state = transactionViewModel.state.value
+                            selectedPartySegment = if (com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType.isDealingWithVendor(state.transactionType.value)) {
+                                com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.VENDOR
+                            } else {
+                                com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.CUSTOMER
+                            }
+                            selectingPartyForTransaction = true
+                            currentScreen = AppScreen.PARTIES
+                        },
+                        onSelectProducts = { 
+                            selectingProductsForTransaction = true
+                            currentScreen = AppScreen.PRODUCTS
+                        },
+                        onSelectWarehouse = { 
+                            selectingWarehouseForTransaction = true
+                            currentScreen = AppScreen.WAREHOUSES
+                        },
+                        onProceedToStep2 = { currentScreen = AppScreen.ADD_TRANSACTION_STEP2 }
+                    )
+                }
+                AppScreen.ADD_TRANSACTION_STEP2 -> {
+                    // Set selected payment method if returned from payment method selection
+                    LaunchedEffect(selectedPaymentMethodForTransaction) {
+                        selectedPaymentMethodForTransaction?.let { paymentMethod ->
+                            transactionViewModel.selectPaymentMethod(paymentMethod)
+                            selectedPaymentMethodForTransaction = null // Clear after setting
+                        }
+                    }
+                    
+                    com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddTransactionStep2Screen(
+                        viewModel = transactionViewModel,
+                        onNavigateBack = { currentScreen = AppScreen.ADD_TRANSACTION_STEP1 },
+                        onSelectPaymentMethod = { 
+                            selectingPaymentMethodForTransaction = true
+                            currentScreen = AppScreen.PAYMENT_METHODS
+                        },
+                        onTransactionSaved = { currentScreen = AppScreen.HOME }
+                    )
+                }
             }
         }
     }
@@ -462,5 +632,8 @@ enum class AppScreen {
     DASHBOARD_SETTINGS,
     TEMPLATES,
     ADD_TEMPLATE,
-    UPDATE_PROFILE
+    UPDATE_PROFILE,
+    TRANSACTIONS_LIST,
+    ADD_TRANSACTION_STEP1,
+    ADD_TRANSACTION_STEP2
 }

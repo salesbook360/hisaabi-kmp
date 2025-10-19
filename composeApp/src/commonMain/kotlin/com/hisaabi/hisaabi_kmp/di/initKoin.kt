@@ -11,6 +11,7 @@ import com.hisaabi.hisaabi_kmp.profile.di.profileModule
 import com.hisaabi.hisaabi_kmp.quantityunits.di.quantityUnitsModule
 import com.hisaabi.hisaabi_kmp.settings.di.settingsModule
 import com.hisaabi.hisaabi_kmp.templates.di.templatesModule
+import com.hisaabi.hisaabi_kmp.transactions.di.transactionsModule
 import com.hisaabi.hisaabi_kmp.warehouses.di.warehousesModule
 import org.koin.core.context.startKoin
 import org.koin.dsl.KoinAppDeclaration
@@ -31,6 +32,7 @@ fun initKoin(config: KoinAppDeclaration? = null) {
             settingsModule,
             templatesModule,
             profileModule,
+            transactionsModule,
             platformModule()
         )
     }
