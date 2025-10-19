@@ -27,6 +27,8 @@ fun TransactionsListScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val sheetState = rememberModalBottomSheetState()
+    var showSearchBar by remember { mutableStateOf(false) }
     
     LaunchedEffect(state.error) {
         state.error?.let { error ->
@@ -59,8 +61,7 @@ fun TransactionsListScreen(
                     }
                     
                     // Search button
-                    var showSearch by remember { mutableStateOf(false) }
-                    IconButton(onClick = { showSearch = !showSearch }) {
+                    IconButton(onClick = { showSearchBar = !showSearchBar }) {
                         Icon(Icons.Default.Search, "Search")
                     }
                 }
@@ -80,7 +81,7 @@ fun TransactionsListScreen(
                 .padding(paddingValues)
         ) {
             // Search bar
-            if (state.searchQuery.isNotEmpty() || state.showFilters) {
+            if (showSearchBar || state.searchQuery.isNotEmpty()) {
                 OutlinedTextField(
                     value = state.searchQuery,
                     onValueChange = { viewModel.setSearchQuery(it) },
@@ -97,15 +98,6 @@ fun TransactionsListScreen(
                         }
                     },
                     singleLine = true
-                )
-            }
-            
-            // Filters section
-            if (state.showFilters) {
-                FiltersSection(
-                    selectedType = state.selectedTransactionType,
-                    onTypeSelected = { viewModel.setTransactionTypeFilter(it) },
-                    onClearFilters = { viewModel.clearFilters() }
                 )
             }
             
@@ -145,82 +137,121 @@ fun TransactionsListScreen(
             }
         }
     }
+    
+    // Filter Bottom Sheet
+    if (state.showFilters) {
+        ModalBottomSheet(
+            onDismissRequest = { viewModel.toggleFilters() },
+            sheetState = sheetState
+        ) {
+            FiltersBottomSheetContent(
+                selectedType = state.selectedTransactionType,
+                onTypeSelected = { viewModel.setTransactionTypeFilter(it) },
+                onClearFilters = { 
+                    viewModel.clearFilters()
+                    viewModel.toggleFilters()
+                },
+                onApplyFilters = { viewModel.toggleFilters() }
+            )
+        }
+    }
 }
 
 @Composable
-private fun FiltersSection(
+private fun FiltersBottomSheetContent(
     selectedType: TransactionType?,
     onTypeSelected: (TransactionType?) -> Unit,
-    onClearFilters: () -> Unit
+    onClearFilters: () -> Unit,
+    onApplyFilters: () -> Unit
 ) {
-    Card(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+        // Header
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    "Filters",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                TextButton(onClick = onClearFilters) {
-                    Text("Clear All")
-                }
-            }
-            
-            // Transaction type filter
             Text(
-                "Transaction Type",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                "Filter Transactions",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
             )
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                FilterChip(
-                    selected = selectedType == null,
-                    onClick = { onTypeSelected(null) },
-                    label = { Text("All") }
-                )
-                FilterChip(
-                    selected = selectedType == TransactionType.SALE,
-                    onClick = { onTypeSelected(TransactionType.SALE) },
-                    label = { Text("Sale") }
-                )
-                FilterChip(
-                    selected = selectedType == TransactionType.PURCHASE,
-                    onClick = { onTypeSelected(TransactionType.PURCHASE) },
-                    label = { Text("Purchase") }
-                )
-            }
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                FilterChip(
-                    selected = selectedType == TransactionType.CUSTOMER_RETURN,
-                    onClick = { onTypeSelected(TransactionType.CUSTOMER_RETURN) },
-                    label = { Text("Return") }
-                )
-                FilterChip(
-                    selected = selectedType == TransactionType.SALE_ORDER,
-                    onClick = { onTypeSelected(TransactionType.SALE_ORDER) },
-                    label = { Text("Order") }
-                )
+            TextButton(onClick = onClearFilters) {
+                Text("Clear All")
             }
         }
+        
+        HorizontalDivider()
+        
+        // Transaction type filter
+        Text(
+            "Transaction Type",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+        
+        // First row of chips
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            FilterChip(
+                selected = selectedType == null,
+                onClick = { onTypeSelected(null) },
+                label = { Text("All") },
+                modifier = Modifier.weight(1f)
+            )
+            FilterChip(
+                selected = selectedType == TransactionType.SALE,
+                onClick = { onTypeSelected(TransactionType.SALE) },
+                label = { Text("Sale") },
+                modifier = Modifier.weight(1f)
+            )
+            FilterChip(
+                selected = selectedType == TransactionType.PURCHASE,
+                onClick = { onTypeSelected(TransactionType.PURCHASE) },
+                label = { Text("Purchase") },
+                modifier = Modifier.weight(1f)
+            )
+        }
+        
+        // Second row of chips
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            FilterChip(
+                selected = selectedType == TransactionType.CUSTOMER_RETURN,
+                onClick = { onTypeSelected(TransactionType.CUSTOMER_RETURN) },
+                label = { Text("Return") },
+                modifier = Modifier.weight(1f)
+            )
+            FilterChip(
+                selected = selectedType == TransactionType.SALE_ORDER,
+                onClick = { onTypeSelected(TransactionType.SALE_ORDER) },
+                label = { Text("Order") },
+                modifier = Modifier.weight(1f)
+            )
+            Spacer(Modifier.weight(1f))
+        }
+        
+        Spacer(Modifier.height(8.dp))
+        
+        // Apply button
+        Button(
+            onClick = onApplyFilters,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Apply Filters")
+        }
+        
+        // Bottom padding for safe area
+        Spacer(Modifier.height(16.dp))
     }
 }
 
