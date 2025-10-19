@@ -61,6 +61,9 @@ fun App() {
             // Templates navigation state
             var templatesRefreshTrigger by remember { mutableStateOf(0) }
             var selectedTemplateIdForEdit by remember { mutableStateOf<String?>(null) }
+            
+            // Profile navigation state
+            // No specific state needed
 
             when (currentScreen) {
                 AppScreen.HOME -> {
@@ -71,6 +74,7 @@ fun App() {
                         onNavigateToReceiptSettings = { currentScreen = AppScreen.RECEIPT_SETTINGS },
                         onNavigateToDashboardSettings = { currentScreen = AppScreen.DASHBOARD_SETTINGS },
                         onNavigateToTemplates = { currentScreen = AppScreen.TEMPLATES },
+                        onNavigateToUpdateProfile = { currentScreen = AppScreen.UPDATE_PROFILE },
                         onNavigateToParties = { segment ->
                             selectedPartySegment = segment
                             currentScreen = AppScreen.PARTIES
@@ -424,6 +428,12 @@ fun App() {
                         }
                     )
                 }
+                AppScreen.UPDATE_PROFILE -> {
+                    com.hisaabi.hisaabi_kmp.profile.presentation.ui.UpdateProfileScreen(
+                        viewModel = org.koin.compose.koinInject(),
+                        onNavigateBack = { currentScreen = AppScreen.HOME }
+                    )
+                }
             }
         }
     }
@@ -451,5 +461,6 @@ enum class AppScreen {
     RECEIPT_SETTINGS,
     DASHBOARD_SETTINGS,
     TEMPLATES,
-    ADD_TEMPLATE
+    ADD_TEMPLATE,
+    UPDATE_PROFILE
 }

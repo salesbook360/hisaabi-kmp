@@ -31,6 +31,7 @@ fun MoreScreen(
     onNavigateToReceiptSettings: () -> Unit = {},
     onNavigateToDashboardSettings: () -> Unit = {},
     onNavigateToTemplates: () -> Unit = {},
+    onNavigateToUpdateProfile: () -> Unit = {},
     preferencesManager: com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager = org.koin.compose.koinInject()
 ) {
     val biometricAuthEnabled by preferencesManager.biometricAuthEnabled.collectAsState(initial = false)
@@ -217,12 +218,6 @@ fun MoreScreen(
                         )
                         SettingsDivider()
                         SettingsItem(
-                            title = "Subscriptions",
-                            icon = Icons.Default.CardMembership,
-                            onClick = { /* Navigate */ }
-                        )
-                        SettingsDivider()
-                        SettingsItem(
                             title = "Credits Wallet",
                             icon = Icons.Default.AccountBalanceWallet,
                             onClick = { /* Navigate */ }
@@ -239,13 +234,7 @@ fun MoreScreen(
                         SettingsItem(
                             title = "Update Profile",
                             icon = Icons.Default.Person,
-                            onClick = { /* Navigate */ }
-                        )
-                        SettingsDivider()
-                        SettingsItem(
-                            title = "Upcoming Features",
-                            icon = Icons.Default.NewReleases,
-                            onClick = { /* Navigate */ }
+                            onClick = onNavigateToUpdateProfile
                         )
                         SettingsDivider()
                         SettingsItem(
