@@ -1,0 +1,30 @@
+package com.hisaabi.hisaabi_kmp.products.di
+
+import com.hisaabi.hisaabi_kmp.database.datasource.ProductLocalDataSource
+import com.hisaabi.hisaabi_kmp.database.datasource.ProductLocalDataSourceImpl
+import com.hisaabi.hisaabi_kmp.products.data.repository.ProductsRepository
+import com.hisaabi.hisaabi_kmp.products.data.repository.ProductsRepositoryImpl
+import com.hisaabi.hisaabi_kmp.products.domain.usecase.AddProductUseCase
+import com.hisaabi.hisaabi_kmp.products.domain.usecase.GetProductsUseCase
+import com.hisaabi.hisaabi_kmp.products.presentation.viewmodel.AddProductViewModel
+import com.hisaabi.hisaabi_kmp.products.presentation.viewmodel.ProductsViewModel
+import org.koin.core.module.dsl.singleOf
+import org.koin.dsl.module
+
+val productsModule = module {
+    // Data Source
+    single<ProductLocalDataSource> { ProductLocalDataSourceImpl(get()) }
+    
+    // Repository
+    single<ProductsRepository> { ProductsRepositoryImpl(get(), get()) }
+    
+    // Use Cases
+    singleOf(::GetProductsUseCase)
+    singleOf(::AddProductUseCase)
+    
+    // ViewModels
+    singleOf(::ProductsViewModel)
+    singleOf(::AddProductViewModel)
+}
+
+

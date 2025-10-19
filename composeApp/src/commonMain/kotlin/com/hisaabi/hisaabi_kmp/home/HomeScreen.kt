@@ -11,7 +11,17 @@ import androidx.compose.ui.graphics.vector.ImageVector
 @Composable
 fun HomeScreen(
     onNavigateToAuth: () -> Unit = {},
-    onNavigateToParties: (com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment) -> Unit = {}
+    onNavigateToQuantityUnits: () -> Unit = {},
+    onNavigateToTransactionSettings: () -> Unit = {},
+    onNavigateToReceiptSettings: () -> Unit = {},
+    onNavigateToDashboardSettings: () -> Unit = {},
+    onNavigateToTemplates: () -> Unit = {},
+    onNavigateToParties: (com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment) -> Unit = {},
+    onNavigateToProducts: () -> Unit = {},
+    onNavigateToAddProduct: (com.hisaabi.hisaabi_kmp.products.domain.model.ProductType) -> Unit = {},
+    onNavigateToPaymentMethods: () -> Unit = {},
+    onNavigateToWarehouses: () -> Unit = {},
+    onNavigateToMyBusiness: () -> Unit = {}
 ) {
     var selectedTab by remember { mutableStateOf(0) }
     
@@ -32,8 +42,22 @@ fun HomeScreen(
         Box(modifier = Modifier.padding(paddingValues)) {
             when (selectedTab) {
                 0 -> DashboardScreen()
-                1 -> HomeMenuScreen(onNavigateToParties = onNavigateToParties)
-                2 -> MoreScreen(onNavigateToAuth = onNavigateToAuth)
+                1 -> HomeMenuScreen(
+                    onNavigateToParties = onNavigateToParties,
+                    onNavigateToProducts = onNavigateToProducts,
+                    onNavigateToAddProduct = onNavigateToAddProduct,
+                    onNavigateToPaymentMethods = onNavigateToPaymentMethods,
+                    onNavigateToWarehouses = onNavigateToWarehouses,
+                    onNavigateToMyBusiness = onNavigateToMyBusiness
+                )
+                2 -> MoreScreen(
+                    onNavigateToAuth = onNavigateToAuth,
+                    onNavigateToQuantityUnits = onNavigateToQuantityUnits,
+                    onNavigateToTransactionSettings = onNavigateToTransactionSettings,
+                    onNavigateToReceiptSettings = onNavigateToReceiptSettings,
+                    onNavigateToDashboardSettings = onNavigateToDashboardSettings,
+                    onNavigateToTemplates = onNavigateToTemplates
+                )
             }
         }
     }

@@ -25,8 +25,18 @@ import androidx.compose.ui.unit.sp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MoreScreen(
-    onNavigateToAuth: () -> Unit = {}
+    onNavigateToAuth: () -> Unit = {},
+    onNavigateToQuantityUnits: () -> Unit = {},
+    onNavigateToTransactionSettings: () -> Unit = {},
+    onNavigateToReceiptSettings: () -> Unit = {},
+    onNavigateToDashboardSettings: () -> Unit = {},
+    onNavigateToTemplates: () -> Unit = {},
+    preferencesManager: com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager = org.koin.compose.koinInject()
 ) {
+    val biometricAuthEnabled by preferencesManager.biometricAuthEnabled.collectAsState(initial = false)
+    val selectedLanguage by preferencesManager.selectedLanguage.collectAsState(initial = com.hisaabi.hisaabi_kmp.settings.data.Language.ENGLISH)
+    
+    var showLanguageDialog by remember { mutableStateOf(false) }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -154,44 +164,47 @@ fun MoreScreen(
                         SettingsItem(
                             title = "Transaction Type Selection",
                             icon = Icons.Default.SwapHoriz,
-                            onClick = { /* Navigate */ }
+                            onClick = onNavigateToTransactionSettings
                         )
                         SettingsDivider()
                         SettingsItem(
                             title = "Receipt Settings",
                             icon = Icons.Default.Receipt,
-                            onClick = { /* Navigate */ }
+                            onClick = onNavigateToReceiptSettings
                         )
                         SettingsDivider()
                         SettingsItem(
                             title = "Dashboard Settings",
                             icon = Icons.Default.Dashboard,
-                            onClick = { /* Navigate */ }
+                            onClick = onNavigateToDashboardSettings
                         )
                         SettingsDivider()
                         SettingsItem(
                             title = "Quantity Units",
                             icon = Icons.Default.Scale,
-                            onClick = { /* Navigate */ }
+                            onClick = onNavigateToQuantityUnits
                         )
                         SettingsDivider()
                         SettingsItem(
                             title = "Templates Settings",
                             icon = Icons.Default.Article,
-                            onClick = { /* Navigate */ }
+                            onClick = onNavigateToTemplates
                         )
                         SettingsDivider()
                         SettingsSwitchItem(
-                            title = "Fingerprint on App Launch",
-                            checked = false,
-                            onCheckedChange = { /* Toggle */ }
+                            title = "Verify identity on app launch",
+                            subtitle = "Use biometric authentication or PIN",
+                            checked = biometricAuthEnabled,
+                            onCheckedChange = { enabled ->
+                                preferencesManager.setBiometricAuthEnabled(enabled)
+                            }
                         )
                         SettingsDivider()
                         SettingsItem(
                             title = "Language",
-                            subtitle = "English",
+                            subtitle = selectedLanguage.displayName,
                             icon = Icons.Default.Language,
-                            onClick = { /* Select language */ }
+                            onClick = { showLanguageDialog = true }
                         )
                         SettingsDivider()
                         SettingsItem(
@@ -326,6 +339,65 @@ fun MoreScreen(
                 }
             }
         }
+    }
+    
+    // Language Selection Dialog
+    if (showLanguageDialog) {
+        AlertDialog(
+            onDismissRequest = { showLanguageDialog = false },
+            title = { 
+                Text(
+                    "Select Language",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    com.hisaabi.hisaabi_kmp.settings.data.Language.values().forEach { language ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    preferencesManager.setSelectedLanguage(language)
+                                    showLanguageDialog = false
+                                }
+                                .padding(vertical = 12.dp, horizontal = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = selectedLanguage == language,
+                                onClick = {
+                                    preferencesManager.setSelectedLanguage(language)
+                                    showLanguageDialog = false
+                                }
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = language.displayName,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = if (selectedLanguage == language) FontWeight.Bold else FontWeight.Normal
+                                )
+                                Text(
+                                    text = language.code.uppercase(),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showLanguageDialog = false }) {
+                    Text("Close")
+                }
+            }
+        )
     }
 }
 

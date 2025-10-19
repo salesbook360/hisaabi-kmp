@@ -21,8 +21,15 @@ import androidx.compose.ui.unit.sp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeMenuScreen(
-    onNavigateToParties: (com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment) -> Unit = {}
+    onNavigateToParties: (com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment) -> Unit = {},
+    onNavigateToProducts: () -> Unit = {},
+    onNavigateToAddProduct: (com.hisaabi.hisaabi_kmp.products.domain.model.ProductType) -> Unit = {},
+    onNavigateToPaymentMethods: () -> Unit = {},
+    onNavigateToWarehouses: () -> Unit = {},
+    onNavigateToMyBusiness: () -> Unit = {}
 ) {
+    var showProductTypeDialog by remember { mutableStateOf(false) }
+    
     Scaffold(
         topBar = {
             TopAppBar(
@@ -87,12 +94,32 @@ fun HomeMenuScreen(
                             "Customers" -> onNavigateToParties(com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.CUSTOMER)
                             "Vendors" -> onNavigateToParties(com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.VENDOR)
                             "Investors" -> onNavigateToParties(com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.INVESTOR)
+                            "Products" -> {
+                                // Show dialog to select product type
+                                showProductTypeDialog = true
+                            }
+                            "Services" -> onNavigateToAddProduct(com.hisaabi.hisaabi_kmp.products.domain.model.ProductType.SERVICE)
+                            "Recipes" -> onNavigateToAddProduct(com.hisaabi.hisaabi_kmp.products.domain.model.ProductType.RECIPE)
+                            "Payment Methods" -> onNavigateToPaymentMethods()
+                            "Warehouse" -> onNavigateToWarehouses()
+                            "My Business" -> onNavigateToMyBusiness()
                             else -> { /* Handle other clicks */ }
                         }
                     }
                 )
             }
         }
+    }
+    
+    // Product Type Selection Dialog
+    if (showProductTypeDialog) {
+        com.hisaabi.hisaabi_kmp.products.presentation.ui.ProductTypeSelectionDialog(
+            onTypeSelected = { type ->
+                showProductTypeDialog = false
+                onNavigateToAddProduct(type)
+            },
+            onDismiss = { showProductTypeDialog = false }
+        )
     }
 }
 
