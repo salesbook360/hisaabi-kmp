@@ -35,8 +35,10 @@ fun MoreScreen(
 ) {
     val biometricAuthEnabled by preferencesManager.biometricAuthEnabled.collectAsState(initial = false)
     val selectedLanguage by preferencesManager.selectedLanguage.collectAsState(initial = com.hisaabi.hisaabi_kmp.settings.data.Language.ENGLISH)
+    val selectedCurrency by preferencesManager.selectedCurrency.collectAsState(initial = com.hisaabi.hisaabi_kmp.settings.domain.model.Currency.PKR)
     
     var showLanguageDialog by remember { mutableStateOf(false) }
+    var showCurrencyDialog by remember { mutableStateOf(false) }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -209,9 +211,9 @@ fun MoreScreen(
                         SettingsDivider()
                         SettingsItem(
                             title = "Currency Unit",
-                            subtitle = "PKR",
+                            subtitle = "${selectedCurrency.flag} ${selectedCurrency.name} (${selectedCurrency.symbol})",
                             icon = Icons.Default.CurrencyExchange,
-                            onClick = { /* Select currency */ }
+                            onClick = { showCurrencyDialog = true }
                         )
                         SettingsDivider()
                         SettingsItem(
@@ -399,6 +401,170 @@ fun MoreScreen(
             }
         )
     }
+    
+    // Currency Selection Dialog
+    if (showCurrencyDialog) {
+        CurrencySelectionDialog(
+            selectedCurrency = selectedCurrency,
+            onCurrencySelected = { currency ->
+                preferencesManager.setSelectedCurrency(currency)
+                showCurrencyDialog = false
+            },
+            onDismiss = { showCurrencyDialog = false }
+        )
+    }
+}
+
+@Composable
+private fun CurrencySelectionDialog(
+    selectedCurrency: com.hisaabi.hisaabi_kmp.settings.domain.model.Currency,
+    onCurrencySelected: (com.hisaabi.hisaabi_kmp.settings.domain.model.Currency) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var searchQuery by remember { mutableStateOf("") }
+    
+    val filteredCurrencies = remember(searchQuery) {
+        if (searchQuery.isBlank()) {
+            com.hisaabi.hisaabi_kmp.settings.domain.model.Currency.ALL_CURRENCIES
+        } else {
+            com.hisaabi.hisaabi_kmp.settings.domain.model.Currency.ALL_CURRENCIES.filter { currency ->
+                currency.name.contains(searchQuery, ignoreCase = true) ||
+                currency.code.contains(searchQuery, ignoreCase = true) ||
+                currency.symbol.contains(searchQuery, ignoreCase = true)
+            }
+        }
+    }
+    
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Column {
+                Text(
+                    "Select Currency",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text("Search currency...") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    leadingIcon = {
+                        Icon(Icons.Default.Search, contentDescription = "Search")
+                    },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Default.Clear, contentDescription = "Clear")
+                            }
+                        }
+                    }
+                )
+            }
+        },
+        text = {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(400.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                items(filteredCurrencies.size) { index ->
+                    val currency = filteredCurrencies[index]
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onCurrencySelected(currency) }
+                            .padding(vertical = 12.dp, horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Flag emoji
+                        Text(
+                            text = currency.flag,
+                            style = MaterialTheme.typography.headlineMedium,
+                            modifier = Modifier.padding(end = 12.dp)
+                        )
+                        
+                        // Currency info
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = currency.name,
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = if (selectedCurrency.code == currency.code) FontWeight.Bold else FontWeight.Normal
+                            )
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = currency.code,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    text = "•",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = currency.symbol,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        
+                        // Selected indicator
+                        if (selectedCurrency.code == currency.code) {
+                            Icon(
+                                Icons.Default.Check,
+                                contentDescription = "Selected",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                    
+                    if (index < filteredCurrencies.size - 1) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 8.dp),
+                            thickness = 0.5.dp,
+                            color = MaterialTheme.colorScheme.outlineVariant
+                        )
+                    }
+                }
+                
+                if (filteredCurrencies.isEmpty()) {
+                    item {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(32.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(
+                                Icons.Default.Search,
+                                contentDescription = null,
+                                modifier = Modifier.size(48.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(Modifier.height(16.dp))
+                            Text(
+                                "No currencies found",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Close")
+            }
+        }
+    )
 }
 
 // Reusable Components

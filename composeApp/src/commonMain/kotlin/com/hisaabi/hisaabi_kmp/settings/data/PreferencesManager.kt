@@ -1,5 +1,6 @@
 package com.hisaabi.hisaabi_kmp.settings.data
 
+import com.hisaabi.hisaabi_kmp.settings.domain.model.Currency
 import com.hisaabi.hisaabi_kmp.settings.domain.model.DashboardConfig
 import com.hisaabi.hisaabi_kmp.settings.domain.model.ReceiptConfig
 import com.hisaabi.hisaabi_kmp.settings.domain.model.TransactionSettings
@@ -29,6 +30,9 @@ class PreferencesManager {
     
     private val _selectedLanguage = MutableStateFlow(Language.ENGLISH)
     val selectedLanguage: Flow<Language> = _selectedLanguage.asStateFlow()
+    
+    private val _selectedCurrency = MutableStateFlow(Currency.PKR)
+    val selectedCurrency: Flow<Currency> = _selectedCurrency.asStateFlow()
     
     private val json = Json {
         prettyPrint = true
@@ -124,6 +128,16 @@ class PreferencesManager {
         _selectedLanguage.value = language
         // TODO: Persist to platform-specific storage
         // TODO: Apply language change to app
+    }
+    
+    // Currency Methods
+    fun getSelectedCurrency(): Currency {
+        return _selectedCurrency.value
+    }
+    
+    fun setSelectedCurrency(currency: Currency) {
+        _selectedCurrency.value = currency
+        // TODO: Persist to platform-specific storage
     }
 }
 
