@@ -24,15 +24,19 @@ class AddTransactionUseCase(
         // Check if this is a Journal Voucher transaction (type 19)
         val isJournalVoucherTransaction = transaction.transactionType == 19
         
+        // Check if this is a Stock Adjustment transaction (types 13, 14, 15)
+        val isStockAdjustmentTransaction = transaction.transactionType in listOf(13, 14, 15)
+        
         // Validate transaction - records, pay/get cash, expense/income, payment transfer, and journal voucher don't need products
+        // Stock adjustments DO need products
         val requiresProducts = !isRecordType && !isPayGetCashTransaction && !isExpenseIncomeTransaction && !isPaymentTransferTransaction && !isJournalVoucherTransaction
         if (requiresProducts && transaction.transactionDetails.isEmpty()) {
             return Result.failure(Exception("Transaction must have at least one product"))
         }
         
         // Records may not require a party (e.g., Self Note)
-        // Payment transfers and journal vouchers don't need a party either (they use payment methods)
-        if (!isRecordType && !isPayGetCashTransaction && !isExpenseIncomeTransaction && !isPaymentTransferTransaction && !isJournalVoucherTransaction && transaction.customerSlug.isNullOrBlank() && transaction.party == null) {
+        // Payment transfers, journal vouchers, and stock adjustments don't need a party either
+        if (!isRecordType && !isPayGetCashTransaction && !isExpenseIncomeTransaction && !isPaymentTransferTransaction && !isJournalVoucherTransaction && !isStockAdjustmentTransaction && transaction.customerSlug.isNullOrBlank() && transaction.party == null) {
             return Result.failure(Exception("Transaction must have a party (customer/vendor)"))
         }
         

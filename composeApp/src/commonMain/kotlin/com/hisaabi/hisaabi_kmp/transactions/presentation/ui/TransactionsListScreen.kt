@@ -15,6 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.ExpenseIncomeType
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.RecordType
+import com.hisaabi.hisaabi_kmp.transactions.domain.model.StockAdjustmentType
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionState
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType
@@ -308,6 +309,7 @@ private fun TransactionCard(
     val isExpenseIncomeType = ExpenseIncomeType.fromValue(transaction.transactionType) != null
     val isPaymentTransferType = transaction.transactionType == 10
     val isJournalVoucherType = transaction.transactionType == 19
+    val isStockAdjustmentType = StockAdjustmentType.fromValue(transaction.transactionType) != null
     
     Card(
         modifier = Modifier
@@ -354,6 +356,9 @@ private fun TransactionCard(
                     } else if (isJournalVoucherType) {
                         // Color for Journal Voucher
                         MaterialTheme.colorScheme.secondaryContainer
+                    } else if (isStockAdjustmentType) {
+                        // Color for Stock Adjustment
+                        MaterialTheme.colorScheme.tertiaryContainer
                     } else {
                         // Original colors for transaction types
                         when (TransactionType.fromValue(transaction.transactionType)) {
@@ -725,6 +730,82 @@ private fun TransactionCard(
                         Spacer(Modifier.height(8.dp))
                         Text(
                             "Description: $desc",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2
+                        )
+                    }
+                }
+            } else if (isStockAdjustmentType) {
+                // For Stock Adjustment, show warehouses and product count
+                transaction.warehouse?.let { warehouse ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            if (transaction.transactionType == 13) "From:" else "Warehouse:",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            warehouse.title,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                
+                // Show To warehouse for transfer
+                if (transaction.transactionType == 13) {
+                    transaction.warehouseTo?.let { warehouseTo ->
+                        Spacer(Modifier.height(4.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "To:",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                warehouseTo.title,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+                
+                Spacer(Modifier.height(8.dp))
+                
+                // Show product count
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Products:",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        "${transaction.transactionDetails.size} items",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                
+                // Show description if available
+                transaction.description?.let { desc ->
+                    if (desc.isNotBlank()) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            "Remarks: $desc",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 2

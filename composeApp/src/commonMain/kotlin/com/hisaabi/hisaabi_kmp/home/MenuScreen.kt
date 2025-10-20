@@ -34,6 +34,7 @@ fun HomeMenuScreen(
     onNavigateToExtraIncome: () -> Unit = {},
     onNavigateToPaymentTransfer: () -> Unit = {},
     onNavigateToJournalVoucher: () -> Unit = {},
+    onNavigateToStockAdjustment: () -> Unit = {},
     onNavigateToAddTransaction: (com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType) -> Unit = {}
 ) {
     var showProductTypeDialog by remember { mutableStateOf(false) }
@@ -86,13 +87,13 @@ fun HomeMenuScreen(
                             "Extra Income" -> onNavigateToExtraIncome()
                             "Payment Transfer" -> onNavigateToPaymentTransfer()
                             "Journal Voucher" -> onNavigateToJournalVoucher()
+                            "Stock Adjustment" -> onNavigateToStockAdjustment()
                             "Sale" -> onNavigateToAddTransaction(com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType.SALE)
                             "Sale Order" -> onNavigateToAddTransaction(com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType.SALE_ORDER)
                             "Purchase" -> onNavigateToAddTransaction(com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType.PURCHASE)
                             "Purchase Order" -> onNavigateToAddTransaction(com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType.PURCHASE_ORDER)
                             "Customer Return" -> onNavigateToAddTransaction(com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType.CUSTOMER_RETURN)
                             "Vendor Return" -> onNavigateToAddTransaction(com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType.VENDOR_RETURN)
-                            "Stock Adjustment" -> onNavigateToAddTransaction(com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType.STOCK_ADJUSTMENT)
                             "Quotation" -> onNavigateToAddTransaction(com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType.QUOTATION)
                             else -> { /* Handle other transaction types later */ }
                         }

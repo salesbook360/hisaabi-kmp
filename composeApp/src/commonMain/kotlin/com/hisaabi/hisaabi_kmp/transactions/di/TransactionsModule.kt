@@ -10,6 +10,7 @@ import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.PayGetCashVie
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddExpenseIncomeViewModel
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.PaymentTransferViewModel
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddJournalVoucherViewModel
+import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.StockAdjustmentViewModel
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 
@@ -49,5 +50,6 @@ val transactionsModule = module {
     singleOf(::AddExpenseIncomeViewModel)
     singleOf(::PaymentTransferViewModel)
     singleOf(::AddJournalVoucherViewModel)
+    singleOf(::StockAdjustmentViewModel)
 }
 

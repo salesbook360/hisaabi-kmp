@@ -114,6 +114,11 @@ data class Transaction(
             return "Journal Voucher"
         }
         
+        // Check if it's a Stock Adjustment transaction
+        StockAdjustmentType.fromValue(transactionType)?.let { stockType ->
+            return stockType.displayName
+        }
+        
         // Otherwise check if it's a transaction type
         return TransactionType.fromValue(transactionType)?.displayName ?: "Unknown"
     }

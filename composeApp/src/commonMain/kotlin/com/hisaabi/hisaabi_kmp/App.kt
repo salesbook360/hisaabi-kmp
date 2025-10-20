@@ -100,9 +100,15 @@ fun App() {
             val journalVoucherViewModel = remember(koin) {
                 koin.get<com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddJournalVoucherViewModel>()
             }
+            val stockAdjustmentViewModel = remember(koin) {
+                koin.get<com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.StockAdjustmentViewModel>()
+            }
 
             // Journal Voucher state
             var showJournalAccountTypeDialog by remember { mutableStateOf(false) }
+            
+            // Stock Adjustment state
+            var isSelectingWarehouseFrom by remember { mutableStateOf(false) }
 
             when (currentScreen) {
                 AppScreen.HOME -> {
@@ -156,6 +162,9 @@ fun App() {
                         },
                         onNavigateToJournalVoucher = {
                             currentScreen = AppScreen.JOURNAL_VOUCHER
+                        },
+                        onNavigateToStockAdjustment = {
+                            currentScreen = AppScreen.STOCK_ADJUSTMENT
                         },
                         onNavigateToAddTransaction = { type ->
                             transactionType = type
@@ -832,6 +841,59 @@ fun App() {
                     }
                 }
                 
+                AppScreen.STOCK_ADJUSTMENT -> {
+                    // Handle warehouse selection for stock adjustment
+                    LaunchedEffect(selectedWarehouseForTransaction) {
+                        selectedWarehouseForTransaction?.let { warehouse ->
+                            if (selectingWarehouseForTransaction && returnToScreenAfterPartySelection == AppScreen.STOCK_ADJUSTMENT) {
+                                if (isSelectingWarehouseFrom) {
+                                    stockAdjustmentViewModel.setWarehouseFrom(warehouse)
+                                } else {
+                                    stockAdjustmentViewModel.setWarehouseTo(warehouse)
+                                }
+                                selectedWarehouseForTransaction = null
+                                selectingWarehouseForTransaction = false
+                                returnToScreenAfterPartySelection = null
+                                isSelectingWarehouseFrom = false
+                            }
+                        }
+                    }
+
+                    // Handle product selection for stock adjustment
+                    LaunchedEffect(selectedProductsForTransaction) {
+                        if (selectingProductsForTransaction && returnToScreenAfterPartySelection == AppScreen.STOCK_ADJUSTMENT) {
+                            selectedProductsForTransaction.forEach { product ->
+                                stockAdjustmentViewModel.addProduct(product)
+                            }
+                            selectedProductsForTransaction = emptyList()
+                            selectingProductsForTransaction = false
+                            returnToScreenAfterPartySelection = null
+                        }
+                    }
+
+                    com.hisaabi.hisaabi_kmp.transactions.presentation.ui.StockAdjustmentScreen(
+                        viewModel = stockAdjustmentViewModel,
+                        onNavigateBack = { currentScreen = AppScreen.HOME },
+                        onSelectWarehouseFrom = {
+                            selectingWarehouseForTransaction = true
+                            returnToScreenAfterPartySelection = AppScreen.STOCK_ADJUSTMENT
+                            isSelectingWarehouseFrom = true
+                            currentScreen = AppScreen.WAREHOUSES
+                        },
+                        onSelectWarehouseTo = {
+                            selectingWarehouseForTransaction = true
+                            returnToScreenAfterPartySelection = AppScreen.STOCK_ADJUSTMENT
+                            isSelectingWarehouseFrom = false
+                            currentScreen = AppScreen.WAREHOUSES
+                        },
+                        onSelectProducts = {
+                            selectingProductsForTransaction = true
+                            returnToScreenAfterPartySelection = AppScreen.STOCK_ADJUSTMENT
+                            currentScreen = AppScreen.PRODUCTS
+                        }
+                    )
+                }
+                
                 AppScreen.ADD_TRANSACTION_STEP1 -> {
                     // Set transaction type if provided
                     LaunchedEffect(transactionType) {
@@ -948,6 +1010,7 @@ enum class AppScreen {
     ADD_EXPENSE_INCOME,
     PAYMENT_TRANSFER,
     JOURNAL_VOUCHER,
+    STOCK_ADJUSTMENT,
     ADD_TRANSACTION_STEP1,
     ADD_TRANSACTION_STEP2
 }
