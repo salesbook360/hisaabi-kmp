@@ -35,6 +35,7 @@ fun HomeMenuScreen(
     onNavigateToPaymentTransfer: () -> Unit = {},
     onNavigateToJournalVoucher: () -> Unit = {},
     onNavigateToStockAdjustment: () -> Unit = {},
+    onNavigateToManufacture: () -> Unit = {},
     onNavigateToAddTransaction: (com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType) -> Unit = {}
 ) {
     var showProductTypeDialog by remember { mutableStateOf(false) }
@@ -88,6 +89,7 @@ fun HomeMenuScreen(
                             "Payment Transfer" -> onNavigateToPaymentTransfer()
                             "Journal Voucher" -> onNavigateToJournalVoucher()
                             "Stock Adjustment" -> onNavigateToStockAdjustment()
+                            "Manufacture" -> onNavigateToManufacture()
                             "Sale" -> onNavigateToAddTransaction(com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType.SALE)
                             "Sale Order" -> onNavigateToAddTransaction(com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType.SALE_ORDER)
                             "Purchase" -> onNavigateToAddTransaction(com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType.PURCHASE)
@@ -209,7 +211,8 @@ val newTransactionOptions = listOf(
     MenuOption("Expense", Icons.Default.MoneyOff),
     MenuOption("Extra Income", Icons.Default.AttachMoney),
     MenuOption("Quotation", Icons.Default.Description),
-    MenuOption("Stock Adjustment", Icons.Default.Tune)
+    MenuOption("Stock Adjustment", Icons.Default.Tune),
+    MenuOption("Manufacture", Icons.Default.Build)
 )
 
 // Other Options (based on native app)

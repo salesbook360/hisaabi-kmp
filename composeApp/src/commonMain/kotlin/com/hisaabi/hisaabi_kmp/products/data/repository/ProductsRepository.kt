@@ -7,6 +7,7 @@ import com.hisaabi.hisaabi_kmp.database.entity.RecipeIngredientsEntity
 import com.hisaabi.hisaabi_kmp.products.domain.model.Product
 import com.hisaabi.hisaabi_kmp.products.domain.model.ProductType
 import com.hisaabi.hisaabi_kmp.products.domain.model.RecipeIngredient
+import kotlinx.coroutines.flow.first
 
 interface ProductsRepository {
     suspend fun getProducts(
@@ -97,8 +98,16 @@ class ProductsRepositoryImpl(
     }
     
     override suspend fun getRecipeIngredients(recipeSlug: String): List<RecipeIngredient> {
-        // Note: This returns Flow, we'll handle it in the use case
-        return emptyList() // Placeholder
+        return recipeIngredientsDao.getIngredientsByRecipe(recipeSlug)
+            .first()
+            .map { entity ->
+                // Load the product details for each ingredient
+                val ingredientProduct = productDataSource.getProductBySlug(entity.ingredient_slug ?: "")
+                entity.toDomainModel().copy(
+                    ingredientTitle = ingredientProduct?.title ?: "Unknown",
+                    quantityUnitTitle = ingredientProduct?.default_unit_slug // Could be enhanced with actual unit title
+                )
+            }
     }
     
     override suspend fun addRecipeIngredient(

@@ -80,6 +80,7 @@ fun App() {
             var returnToScreenAfterProductSelection by remember { mutableStateOf<AppScreen?>(null) }
             var selectingPaymentMethodForTransaction by remember { mutableStateOf(false) }
             var selectedPaymentMethodForTransaction by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod?>(null) }
+            var selectedTransactionSlug by remember { mutableStateOf<String?>(null) }
             
             // Create transaction ViewModel once and reuse it across both steps
             val koin = org.koin.compose.getKoin()
@@ -103,6 +104,12 @@ fun App() {
             }
             val stockAdjustmentViewModel = remember(koin) {
                 koin.get<com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.StockAdjustmentViewModel>()
+            }
+            val manufactureViewModel = remember(koin) {
+                koin.get<com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddManufactureViewModel>()
+            }
+            val transactionDetailViewModel = remember(koin) {
+                koin.get<com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionDetailViewModel>()
             }
 
             // Journal Voucher state
@@ -166,6 +173,9 @@ fun App() {
                         },
                         onNavigateToStockAdjustment = {
                             currentScreen = AppScreen.STOCK_ADJUSTMENT
+                        },
+                        onNavigateToManufacture = {
+                            currentScreen = AppScreen.ADD_MANUFACTURE
                         },
                         onNavigateToAddTransaction = { type ->
                             transactionType = type
@@ -594,13 +604,30 @@ fun App() {
                         viewModel = org.koin.compose.koinInject(),
                         onNavigateBack = { currentScreen = AppScreen.HOME },
                         onTransactionClick = { transaction ->
-                            // TODO: Navigate to transaction detail
+                            selectedTransactionSlug = transaction.slug
+                            currentScreen = AppScreen.TRANSACTION_DETAIL
                         },
                         onAddTransactionClick = {
                             transactionType = null
                             currentScreen = AppScreen.ADD_TRANSACTION_STEP1
                         }
                     )
+                }
+                
+                AppScreen.TRANSACTION_DETAIL -> {
+                    selectedTransactionSlug?.let { slug ->
+                        com.hisaabi.hisaabi_kmp.transactions.presentation.ui.TransactionDetailScreen(
+                            viewModel = transactionDetailViewModel,
+                            transactionSlug = slug,
+                            onNavigateBack = { 
+                                selectedTransactionSlug = null
+                                currentScreen = AppScreen.TRANSACTIONS_LIST
+                            }
+                        )
+                    } ?: run {
+                        // If no transaction slug, go back to list
+                        currentScreen = AppScreen.TRANSACTIONS_LIST
+                    }
                 }
                 
                 AppScreen.ADD_RECORD -> {
@@ -900,6 +927,33 @@ fun App() {
                     )
                 }
                 
+                AppScreen.ADD_MANUFACTURE -> {
+                    // Handle warehouse selection for manufacture
+                    LaunchedEffect(selectedWarehouseForTransaction) {
+                        selectedWarehouseForTransaction?.let { warehouse ->
+                            if (selectingWarehouseForTransaction && returnToScreenAfterPartySelection == AppScreen.ADD_MANUFACTURE) {
+                                manufactureViewModel.selectWarehouse(warehouse)
+                                selectedWarehouseForTransaction = null
+                                selectingWarehouseForTransaction = false
+                                returnToScreenAfterPartySelection = null
+                            }
+                        }
+                    }
+
+                    com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddManufactureScreen(
+                        viewModel = manufactureViewModel,
+                        onNavigateBack = { 
+                            manufactureViewModel.resetState()
+                            currentScreen = AppScreen.HOME 
+                        },
+                        onSelectWarehouse = {
+                            selectingWarehouseForTransaction = true
+                            returnToScreenAfterPartySelection = AppScreen.ADD_MANUFACTURE
+                            currentScreen = AppScreen.WAREHOUSES
+                        }
+                    )
+                }
+                
                 AppScreen.ADD_TRANSACTION_STEP1 -> {
                     // Set transaction type if provided
                     LaunchedEffect(transactionType) {
@@ -1018,6 +1072,8 @@ enum class AppScreen {
     PAYMENT_TRANSFER,
     JOURNAL_VOUCHER,
     STOCK_ADJUSTMENT,
+    ADD_MANUFACTURE,
     ADD_TRANSACTION_STEP1,
-    ADD_TRANSACTION_STEP2
+    ADD_TRANSACTION_STEP2,
+    TRANSACTION_DETAIL
 }

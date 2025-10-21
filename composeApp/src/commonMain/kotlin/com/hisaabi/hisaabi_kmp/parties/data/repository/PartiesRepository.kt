@@ -37,6 +37,8 @@ interface PartiesRepository {
     suspend fun updateParty(party: Party): String
     
     suspend fun deleteParty(partySlug: String)
+    
+    suspend fun getPartyBySlug(slug: String): Party?
 }
 
 class PartiesRepositoryImpl(
@@ -121,6 +123,10 @@ class PartiesRepositoryImpl(
         if (party != null) {
             partyDao.deleteParty(party)
         }
+    }
+    
+    override suspend fun getPartyBySlug(slug: String): Party? {
+        return partyDao.getPartyBySlug(slug)?.toDomainModel()
     }
 }
 

@@ -11,6 +11,8 @@ import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddExpenseInc
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.PaymentTransferViewModel
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddJournalVoucherViewModel
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.StockAdjustmentViewModel
+import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionDetailViewModel
+import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddManufactureViewModel
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 
@@ -24,7 +26,16 @@ val transactionsModule = module {
     }
     
     // Repository
-    single { TransactionsRepository(get()) }
+    single { 
+        TransactionsRepository(
+            localDataSource = get(),
+            partiesRepository = get(),
+            paymentMethodsRepository = get(),
+            warehousesRepository = get(),
+            productsRepository = get(),
+            quantityUnitsRepository = get()
+        ) 
+    }
     
     // Use Cases
     singleOf(::GetTransactionsUseCase)
@@ -32,6 +43,7 @@ val transactionsModule = module {
     singleOf(::UpdateTransactionUseCase)
     singleOf(::DeleteTransactionUseCase)
     singleOf(::GetTransactionDetailsCountUseCase)
+    singleOf(::GetTransactionWithDetailsUseCase)
     
     // Use Cases Aggregator
     single {
@@ -53,5 +65,20 @@ val transactionsModule = module {
     singleOf(::PaymentTransferViewModel)
     singleOf(::AddJournalVoucherViewModel)
     singleOf(::StockAdjustmentViewModel)
+    single {
+        TransactionDetailViewModel(
+            getTransactionWithDetailsUseCase = get(),
+            transactionsRepository = get()
+        )
+    }
+    single {
+        AddManufactureViewModel(
+            transactionsRepository = get(),
+            productsRepository = get(),
+            quantityUnitsRepository = get(),
+            paymentMethodsRepository = get(),
+            warehousesRepository = get()
+        )
+    }
 }
 

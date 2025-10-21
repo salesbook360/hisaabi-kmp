@@ -56,6 +56,14 @@ class TransactionLocalDataSource(
         return transactionDetailDao.getDetailsCountByTransaction(transactionSlug)
     }
     
+    fun getChildTransactions(parentSlug: String): Flow<List<InventoryTransactionEntity>> {
+        return transactionDao.getChildTransactions(parentSlug)
+    }
+    
+    suspend fun getChildTransactionsList(parentSlug: String): List<InventoryTransactionEntity> {
+        return transactionDao.getChildTransactionsList(parentSlug)
+    }
+    
     suspend fun insertTransactionDetail(detail: TransactionDetailEntity): Long {
         return transactionDetailDao.insertTransactionDetail(detail)
     }

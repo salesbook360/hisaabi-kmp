@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface InventoryTransactionDao {
-    @Query("SELECT * FROM InventoryTransaction ORDER BY timestamp DESC")
+    @Query("SELECT * FROM InventoryTransaction WHERE parent_slug IS NULL OR parent_slug = '' ORDER BY timestamp DESC")
     fun getAllTransactions(): Flow<List<InventoryTransactionEntity>>
     
     @Query("SELECT * FROM InventoryTransaction WHERE id = :id")
@@ -15,13 +15,19 @@ interface InventoryTransactionDao {
     @Query("SELECT * FROM InventoryTransaction WHERE slug = :slug")
     suspend fun getTransactionBySlug(slug: String): InventoryTransactionEntity?
     
-    @Query("SELECT * FROM InventoryTransaction WHERE customer_slug = :customerSlug ORDER BY timestamp DESC")
+    @Query("SELECT * FROM InventoryTransaction WHERE parent_slug = :parentSlug ORDER BY timestamp ASC")
+    fun getChildTransactions(parentSlug: String): Flow<List<InventoryTransactionEntity>>
+    
+    @Query("SELECT * FROM InventoryTransaction WHERE parent_slug = :parentSlug ORDER BY timestamp ASC")
+    suspend fun getChildTransactionsList(parentSlug: String): List<InventoryTransactionEntity>
+    
+    @Query("SELECT * FROM InventoryTransaction WHERE customer_slug = :customerSlug AND (parent_slug IS NULL OR parent_slug = '') ORDER BY timestamp DESC")
     fun getTransactionsByCustomer(customerSlug: String): Flow<List<InventoryTransactionEntity>>
     
-    @Query("SELECT * FROM InventoryTransaction WHERE transaction_type = :transactionType ORDER BY timestamp DESC")
+    @Query("SELECT * FROM InventoryTransaction WHERE transaction_type = :transactionType AND (parent_slug IS NULL OR parent_slug = '') ORDER BY timestamp DESC")
     fun getTransactionsByType(transactionType: Int): Flow<List<InventoryTransactionEntity>>
     
-    @Query("SELECT * FROM InventoryTransaction WHERE business_slug = :businessSlug ORDER BY timestamp DESC")
+    @Query("SELECT * FROM InventoryTransaction WHERE business_slug = :businessSlug AND (parent_slug IS NULL OR parent_slug = '') ORDER BY timestamp DESC")
     fun getTransactionsByBusiness(businessSlug: String): Flow<List<InventoryTransactionEntity>>
     
     @Query("SELECT * FROM InventoryTransaction WHERE sync_status != 0")

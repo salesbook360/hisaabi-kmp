@@ -191,8 +191,8 @@ class AddJournalVoucherViewModel(
 
         viewModelScope.launch {
             try {
-                // Create the transaction
-                val transaction = Transaction(
+                // Step 1: Create and save the main Journal Voucher transaction
+                val journalTransaction = Transaction(
                     transactionType = 19, // TRANSACTION_TYPE_JOURNAL
                     totalPaid = currentState.totalDebit,
                     totalBill = currentState.totalDebit,
@@ -203,18 +203,105 @@ class AddJournalVoucherViewModel(
                     flatDiscount = 0.0,
                     flatTax = 0.0,
                     additionalCharges = 0.0,
-                    // Store journal accounts as JSON in description or use a custom field
-                    // For now, we'll need to extend the Transaction model or use transactionDetails
-                    transactionDetails = emptyList() // Journal vouchers don't have product details
+                    transactionDetails = emptyList()
                 )
 
-                transactionUseCases.addTransaction(transaction)
-                    .onSuccess {
-                        _state.update { 
-                            AddJournalVoucherState(
-                                success = true,
-                                dateTime = Clock.System.now().toEpochMilliseconds()
-                            )
+                // Save the parent journal voucher transaction
+                transactionUseCases.addTransaction(journalTransaction)
+                    .onSuccess { parentSlug ->
+                        viewModelScope.launch {
+                            try {
+                                // Step 2: Create child transactions for each account
+                                var timestampCounter = 1L
+                                
+                                currentState.accounts.forEach { account ->
+                                    val childTimestamp = (currentState.dateTime + timestampCounter).toString()
+                                    
+                                    when {
+                                        // Party accounts (Customer, Vendor, Investor, Expense, Extra Income)
+                                        account.party != null -> {
+                                            val transactionType = getTransactionTypeFromParty(
+                                                account.party.roleId,
+                                                account.isDebit
+                                            )
+                                            
+                                            val amount = if (transactionType == 8 || transactionType == 9) {
+                                                // For expense and income, use signed amounts
+                                                if (account.isDebit) account.amount else -account.amount
+                                            } else {
+                                                account.amount
+                                            }
+                                            
+                                            val childTransaction = Transaction(
+                                                parentSlug = parentSlug,
+                                                transactionType = transactionType,
+                                                customerSlug = account.party.slug,
+                                                party = account.party,
+                                                totalPaid = amount,
+                                                totalBill = 0.0,
+                                                timestamp = childTimestamp,
+                                                description = currentState.description.ifBlank { null },
+                                                paymentMethodToSlug = currentState.selectedPaymentMethod.slug,
+                                                paymentMethodTo = currentState.selectedPaymentMethod,
+                                                flatDiscount = 0.0,
+                                                flatTax = 0.0,
+                                                additionalCharges = 0.0
+                                            )
+                                            
+                                            transactionUseCases.addTransaction(childTransaction)
+                                        }
+                                        
+                                        // Payment Method accounts
+                                        account.paymentMethod != null -> {
+                                            val childTransaction = Transaction(
+                                                parentSlug = parentSlug,
+                                                transactionType = 10, // TRANSACTION_TYPE_CASH_TRANSFER
+                                                totalPaid = account.amount,
+                                                totalBill = 0.0,
+                                                timestamp = childTimestamp,
+                                                description = currentState.description.ifBlank { null },
+                                                paymentMethodFromSlug = if (account.isDebit) 
+                                                    currentState.selectedPaymentMethod.slug 
+                                                else 
+                                                    account.paymentMethod.slug,
+                                                paymentMethodFrom = if (account.isDebit) 
+                                                    currentState.selectedPaymentMethod 
+                                                else 
+                                                    account.paymentMethod,
+                                                paymentMethodToSlug = if (account.isDebit) 
+                                                    account.paymentMethod.slug 
+                                                else 
+                                                    currentState.selectedPaymentMethod.slug,
+                                                paymentMethodTo = if (account.isDebit) 
+                                                    account.paymentMethod 
+                                                else 
+                                                    currentState.selectedPaymentMethod,
+                                                flatDiscount = 0.0,
+                                                flatTax = 0.0,
+                                                additionalCharges = 0.0
+                                            )
+                                            
+                                            transactionUseCases.addTransaction(childTransaction)
+                                        }
+                                    }
+                                    
+                                    timestampCounter++
+                                }
+                                
+                                _state.update { 
+                                    AddJournalVoucherState(
+                                        success = true,
+                                        dateTime = Clock.System.now().toEpochMilliseconds()
+                                    )
+                                }
+                            } catch (e: Exception) {
+                                _state.update { 
+                                    it.copy(
+                                        isLoading = false,
+                                        error = "Failed to save child transactions: ${e.message}"
+                                    )
+                                }
+                            }
                         }
                     }
                     .onFailure { exception ->
@@ -233,6 +320,30 @@ class AddJournalVoucherViewModel(
                     )
                 }
             }
+        }
+    }
+    
+    /**
+     * Get transaction type based on party role and whether it's debit or credit
+     */
+    private fun getTransactionTypeFromParty(roleId: Int, isDebit: Boolean): Int {
+        return when (roleId) {
+            // Customer: roleId = 1
+            1 -> if (isDebit) 6 else 7  // Pay to Customer (6) or Get from Customer (7)
+            
+            // Vendor: roleId = 2  
+            2 -> if (isDebit) 4 else 5  // Pay to Vendor (4) or Get from Vendor (5)
+            
+            // Investor: roleId = 7
+            7 -> if (isDebit) 12 else 11  // Investment Withdraw (12) or Deposit (11)
+            
+            // Expense: roleId = 5
+            5 -> 8  // Expense (8)
+            
+            // Extra Income: roleId = 6
+            6 -> 9  // Extra Income (9)
+            
+            else -> if (isDebit) 6 else 7  // Default to customer transactions
         }
     }
 
