@@ -52,6 +52,10 @@ class TransactionLocalDataSource(
         return transactionDetailDao.getDetailsByTransaction(transactionSlug)
     }
     
+    suspend fun getDetailsCountByTransaction(transactionSlug: String): Int {
+        return transactionDetailDao.getDetailsCountByTransaction(transactionSlug)
+    }
+    
     suspend fun insertTransactionDetail(detail: TransactionDetailEntity): Long {
         return transactionDetailDao.insertTransactionDetail(detail)
     }

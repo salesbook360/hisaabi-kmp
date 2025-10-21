@@ -15,6 +15,9 @@ interface TransactionDetailDao {
     @Query("SELECT * FROM TransactionDetail WHERE transaction_slug = :transactionSlug")
     fun getDetailsByTransaction(transactionSlug: String): Flow<List<TransactionDetailEntity>>
     
+    @Query("SELECT COUNT(*) FROM TransactionDetail WHERE transaction_slug = :transactionSlug")
+    suspend fun getDetailsCountByTransaction(transactionSlug: String): Int
+    
     @Query("SELECT * FROM TransactionDetail WHERE product_slug = :productSlug")
     fun getDetailsByProduct(productSlug: String): Flow<List<TransactionDetailEntity>>
     

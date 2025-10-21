@@ -77,6 +77,7 @@ fun App() {
             var selectedWarehouseForTransaction by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse?>(null) }
             var selectingProductsForTransaction by remember { mutableStateOf(false) }
             var selectedProductsForTransaction by remember { mutableStateOf<List<com.hisaabi.hisaabi_kmp.products.domain.model.Product>>(emptyList()) }
+            var returnToScreenAfterProductSelection by remember { mutableStateOf<AppScreen?>(null) }
             var selectingPaymentMethodForTransaction by remember { mutableStateOf(false) }
             var selectedPaymentMethodForTransaction by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod?>(null) }
             
@@ -334,9 +335,8 @@ fun App() {
                             if (selectingProductsForTransaction) {
                                 // Add product to selection list
                                 selectedProductsForTransaction = selectedProductsForTransaction + product
-                                // Return to transaction screen
-                                selectingProductsForTransaction = false
-                                currentScreen = AppScreen.ADD_TRANSACTION_STEP1
+                                // Return to the appropriate screen (don't clear flags yet - let target screen handle it)
+                                currentScreen = returnToScreenAfterProductSelection ?: AppScreen.ADD_TRANSACTION_STEP1
                             } else {
                                 // If it's a recipe, navigate to ingredients screen
                                 if (product.isRecipe) {
@@ -354,7 +354,9 @@ fun App() {
                         },
                         onNavigateBack = { 
                             if (selectingProductsForTransaction) {
+                                // Navigate back without selecting - clear the selection state
                                 selectingProductsForTransaction = false
+                                returnToScreenAfterProductSelection = null
                                 currentScreen = AppScreen.ADD_TRANSACTION_STEP1
                             } else {
                                 currentScreen = AppScreen.HOME
@@ -444,10 +446,10 @@ fun App() {
                         viewModel = org.koin.compose.koinInject(),
                         onWarehouseClick = { warehouse ->
                             if (selectingWarehouseForTransaction) {
-                                // Store selected warehouse and return to transaction
+                                // Store selected warehouse and return to the appropriate screen
                                 selectedWarehouseForTransaction = warehouse
-                                selectingWarehouseForTransaction = false
-                                currentScreen = AppScreen.ADD_TRANSACTION_STEP1
+                                // Don't reset flags here - let the target screen handle it
+                                currentScreen = returnToScreenAfterPartySelection ?: AppScreen.ADD_TRANSACTION_STEP1
                             } else {
                                 selectedWarehouseForEdit = warehouse
                                 currentScreen = AppScreen.ADD_WAREHOUSE
@@ -459,8 +461,12 @@ fun App() {
                         },
                         onNavigateBack = { 
                             if (selectingWarehouseForTransaction) {
+                                // Navigate back without selecting - clear the selection state
+                                val targetScreen = returnToScreenAfterPartySelection ?: AppScreen.ADD_TRANSACTION_STEP1
                                 selectingWarehouseForTransaction = false
-                                currentScreen = AppScreen.ADD_TRANSACTION_STEP1
+                                returnToScreenAfterPartySelection = null
+                                isSelectingWarehouseFrom = false
+                                currentScreen = targetScreen
                             } else {
                                 currentScreen = AppScreen.HOME
                             }
@@ -861,13 +867,13 @@ fun App() {
 
                     // Handle product selection for stock adjustment
                     LaunchedEffect(selectedProductsForTransaction) {
-                        if (selectingProductsForTransaction && returnToScreenAfterPartySelection == AppScreen.STOCK_ADJUSTMENT) {
+                        if (selectingProductsForTransaction && returnToScreenAfterProductSelection == AppScreen.STOCK_ADJUSTMENT) {
                             selectedProductsForTransaction.forEach { product ->
                                 stockAdjustmentViewModel.addProduct(product)
                             }
                             selectedProductsForTransaction = emptyList()
                             selectingProductsForTransaction = false
-                            returnToScreenAfterPartySelection = null
+                            returnToScreenAfterProductSelection = null
                         }
                     }
 
@@ -888,7 +894,7 @@ fun App() {
                         },
                         onSelectProducts = {
                             selectingProductsForTransaction = true
-                            returnToScreenAfterPartySelection = AppScreen.STOCK_ADJUSTMENT
+                            returnToScreenAfterProductSelection = AppScreen.STOCK_ADJUSTMENT
                             currentScreen = AppScreen.PRODUCTS
                         }
                     )
@@ -947,6 +953,7 @@ fun App() {
                         },
                         onSelectProducts = { 
                             selectingProductsForTransaction = true
+                            returnToScreenAfterProductSelection = AppScreen.ADD_TRANSACTION_STEP1
                             currentScreen = AppScreen.PRODUCTS
                         },
                         onSelectWarehouse = { 

@@ -128,7 +128,8 @@ fun TransactionsListScreen(
                             TransactionCard(
                                 transaction = transaction,
                                 onClick = { onTransactionClick(transaction) },
-                                onDeleteClick = { viewModel.deleteTransaction(transaction) }
+                                onDeleteClick = { viewModel.deleteTransaction(transaction) },
+                                transactionDetailsCounts = state.transactionDetailsCounts
                             )
                         }
                         
@@ -301,7 +302,8 @@ private fun EmptyTransactionsView(
 private fun TransactionCard(
     transaction: Transaction,
     onClick: () -> Unit,
-    onDeleteClick: () -> Unit
+    onDeleteClick: () -> Unit,
+    transactionDetailsCounts: Map<String, Int>
 ) {
     var showOptions by remember { mutableStateOf(false) }
     val isRecordType = RecordType.fromValue(transaction.transactionType) != null
@@ -738,7 +740,7 @@ private fun TransactionCard(
                 }
             } else if (isStockAdjustmentType) {
                 // For Stock Adjustment, show warehouses and product count
-                transaction.warehouse?.let { warehouse ->
+                transaction.warehouseFrom?.let { warehouse ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -794,7 +796,7 @@ private fun TransactionCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        "${transaction.transactionDetails.size} items",
+                        "${transactionDetailsCounts[transaction.slug] ?: transaction.transactionDetails.size} items",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold
                     )

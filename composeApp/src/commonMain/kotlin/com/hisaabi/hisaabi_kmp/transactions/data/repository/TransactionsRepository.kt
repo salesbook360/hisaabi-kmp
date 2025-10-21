@@ -50,6 +50,10 @@ class TransactionsRepository(
         return transaction.toDomainModel(details)
     }
     
+    suspend fun getTransactionDetailsCount(slug: String): Int {
+        return localDataSource.getDetailsCountByTransaction(slug)
+    }
+    
     suspend fun insertTransaction(transaction: Transaction): Result<String> {
         return try {
             val slug = transaction.slug ?: generateSlug()

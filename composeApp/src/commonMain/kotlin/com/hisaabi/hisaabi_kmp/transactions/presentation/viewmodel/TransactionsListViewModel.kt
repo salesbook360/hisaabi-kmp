@@ -11,6 +11,7 @@ import kotlinx.coroutines.launch
 
 data class TransactionsListState(
     val transactions: List<Transaction> = emptyList(),
+    val transactionDetailsCounts: Map<String, Int> = emptyMap(),
     val isLoading: Boolean = false,
     val error: String? = null,
     val selectedTransactionType: TransactionType? = null,
@@ -46,9 +47,24 @@ class TransactionsListViewModel(
                         }
                     }
                     .collect { transactions ->
+                        // Load detail counts for stock adjustment transactions
+                        val stockAdjustmentSlugs = transactions
+                            .filter { it.transactionType in listOf(12, 13, 14) }  // Stock adjustment types
+                            .mapNotNull { it.slug }
+                        
+                        val counts = mutableMapOf<String, Int>()
+                        stockAdjustmentSlugs.forEach { slug ->
+                            try {
+                                counts[slug] = transactionUseCases.getTransactionDetailsCount(slug)
+                            } catch (e: Exception) {
+                                counts[slug] = 0
+                            }
+                        }
+                        
                         _state.update { 
                             it.copy(
                                 transactions = applyFilters(transactions),
+                                transactionDetailsCounts = counts,
                                 isLoading = false,
                                 error = null
                             )

@@ -31,6 +31,7 @@ val transactionsModule = module {
     singleOf(::AddTransactionUseCase)
     singleOf(::UpdateTransactionUseCase)
     singleOf(::DeleteTransactionUseCase)
+    singleOf(::GetTransactionDetailsCountUseCase)
     
     // Use Cases Aggregator
     single {
@@ -38,7 +39,8 @@ val transactionsModule = module {
             getTransactions = get(),
             addTransaction = get(),
             updateTransaction = get(),
-            deleteTransaction = get()
+            deleteTransaction = get(),
+            getTransactionDetailsCount = get()
         )
     }
     

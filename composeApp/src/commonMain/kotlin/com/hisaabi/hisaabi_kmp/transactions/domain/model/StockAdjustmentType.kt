@@ -12,3 +12,4 @@ enum class StockAdjustmentType(val value: Int, val displayName: String) {
     }
 }
 
+

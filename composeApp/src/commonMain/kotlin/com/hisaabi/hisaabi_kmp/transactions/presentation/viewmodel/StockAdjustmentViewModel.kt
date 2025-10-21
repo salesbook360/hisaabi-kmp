@@ -57,10 +57,10 @@ class StockAdjustmentViewModel(
                 productSlug = product.slug,
                 product = product,
                 quantity = 1.0,
-                price = product.salePrice,
-                discount = 0.0,
-                tax = 0.0,
-                quantityUnitSlug = product.quantityUnitSlug,
+                price = product.retailPrice,
+                flatDiscount = 0.0,
+                flatTax = 0.0,
+                quantityUnitSlug = product.defaultUnitSlug,
                 description = ""
             )
             _state.update { 
@@ -136,9 +136,9 @@ class StockAdjustmentViewModel(
             try {
                 val transaction = Transaction(
                     transactionType = currentState.adjustmentType.value,
-                    warehouseSlug = currentState.warehouseFrom?.slug,
-                    warehouse = currentState.warehouseFrom,
-                    warehouseToSlug = if (currentState.adjustmentType == StockAdjustmentType.STOCK_TRANSFER) {
+                    wareHouseSlugFrom = currentState.warehouseFrom?.slug,
+                    warehouseFrom = currentState.warehouseFrom,
+                    wareHouseSlugTo = if (currentState.adjustmentType == StockAdjustmentType.STOCK_TRANSFER) {
                         currentState.warehouseTo?.slug
                     } else null,
                     warehouseTo = if (currentState.adjustmentType == StockAdjustmentType.STOCK_TRANSFER) {
@@ -200,4 +200,5 @@ class StockAdjustmentViewModel(
         }
     }
 }
+
 

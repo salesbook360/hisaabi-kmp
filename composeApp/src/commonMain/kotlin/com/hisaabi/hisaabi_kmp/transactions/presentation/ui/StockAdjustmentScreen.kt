@@ -201,10 +201,10 @@ fun StockAdjustmentScreen(
                                 ProductCard(
                                     detail = detail,
                                     onQuantityChange = { quantity ->
-                                        viewModel.updateProductQuantity(detail.productSlug, quantity)
+                                        detail.productSlug?.let { viewModel.updateProductQuantity(it, quantity) }
                                     },
                                     onRemove = {
-                                        viewModel.removeProduct(detail.productSlug)
+                                        detail.productSlug?.let { viewModel.removeProduct(it) }
                                     }
                                 )
                             }
@@ -395,4 +395,5 @@ private fun ProductCard(
         }
     }
 }
+
 
