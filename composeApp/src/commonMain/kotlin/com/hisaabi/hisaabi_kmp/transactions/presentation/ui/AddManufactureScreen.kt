@@ -58,7 +58,9 @@ fun AddManufactureScreen(
                 actions = {
                     if (!state.isSaving) {
                         IconButton(onClick = {
-                            viewModel.saveManufactureTransaction(onSuccess = onNavigateBack)
+                            viewModel.saveManufactureTransaction(onSuccess = { _ ->
+                                onNavigateBack()
+                            })
                         }) {
                             Icon(Icons.Default.Save, "Save")
                         }

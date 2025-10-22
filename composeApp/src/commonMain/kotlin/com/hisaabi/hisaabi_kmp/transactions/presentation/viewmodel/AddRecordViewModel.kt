@@ -3,7 +3,7 @@ package com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
-import com.hisaabi.hisaabi_kmp.transactions.domain.model.RecordType
+import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionState
 import com.hisaabi.hisaabi_kmp.transactions.domain.usecase.TransactionUseCases
@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 
 data class AddRecordState(
-    val recordType: RecordType? = null,
+    val recordType: AllTransactionTypes? = null,
     val state: TransactionState = TransactionState.PENDING,
     val selectedParty: Party? = null,
     val description: String = "",
@@ -31,7 +31,7 @@ class AddRecordViewModel(
     private val _state = MutableStateFlow(AddRecordState())
     val state: StateFlow<AddRecordState> = _state.asStateFlow()
     
-    fun setRecordType(recordType: RecordType) {
+    fun setRecordType(recordType: AllTransactionTypes) {
         _state.update { it.copy(recordType = recordType) }
     }
     
@@ -68,7 +68,7 @@ class AddRecordViewModel(
             return
         }
         
-        if (RecordType.requiresParty(currentState.recordType) && currentState.selectedParty == null) {
+        if (AllTransactionTypes.requiresParty(currentState.recordType.value) && currentState.selectedParty == null) {
             _state.update { it.copy(error = "Please select a party") }
             return
         }

@@ -15,7 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
 import com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod
-import com.hisaabi.hisaabi_kmp.transactions.domain.model.ExpenseIncomeType
+import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddExpenseIncomeViewModel
 import com.hisaabi.hisaabi_kmp.utils.SimpleDateTimePickerDialog
 import com.hisaabi.hisaabi_kmp.utils.formatDateTime
@@ -58,7 +58,7 @@ fun AddExpenseIncomeScreen(
             TopAppBar(
                 title = { 
                     Text(
-                        if (state.transactionType == ExpenseIncomeType.EXPENSE) 
+                        if (state.transactionType == AllTransactionTypes.EXPENSE) 
                             "Add Expense" 
                         else 
                             "Add Extra Income"
@@ -167,8 +167,8 @@ fun AddExpenseIncomeScreen(
 
 @Composable
 private fun TransactionTypeSelector(
-    selectedType: ExpenseIncomeType,
-    onTypeSelected: (ExpenseIncomeType) -> Unit
+    selectedType: AllTransactionTypes,
+    onTypeSelected: (AllTransactionTypes) -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -192,15 +192,15 @@ private fun TransactionTypeSelector(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                ExpenseIncomeType.values().forEach { type ->
+                listOf(AllTransactionTypes.EXPENSE, AllTransactionTypes.EXTRA_INCOME).forEach { type ->
                     FilterChip(
                         selected = selectedType == type,
                         onClick = { onTypeSelected(type) },
-                        label = { Text(type.displayName) },
+                        label = { Text(AllTransactionTypes.getDisplayName(type.value)) },
                         modifier = Modifier.weight(1f),
                         leadingIcon = {
                             Icon(
-                                if (type == ExpenseIncomeType.EXPENSE)
+                                if (type == AllTransactionTypes.EXPENSE)
                                     Icons.Default.TrendingDown
                                 else
                                     Icons.Default.TrendingUp,
@@ -246,7 +246,7 @@ private fun DateTimeField(
 @Composable
 private fun PartyTypeSelectionCard(
     selectedParty: Party?,
-    transactionType: ExpenseIncomeType,
+    transactionType: AllTransactionTypes,
     onSelectParty: () -> Unit,
     onRemoveParty: () -> Unit
 ) {
@@ -267,7 +267,7 @@ private fun PartyTypeSelectionCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    if (transactionType == ExpenseIncomeType.EXPENSE) 
+                    if (transactionType == AllTransactionTypes.EXPENSE) 
                         "Expense Type *" 
                     else 
                         "Income Type *",
@@ -298,7 +298,7 @@ private fun PartyTypeSelectionCard(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            if (transactionType == ExpenseIncomeType.EXPENSE)
+                            if (transactionType == AllTransactionTypes.EXPENSE)
                                 Icons.Default.Receipt
                             else
                                 Icons.Default.AccountBalance,
@@ -321,7 +321,7 @@ private fun PartyTypeSelectionCard(
                     Icon(Icons.Default.Add, "Add")
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        if (transactionType == ExpenseIncomeType.EXPENSE)
+                        if (transactionType == AllTransactionTypes.EXPENSE)
                             "Select Expense Type"
                         else
                             "Select Income Type"

@@ -80,47 +80,8 @@ data class Transaction(
     }
     
     fun getTransactionTypeName(): String {
-        // Check if it's a record type first
-        RecordType.fromValue(transactionType)?.let { recordType ->
-            return recordType.displayName
-        }
-        
-        // Check if it's a Pay/Get Payment transaction
-        val payGetCashName = when (transactionType) {
-            4 -> "Pay Payment to Vendor"
-            5 -> "Get Payment from Vendor"
-            6 -> "Pay Payment to Customer"
-            7 -> "Get Payment from Customer"
-            11 -> "Investment Deposit"
-            12 -> "Investment Withdraw"
-            else -> null
-        }
-        if (payGetCashName != null) {
-            return payGetCashName
-        }
-        
-        // Check if it's an Expense or Extra Income transaction
-        ExpenseIncomeType.fromValue(transactionType)?.let { expenseIncomeType ->
-            return expenseIncomeType.displayName
-        }
-        
-        // Check if it's a Payment Transfer transaction
-        if (transactionType == 10) {
-            return "Payment Transfer"
-        }
-        
-        // Check if it's a Journal Voucher transaction
-        if (transactionType == 19) {
-            return "Journal Voucher"
-        }
-        
-        // Check if it's a Stock Adjustment transaction
-        StockAdjustmentType.fromValue(transactionType)?.let { stockType ->
-            return stockType.displayName
-        }
-        
-        // Otherwise check if it's a transaction type
-        return TransactionType.fromValue(transactionType)?.displayName ?: "Unknown"
+        // Use centralized AllTransactionTypes for all transaction type names
+        return AllTransactionTypes.getDisplayName(transactionType)
     }
     
     fun getPriceTypeName(): String {
@@ -132,15 +93,15 @@ data class Transaction(
     }
     
     fun isDealingWithVendor(): Boolean {
-        return TransactionType.isDealingWithVendor(transactionType)
+        return AllTransactionTypes.isDealingWithVendor(transactionType)
     }
     
     fun isDealingWithCustomer(): Boolean {
-        return TransactionType.isDealingWithCustomer(transactionType)
+        return AllTransactionTypes.isDealingWithCustomer(transactionType)
     }
     
     fun isReturningProducts(): Boolean {
-        return TransactionType.isReturningProducts(transactionType)
+        return AllTransactionTypes.isReturningProducts(transactionType)
     }
 }
 

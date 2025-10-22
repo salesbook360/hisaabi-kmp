@@ -18,7 +18,7 @@ import kotlinx.coroutines.launch
 
 data class AddTransactionState(
     // Step 1: Products and Party
-    val transactionType: TransactionType = TransactionType.SALE,
+    val transactionType: AllTransactionTypes = AllTransactionTypes.SALE,
     val selectedParty: Party? = null,
     val selectedWarehouse: Warehouse? = null,
     val transactionDetails: List<TransactionDetailItem> = emptyList(),
@@ -332,9 +332,9 @@ class AddTransactionViewModel(
     }
     
     // Private Helper Functions
-    private fun updateDefaultPriceType(type: TransactionType) {
+    private fun updateDefaultPriceType(type: AllTransactionTypes) {
         val priceType = when {
-            TransactionType.isDealingWithVendor(type.value) -> PriceType.PURCHASE
+            AllTransactionTypes.isDealingWithVendor(type.value) -> PriceType.PURCHASE
             else -> PriceType.RETAIL
         }
         _state.update { it.copy(priceType = priceType) }

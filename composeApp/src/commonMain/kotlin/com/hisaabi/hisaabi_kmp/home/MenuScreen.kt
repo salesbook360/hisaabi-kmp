@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,7 +37,7 @@ fun HomeMenuScreen(
     onNavigateToJournalVoucher: () -> Unit = {},
     onNavigateToStockAdjustment: () -> Unit = {},
     onNavigateToManufacture: () -> Unit = {},
-    onNavigateToAddTransaction: (com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType) -> Unit = {}
+    onNavigateToAddTransaction: (AllTransactionTypes) -> Unit = {}
 ) {
     var showProductTypeDialog by remember { mutableStateOf(false) }
     
@@ -90,13 +91,13 @@ fun HomeMenuScreen(
                             "Journal Voucher" -> onNavigateToJournalVoucher()
                             "Stock Adjustment" -> onNavigateToStockAdjustment()
                             "Manufacture" -> onNavigateToManufacture()
-                            "Sale" -> onNavigateToAddTransaction(com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType.SALE)
-                            "Sale Order" -> onNavigateToAddTransaction(com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType.SALE_ORDER)
-                            "Purchase" -> onNavigateToAddTransaction(com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType.PURCHASE)
-                            "Purchase Order" -> onNavigateToAddTransaction(com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType.PURCHASE_ORDER)
-                            "Customer Return" -> onNavigateToAddTransaction(com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType.CUSTOMER_RETURN)
-                            "Vendor Return" -> onNavigateToAddTransaction(com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType.VENDOR_RETURN)
-                            "Quotation" -> onNavigateToAddTransaction(com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType.QUOTATION)
+                            "Sale" -> onNavigateToAddTransaction(com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.SALE)
+                            "Sale Order" -> onNavigateToAddTransaction(com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.SALE_ORDER)
+                            "Purchase" -> onNavigateToAddTransaction(com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.PURCHASE)
+                            "Purchase Order" -> onNavigateToAddTransaction(com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.PURCHASE_ORDER)
+                            "Customer Return" -> onNavigateToAddTransaction(com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.CUSTOMER_RETURN)
+                            "Vendor Return" -> onNavigateToAddTransaction(com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.VENDOR_RETURN)
+                            "Quotation" -> onNavigateToAddTransaction(com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.QUOTATION)
                             else -> { /* Handle other transaction types later */ }
                         }
                     }

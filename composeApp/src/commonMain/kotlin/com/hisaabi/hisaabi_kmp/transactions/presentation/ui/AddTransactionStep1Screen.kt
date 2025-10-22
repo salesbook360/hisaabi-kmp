@@ -72,7 +72,9 @@ fun AddTransactionStep1Screen(
                         expanded = showTypeMenu,
                         onDismissRequest = { showTypeMenu = false }
                     ) {
-                        TransactionType.values().forEach { type ->
+                        AllTransactionTypes.entries.filter { 
+                            it.category == TransactionCategory.BASIC 
+                        }.forEach { type ->
                             DropdownMenuItem(
                                 text = { Text(type.displayName) },
                                 onClick = {
@@ -112,7 +114,7 @@ fun AddTransactionStep1Screen(
             }
             
             // Warehouse Selection Card (if needed)
-            if (TransactionType.affectsStock(state.transactionType.value)) {
+            if (AllTransactionTypes.affectsStock(state.transactionType.value)) {
                 item {
                     WarehouseSelectionCard(
                         selectedWarehouse = state.selectedWarehouse,
@@ -220,7 +222,7 @@ fun AddTransactionStep1Screen(
 @Composable
 private fun PartySelectionCard(
     selectedParty: Party?,
-    transactionType: TransactionType,
+    transactionType: AllTransactionTypes,
     onSelectParty: () -> Unit
 ) {
     Card(
@@ -252,7 +254,7 @@ private fun PartySelectionCard(
             Spacer(Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    if (TransactionType.isDealingWithVendor(transactionType.value)) "Vendor" else "Customer",
+                    if (AllTransactionTypes.isDealingWithVendor(transactionType.value)) "Vendor" else "Customer",
                     style = MaterialTheme.typography.labelMedium,
                     color = if (selectedParty == null) 
                         MaterialTheme.colorScheme.onErrorContainer 
@@ -260,7 +262,7 @@ private fun PartySelectionCard(
                         MaterialTheme.colorScheme.onPrimaryContainer
                 )
                 Text(
-                    selectedParty?.name ?: "Select ${if (TransactionType.isDealingWithVendor(transactionType.value)) "Vendor" else "Customer"}",
+                    selectedParty?.name ?: "Select ${if (AllTransactionTypes.isDealingWithVendor(transactionType.value)) "Vendor" else "Customer"}",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = if (selectedParty == null) 
@@ -332,10 +334,10 @@ private fun WarehouseSelectionCard(
 @Composable
 private fun PriceTypeSelector(
     selectedPriceType: PriceType,
-    transactionType: TransactionType,
+    transactionType: AllTransactionTypes,
     onPriceTypeSelected: (PriceType) -> Unit
 ) {
-    if (TransactionType.isDealingWithVendor(transactionType.value)) {
+    if (AllTransactionTypes.isDealingWithVendor(transactionType.value)) {
         return // Purchase transactions only use purchase price
     }
     

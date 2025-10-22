@@ -3,18 +3,23 @@ package com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
+import com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType
 import com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod
-import com.hisaabi.hisaabi_kmp.transactions.domain.model.PayGetCashType
-import com.hisaabi.hisaabi_kmp.transactions.domain.model.PartyTypeForCash
+import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction
 import com.hisaabi.hisaabi_kmp.transactions.domain.usecase.TransactionUseCases
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 
+enum class PayGetCashType {
+    PAY_CASH,
+    GET_CASH
+}
+
 data class PayGetCashState(
     val payGetCashType: PayGetCashType = PayGetCashType.GET_CASH,
-    val partyType: PartyTypeForCash = PartyTypeForCash.CUSTOMER,
+    val partyType: PartyType = PartyType.CUSTOMER,
     val selectedParty: Party? = null,
     val amount: String = "",
     val description: String = "",
@@ -36,7 +41,7 @@ class PayGetCashViewModel(
         _state.update { it.copy(payGetCashType = type) }
     }
     
-    fun setPartyType(type: PartyTypeForCash) {
+    fun setPartyType(type: PartyType) {
         _state.update { it.copy(partyType = type, selectedParty = null) }
     }
     
@@ -85,7 +90,30 @@ class PayGetCashViewModel(
             
             try {
                 // Determine transaction type based on party type and pay/get selection
-                val transactionType = currentState.partyType.getTransactionType(currentState.payGetCashType)
+                val transactionType = when (currentState.partyType) {
+                    PartyType.CUSTOMER -> {
+                        if (currentState.payGetCashType == PayGetCashType.PAY_CASH) 
+                            AllTransactionTypes.PAY_TO_CUSTOMER.value
+                        else 
+                            AllTransactionTypes.GET_FROM_CUSTOMER.value
+                    }
+                    PartyType.VENDOR -> {
+                        if (currentState.payGetCashType == PayGetCashType.PAY_CASH) 
+                            AllTransactionTypes.PAY_TO_VENDOR.value
+                        else 
+                            AllTransactionTypes.GET_FROM_VENDOR.value
+                    }
+                    PartyType.INVESTOR -> {
+                        if (currentState.payGetCashType == PayGetCashType.PAY_CASH) 
+                            AllTransactionTypes.INVESTMENT_WITHDRAW.value
+                        else 
+                            AllTransactionTypes.INVESTMENT_DEPOSIT.value
+                    }
+
+                    else -> {
+                        AllTransactionTypes.PAY_TO_CUSTOMER.value
+                    }
+                }
                 
                 val transaction = Transaction(
                     customerSlug = currentState.selectedParty.slug,

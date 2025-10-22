@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
 import com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod
-import com.hisaabi.hisaabi_kmp.transactions.domain.model.ExpenseIncomeType
+import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction
 import com.hisaabi.hisaabi_kmp.transactions.domain.usecase.TransactionUseCases
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 
 data class AddExpenseIncomeState(
-    val transactionType: ExpenseIncomeType = ExpenseIncomeType.EXPENSE,
+    val transactionType: AllTransactionTypes = AllTransactionTypes.EXPENSE,
     val selectedParty: Party? = null, // This will be expense/income type (stored as Party with roleId 14 or 15)
     val amount: String = "",
     val description: String = "",
@@ -33,7 +33,7 @@ class AddExpenseIncomeViewModel(
     private val _state = MutableStateFlow(AddExpenseIncomeState())
     val state: StateFlow<AddExpenseIncomeState> = _state.asStateFlow()
 
-    fun setTransactionType(type: ExpenseIncomeType) {
+    fun setTransactionType(type: AllTransactionTypes) {
         _state.update { it.copy(transactionType = type, selectedParty = null) }
     }
 
@@ -64,7 +64,7 @@ class AddExpenseIncomeViewModel(
         if (currentState.selectedParty == null) {
             _state.update { 
                 it.copy(
-                    error = if (currentState.transactionType == ExpenseIncomeType.EXPENSE) 
+                    error = if (currentState.transactionType == AllTransactionTypes.EXPENSE) 
                         "Please select expense type" 
                     else 
                         "Please select income type"

@@ -9,6 +9,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.hisaabi.hisaabi_kmp.auth.AuthNavigation
 import com.hisaabi.hisaabi_kmp.home.HomeScreen
+import com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.KoinContext
 
@@ -67,7 +68,7 @@ fun App() {
             // No specific state needed
             
             // Transactions navigation state
-            var transactionType by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType?>(null) }
+            var transactionType by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes?>(null) }
             var selectingPartyForTransaction by remember { mutableStateOf(false) }
             var selectedPartyForTransaction by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.parties.domain.model.Party?>(null) }
             var returnToScreenAfterPartySelection by remember { mutableStateOf<AppScreen?>(null) }
@@ -158,11 +159,11 @@ fun App() {
                             currentScreen = AppScreen.PAY_GET_CASH
                         },
                         onNavigateToExpense = {
-                            expenseIncomeViewModel.setTransactionType(com.hisaabi.hisaabi_kmp.transactions.domain.model.ExpenseIncomeType.EXPENSE)
+                            expenseIncomeViewModel.setTransactionType(com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.EXPENSE)
                             currentScreen = AppScreen.ADD_EXPENSE_INCOME
                         },
                         onNavigateToExtraIncome = {
-                            expenseIncomeViewModel.setTransactionType(com.hisaabi.hisaabi_kmp.transactions.domain.model.ExpenseIncomeType.EXTRA_INCOME)
+                            expenseIncomeViewModel.setTransactionType(com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.EXTRA_INCOME)
                             currentScreen = AppScreen.ADD_EXPENSE_INCOME
                         },
                         onNavigateToPaymentTransfer = {
@@ -675,12 +676,16 @@ fun App() {
                             selectingPartyForTransaction = true
                             returnToScreenAfterPartySelection = AppScreen.PAY_GET_CASH
                             selectedPartySegment = when (partyType) {
-                                com.hisaabi.hisaabi_kmp.transactions.domain.model.PartyTypeForCash.CUSTOMER -> 
+                                PartyType.CUSTOMER ->
                                     com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.CUSTOMER
-                                com.hisaabi.hisaabi_kmp.transactions.domain.model.PartyTypeForCash.VENDOR -> 
+                                PartyType.VENDOR ->
                                     com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.VENDOR
-                                com.hisaabi.hisaabi_kmp.transactions.domain.model.PartyTypeForCash.INVESTOR -> 
+                                PartyType.INVESTOR ->
                                     com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.INVESTOR
+
+                                else -> {
+                                    com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.CUSTOMER
+                                }
                             }
                             currentScreen = AppScreen.PARTIES
                         },
@@ -718,7 +723,7 @@ fun App() {
                             isExpenseIncomePartySelection = true  // Set expense/income context
                             // Set initial segment based on transaction type
                             val state = expenseIncomeViewModel.state.value
-                            selectedPartySegment = if (state.transactionType == com.hisaabi.hisaabi_kmp.transactions.domain.model.ExpenseIncomeType.EXPENSE) {
+                            selectedPartySegment = if (state.transactionType == com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.EXPENSE) {
                                 com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.EXPENSE
                             } else {
                                 com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.EXTRA_INCOME
@@ -996,7 +1001,7 @@ fun App() {
                         onSelectParty = { 
                             // Determine party segment based on transaction type
                             val state = transactionViewModel.state.value
-                            selectedPartySegment = if (com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType.isDealingWithVendor(state.transactionType.value)) {
+                            selectedPartySegment = if (com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.isDealingWithVendor(state.transactionType.value)) {
                                 com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.VENDOR
                             } else {
                                 com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.CUSTOMER

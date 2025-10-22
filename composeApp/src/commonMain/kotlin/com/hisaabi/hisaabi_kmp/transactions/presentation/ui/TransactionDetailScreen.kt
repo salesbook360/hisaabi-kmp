@@ -1125,11 +1125,11 @@ private fun getTransactionColor(transaction: Transaction): androidx.compose.ui.g
         isJournalVoucherType -> androidx.compose.ui.graphics.Color(0xFFF3E5F5)
         isStockAdjustmentType -> androidx.compose.ui.graphics.Color(0xFFE0F2F1)
         else -> {
-            when (TransactionType.fromValue(transaction.transactionType)) {
-                TransactionType.SALE -> androidx.compose.ui.graphics.Color(0xFFE3F2FD)
-                TransactionType.PURCHASE -> androidx.compose.ui.graphics.Color(0xFFF3E5F5)
-                TransactionType.CUSTOMER_RETURN -> androidx.compose.ui.graphics.Color(0xFFFFEBEE)
-                TransactionType.VENDOR_RETURN -> androidx.compose.ui.graphics.Color(0xFFE0F2F1)
+            when (AllTransactionTypes.fromValue(transaction.transactionType)) {
+                AllTransactionTypes.SALE -> androidx.compose.ui.graphics.Color(0xFFE3F2FD)
+                AllTransactionTypes.PURCHASE -> androidx.compose.ui.graphics.Color(0xFFF3E5F5)
+                AllTransactionTypes.CUSTOMER_RETURN -> androidx.compose.ui.graphics.Color(0xFFFFEBEE)
+                AllTransactionTypes.VENDOR_RETURN -> androidx.compose.ui.graphics.Color(0xFFE0F2F1)
                 else -> androidx.compose.ui.graphics.Color(0xFFF5F5F5)
             }
         }

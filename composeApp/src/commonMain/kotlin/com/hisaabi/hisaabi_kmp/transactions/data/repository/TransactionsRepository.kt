@@ -10,6 +10,7 @@ import com.hisaabi.hisaabi_kmp.paymentmethods.data.repository.PaymentMethodsRepo
 import com.hisaabi.hisaabi_kmp.warehouses.data.repository.WarehousesRepository
 import com.hisaabi.hisaabi_kmp.products.data.repository.ProductsRepository
 import com.hisaabi.hisaabi_kmp.quantityunits.data.repository.QuantityUnitsRepository
+import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -205,7 +206,7 @@ class TransactionsRepository(
                 customerSlug = null, // No customer for manufacture
                 party = null,
                 priceTypeId = 1, // Purchase price type
-                transactionType = 3, // MANUFACTURE type
+                transactionType = AllTransactionTypes.MANUFACTURE.value, // MANUFACTURE type
                 timestamp = timestamp.toString(),
                 totalPaid = recipeDetail.calculateBill(),
                 statusId = 2, // Completed

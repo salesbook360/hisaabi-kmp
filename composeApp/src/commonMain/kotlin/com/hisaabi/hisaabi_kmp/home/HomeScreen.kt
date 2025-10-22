@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 
 @Composable
 fun HomeScreen(
@@ -32,7 +33,7 @@ fun HomeScreen(
     onNavigateToJournalVoucher: () -> Unit = {},
     onNavigateToStockAdjustment: () -> Unit = {},
     onNavigateToManufacture: () -> Unit = {},
-    onNavigateToAddTransaction: (com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType) -> Unit = {}
+    onNavigateToAddTransaction: (AllTransactionTypes) -> Unit = {}
 ) {
     var selectedTab by remember { mutableStateOf(0) }
     

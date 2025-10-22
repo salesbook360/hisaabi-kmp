@@ -42,7 +42,7 @@ class AddManufactureViewModel(
             try {
                 // Load all recipes
                 val recipes = productsRepository.getProducts(
-                    businessSlug = "BUS_1", // TODO: Get from user session
+                    businessSlug = "default_business", // TODO: Get from user session
                     productType = ProductType.RECIPE
                 )
                 _state.value = _state.value.copy(
@@ -193,7 +193,7 @@ class AddManufactureViewModel(
         )
     }
 
-    fun saveManufactureTransaction(onSuccess: () -> Unit) {
+    fun saveManufactureTransaction(onSuccess: (String) -> Unit) {
         viewModelScope.launch {
             try {
                 _state.value = _state.value.copy(isSaving = true, error = null)
@@ -230,7 +230,7 @@ class AddManufactureViewModel(
                 )
 
                 // Save manufacture transaction
-                transactionsRepository.saveManufactureTransaction(
+                val result = transactionsRepository.saveManufactureTransaction(
                     recipeDetail = recipeDetail,
                     ingredients = _state.value.ingredients,
                     additionalCharges = _state.value.additionalCharges,
@@ -238,12 +238,22 @@ class AddManufactureViewModel(
                     warehouseSlug = selectedWarehouse.slug.orEmpty(),
                     paymentMethodSlug = paymentMethod?.slug,
                     timestamp = _state.value.transactionTimestamp,
-                    businessSlug = "BUS_1", // TODO: Get from user session
-                    userSlug = "USER_1" // TODO: Get from user session
+                    businessSlug = "default_business", // TODO: Get from user session
+                    userSlug = "default_user" // TODO: Get from user session
                 )
 
-                _state.value = _state.value.copy(isSaving = false)
-                onSuccess()
+                result.fold(
+                    onSuccess = { transactionSlug ->
+                        _state.value = _state.value.copy(isSaving = false)
+                        onSuccess(transactionSlug)
+                    },
+                    onFailure = { error ->
+                        _state.value = _state.value.copy(
+                            isSaving = false,
+                            error = error.message ?: "Failed to save transaction"
+                        )
+                    }
+                )
             } catch (e: Exception) {
                 _state.value = _state.value.copy(
                     isSaving = false,

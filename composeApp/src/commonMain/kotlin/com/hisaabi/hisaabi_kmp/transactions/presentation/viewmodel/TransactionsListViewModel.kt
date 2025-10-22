@@ -3,8 +3,8 @@ package com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
+import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction
-import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType
 import com.hisaabi.hisaabi_kmp.transactions.domain.usecase.TransactionUseCases
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -14,7 +14,7 @@ data class TransactionsListState(
     val transactionDetailsCounts: Map<String, Int> = emptyMap(),
     val isLoading: Boolean = false,
     val error: String? = null,
-    val selectedTransactionType: TransactionType? = null,
+    val selectedTransactionType: AllTransactionTypes? = null,
     val selectedParty: Party? = null,
     val searchQuery: String = "",
     val startDate: String? = null,
@@ -108,7 +108,7 @@ class TransactionsListViewModel(
         return filtered.sortedByDescending { it.timestamp }
     }
     
-    fun setTransactionTypeFilter(type: TransactionType?) {
+    fun setTransactionTypeFilter(type: AllTransactionTypes?) {
         _state.update { it.copy(selectedTransactionType = type) }
         refreshFilters()
     }

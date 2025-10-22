@@ -1,8 +1,10 @@
 package com.hisaabi.hisaabi_kmp.products.presentation.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -11,18 +13,34 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.hisaabi.hisaabi_kmp.products.domain.model.Product
 import com.hisaabi.hisaabi_kmp.products.domain.model.RecipeIngredient
+import com.hisaabi.hisaabi_kmp.products.presentation.viewmodel.ManageRecipeIngredientsViewModel
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ManageRecipeIngredientsScreen(
     recipeProduct: Product,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    viewModel: ManageRecipeIngredientsViewModel = koinInject()
 ) {
-    var ingredients by remember { mutableStateOf<List<RecipeIngredient>>(emptyList()) }
+    val uiState by viewModel.uiState.collectAsState()
     var showAddIngredientDialog by remember { mutableStateOf(false) }
+    
+    // Load ingredients when screen opens
+    LaunchedEffect(recipeProduct.slug) {
+        viewModel.loadIngredients(recipeProduct.slug)
+    }
+    
+    // Show error messages
+    LaunchedEffect(uiState.error) {
+        if (uiState.error != null) {
+            // Error will be shown in UI
+        }
+    }
     
     Scaffold(
         topBar = {
@@ -78,16 +96,60 @@ fun ManageRecipeIngredientsScreen(
             
             Spacer(modifier = Modifier.height(16.dp))
             
+            // Error message
+            if (uiState.error != null) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.Error,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = uiState.error.orEmpty(),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(onClick = { viewModel.clearError() }) {
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = "Dismiss",
+                                tint = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+            
             // Ingredients Section
             Text(
-                text = "Ingredients (${ingredients.size})",
+                text = "Ingredients (${uiState.ingredients.size})",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
             
             Spacer(modifier = Modifier.height(8.dp))
             
-            if (ingredients.isEmpty()) {
+            if (uiState.isLoading) {
+                // Loading State
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            } else if (uiState.ingredients.isEmpty()) {
                 // Empty State
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -120,12 +182,13 @@ fun ManageRecipeIngredientsScreen(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(ingredients, key = { it.id }) { ingredient ->
+                    items(uiState.ingredients, key = { it.id }) { ingredient ->
                         IngredientItem(
                             ingredient = ingredient,
                             onDelete = {
-                                // TODO: Delete ingredient
-                                ingredients = ingredients.filter { it.id != ingredient.id }
+                                ingredient.slug?.let { slug ->
+                                    viewModel.deleteIngredient(slug, recipeProduct.slug)
+                                }
                             }
                         )
                     }
@@ -134,11 +197,12 @@ fun ManageRecipeIngredientsScreen(
         }
     }
     
-    // Add Ingredient Dialog (Placeholder)
+    // Add Ingredient Dialog
     if (showAddIngredientDialog) {
         AddIngredientDialog(
-            onIngredientAdded = { newIngredient ->
-                ingredients = ingredients + newIngredient
+            viewModel = viewModel,
+            recipeSlug = recipeProduct.slug,
+            onIngredientAdded = {
                 showAddIngredientDialog = false
             },
             onDismiss = { showAddIngredientDialog = false }
@@ -195,12 +259,28 @@ private fun IngredientItem(
 
 @Composable
 private fun AddIngredientDialog(
-    onIngredientAdded: (RecipeIngredient) -> Unit,
+    viewModel: ManageRecipeIngredientsViewModel,
+    recipeSlug: String,
+    onIngredientAdded: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    var ingredientName by remember { mutableStateOf("") }
+    val uiState by viewModel.uiState.collectAsState()
+    var selectedProduct by remember { mutableStateOf<Product?>(null) }
     var quantity by remember { mutableStateOf("") }
-    var unit by remember { mutableStateOf("") }
+    var showProductPicker by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    
+    // Load products when dialog opens
+    LaunchedEffect(Unit) {
+        viewModel.loadSimpleProducts()
+    }
+    
+    // Close dialog on success
+    LaunchedEffect(uiState.isSaving) {
+        if (!uiState.isSaving && uiState.saveError == null && selectedProduct != null && quantity.isNotEmpty()) {
+            onIngredientAdded()
+        }
+    }
     
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -210,32 +290,95 @@ private fun AddIngredientDialog(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                // Product Selection
                 OutlinedTextField(
-                    value = ingredientName,
-                    onValueChange = { ingredientName = it },
-                    label = { Text("Ingredient Name *") },
+                    value = selectedProduct?.title ?: "",
+                    onValueChange = { },
+                    label = { Text("Select Product *") },
                     modifier = Modifier.fillMaxWidth(),
+                    readOnly = true,
+                    trailingIcon = {
+                        IconButton(onClick = { showProductPicker = true }) {
+                            Icon(Icons.Default.ArrowDropDown, contentDescription = "Select Product")
+                        }
+                    },
+                    placeholder = { Text("Tap to select a product") },
                     singleLine = true
                 )
                 
+                // Quantity Input
                 OutlinedTextField(
                     value = quantity,
                     onValueChange = { quantity = it },
                     label = { Text("Quantity *") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    suffix = { 
+                        Text(
+                            text = selectedProduct?.defaultUnitSlug ?: "units",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
                 )
                 
-                OutlinedTextField(
-                    value = unit,
-                    onValueChange = { unit = it },
-                    label = { Text("Unit (e.g., gram, kg, piece)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
+                // Product info
+                if (selectedProduct != null) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(
+                                text = "Selected: ${selectedProduct?.title}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            if (selectedProduct?.description != null) {
+                                Text(
+                                    text = selectedProduct?.description.orEmpty(),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            }
+                        }
+                    }
+                }
                 
+                // Loading state
+                if (uiState.isLoadingProducts) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Loading products...", style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+                
+                // Error messages
+                if (uiState.productsError != null) {
+                    Text(
+                        text = "Error: ${uiState.productsError}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+                
+                if (uiState.saveError != null) {
+                    Text(
+                        text = "Error: ${uiState.saveError}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+                
+                // Info note
                 Text(
-                    text = "Note: In a full implementation, you would select from existing products.",
+                    text = "Only simple products can be used as ingredients. Services and recipes are not allowed.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -244,36 +387,150 @@ private fun AddIngredientDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    if (ingredientName.isNotBlank() && quantity.isNotBlank()) {
-                        val newIngredient = RecipeIngredient(
-                            id = (0..10000).random(),
-                            recipeSlug = "",
-                            ingredientSlug = "",
-                            ingredientTitle = ingredientName,
-                            quantity = quantity.toDoubleOrNull() ?: 0.0,
-                            quantityUnitSlug = null,
-                            quantityUnitTitle = unit.takeIf { it.isNotBlank() },
-                            slug = null,
-                            businessSlug = null,
-                            createdBy = null,
-                            syncStatus = 0,
-                            createdAt = null,
-                            updatedAt = null
-                        )
-                        onIngredientAdded(newIngredient)
+                    selectedProduct?.let { product ->
+                        val qty = quantity.toDoubleOrNull()
+                        if (qty != null && qty > 0) {
+                            viewModel.addIngredient(
+                                recipeSlug = recipeSlug,
+                                ingredientProduct = product,
+                                quantity = qty,
+                                quantityUnitSlug = product.defaultUnitSlug
+                            )
+                        }
                     }
                 },
-                enabled = ingredientName.isNotBlank() && quantity.isNotBlank()
+                enabled = !uiState.isSaving && selectedProduct != null && 
+                         quantity.isNotBlank() && (quantity.toDoubleOrNull() ?: 0.0) > 0
             ) {
+                if (uiState.isSaving) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
                 Text("Add")
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            TextButton(
+                onClick = onDismiss,
+                enabled = !uiState.isSaving
+            ) {
                 Text("Cancel")
             }
         }
     )
+    
+    // Product Picker Dialog
+    if (showProductPicker) {
+        AlertDialog(
+            onDismissRequest = { showProductPicker = false },
+            title = { Text("Select Product") },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 400.dp)
+                ) {
+                    // Search field
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        label = { Text("Search products") },
+                        modifier = Modifier.fillMaxWidth(),
+                        leadingIcon = {
+                            Icon(Icons.Default.Search, contentDescription = "Search")
+                        },
+                        singleLine = true
+                    )
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    // Products list
+                    if (uiState.availableProducts.isEmpty()) {
+                        Box(
+                            modifier = Modifier.fillMaxWidth().padding(32.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "No simple products available. Add simple products first.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    } else {
+                        val filteredProducts = if (searchQuery.isBlank()) {
+                            uiState.availableProducts
+                        } else {
+                            uiState.availableProducts.filter {
+                                it.title.contains(searchQuery, ignoreCase = true) ||
+                                (it.description?.contains(searchQuery, ignoreCase = true) == true)
+                            }
+                        }
+                        
+                        LazyColumn(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            items(filteredProducts) { product ->
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            selectedProduct = product
+                                            showProductPicker = false
+                                            searchQuery = ""
+                                        },
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = if (selectedProduct?.slug == product.slug) {
+                                            MaterialTheme.colorScheme.primaryContainer
+                                        } else {
+                                            MaterialTheme.colorScheme.surface
+                                        }
+                                    )
+                                ) {
+                                    Column(modifier = Modifier.padding(12.dp)) {
+                                        Text(
+                                            text = product.title,
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                        if (product.description != null) {
+                                            Text(
+                                                text = product.description,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                maxLines = 2
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        if (filteredProducts.isEmpty()) {
+                            Box(
+                                modifier = Modifier.fillMaxWidth().padding(32.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "No products found matching \"$searchQuery\"",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showProductPicker = false }) {
+                    Text("Close")
+                }
+            }
+        )
+    }
 }
 
 

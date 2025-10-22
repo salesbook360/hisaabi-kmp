@@ -13,12 +13,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.hisaabi.hisaabi_kmp.transactions.domain.model.ExpenseIncomeType
-import com.hisaabi.hisaabi_kmp.transactions.domain.model.RecordType
-import com.hisaabi.hisaabi_kmp.transactions.domain.model.StockAdjustmentType
+import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionState
-import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionsListViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -212,14 +209,14 @@ private fun FiltersBottomSheetContent(
                 modifier = Modifier.weight(1f)
             )
             FilterChip(
-                selected = selectedType == TransactionType.SALE,
-                onClick = { onTypeSelected(TransactionType.SALE) },
+                selected = selectedType == AllTransactionTypes.SALE,
+                onClick = { onTypeSelected(AllTransactionTypes.SALE) },
                 label = { Text("Sale") },
                 modifier = Modifier.weight(1f)
             )
             FilterChip(
-                selected = selectedType == TransactionType.PURCHASE,
-                onClick = { onTypeSelected(TransactionType.PURCHASE) },
+                selected = selectedType == AllTransactionTypes.PURCHASE,
+                onClick = { onTypeSelected(AllTransactionTypes.PURCHASE) },
                 label = { Text("Purchase") },
                 modifier = Modifier.weight(1f)
             )
@@ -231,14 +228,14 @@ private fun FiltersBottomSheetContent(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             FilterChip(
-                selected = selectedType == TransactionType.CUSTOMER_RETURN,
-                onClick = { onTypeSelected(TransactionType.CUSTOMER_RETURN) },
+                selected = selectedType == AllTransactionTypes.CUSTOMER_RETURN,
+                onClick = { onTypeSelected(AllTransactionTypes.CUSTOMER_RETURN) },
                 label = { Text("Return") },
                 modifier = Modifier.weight(1f)
             )
             FilterChip(
-                selected = selectedType == TransactionType.SALE_ORDER,
-                onClick = { onTypeSelected(TransactionType.SALE_ORDER) },
+                selected = selectedType == AllTransactionTypes.SALE_ORDER,
+                onClick = { onTypeSelected(AllTransactionTypes.SALE_ORDER) },
                 label = { Text("Order") },
                 modifier = Modifier.weight(1f)
             )
@@ -306,12 +303,13 @@ private fun TransactionCard(
     transactionDetailsCounts: Map<String, Int>
 ) {
     var showOptions by remember { mutableStateOf(false) }
-    val isRecordType = RecordType.fromValue(transaction.transactionType) != null
-    val isPayGetCashType = transaction.transactionType in listOf(4, 5, 6, 7, 11, 12)
-    val isExpenseIncomeType = ExpenseIncomeType.fromValue(transaction.transactionType) != null
-    val isPaymentTransferType = transaction.transactionType == 10
-    val isJournalVoucherType = transaction.transactionType == 19
-    val isStockAdjustmentType = StockAdjustmentType.fromValue(transaction.transactionType) != null
+    val isRecordType = AllTransactionTypes.isRecord(transaction.transactionType)
+    val isPayGetCashType = AllTransactionTypes.isPayGetCash(transaction.transactionType)
+    val isExpenseIncomeType = AllTransactionTypes.isExpenseIncome(transaction.transactionType)
+    val isPaymentTransferType = transaction.transactionType == AllTransactionTypes.PAYMENT_TRANSFER.value
+    val isJournalVoucherType = transaction.transactionType == AllTransactionTypes.JOURNAL_VOUCHER.value
+    val isStockAdjustmentType = AllTransactionTypes.isStockAdjustment(transaction.transactionType)
+    val isManufactureType = transaction.transactionType == AllTransactionTypes.MANUFACTURE.value
     
     Card(
         modifier = Modifier
@@ -330,28 +328,31 @@ private fun TransactionCard(
                 Surface(
                     color = if (isRecordType) {
                         // Different colors for record types
-                        when (RecordType.fromValue(transaction.transactionType)) {
-                            RecordType.MEETING -> MaterialTheme.colorScheme.tertiaryContainer
-                            RecordType.TASK -> MaterialTheme.colorScheme.secondaryContainer
-                            RecordType.CLIENT_NOTE -> MaterialTheme.colorScheme.primaryContainer
-                            RecordType.SELF_NOTE -> MaterialTheme.colorScheme.surfaceVariant
-                            RecordType.CASH_REMINDER -> MaterialTheme.colorScheme.errorContainer
+                        when (AllTransactionTypes.fromValue(transaction.transactionType)) {
+                            AllTransactionTypes.MEETING -> MaterialTheme.colorScheme.tertiaryContainer
+                            AllTransactionTypes.TASK -> MaterialTheme.colorScheme.secondaryContainer
+                            AllTransactionTypes.CLIENT_NOTE -> MaterialTheme.colorScheme.primaryContainer
+                            AllTransactionTypes.SELF_NOTE -> MaterialTheme.colorScheme.surfaceVariant
+                            AllTransactionTypes.CASH_REMINDER -> MaterialTheme.colorScheme.errorContainer
                             else -> MaterialTheme.colorScheme.surfaceVariant
                         }
                     } else if (isPayGetCashType) {
                         // Colors for Pay/Get Cash transactions
-                        when (transaction.transactionType) {
-                            5, 7, 12 -> MaterialTheme.colorScheme.primaryContainer // Get Cash (incoming)
-                            4, 6, 11 -> MaterialTheme.colorScheme.secondaryContainer // Pay Cash (outgoing)
+                        when (AllTransactionTypes.fromValue(transaction.transactionType)) {
+                            AllTransactionTypes.GET_CASH_FROM_CUSTOMER, AllTransactionTypes.GET_CASH_FROM_VENDOR, AllTransactionTypes.GET_CASH_FROM_INVESTOR -> MaterialTheme.colorScheme.primaryContainer // Get Cash (incoming)
+                            AllTransactionTypes.PAY_CASH_TO_CUSTOMER, AllTransactionTypes.PAY_CASH_TO_VENDOR, AllTransactionTypes.PAY_CASH_TO_INVESTOR -> MaterialTheme.colorScheme.secondaryContainer // Pay Cash (outgoing)
                             else -> MaterialTheme.colorScheme.surfaceVariant
                         }
                     } else if (isExpenseIncomeType) {
                         // Colors for Expense/Income transactions
-                        when (ExpenseIncomeType.fromValue(transaction.transactionType)) {
-                            ExpenseIncomeType.EXPENSE -> MaterialTheme.colorScheme.errorContainer
-                            ExpenseIncomeType.EXTRA_INCOME -> MaterialTheme.colorScheme.primaryContainer
+                        when (AllTransactionTypes.fromValue(transaction.transactionType)) {
+                            AllTransactionTypes.EXPENSE -> MaterialTheme.colorScheme.errorContainer
+                            AllTransactionTypes.EXTRA_INCOME -> MaterialTheme.colorScheme.primaryContainer
                             else -> MaterialTheme.colorScheme.surfaceVariant
                         }
+                    } else if (isManufactureType) {
+                        // Color for Manufacture transactions
+                        MaterialTheme.colorScheme.tertiaryContainer
                     } else if (isPaymentTransferType) {
                         // Color for Payment Transfer
                         MaterialTheme.colorScheme.tertiaryContainer
@@ -363,11 +364,11 @@ private fun TransactionCard(
                         MaterialTheme.colorScheme.tertiaryContainer
                     } else {
                         // Original colors for transaction types
-                        when (TransactionType.fromValue(transaction.transactionType)) {
-                            TransactionType.SALE -> MaterialTheme.colorScheme.primaryContainer
-                            TransactionType.PURCHASE -> MaterialTheme.colorScheme.secondaryContainer
-                            TransactionType.CUSTOMER_RETURN -> MaterialTheme.colorScheme.errorContainer
-                            TransactionType.VENDOR_RETURN -> MaterialTheme.colorScheme.tertiaryContainer
+                        when (AllTransactionTypes.fromValue(transaction.transactionType)) {
+                            AllTransactionTypes.SALE -> MaterialTheme.colorScheme.primaryContainer
+                            AllTransactionTypes.PURCHASE -> MaterialTheme.colorScheme.secondaryContainer
+                            AllTransactionTypes.CUSTOMER_RETURN -> MaterialTheme.colorScheme.errorContainer
+                            AllTransactionTypes.VENDOR_RETURN -> MaterialTheme.colorScheme.tertiaryContainer
                             else -> MaterialTheme.colorScheme.surfaceVariant
                         }
                     },
@@ -546,7 +547,7 @@ private fun TransactionCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        if (transaction.transactionType == ExpenseIncomeType.EXPENSE.value) "Expense:" else "Income:",
+                        if (transaction.transactionType == AllTransactionTypes.EXPENSE.value) "Expense:" else "Income:",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -554,7 +555,7 @@ private fun TransactionCard(
                         "₨ ${"%.2f".format(transaction.totalPaid)}",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
-                        color = if (transaction.transactionType == ExpenseIncomeType.EXPENSE.value) 
+                        color = if (transaction.transactionType == AllTransactionTypes.EXPENSE.value) 
                             MaterialTheme.colorScheme.error 
                         else 
                             MaterialTheme.colorScheme.primary

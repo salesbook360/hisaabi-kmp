@@ -17,9 +17,10 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
+import com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType
 import com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.PayGetCashType
-import com.hisaabi.hisaabi_kmp.transactions.domain.model.PartyTypeForCash
+import com.hisaabi.hisaabi_kmp.transactions.domain.model.PartyType
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.PayGetCashViewModel
 import com.hisaabi.hisaabi_kmp.utils.SimpleDateTimePickerDialog
 import com.hisaabi.hisaabi_kmp.utils.formatDateTime
@@ -29,7 +30,7 @@ import com.hisaabi.hisaabi_kmp.utils.formatDateTime
 fun PayGetCashScreen(
     viewModel: PayGetCashViewModel,
     onNavigateBack: () -> Unit,
-    onSelectParty: (PartyTypeForCash) -> Unit,
+    onSelectParty: (PartyType) -> Unit,
     onSelectPaymentMethod: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
@@ -103,7 +104,7 @@ fun PayGetCashScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        PayGetCashType.values().forEach { type ->
+                        PartyType.values().forEach { type ->
                             FilterChip(
                                 selected = state.payGetCashType == type,
                                 onClick = { viewModel.setPayGetCashType(type) },
@@ -144,7 +145,7 @@ fun PayGetCashScreen(
                         modifier = Modifier.padding(bottom = 12.dp)
                     )
                     
-                    PartyTypeForCash.values().forEach { type ->
+                    PartyType.values().forEach { type ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -261,7 +262,7 @@ fun PayGetCashScreen(
 @Composable
 private fun PartySelectionCard(
     selectedParty: Party?,
-    partyType: PartyTypeForCash,
+    partyType: PartyType,
     onSelectParty: () -> Unit,
     onRemoveParty: () -> Unit
 ) {
