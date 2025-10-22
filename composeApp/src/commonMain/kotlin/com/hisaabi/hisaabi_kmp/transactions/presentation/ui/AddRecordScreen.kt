@@ -14,7 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
-import com.hisaabi.hisaabi_kmp.transactions.domain.model.RecordType
+import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionState
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddRecordViewModel
 import com.hisaabi.hisaabi_kmp.utils.SimpleDateTimePickerDialog
@@ -85,7 +85,7 @@ fun AddRecordScreen(
             
             // Party Selection (conditional)
             val recordType = state.recordType
-            if (recordType != null && RecordType.requiresParty(recordType)) {
+            if (recordType != null && AllTransactionTypes.requiresParty(recordType.value)) {
                 PartySelectionCard(
                     selectedParty = state.selectedParty,
                     onSelectParty = onSelectParty,
@@ -94,7 +94,7 @@ fun AddRecordScreen(
             }
             
             // Amount Field (only for Cash Reminder)
-            if (recordType != null && RecordType.showsAmountField(recordType)) {
+            if (recordType != null && recordType == AllTransactionTypes.CASH_REMINDER) {
                 OutlinedTextField(
                     value = state.amount,
                     onValueChange = { viewModel.setAmount(it) },
@@ -187,17 +187,24 @@ fun AddRecordScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun RecordTypeSelector(
-    selectedType: RecordType?,
-    onTypeSelected: (RecordType) -> Unit
+    selectedType: AllTransactionTypes?,
+    onTypeSelected: (AllTransactionTypes) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val recordTypes = listOf(
+        AllTransactionTypes.MEETING,
+        AllTransactionTypes.TASK,
+        AllTransactionTypes.CLIENT_NOTE,
+        AllTransactionTypes.SELF_NOTE,
+        AllTransactionTypes.CASH_REMINDER
+    )
     
     ExposedDropdownMenuBox(
         expanded = expanded,
         onExpandedChange = { expanded = it }
     ) {
         OutlinedTextField(
-            value = selectedType?.displayName ?: "",
+            value = selectedType?.let { AllTransactionTypes.getDisplayName(it.value) } ?: "",
             onValueChange = {},
             readOnly = true,
             label = { Text("Record Type *") },
@@ -212,9 +219,9 @@ private fun RecordTypeSelector(
             expanded = expanded,
             onDismissRequest = { expanded = false }
         ) {
-            RecordType.values().forEach { type ->
+            recordTypes.forEach { type ->
                 DropdownMenuItem(
-                    text = { Text(type.displayName) },
+                    text = { Text(AllTransactionTypes.getDisplayName(type.value)) },
                     onClick = {
                         onTypeSelected(type)
                         expanded = false
@@ -222,11 +229,12 @@ private fun RecordTypeSelector(
                     leadingIcon = {
                         Icon(
                             when (type) {
-                                RecordType.MEETING -> Icons.Default.Event
-                                RecordType.TASK -> Icons.Default.Task
-                                RecordType.CLIENT_NOTE -> Icons.Default.Note
-                                RecordType.SELF_NOTE -> Icons.Default.StickyNote2
-                                RecordType.CASH_REMINDER -> Icons.Default.Notifications
+                                AllTransactionTypes.MEETING -> Icons.Default.Event
+                                AllTransactionTypes.TASK -> Icons.Default.Task
+                                AllTransactionTypes.CLIENT_NOTE -> Icons.Default.Note
+                                AllTransactionTypes.SELF_NOTE -> Icons.Default.StickyNote2
+                                AllTransactionTypes.CASH_REMINDER -> Icons.Default.Notifications
+                                else -> Icons.Default.Description
                             },
                             contentDescription = null
                         )

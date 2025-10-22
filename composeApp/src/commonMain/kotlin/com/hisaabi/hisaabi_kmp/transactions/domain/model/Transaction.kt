@@ -23,7 +23,7 @@ data class Transaction(
     val paymentMethodFromSlug: String? = null,
     val paymentMethodTo: PaymentMethod? = null,
     val paymentMethodFrom: PaymentMethod? = null,
-    val transactionType: Int = TransactionType.SALE.value,
+    val transactionType: Int = AllTransactionTypes.SALE.value,
     val priceTypeId: Int = PriceType.RETAIL.value,
     val description: String? = null,
     val shippingAddress: String? = null,

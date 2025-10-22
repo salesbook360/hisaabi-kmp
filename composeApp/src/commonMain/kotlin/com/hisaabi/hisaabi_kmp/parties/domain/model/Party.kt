@@ -43,16 +43,16 @@ data class Party(
         get() = name.ifEmpty { email ?: "Unknown" }
 }
 
-enum class PartyType(val type: Int) {
-    CUSTOMER(0),
-    VENDOR(1),
-    DEFAULT_VENDOR(10),
-    WALK_IN_CUSTOMER(11),
-    INVESTOR(12),
-    STOCK_ADJUSTER(13),
-    EXPENSE(14),
-    EXTRA_INCOME(15),
-    MANUFACTURER(16);
+enum class PartyType(val type: Int, val displayName: String) {
+    CUSTOMER(0, "Customer"),
+    VENDOR(1, "Vendor"),
+    DEFAULT_VENDOR(10, "Default Vendor"),
+    WALK_IN_CUSTOMER(11, "Walk-in Customer"),
+    INVESTOR(12, "Investor"),
+    STOCK_ADJUSTER(13, "Stock Adjuster"),
+    EXPENSE(14, "Expense"),
+    EXTRA_INCOME(15, "Extra Income"),
+    MANUFACTURER(16, "Manufacturer");
     
     companion object {
         fun fromInt(value: Int): PartyType? = entries.find { it.type == value }

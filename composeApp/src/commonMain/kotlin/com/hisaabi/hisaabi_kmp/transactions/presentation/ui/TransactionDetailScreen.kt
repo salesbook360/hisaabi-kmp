@@ -147,12 +147,12 @@ private fun TransactionDetailContent(
     childTransactions: List<Transaction>,
     modifier: Modifier = Modifier
 ) {
-    val isRecordType = RecordType.fromValue(transaction.transactionType) != null
-    val isPayGetCashType = transaction.transactionType in listOf(4, 5, 6, 7, 11, 12)
-    val isExpenseIncomeType = ExpenseIncomeType.fromValue(transaction.transactionType) != null
-    val isPaymentTransferType = transaction.transactionType == 10
-    val isJournalVoucherType = transaction.transactionType == 19
-    val isStockAdjustmentType = StockAdjustmentType.fromValue(transaction.transactionType) != null
+    val isRecordType = AllTransactionTypes.isRecord(transaction.transactionType)
+    val isPayGetCashType = AllTransactionTypes.isPayGetCash(transaction.transactionType)
+    val isExpenseIncomeType = AllTransactionTypes.isExpenseIncome(transaction.transactionType)
+    val isPaymentTransferType = AllTransactionTypes.isPaymentTransfer(transaction.transactionType)
+    val isJournalVoucherType = AllTransactionTypes.isJournalVoucher(transaction.transactionType)
+    val isStockAdjustmentType = AllTransactionTypes.isStockAdjustment(transaction.transactionType)
     val isRegularTransaction = !isRecordType && !isPayGetCashType && !isExpenseIncomeType && 
                                 !isPaymentTransferType && !isJournalVoucherType && !isStockAdjustmentType
     
@@ -565,7 +565,7 @@ private fun RecordDetailsCard(transaction: Transaction) {
             Spacer(Modifier.height(12.dp))
             
             // Show amount only for Cash Reminder
-            if (RecordType.fromValue(transaction.transactionType) == RecordType.CASH_REMINDER && transaction.totalPaid > 0) {
+            if (AllTransactionTypes.isRecord(transaction.transactionType) && transaction.totalPaid > 0) {
                 DetailRow(
                     label = "Promised Amount",
                     value = "₨ ${"%.2f".format(transaction.totalPaid)}",
@@ -623,7 +623,7 @@ private fun PayGetCashDetailsCard(transaction: Transaction) {
 
 @Composable
 private fun ExpenseIncomeDetailsCard(transaction: Transaction) {
-    val isExpense = transaction.transactionType == ExpenseIncomeType.EXPENSE.value
+    val isExpense = transaction.transactionType == AllTransactionTypes.EXPENSE.value
     
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -739,14 +739,14 @@ private fun JournalVoucherDetailsCard(transaction: Transaction) {
 
 @Composable
 private fun StockAdjustmentDetailsCard(transaction: Transaction) {
-    val stockType = StockAdjustmentType.fromValue(transaction.transactionType)
+    val stockType = AllTransactionTypes.fromValue(transaction.transactionType)
     
     Card(
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                stockType?.displayName ?: "Stock Adjustment",
+                stockType?.let { AllTransactionTypes.getDisplayName(it.value) } ?: "Stock Adjustment",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -1091,32 +1091,36 @@ private fun DetailRow(
 }
 
 private fun getTransactionColor(transaction: Transaction): androidx.compose.ui.graphics.Color {
-    val isRecordType = RecordType.fromValue(transaction.transactionType) != null
-    val isPayGetCashType = transaction.transactionType in listOf(4, 5, 6, 7, 11, 12)
-    val isExpenseIncomeType = ExpenseIncomeType.fromValue(transaction.transactionType) != null
-    val isPaymentTransferType = transaction.transactionType == 10
-    val isJournalVoucherType = transaction.transactionType == 19
-    val isStockAdjustmentType = StockAdjustmentType.fromValue(transaction.transactionType) != null
+    val isRecordType = AllTransactionTypes.isRecord(transaction.transactionType)
+    val isPayGetCashType = AllTransactionTypes.isPayGetCash(transaction.transactionType)
+    val isExpenseIncomeType = AllTransactionTypes.isExpenseIncome(transaction.transactionType)
+    val isPaymentTransferType = AllTransactionTypes.isPaymentTransfer(transaction.transactionType)
+    val isJournalVoucherType = AllTransactionTypes.isJournalVoucher(transaction.transactionType)
+    val isStockAdjustmentType = AllTransactionTypes.isStockAdjustment(transaction.transactionType)
     
     return when {
         isRecordType -> {
-            when (RecordType.fromValue(transaction.transactionType)) {
-                RecordType.MEETING -> androidx.compose.ui.graphics.Color(0xFFE3F2FD)
-                RecordType.TASK -> androidx.compose.ui.graphics.Color(0xFFF3E5F5)
-                RecordType.CLIENT_NOTE -> androidx.compose.ui.graphics.Color(0xFFE8F5E9)
-                RecordType.SELF_NOTE -> androidx.compose.ui.graphics.Color(0xFFFFF9C4)
-                RecordType.CASH_REMINDER -> androidx.compose.ui.graphics.Color(0xFFFFEBEE)
+            when (AllTransactionTypes.fromValue(transaction.transactionType)) {
+                AllTransactionTypes.MEETING -> androidx.compose.ui.graphics.Color(0xFFE3F2FD)
+                AllTransactionTypes.TASK -> androidx.compose.ui.graphics.Color(0xFFF3E5F5)
+                AllTransactionTypes.CLIENT_NOTE -> androidx.compose.ui.graphics.Color(0xFFE8F5E9)
+                AllTransactionTypes.SELF_NOTE -> androidx.compose.ui.graphics.Color(0xFFFFF9C4)
+                AllTransactionTypes.CASH_REMINDER -> androidx.compose.ui.graphics.Color(0xFFFFEBEE)
                 else -> androidx.compose.ui.graphics.Color(0xFFF5F5F5)
             }
         }
         isPayGetCashType -> {
-            if (transaction.transactionType in listOf(5, 7, 12))
+            if (transaction.transactionType in listOf(
+                AllTransactionTypes.GET_FROM_CUSTOMER.value, 
+                AllTransactionTypes.GET_FROM_VENDOR.value, 
+                AllTransactionTypes.INVESTMENT_DEPOSIT.value
+            ))
                 androidx.compose.ui.graphics.Color(0xFFE3F2FD)
             else
                 androidx.compose.ui.graphics.Color(0xFFF3E5F5)
         }
         isExpenseIncomeType -> {
-            if (transaction.transactionType == ExpenseIncomeType.EXPENSE.value)
+            if (transaction.transactionType == AllTransactionTypes.EXPENSE.value)
                 androidx.compose.ui.graphics.Color(0xFFFFEBEE)
             else
                 androidx.compose.ui.graphics.Color(0xFFE8F5E9)

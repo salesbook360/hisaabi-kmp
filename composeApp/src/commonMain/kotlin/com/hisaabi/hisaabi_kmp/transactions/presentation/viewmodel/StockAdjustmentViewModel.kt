@@ -3,7 +3,7 @@ package com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hisaabi.hisaabi_kmp.products.domain.model.Product
-import com.hisaabi.hisaabi_kmp.transactions.domain.model.StockAdjustmentType
+import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionDetail
 import com.hisaabi.hisaabi_kmp.transactions.domain.usecase.TransactionUseCases
@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 
 data class StockAdjustmentState(
-    val adjustmentType: StockAdjustmentType = StockAdjustmentType.STOCK_INCREASE,
+    val adjustmentType: AllTransactionTypes = AllTransactionTypes.STOCK_INCREASE,
     val warehouseFrom: Warehouse? = null,
     val warehouseTo: Warehouse? = null,
     val products: List<TransactionDetail> = emptyList(),
@@ -34,7 +34,7 @@ class StockAdjustmentViewModel(
     private val _state = MutableStateFlow(StockAdjustmentState())
     val state: StateFlow<StockAdjustmentState> = _state.asStateFlow()
 
-    fun setAdjustmentType(type: StockAdjustmentType) {
+    fun setAdjustmentType(type: AllTransactionTypes) {
         _state.update { it.copy(adjustmentType = type) }
     }
 
@@ -108,7 +108,7 @@ class StockAdjustmentViewModel(
 
         // Validate warehouse selection based on adjustment type
         when (currentState.adjustmentType) {
-            StockAdjustmentType.STOCK_TRANSFER -> {
+            AllTransactionTypes.STOCK_TRANSFER -> {
                 if (currentState.warehouseFrom == null) {
                     _state.update { it.copy(error = "Please select 'From' warehouse") }
                     return
@@ -122,11 +122,14 @@ class StockAdjustmentViewModel(
                     return
                 }
             }
-            StockAdjustmentType.STOCK_INCREASE, StockAdjustmentType.STOCK_REDUCE -> {
+            AllTransactionTypes.STOCK_INCREASE, AllTransactionTypes.STOCK_REDUCE -> {
                 if (currentState.warehouseFrom == null) {
                     _state.update { it.copy(error = "Please select a warehouse") }
                     return
                 }
+            }
+            else -> {
+                // No validation for other types
             }
         }
 
@@ -138,10 +141,10 @@ class StockAdjustmentViewModel(
                     transactionType = currentState.adjustmentType.value,
                     wareHouseSlugFrom = currentState.warehouseFrom?.slug,
                     warehouseFrom = currentState.warehouseFrom,
-                    wareHouseSlugTo = if (currentState.adjustmentType == StockAdjustmentType.STOCK_TRANSFER) {
+                    wareHouseSlugTo = if (currentState.adjustmentType == AllTransactionTypes.STOCK_TRANSFER) {
                         currentState.warehouseTo?.slug
                     } else null,
-                    warehouseTo = if (currentState.adjustmentType == StockAdjustmentType.STOCK_TRANSFER) {
+                    warehouseTo = if (currentState.adjustmentType == AllTransactionTypes.STOCK_TRANSFER) {
                         currentState.warehouseTo
                     } else null,
                     transactionDetails = currentState.products,

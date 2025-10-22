@@ -155,6 +155,66 @@ enum class AllTransactionTypes(val value: Int, val displayName: String, val cate
         fun getByCategory(category: TransactionCategory): List<AllTransactionTypes> {
             return entries.filter { it.category == category }
         }
+        
+        /**
+         * Check if transaction type is a record type (Meeting, Task, Note, etc.)
+         */
+        fun isRecord(type: Int): Boolean {
+            return type in listOf(
+                MEETING.value,
+                TASK.value,
+                CLIENT_NOTE.value,
+                SELF_NOTE.value,
+                CASH_REMINDER.value
+            )
+        }
+        
+        /**
+         * Check if transaction type is a Pay/Get Cash transaction
+         */
+        fun isPayGetCash(type: Int): Boolean {
+            return type in listOf(
+                PAY_TO_CUSTOMER.value,
+                GET_FROM_CUSTOMER.value,
+                PAY_TO_VENDOR.value,
+                GET_FROM_VENDOR.value,
+                INVESTMENT_DEPOSIT.value,
+                INVESTMENT_WITHDRAW.value
+            )
+        }
+        
+        /**
+         * Check if transaction type is an Expense or Extra Income transaction
+         */
+        fun isExpenseIncome(type: Int): Boolean {
+            return type in listOf(EXPENSE.value, EXTRA_INCOME.value)
+        }
+        
+        /**
+         * Check if transaction type is a Payment Transfer
+         */
+        fun isPaymentTransfer(type: Int): Boolean {
+            return type == PAYMENT_TRANSFER.value
+        }
+        
+        /**
+         * Check if transaction type is a Journal Voucher
+         */
+        fun isJournalVoucher(type: Int): Boolean {
+            return type == JOURNAL_VOUCHER.value
+        }
+        
+        /**
+         * Check if transaction type is a Stock Adjustment
+         */
+        fun isStockAdjustment(type: Int): Boolean {
+            return type in listOf(
+                STOCK_INCREASE.value,
+                STOCK_REDUCE.value,
+                STOCK_TRANSFER.value,
+                STOCK_ADJUSTMENT.value
+            )
+        }
     }
 }
 

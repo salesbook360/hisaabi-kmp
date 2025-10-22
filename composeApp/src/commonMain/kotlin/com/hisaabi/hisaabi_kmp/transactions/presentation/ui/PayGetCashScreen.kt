@@ -19,10 +19,10 @@ import androidx.compose.ui.unit.dp
 import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
 import com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType
 import com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod
-import com.hisaabi.hisaabi_kmp.transactions.domain.model.PayGetCashType
-import com.hisaabi.hisaabi_kmp.transactions.domain.model.PartyType
+import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.PayGetCashType
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.PayGetCashViewModel
 import com.hisaabi.hisaabi_kmp.utils.SimpleDateTimePickerDialog
+import com.hisaabi.hisaabi_kmp.utils.format
 import com.hisaabi.hisaabi_kmp.utils.formatDateTime
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -104,7 +104,7 @@ fun PayGetCashScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        PartyType.values().forEach { type ->
+                        PayGetCashType.values().forEach { type ->
                             FilterChip(
                                 selected = state.payGetCashType == type,
                                 onClick = { viewModel.setPayGetCashType(type) },
@@ -112,7 +112,7 @@ fun PayGetCashScreen(
                                 modifier = Modifier.weight(1f),
                                 leadingIcon = {
                                     Icon(
-                                        if (type == PayGetCashType.GET_CASH) 
+                                        if (type == PayGetCashType.GET_CASH)
                                             Icons.Default.CallReceived 
                                         else 
                                             Icons.Default.CallMade,

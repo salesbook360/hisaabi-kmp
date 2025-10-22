@@ -2,8 +2,6 @@ package com.hisaabi.hisaabi_kmp.transactions.presentation.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -15,7 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.hisaabi.hisaabi_kmp.transactions.domain.model.StockAdjustmentType
+import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionDetail
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.StockAdjustmentViewModel
 import com.hisaabi.hisaabi_kmp.utils.SimpleDateTimePickerDialog
@@ -110,16 +108,21 @@ fun StockAdjustmentScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        StockAdjustmentType.entries.forEach { type ->
+                        listOf(
+                            AllTransactionTypes.STOCK_INCREASE,
+                            AllTransactionTypes.STOCK_REDUCE,
+                            AllTransactionTypes.STOCK_TRANSFER
+                        ).forEach { type ->
                             FilterChip(
                                 selected = state.adjustmentType == type,
                                 onClick = { viewModel.setAdjustmentType(type) },
                                 label = { 
                                     Text(
                                         when (type) {
-                                            StockAdjustmentType.STOCK_INCREASE -> "Increase"
-                                            StockAdjustmentType.STOCK_REDUCE -> "Reduce"
-                                            StockAdjustmentType.STOCK_TRANSFER -> "Transfer"
+                                            AllTransactionTypes.STOCK_INCREASE -> "Increase"
+                                            AllTransactionTypes.STOCK_REDUCE -> "Reduce"
+                                            AllTransactionTypes.STOCK_TRANSFER -> "Transfer"
+                                            else -> "Unknown"
                                         }
                                     ) 
                                 },
@@ -136,7 +139,7 @@ fun StockAdjustmentScreen(
             // Warehouse From (always visible)
             WarehouseSelectionCard(
                 title = when (state.adjustmentType) {
-                    StockAdjustmentType.STOCK_TRANSFER -> "From Warehouse *"
+                    AllTransactionTypes.STOCK_TRANSFER -> "From Warehouse *"
                     else -> "Warehouse *"
                 },
                 selectedWarehouse = state.warehouseFrom,
@@ -145,7 +148,7 @@ fun StockAdjustmentScreen(
             )
 
             // Warehouse To (only for transfer)
-            if (state.adjustmentType == StockAdjustmentType.STOCK_TRANSFER) {
+            if (state.adjustmentType == AllTransactionTypes.STOCK_TRANSFER) {
                 WarehouseSelectionCard(
                     title = "To Warehouse *",
                     selectedWarehouse = state.warehouseTo,

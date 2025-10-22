@@ -16,11 +16,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
-import com.hisaabi.hisaabi_kmp.products.domain.model.Product
-import com.hisaabi.hisaabi_kmp.quantityunits.domain.model.QuantityUnit
+import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.FlatOrPercent
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.PriceType
-import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionType
+import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionCategory
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddTransactionViewModel
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionDetailItem
 import com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse
@@ -72,8 +71,8 @@ fun AddTransactionStep1Screen(
                         expanded = showTypeMenu,
                         onDismissRequest = { showTypeMenu = false }
                     ) {
-                        AllTransactionTypes.entries.filter { 
-                            it.category == TransactionCategory.BASIC 
+                        AllTransactionTypes.entries.filter {
+                            it.category == TransactionCategory.BASIC
                         }.forEach { type ->
                             DropdownMenuItem(
                                 text = { Text(type.displayName) },

@@ -161,8 +161,8 @@ fun TransactionsListScreen(
 
 @Composable
 private fun FiltersBottomSheetContent(
-    selectedType: TransactionType?,
-    onTypeSelected: (TransactionType?) -> Unit,
+    selectedType: AllTransactionTypes?,
+    onTypeSelected: (AllTransactionTypes?) -> Unit,
     onClearFilters: () -> Unit,
     onApplyFilters: () -> Unit
 ) {
@@ -339,8 +339,8 @@ private fun TransactionCard(
                     } else if (isPayGetCashType) {
                         // Colors for Pay/Get Cash transactions
                         when (AllTransactionTypes.fromValue(transaction.transactionType)) {
-                            AllTransactionTypes.GET_CASH_FROM_CUSTOMER, AllTransactionTypes.GET_CASH_FROM_VENDOR, AllTransactionTypes.GET_CASH_FROM_INVESTOR -> MaterialTheme.colorScheme.primaryContainer // Get Cash (incoming)
-                            AllTransactionTypes.PAY_CASH_TO_CUSTOMER, AllTransactionTypes.PAY_CASH_TO_VENDOR, AllTransactionTypes.PAY_CASH_TO_INVESTOR -> MaterialTheme.colorScheme.secondaryContainer // Pay Cash (outgoing)
+                            AllTransactionTypes.GET_FROM_CUSTOMER, AllTransactionTypes.GET_FROM_VENDOR, AllTransactionTypes.INVESTMENT_WITHDRAW -> MaterialTheme.colorScheme.primaryContainer // Get Cash (incoming)
+                            AllTransactionTypes.PAY_TO_CUSTOMER, AllTransactionTypes.PAY_TO_VENDOR, AllTransactionTypes.INVESTMENT_DEPOSIT -> MaterialTheme.colorScheme.secondaryContainer // Pay Cash (outgoing)
                             else -> MaterialTheme.colorScheme.surfaceVariant
                         }
                     } else if (isExpenseIncomeType) {
@@ -440,7 +440,7 @@ private fun TransactionCard(
                 }
                 
                 // Show amount only for Cash Reminder
-                if (RecordType.fromValue(transaction.transactionType) == RecordType.CASH_REMINDER && transaction.totalPaid > 0) {
+                if (transaction.transactionType == AllTransactionTypes.CASH_REMINDER.value && transaction.totalPaid > 0) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,

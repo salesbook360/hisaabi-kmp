@@ -76,7 +76,7 @@ class AddTransactionViewModel(
     val state: StateFlow<AddTransactionState> = _state.asStateFlow()
     
     // Step 1 Functions
-    fun setTransactionType(type: TransactionType) {
+    fun setTransactionType(type: AllTransactionTypes) {
         _state.update { it.copy(transactionType = type) }
         updateDefaultPriceType(type)
     }

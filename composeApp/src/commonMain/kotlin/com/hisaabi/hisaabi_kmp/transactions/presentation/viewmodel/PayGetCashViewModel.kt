@@ -12,9 +12,9 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 
-enum class PayGetCashType {
-    PAY_CASH,
-    GET_CASH
+enum class PayGetCashType(val displayName: String) {
+    PAY_CASH("Pay Cash"),
+    GET_CASH("Get Cash")
 }
 
 data class PayGetCashState(
