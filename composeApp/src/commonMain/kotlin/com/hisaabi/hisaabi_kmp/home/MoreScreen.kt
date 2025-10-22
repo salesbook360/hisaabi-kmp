@@ -32,11 +32,16 @@ fun MoreScreen(
     onNavigateToDashboardSettings: () -> Unit = {},
     onNavigateToTemplates: () -> Unit = {},
     onNavigateToUpdateProfile: () -> Unit = {},
-    preferencesManager: com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager = org.koin.compose.koinInject()
+    preferencesManager: com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager = org.koin.compose.koinInject(),
+    authViewModel: com.hisaabi.hisaabi_kmp.auth.presentation.viewmodel.AuthViewModel = org.koin.compose.koinInject()
 ) {
     val biometricAuthEnabled by preferencesManager.biometricAuthEnabled.collectAsState(initial = false)
     val selectedLanguage by preferencesManager.selectedLanguage.collectAsState(initial = com.hisaabi.hisaabi_kmp.settings.data.Language.ENGLISH)
     val selectedCurrency by preferencesManager.selectedCurrency.collectAsState(initial = com.hisaabi.hisaabi_kmp.settings.domain.model.Currency.PKR)
+    
+    // Get current user from AuthViewModel
+    val authUiState by authViewModel.uiState.collectAsState()
+    val currentUser = authUiState.currentUser
     
     var showLanguageDialog by remember { mutableStateOf(false) }
     var showCurrencyDialog by remember { mutableStateOf(false) }
@@ -75,9 +80,15 @@ fun MoreScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "John Doe",
+                                text = currentUser?.displayName ?: "User",
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = currentUser?.email ?: "",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
@@ -115,7 +126,7 @@ fun MoreScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = "J",
+                                    text = currentUser?.name?.firstOrNull()?.uppercase()?.toString() ?: "U",
                                     style = MaterialTheme.typography.displayMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -300,7 +311,10 @@ fun MoreScreen(
                             icon = Icons.AutoMirrored.Filled.Logout,
                             iconTint = MaterialTheme.colorScheme.error,
                             textColor = MaterialTheme.colorScheme.error,
-                            onClick = onNavigateToAuth
+                            onClick = {
+                                authViewModel.logout()
+                                onNavigateToAuth()
+                            }
                         )
                         SettingsDivider()
                         SettingsItem(

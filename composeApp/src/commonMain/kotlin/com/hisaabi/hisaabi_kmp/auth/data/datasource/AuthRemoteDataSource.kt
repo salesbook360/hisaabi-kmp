@@ -26,7 +26,7 @@ class AuthRemoteDataSourceImpl(
         private const val LOGIN_ENDPOINT = "$BASE_URL/login"
         private const val REGISTER_ENDPOINT = "$BASE_URL/register"
         private const val LOGIN_WITH_GOOGLE_ENDPOINT = "$BASE_URL/login-with-google"
-        private const val REFRESH_ENDPOINT = "$BASE_URL/refresh"
+        private const val REFRESH_ENDPOINT = "$BASE_URL/refresh-auth-token"
         private const val FORGOT_PASSWORD_ENDPOINT = "$BASE_URL/forgot-password"
         private const val RESET_PASSWORD_ENDPOINT = "$BASE_URL/reset-password"
         private const val LOGOUT_ENDPOINT = "$BASE_URL/logout"
@@ -89,10 +89,21 @@ class AuthRemoteDataSourceImpl(
     }
     
     override suspend fun refreshToken(request: RefreshTokenRequest): RegisterResponse {
-        return httpClient.post(REFRESH_ENDPOINT) {
+        println("=== REFRESH TOKEN API CALL ===")
+        println("Endpoint: $REFRESH_ENDPOINT")
+        println("Refresh Token: ${request.refreshToken}")
+        
+        val response = httpClient.post(REFRESH_ENDPOINT) {
             contentType(ContentType.Application.Json)
-            setBody(request)
-        }.body<RegisterResponse>()
+            header("refreshToken", request.refreshToken)
+            setBody("{\"\"}")
+        }
+        
+        println("Refresh Response Status: ${response.status}")
+        val refreshResponse = response.body<RegisterResponse>()
+        println("Response Body: $refreshResponse")
+        
+        return refreshResponse
     }
     
     override suspend fun forgotPassword(request: ForgotPasswordRequest): Unit {

@@ -236,8 +236,10 @@ class AuthRepositoryImpl(
         return localDataSource.isLoggedIn()
     }
     
-    override fun observeAuthState(): Flow<Boolean> = flow {
-        emit(localDataSource.isLoggedIn())
+    override fun observeAuthState(): Flow<Boolean> {
+        // Observe database changes for auth state using Room's Flow
+        // This will automatically emit when auth data is cleared (logout) or saved (login)
+        return localDataSource.observeAuthState()
     }
 }
 

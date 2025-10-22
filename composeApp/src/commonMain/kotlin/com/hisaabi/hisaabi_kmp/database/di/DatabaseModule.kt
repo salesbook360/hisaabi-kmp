@@ -28,6 +28,7 @@ val databaseModule = module {
     single { get<AppDatabase>().deletedRecordsDao() }
     single { get<AppDatabase>().entityMediaDao() }
     single { get<AppDatabase>().recipeIngredientsDao() }
+    single { get<AppDatabase>().userAuthDao() }
     // Business DAO removed - now using remote API
     // single { get<AppDatabase>().businessDao() }
     
