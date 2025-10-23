@@ -40,3 +40,4 @@ val ALL_MIGRATIONS = arrayOf(
     MIGRATION_1_2
 )
 
+
