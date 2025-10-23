@@ -1,5 +1,7 @@
 package com.hisaabi.hisaabi_kmp.business.di
 
+import com.hisaabi.hisaabi_kmp.business.data.datasource.BusinessPreferencesDataSource
+import com.hisaabi.hisaabi_kmp.business.data.datasource.BusinessPreferencesDataSourceImpl
 import com.hisaabi.hisaabi_kmp.business.data.datasource.BusinessRemoteDataSource
 import com.hisaabi.hisaabi_kmp.business.data.datasource.BusinessRemoteDataSourceImpl
 import com.hisaabi.hisaabi_kmp.business.data.repository.BusinessRepository
@@ -13,6 +15,9 @@ val businessModule = module {
     // Remote Data Source - uses HttpClient from authModule
     single<BusinessRemoteDataSource> { BusinessRemoteDataSourceImpl(get()) }
     
+    // Preferences Data Source - for selected business persistence
+    single<BusinessPreferencesDataSource> { BusinessPreferencesDataSourceImpl(get()) }
+    
     // Repository
     single { BusinessRepository(get()) }
     
@@ -21,6 +26,7 @@ val businessModule = module {
     single { AddBusinessUseCase(get()) }
     single { UpdateBusinessUseCase(get()) }
     single { DeleteBusinessUseCase(get()) }
+    single { GetSelectedBusinessUseCase(get(), get()) }
     
     single {
         BusinessUseCases(
@@ -32,7 +38,7 @@ val businessModule = module {
     }
     
     // ViewModels
-    viewModel { MyBusinessViewModel(get()) }
+    viewModel { MyBusinessViewModel(get(), get()) }
     viewModel { AddBusinessViewModel(get()) }
 }
 

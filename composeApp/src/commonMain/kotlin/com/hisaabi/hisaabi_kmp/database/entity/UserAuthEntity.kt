@@ -46,6 +46,10 @@ data class UserAuthEntity(
     @ColumnInfo(name = "refresh_token")
     val refreshToken: String,
     
+    // Selected Business (for multi-business support)
+    @ColumnInfo(name = "selected_business_id")
+    val selectedBusinessId: Int? = null,
+    
     // Metadata
     @ColumnInfo(name = "last_updated")
     val lastUpdated: Long = System.currentTimeMillis()

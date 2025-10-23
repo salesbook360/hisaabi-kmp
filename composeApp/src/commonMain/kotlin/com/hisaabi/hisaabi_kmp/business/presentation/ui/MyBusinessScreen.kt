@@ -23,7 +23,8 @@ fun MyBusinessScreen(
     onBusinessClick: (Business) -> Unit = {},
     onAddBusinessClick: () -> Unit = {},
     onNavigateBack: () -> Unit = {},
-    refreshTrigger: Int = 0
+    refreshTrigger: Int = 0,
+    showTopBar: Boolean = true // Control whether to show top bar
 ) {
     val state by viewModel.state.collectAsState()
     var showDeleteDialog by remember { mutableStateOf<Business?>(null) }
@@ -43,18 +44,22 @@ fun MyBusinessScreen(
     }
     
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("My Business") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
-                        )
+        topBar = if (showTopBar) {
+            {
+                TopAppBar(
+                    title = { Text("My Business") },
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back"
+                            )
+                        }
                     }
-                }
-            )
+                )
+            }
+        } else {
+            {}
         },
         floatingActionButton = {
             FloatingActionButton(
@@ -117,7 +122,15 @@ fun MyBusinessScreen(
                         items(state.businesses, key = { it.id }) { business ->
                             BusinessItem(
                                 business = business,
-                                onClick = { onBusinessClick(business) },
+                                isSelected = business.id == state.selectedBusinessId,
+                                onClick = { 
+                                    // Only select the business, don't navigate
+                                    viewModel.selectBusiness(business)
+                                },
+                                onEditClick = { 
+                                    // Navigate directly to edit screen
+                                    onBusinessClick(business)
+                                },
                                 onDeleteClick = { showDeleteDialog = business }
                             )
                             Spacer(modifier = Modifier.height(8.dp))
@@ -156,12 +169,20 @@ fun MyBusinessScreen(
 @Composable
 private fun BusinessItem(
     business: Business,
+    isSelected: Boolean,
     onClick: () -> Unit,
+    onEditClick: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) 
+                MaterialTheme.colorScheme.primaryContainer 
+            else 
+                MaterialTheme.colorScheme.surface
+        )
     ) {
         Row(
             modifier = Modifier
@@ -173,18 +194,44 @@ private fun BusinessItem(
             Icon(
                 Icons.Default.Business,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
+                tint = if (isSelected) 
+                    MaterialTheme.colorScheme.primary 
+                else 
+                    MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(40.dp)
             )
             
             Spacer(modifier = Modifier.width(16.dp))
             
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = business.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = business.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    
+                    if (isSelected) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        AssistChip(
+                            onClick = { },
+                            label = { 
+                                Text(
+                                    "Selected",
+                                    style = MaterialTheme.typography.labelSmall
+                                ) 
+                            },
+                            colors = AssistChipDefaults.assistChipColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                labelColor = MaterialTheme.colorScheme.onPrimary
+                            ),
+                            border = null,
+                            modifier = Modifier.height(24.dp)
+                        )
+                    }
+                }
                 
                 // Email
                 if (!business.email.isNullOrBlank()) {
@@ -244,6 +291,18 @@ private fun BusinessItem(
                 }
             }
             
+            // Edit button
+            IconButton(
+                onClick = { onEditClick() }
+            ) {
+                Icon(
+                    Icons.Default.Edit,
+                    contentDescription = "Edit",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+            
+            // Delete button
             IconButton(
                 onClick = { onDeleteClick() }
             ) {
@@ -256,4 +315,3 @@ private fun BusinessItem(
         }
     }
 }
-

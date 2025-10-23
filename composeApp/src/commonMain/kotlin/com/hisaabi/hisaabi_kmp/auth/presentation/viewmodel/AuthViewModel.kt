@@ -26,6 +26,9 @@ class AuthViewModel(
     private val _isLoggedIn = MutableStateFlow(false)
     val isLoggedIn: StateFlow<Boolean> = _isLoggedIn.asStateFlow()
     
+    private val _isInitialized = MutableStateFlow(false)
+    val isInitialized: StateFlow<Boolean> = _isInitialized.asStateFlow()
+    
     init {
         checkAuthState()
         observeAuthState()
@@ -152,6 +155,7 @@ class AuthViewModel(
                 currentUser = currentUser
             )
             _isLoggedIn.value = isLoggedIn
+            _isInitialized.value = true // Mark as initialized after first check
         }
     }
     

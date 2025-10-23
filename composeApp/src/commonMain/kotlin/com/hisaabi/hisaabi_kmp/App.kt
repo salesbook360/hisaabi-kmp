@@ -3,22 +3,79 @@ package com.hisaabi.hisaabi_kmp
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.hisaabi.hisaabi_kmp.auth.AuthNavigation
+import com.hisaabi.hisaabi_kmp.auth.presentation.viewmodel.AuthViewModel
+import com.hisaabi.hisaabi_kmp.business.data.datasource.BusinessPreferencesDataSource
+import com.hisaabi.hisaabi_kmp.business.presentation.ui.BusinessSelectionGateScreen
 import com.hisaabi.hisaabi_kmp.home.HomeScreen
 import com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.KoinContext
+import org.koin.compose.koinInject
+import kotlin.system.exitProcess
 
 @Composable
 @Preview
 fun App() {
     MaterialTheme {
         KoinContext {
-            var currentScreen by remember { mutableStateOf(AppScreen.HOME) }
+            // Check authentication state on app launch
+            val authViewModel: AuthViewModel = koinInject()
+            val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
+            val isInitialized by authViewModel.isInitialized.collectAsState()
+            
+            // Business preferences for checking selected business
+            val businessPreferences: BusinessPreferencesDataSource = koinInject()
+            var selectedBusinessId by remember { mutableStateOf<Int?>(null) }
+            
+            // Observe selected business ID
+            LaunchedEffect(Unit) {
+                businessPreferences.observeSelectedBusinessId().collect { businessId ->
+                    selectedBusinessId = businessId
+                }
+            }
+            
+            // Set initial screen based on authentication state
+            var currentScreen by remember { mutableStateOf<AppScreen?>(null) }
+            
+            // Set initial screen after auth check is complete
+            LaunchedEffect(isInitialized, isLoggedIn, selectedBusinessId) {
+                if (isInitialized && currentScreen == null) {
+                    currentScreen = when {
+                        !isLoggedIn -> AppScreen.AUTH
+                        selectedBusinessId == null -> AppScreen.BUSINESS_SELECTION_GATE
+                        else -> AppScreen.HOME
+                    }
+                }
+            }
+            
+            // Handle auth and business selection state changes after initialization
+            LaunchedEffect(isLoggedIn, selectedBusinessId) {
+                if (currentScreen != null) {
+                    when {
+                        // User logged out - go to auth
+                        !isLoggedIn && currentScreen != AppScreen.AUTH -> {
+                            currentScreen = AppScreen.AUTH
+                        }
+                        // User logged in but no business selected - go to gate
+                        isLoggedIn && selectedBusinessId == null && 
+                        currentScreen != AppScreen.BUSINESS_SELECTION_GATE &&
+                        currentScreen != AppScreen.ADD_BUSINESS -> {
+                            currentScreen = AppScreen.BUSINESS_SELECTION_GATE
+                        }
+                        // User logged in and has selected business - allow navigation
+                        isLoggedIn && selectedBusinessId != null &&
+                        (currentScreen == AppScreen.AUTH || currentScreen == AppScreen.BUSINESS_SELECTION_GATE) -> {
+                            currentScreen = AppScreen.HOME
+                        }
+                    }
+                }
+            }
             var selectedPartySegment by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment?>(null) }
             var addPartyType by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType?>(null) }
             var partiesRefreshTrigger by remember { mutableStateOf(0) }
@@ -119,7 +176,12 @@ fun App() {
             // Stock Adjustment state
             var isSelectingWarehouseFrom by remember { mutableStateOf(false) }
 
-            when (currentScreen) {
+            // Show splash screen while checking auth state
+            if (currentScreen == null) {
+                SplashScreen()
+            } else {
+                // Show content only when currentScreen is initialized
+                when (currentScreen!!) {
                 AppScreen.HOME -> {
                     HomeScreen(
                         onNavigateToAuth = { currentScreen = AppScreen.AUTH },
@@ -186,7 +248,33 @@ fun App() {
                 }
                 AppScreen.AUTH -> {
                     AuthNavigation(
-                        onNavigateToMain = { currentScreen = AppScreen.HOME }
+                        onNavigateToMain = { 
+                            // After login, check if business is selected
+                            currentScreen = if (selectedBusinessId != null) {
+                                AppScreen.HOME
+                            } else {
+                                AppScreen.BUSINESS_SELECTION_GATE
+                            }
+                        }
+                    )
+                }
+                AppScreen.BUSINESS_SELECTION_GATE -> {
+                    val myBusinessViewModel: com.hisaabi.hisaabi_kmp.business.presentation.viewmodel.MyBusinessViewModel = koinInject()
+                    BusinessSelectionGateScreen(
+                        viewModel = myBusinessViewModel,
+                        onBusinessSelected = {
+                            // Business selected, navigate to home
+                            currentScreen = AppScreen.HOME
+                        },
+                        onAddBusinessClick = {
+                            // Navigate to add business screen
+                            selectedBusinessForEdit = null
+                            currentScreen = AppScreen.ADD_BUSINESS
+                        },
+                        onExitApp = {
+                            // Exit the app when back is pressed without business selection
+                            exitProcess(0)
+                        }
                     )
                 }
                 AppScreen.PARTIES -> {
@@ -519,7 +607,12 @@ fun App() {
                         businessToEdit = selectedBusinessForEdit,
                         onNavigateBack = {
                             businessRefreshTrigger++
-                            currentScreen = AppScreen.MY_BUSINESS
+                            // Go back to gate if no business is selected, otherwise go to MY_BUSINESS
+                            currentScreen = if (selectedBusinessId == null) {
+                                AppScreen.BUSINESS_SELECTION_GATE
+                            } else {
+                                AppScreen.MY_BUSINESS
+                            }
                         }
                     )
                 }
@@ -1041,6 +1134,7 @@ fun App() {
                         onTransactionSaved = { currentScreen = AppScreen.HOME }
                     )
                 }
+                }
             }
         }
     }
@@ -1049,6 +1143,7 @@ fun App() {
 enum class AppScreen {
     HOME,
     AUTH,
+    BUSINESS_SELECTION_GATE, // Gate screen to ensure business is selected
     PARTIES,
     ADD_PARTY,
     CATEGORIES,

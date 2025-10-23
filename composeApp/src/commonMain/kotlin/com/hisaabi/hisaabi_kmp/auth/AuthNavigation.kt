@@ -5,7 +5,6 @@ import androidx.compose.ui.Modifier
 import com.hisaabi.hisaabi_kmp.auth.presentation.rememberGoogleSignInHelper
 import com.hisaabi.hisaabi_kmp.auth.presentation.ui.ForgotPasswordScreen
 import com.hisaabi.hisaabi_kmp.auth.presentation.ui.LoginScreen
-import com.hisaabi.hisaabi_kmp.auth.presentation.ui.ProfileScreen
 import com.hisaabi.hisaabi_kmp.auth.presentation.ui.RegisterScreen
 import com.hisaabi.hisaabi_kmp.auth.presentation.viewmodel.AuthViewModel
 import org.koin.compose.koinInject
@@ -24,40 +23,42 @@ fun AuthNavigation(
     var showRegister by remember { mutableStateOf(false) }
     var showForgotPassword by remember { mutableStateOf(false) }
     
-    when {
-        isLoggedIn -> {
-            ProfileScreen(
-                viewModel = authViewModel,
-                onLogout = {
-                    showRegister = false
-                    showForgotPassword = false
-                }
-            )
+    // Navigate to main immediately when user is logged in
+    // This prevents the profile screen flash after login
+    LaunchedEffect(isLoggedIn) {
+        if (isLoggedIn) {
+            onNavigateToMain()
         }
-        showForgotPassword -> {
-            ForgotPasswordScreen(
-                viewModel = authViewModel,
-                onNavigateBack = { showForgotPassword = false }
-            )
-        }
-        showRegister -> {
-            RegisterScreen(
-                viewModel = authViewModel,
-                onNavigateToLogin = { 
-                    showRegister = false
-                    showForgotPassword = false
-                },
-                onRegisterSuccess = onNavigateToMain
-            )
-        }
-        else -> {
-            LoginScreen(
-                viewModel = authViewModel,
-                onNavigateToRegister = { showRegister = true },
-                onNavigateToForgotPassword = { showForgotPassword = true },
-                onLoginSuccess = onNavigateToMain,
-                googleSignInHelper = googleSignInHelper
-            )
+    }
+    
+    // Only show auth screens when not logged in
+    if (!isLoggedIn) {
+        when {
+            showForgotPassword -> {
+                ForgotPasswordScreen(
+                    viewModel = authViewModel,
+                    onNavigateBack = { showForgotPassword = false }
+                )
+            }
+            showRegister -> {
+                RegisterScreen(
+                    viewModel = authViewModel,
+                    onNavigateToLogin = { 
+                        showRegister = false
+                        showForgotPassword = false
+                    },
+                    onRegisterSuccess = onNavigateToMain
+                )
+            }
+            else -> {
+                LoginScreen(
+                    viewModel = authViewModel,
+                    onNavigateToRegister = { showRegister = true },
+                    onNavigateToForgotPassword = { showForgotPassword = true },
+                    onLoginSuccess = onNavigateToMain,
+                    googleSignInHelper = googleSignInHelper
+                )
+            }
         }
     }
 }
