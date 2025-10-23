@@ -35,18 +35,3 @@ object TransactionTypeHelper {
     fun getPaymentOutTransactionTypes() = listOf(PAYMENT_OUT)
 }
 
-/**
- * Role IDs for parties based on role_id field in Party table
- */
-object PartyRoleHelper {
-    const val CUSTOMER = 1
-    const val VENDOR = 2
-    const val INVESTOR = 3
-    const val WALK_IN_CUSTOMER = 4
-    const val DEFAULT_VENDOR = 5
-    
-    fun getCustomerRoles() = listOf(CUSTOMER, WALK_IN_CUSTOMER)
-    fun getVendorRoles() = listOf(VENDOR, DEFAULT_VENDOR)
-    fun getInvestorRoles() = listOf(INVESTOR)
-}
-

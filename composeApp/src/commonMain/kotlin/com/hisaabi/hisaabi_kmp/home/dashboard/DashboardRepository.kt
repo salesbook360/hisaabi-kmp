@@ -3,6 +3,7 @@ package com.hisaabi.hisaabi_kmp.home.dashboard
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import com.hisaabi.hisaabi_kmp.database.dao.*
+import com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType
 import kotlin.math.abs
 
 /**
@@ -38,9 +39,9 @@ class DashboardRepository(
             )
         )
         
-        // Customer Balance (Receivable)
+        // Customer Balance (Receivable) - Use correct PartyType constants
         val customerBalance = partyDao.getTotalBalance(
-            PartyRoleHelper.getCustomerRoles(),
+            listOf(PartyType.CUSTOMER.type, PartyType.WALK_IN_CUSTOMER.type),
             businessSlug
         ) ?: 0.0
         items.add(
@@ -51,9 +52,9 @@ class DashboardRepository(
             )
         )
         
-        // Vendor Balance (Payable)
+        // Vendor Balance (Payable) - Use correct PartyType constants
         val vendorBalance = partyDao.getTotalBalance(
-            PartyRoleHelper.getVendorRoles(),
+            listOf(PartyType.VENDOR.type, PartyType.DEFAULT_VENDOR.type),
             businessSlug
         ) ?: 0.0
         items.add(
@@ -369,8 +370,8 @@ class DashboardRepository(
     suspend fun getPartiesSummary(businessSlug: String): DashboardSectionDataModel {
         val items = mutableListOf<DashboardSectionDataModel.SectionItem>()
         
-        // Total Customers
-        val totalCustomers = partyDao.getCountByRole(PartyRoleHelper.CUSTOMER, businessSlug)?.toDouble() ?: 0.0
+        // Total Customers - Use correct PartyType constants
+        val totalCustomers = partyDao.getCountByRole(PartyType.CUSTOMER.type, businessSlug)?.toDouble() ?: 0.0
         items.add(
             DashboardSectionDataModel.SectionItem(
                 title = "Total Customers",
@@ -379,8 +380,8 @@ class DashboardRepository(
             )
         )
         
-        // Total Suppliers
-        val totalSuppliers = partyDao.getCountByRole(PartyRoleHelper.VENDOR, businessSlug)?.toDouble() ?: 0.0
+        // Total Suppliers - Use correct PartyType constants
+        val totalSuppliers = partyDao.getCountByRole(PartyType.VENDOR.type, businessSlug)?.toDouble() ?: 0.0
         items.add(
             DashboardSectionDataModel.SectionItem(
                 title = "Total Suppliers",
@@ -389,8 +390,8 @@ class DashboardRepository(
             )
         )
         
-        // Total Investors (if exists)
-        val totalInvestors = partyDao.getCountByRole(PartyRoleHelper.INVESTOR, businessSlug)?.toDouble() ?: 0.0
+        // Total Investors (if exists) - Use correct PartyType constants
+        val totalInvestors = partyDao.getCountByRole(PartyType.INVESTOR.type, businessSlug)?.toDouble() ?: 0.0
         if (totalInvestors > 0) {
             items.add(
                 DashboardSectionDataModel.SectionItem(
