@@ -48,8 +48,7 @@ interface ProductDao {
     // Dashboard Queries
     @Query("""
         SELECT COUNT(*) FROM Product 
-        WHERE status_id != 3 
-        AND business_slug = :businessSlug
+        WHERE business_slug = :businessSlug
     """)
     suspend fun getTotalProductsCount(businessSlug: String): Int?
 }
