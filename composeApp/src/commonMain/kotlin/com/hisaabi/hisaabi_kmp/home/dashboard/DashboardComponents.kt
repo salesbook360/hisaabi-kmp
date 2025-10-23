@@ -170,12 +170,14 @@ fun OverviewItem(
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
     ) {
         Icon(
             imageVector = item.icon,
             contentDescription = item.title,
-            modifier = Modifier.size(24.dp),
+            modifier = Modifier.size(20.dp),
             tint = MaterialTheme.colorScheme.primary
         )
         Spacer(modifier = Modifier.width(12.dp))
@@ -250,12 +252,14 @@ fun SummarySection(
 fun SummaryItem(item: DashboardSectionDataModel.SectionItem) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
     ) {
         Icon(
             imageVector = item.icon,
             contentDescription = item.title,
-            modifier = Modifier.size(40.dp),
+            modifier = Modifier.size(28.dp),
             tint = MaterialTheme.colorScheme.primary
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -283,7 +287,7 @@ fun DashboardSectionLoader() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(150.dp)
+            .height(180.dp)
             .padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -323,7 +327,7 @@ fun DashboardSectionError(message: String) {
  */
 private fun calculateGridHeight(itemCount: Int, columns: Int): androidx.compose.ui.unit.Dp {
     val rows = (itemCount + columns - 1) / columns
-    return (rows * 80).dp
+    return (rows * 100).dp
 }
 
 /**
