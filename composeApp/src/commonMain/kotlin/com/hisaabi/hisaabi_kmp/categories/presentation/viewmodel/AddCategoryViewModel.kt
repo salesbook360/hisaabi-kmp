@@ -4,21 +4,31 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hisaabi.hisaabi_kmp.categories.domain.model.CategoryType
 import com.hisaabi.hisaabi_kmp.categories.domain.usecase.AddCategoryUseCase
+import com.hisaabi.hisaabi_kmp.core.session.AppSessionManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class AddCategoryViewModel(
-    private val addCategoryUseCase: AddCategoryUseCase
+    private val addCategoryUseCase: AddCategoryUseCase,
+    private val sessionManager: AppSessionManager
 ) : ViewModel() {
     
-    // TODO: Get from session/business context
-    private val businessSlug: String = "default_business"
-    private val userSlug: String = "default_user"
+    private var businessSlug: String? = null
+    private var userSlug: String? = null
     
     private val _uiState = MutableStateFlow(AddCategoryUiState())
     val uiState: StateFlow<AddCategoryUiState> = _uiState.asStateFlow()
+    
+    init {
+        viewModelScope.launch {
+            sessionManager.observeSessionContext().collect { context ->
+                businessSlug = context.businessSlug
+                userSlug = context.userSlug
+            }
+        }
+    }
     
     fun resetState() {
         _uiState.value = AddCategoryUiState()
@@ -32,12 +42,22 @@ class AddCategoryViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             
+            val bSlug = businessSlug
+            val uSlug = userSlug
+            if (bSlug == null || uSlug == null) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = "No business or user context available"
+                )
+                return@launch
+            }
+            
             val result = addCategoryUseCase(
                 title = title,
                 description = description,
                 categoryType = categoryType,
-                businessSlug = businessSlug,
-                userSlug = userSlug
+                businessSlug = bSlug,
+                userSlug = uSlug
             )
             
             result.fold(

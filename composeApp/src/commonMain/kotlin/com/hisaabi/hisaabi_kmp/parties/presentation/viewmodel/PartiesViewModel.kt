@@ -2,6 +2,7 @@ package com.hisaabi.hisaabi_kmp.parties.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hisaabi.hisaabi_kmp.core.session.AppSessionManager
 import com.hisaabi.hisaabi_kmp.parties.domain.model.PartiesFilter
 import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
 import com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment
@@ -16,11 +17,12 @@ import kotlinx.coroutines.launch
 class PartiesViewModel(
     private val getPartiesUseCase: GetPartiesUseCase,
     private val getPartiesCountUseCase: GetPartiesCountUseCase,
-    private val getTotalBalanceUseCase: GetTotalBalanceUseCase
+    private val getTotalBalanceUseCase: GetTotalBalanceUseCase,
+    private val sessionManager: AppSessionManager
 ) : ViewModel() {
     
-    // TODO: Get from session/business context - for now using default
-    private val businessSlug: String = "default_business"
+    // Get business slug from session manager
+    private var businessSlug: String? = null
     
     private val _uiState = MutableStateFlow(PartiesUiState())
     val uiState: StateFlow<PartiesUiState> = _uiState.asStateFlow()
@@ -30,7 +32,16 @@ class PartiesViewModel(
     private var canLoadMore = true
     
     init {
-        loadParties(reset = true)
+        // Observe business changes and reload parties
+        viewModelScope.launch {
+            sessionManager.observeBusinessSlug().collect { newBusinessSlug ->
+                businessSlug = newBusinessSlug
+                if (newBusinessSlug != null) {
+                    loadParties(reset = true)
+                    loadTotalBalance()
+                }
+            }
+        }
     }
     
     fun onSegmentChanged(segment: PartySegment) {
@@ -82,10 +93,20 @@ class PartiesViewModel(
                 _uiState.value = _uiState.value.copy(isLoadingMore = true)
             }
             
+            val slug = businessSlug
+            if (slug == null) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    isLoadingMore = false,
+                    error = "No business selected"
+                )
+                return@launch
+            }
+            
             val result = getPartiesUseCase(
                 segment = _uiState.value.selectedSegment,
                 filter = _uiState.value.selectedFilter,
-                businessSlug = businessSlug,
+                businessSlug = slug,
                 searchQuery = _uiState.value.searchQuery.takeIf { it.isNotBlank() },
                 pageSize = pageSize,
                 pageNumber = currentPage
@@ -127,9 +148,11 @@ class PartiesViewModel(
     
     private fun loadPartiesCount() {
         viewModelScope.launch {
+            val slug = businessSlug ?: return@launch
+            
             val result = getPartiesCountUseCase(
                 segment = _uiState.value.selectedSegment,
-                businessSlug = businessSlug,
+                businessSlug = slug,
                 searchQuery = _uiState.value.searchQuery.takeIf { it.isNotBlank() }
             )
             
@@ -141,9 +164,11 @@ class PartiesViewModel(
     
     private fun loadTotalBalance() {
         viewModelScope.launch {
+            val slug = businessSlug ?: return@launch
+            
             val result = getTotalBalanceUseCase(
                 segment = _uiState.value.selectedSegment,
-                businessSlug = businessSlug
+                businessSlug = slug
             )
             
             result.onSuccess { balance ->

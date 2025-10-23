@@ -2,6 +2,7 @@ package com.hisaabi.hisaabi_kmp.parties.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hisaabi.hisaabi_kmp.core.session.AppSessionManager
 import com.hisaabi.hisaabi_kmp.database.dao.CategoryDao
 import com.hisaabi.hisaabi_kmp.database.entity.CategoryEntity
 import com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType
@@ -13,12 +14,13 @@ import kotlinx.coroutines.launch
 
 class AddPartyViewModel(
     private val addPartyUseCase: AddPartyUseCase,
-    private val categoryDao: CategoryDao
+    private val categoryDao: CategoryDao,
+    private val sessionManager: AppSessionManager
 ) : ViewModel() {
     
-    // TODO: Get from session/business context
-    private val businessSlug: String = "default_business"
-    private val userSlug: String = "default_user"
+    // Get slugs from session manager  
+    private var businessSlug: String? = null
+    private var userSlug: String? = null
     
     private val _uiState = MutableStateFlow(AddPartyUiState())
     val uiState: StateFlow<AddPartyUiState> = _uiState.asStateFlow()
@@ -30,8 +32,17 @@ class AddPartyViewModel(
     val areas: StateFlow<List<CategoryEntity>> = _areas.asStateFlow()
     
     init {
-        loadCategories()
-        loadAreas()
+        // Observe session context changes
+        viewModelScope.launch {
+            sessionManager.observeSessionContext().collect { context ->
+                businessSlug = context.businessSlug
+                userSlug = context.userSlug
+                if (context.businessSlug != null) {
+                    loadCategories()
+                    loadAreas()
+                }
+            }
+        }
     }
     
     fun resetState() {
@@ -41,8 +52,9 @@ class AddPartyViewModel(
     private fun loadCategories() {
         viewModelScope.launch {
             try {
+                val slug = businessSlug ?: return@launch
                 // Type ID 3 = Customer Category (from CategoryTypeEnum)
-                _categories.value = categoryDao.getCategoriesByTypeAndBusiness(3, businessSlug)
+                _categories.value = categoryDao.getCategoriesByTypeAndBusiness(3, slug)
             } catch (e: Exception) {
                 println("Error loading categories: ${e.message}")
             }
@@ -52,8 +64,9 @@ class AddPartyViewModel(
     private fun loadAreas() {
         viewModelScope.launch {
             try {
+                val slug = businessSlug ?: return@launch
                 // Type ID 2 = Area (from CategoryTypeEnum)
-                _areas.value = categoryDao.getCategoriesByTypeAndBusiness(2, businessSlug)
+                _areas.value = categoryDao.getCategoriesByTypeAndBusiness(2, slug)
             } catch (e: Exception) {
                 println("Error loading areas: ${e.message}")
             }
@@ -77,6 +90,16 @@ class AddPartyViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             
+            val bSlug = businessSlug
+            val uSlug = userSlug
+            if (bSlug == null || uSlug == null) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = "No business or user context available"
+                )
+                return@launch
+            }
+            
             val result = addPartyUseCase(
                 name = name,
                 phone = phone,
@@ -86,8 +109,8 @@ class AddPartyViewModel(
                 openingBalance = openingBalance,
                 isBalancePayable = isBalancePayable,
                 partyType = partyType,
-                businessSlug = businessSlug,
-                userSlug = userSlug,
+                businessSlug = bSlug,
+                userSlug = uSlug,
                 categorySlug = categorySlug,
                 areaSlug = areaSlug,
                 latitude = latitude,

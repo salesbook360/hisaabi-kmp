@@ -2,6 +2,7 @@ package com.hisaabi.hisaabi_kmp.products.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hisaabi.hisaabi_kmp.core.session.AppSessionManager
 import com.hisaabi.hisaabi_kmp.products.domain.model.Product
 import com.hisaabi.hisaabi_kmp.products.domain.model.ProductType
 import com.hisaabi.hisaabi_kmp.products.domain.usecase.GetProductsUseCase
@@ -11,17 +12,24 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class ProductsViewModel(
-    private val getProductsUseCase: GetProductsUseCase
+    private val getProductsUseCase: GetProductsUseCase,
+    private val sessionManager: AppSessionManager
 ) : ViewModel() {
     
-    // TODO: Get from session/business context
-    private val businessSlug: String = "default_business"
+    private var businessSlug: String? = null
     
     private val _uiState = MutableStateFlow(ProductsUiState())
     val uiState: StateFlow<ProductsUiState> = _uiState.asStateFlow()
     
     init {
-        loadProducts()
+        viewModelScope.launch {
+            sessionManager.observeBusinessSlug().collect { newBusinessSlug ->
+                businessSlug = newBusinessSlug
+                if (newBusinessSlug != null) {
+                    loadProducts()
+                }
+            }
+        }
     }
     
     fun onProductTypeChanged(productType: ProductType?) {
@@ -51,8 +59,17 @@ class ProductsViewModel(
                 error = null
             )
             
+            val slug = businessSlug
+            if (slug == null) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = "No business selected"
+                )
+                return@launch
+            }
+            
             val result = getProductsUseCase(
-                businessSlug = businessSlug,
+                businessSlug = slug,
                 productType = _uiState.value.selectedProductType
             )
             

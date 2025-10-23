@@ -2,6 +2,7 @@ package com.hisaabi.hisaabi_kmp.products.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hisaabi.hisaabi_kmp.core.session.AppSessionManager
 import com.hisaabi.hisaabi_kmp.products.data.repository.ProductsRepository
 import com.hisaabi.hisaabi_kmp.products.domain.model.Product
 import com.hisaabi.hisaabi_kmp.products.domain.model.ProductType
@@ -12,15 +13,24 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class ManageRecipeIngredientsViewModel(
-    private val productsRepository: ProductsRepository
+    private val productsRepository: ProductsRepository,
+    private val sessionManager: AppSessionManager
 ) : ViewModel() {
     
-    // TODO: Get from session/business context
-    private val businessSlug: String = "default_business"
-    private val userSlug: String = "default_user"
+    private var businessSlug: String? = null
+    private var userSlug: String? = null
     
     private val _uiState = MutableStateFlow(RecipeIngredientsUiState())
     val uiState: StateFlow<RecipeIngredientsUiState> = _uiState.asStateFlow()
+    
+    init {
+        viewModelScope.launch {
+            sessionManager.observeSessionContext().collect { context ->
+                businessSlug = context.businessSlug
+                userSlug = context.userSlug
+            }
+        }
+    }
     
     fun loadIngredients(recipeSlug: String) {
         viewModelScope.launch {
@@ -46,9 +56,18 @@ class ManageRecipeIngredientsViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoadingProducts = true, productsError = null)
             
+            val slug = businessSlug
+            if (slug == null) {
+                _uiState.value = _uiState.value.copy(
+                    isLoadingProducts = false,
+                    productsError = "No business selected"
+                )
+                return@launch
+            }
+            
             try {
                 // Get only simple products (type 0) - exclude services and recipes
-                val allProducts = productsRepository.getProducts(businessSlug)
+                val allProducts = productsRepository.getProducts(slug)
                 val simpleProducts = allProducts.filter { 
                     it.typeId == ProductType.SIMPLE_PRODUCT.type 
                 }
@@ -76,6 +95,16 @@ class ManageRecipeIngredientsViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isSaving = true, saveError = null)
             
+            val bSlug = businessSlug
+            val uSlug = userSlug
+            if (bSlug == null || uSlug == null) {
+                _uiState.value = _uiState.value.copy(
+                    isSaving = false,
+                    saveError = "No business or user context available"
+                )
+                return@launch
+            }
+            
             try {
                 val ingredient = RecipeIngredient(
                     recipeSlug = recipeSlug,
@@ -85,14 +114,14 @@ class ManageRecipeIngredientsViewModel(
                     quantityUnitSlug = quantityUnitSlug,
                     quantityUnitTitle = quantityUnitSlug, // TODO: Fetch actual unit title
                     slug = null,
-                    businessSlug = businessSlug,
-                    createdBy = userSlug,
+                    businessSlug = bSlug,
+                    createdBy = uSlug,
                     syncStatus = 0,
                     createdAt = null,
                     updatedAt = null
                 )
                 
-                productsRepository.addRecipeIngredient(ingredient, businessSlug, userSlug)
+                productsRepository.addRecipeIngredient(ingredient, bSlug, uSlug)
                 
                 // Reload ingredients
                 loadIngredients(recipeSlug)

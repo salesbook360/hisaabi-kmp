@@ -2,6 +2,7 @@ package com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hisaabi.hisaabi_kmp.core.session.AppSessionManager
 import com.hisaabi.hisaabi_kmp.paymentmethods.data.repository.PaymentMethodsRepository
 import com.hisaabi.hisaabi_kmp.products.data.repository.ProductsRepository
 import com.hisaabi.hisaabi_kmp.products.domain.model.Product
@@ -25,24 +26,45 @@ class AddManufactureViewModel(
     private val productsRepository: ProductsRepository,
     private val quantityUnitsRepository: QuantityUnitsRepository,
     private val paymentMethodsRepository: PaymentMethodsRepository,
-    private val warehousesRepository: WarehousesRepository
+    private val warehousesRepository: WarehousesRepository,
+    private val sessionManager: AppSessionManager
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ManufactureState())
     val state: StateFlow<ManufactureState> = _state.asStateFlow()
 
     private val originalQuantityMap = mutableMapOf<String, Double>()
+    
+    private var businessSlug: String? = null
+    private var userSlug: String? = null
 
     init {
-        loadInitialData()
+        viewModelScope.launch {
+            sessionManager.observeSessionContext().collect { context ->
+                businessSlug = context.businessSlug
+                userSlug = context.userSlug
+                if (context.businessSlug != null) {
+                    loadInitialData()
+                }
+            }
+        }
     }
 
     private fun loadInitialData() {
         viewModelScope.launch {
+            val slug = businessSlug
+            if (slug == null) {
+                _state.value = _state.value.copy(
+                    error = "No business selected",
+                    isLoading = false
+                )
+                return@launch
+            }
+            
             try {
                 // Load all recipes
                 val recipes = productsRepository.getProducts(
-                    businessSlug = "default_business", // TODO: Get from user session
+                    businessSlug = slug,
                     productType = ProductType.RECIPE
                 )
                 _state.value = _state.value.copy(
@@ -229,6 +251,16 @@ class AddManufactureViewModel(
                     updatedAt = null
                 )
 
+                val bSlug = businessSlug
+                val uSlug = userSlug
+                if (bSlug == null || uSlug == null) {
+                    _state.value = _state.value.copy(
+                        isSaving = false,
+                        error = "No business or user context available"
+                    )
+                    return@launch
+                }
+                
                 // Save manufacture transaction
                 val result = transactionsRepository.saveManufactureTransaction(
                     recipeDetail = recipeDetail,
@@ -238,8 +270,8 @@ class AddManufactureViewModel(
                     warehouseSlug = selectedWarehouse.slug.orEmpty(),
                     paymentMethodSlug = paymentMethod?.slug,
                     timestamp = _state.value.transactionTimestamp,
-                    businessSlug = "default_business", // TODO: Get from user session
-                    userSlug = "default_user" // TODO: Get from user session
+                    businessSlug = bSlug,
+                    userSlug = uSlug
                 )
 
                 result.fold(

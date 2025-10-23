@@ -12,6 +12,7 @@ interface AuthLocalDataSource {
     suspend fun getRefreshToken(): String?
     suspend fun saveUser(user: UserDto)
     suspend fun getUser(): UserDto?
+    fun observeUser(): kotlinx.coroutines.flow.Flow<UserDto?>
     suspend fun clearAuthData()
     suspend fun isLoggedIn(): Boolean
     fun observeAuthState(): kotlinx.coroutines.flow.Flow<Boolean>
@@ -93,6 +94,27 @@ class AuthLocalDataSourceImpl(
                 refreshToken = userAuth.refreshToken
             )
         )
+    }
+    
+    override fun observeUser(): kotlinx.coroutines.flow.Flow<UserDto?> {
+        return userAuthDao.observeUserAuth().map { userAuth ->
+            userAuth?.let {
+                UserDto(
+                    id = it.userId,
+                    name = it.name,
+                    email = it.email,
+                    address = it.address,
+                    phone = it.phone,
+                    slug = it.slug,
+                    firebaseId = it.firebaseId,
+                    pic = it.pic,
+                    authInfo = com.hisaabi.hisaabi_kmp.auth.data.model.AuthInfo(
+                        accessToken = it.accessToken,
+                        refreshToken = it.refreshToken
+                    )
+                )
+            }
+        }
     }
     
     override suspend fun clearAuthData() {

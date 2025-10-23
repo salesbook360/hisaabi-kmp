@@ -2,6 +2,7 @@ package com.hisaabi.hisaabi_kmp.products.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hisaabi.hisaabi_kmp.core.session.AppSessionManager
 import com.hisaabi.hisaabi_kmp.products.domain.model.ProductType
 import com.hisaabi.hisaabi_kmp.products.domain.usecase.AddProductUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -10,15 +11,24 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class AddProductViewModel(
-    private val addProductUseCase: AddProductUseCase
+    private val addProductUseCase: AddProductUseCase,
+    private val sessionManager: AppSessionManager
 ) : ViewModel() {
     
-    // TODO: Get from session/business context
-    private val businessSlug: String = "default_business"
-    private val userSlug: String = "default_user"
+    private var businessSlug: String? = null
+    private var userSlug: String? = null
     
     private val _uiState = MutableStateFlow(AddProductUiState())
     val uiState: StateFlow<AddProductUiState> = _uiState.asStateFlow()
+    
+    init {
+        viewModelScope.launch {
+            sessionManager.observeSessionContext().collect { context ->
+                businessSlug = context.businessSlug
+                userSlug = context.userSlug
+            }
+        }
+    }
     
     fun resetState() {
         _uiState.value = AddProductUiState()
@@ -39,6 +49,16 @@ class AddProductViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             
+            val bSlug = businessSlug
+            val uSlug = userSlug
+            if (bSlug == null || uSlug == null) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = "No business or user context available"
+                )
+                return@launch
+            }
+            
             val result = addProductUseCase(
                 title = title,
                 description = description,
@@ -50,8 +70,8 @@ class AddProductViewModel(
                 discountPercentage = discountPercentage,
                 categorySlug = categorySlug,
                 manufacturer = manufacturer,
-                businessSlug = businessSlug,
-                userSlug = userSlug
+                businessSlug = bSlug,
+                userSlug = uSlug
             )
             
             result.fold(

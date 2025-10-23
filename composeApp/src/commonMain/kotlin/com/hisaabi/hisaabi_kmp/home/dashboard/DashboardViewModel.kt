@@ -2,6 +2,7 @@ package com.hisaabi.hisaabi_kmp.home.dashboard
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hisaabi.hisaabi_kmp.core.session.AppSessionManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -12,11 +13,12 @@ import kotlinx.coroutines.launch
  * Based on native Android app's DashboardUIViewModel
  */
 class DashboardViewModel(
-    private val repository: DashboardRepository
+    private val repository: DashboardRepository,
+    private val sessionManager: AppSessionManager
 ) : ViewModel() {
     
-    // Default business slug - in real app, get from user preferences
-    private val businessSlug = "default_business"
+    // Get business slug from session manager
+    private var businessSlug: String? = null
     
     // State for each dashboard section
     private val _balanceOverview = MutableStateFlow<DashboardDataState<DashboardSectionDataModel>>(
@@ -60,7 +62,15 @@ class DashboardViewModel(
     private var purchaseInterval = IntervalEnum.THIS_MONTH
     
     init {
-        loadDashboardData()
+        // Observe business changes and reload dashboard
+        viewModelScope.launch {
+            sessionManager.observeBusinessSlug().collect { newBusinessSlug ->
+                businessSlug = newBusinessSlug
+                if (newBusinessSlug != null) {
+                    loadDashboardData()
+                }
+            }
+        }
     }
     
     /**
@@ -99,7 +109,12 @@ class DashboardViewModel(
         viewModelScope.launch {
             _balanceOverview.value = DashboardDataState.Loading
             try {
-                val data = repository.getBalanceOverview(businessSlug, IntervalEnum.ALL_RECORD)
+                val slug = businessSlug
+                if (slug == null) {
+                    _balanceOverview.value = DashboardDataState.Error("No business selected")
+                    return@launch
+                }
+                val data = repository.getBalanceOverview(slug, IntervalEnum.ALL_RECORD)
                 if (data.sectionItems.isEmpty()) {
                     _balanceOverview.value = DashboardDataState.NoData
                 } else {
@@ -116,8 +131,13 @@ class DashboardViewModel(
         viewModelScope.launch {
             _paymentOverview.value = DashboardDataState.Loading
             try {
+                val slug = businessSlug
+                if (slug == null) {
+                    _paymentOverview.value = DashboardDataState.Error("No business selected")
+                    return@launch
+                }
                 val data = repository.getPaymentOverview(
-                    businessSlug,
+                    slug,
                     paymentInterval
                 ).copy(onOptionSelected = ::onPaymentIntervalChanged)
                 
@@ -137,8 +157,13 @@ class DashboardViewModel(
         viewModelScope.launch {
             _salesOverview.value = DashboardDataState.Loading
             try {
+                val slug = businessSlug
+                if (slug == null) {
+                    _salesOverview.value = DashboardDataState.Error("No business selected")
+                    return@launch
+                }
                 val data = repository.getSalesOverview(
-                    businessSlug,
+                    slug,
                     salesInterval
                 ).copy(onOptionSelected = ::onSalesIntervalChanged)
                 
@@ -158,8 +183,13 @@ class DashboardViewModel(
         viewModelScope.launch {
             _purchaseOverview.value = DashboardDataState.Loading
             try {
+                val slug = businessSlug
+                if (slug == null) {
+                    _purchaseOverview.value = DashboardDataState.Error("No business selected")
+                    return@launch
+                }
                 val data = repository.getPurchaseOverview(
-                    businessSlug,
+                    slug,
                     purchaseInterval
                 ).copy(onOptionSelected = ::onPurchaseIntervalChanged)
                 
@@ -179,7 +209,12 @@ class DashboardViewModel(
         viewModelScope.launch {
             _inventorySummary.value = DashboardDataState.Loading
             try {
-                val data = repository.getInventorySummary(businessSlug)
+                val slug = businessSlug
+                if (slug == null) {
+                    _inventorySummary.value = DashboardDataState.Error("No business selected")
+                    return@launch
+                }
+                val data = repository.getInventorySummary(slug)
                 if (data.sectionItems.isEmpty()) {
                     _inventorySummary.value = DashboardDataState.NoData
                 } else {
@@ -196,7 +231,12 @@ class DashboardViewModel(
         viewModelScope.launch {
             _partiesSummary.value = DashboardDataState.Loading
             try {
-                val data = repository.getPartiesSummary(businessSlug)
+                val slug = businessSlug
+                if (slug == null) {
+                    _partiesSummary.value = DashboardDataState.Error("No business selected")
+                    return@launch
+                }
+                val data = repository.getPartiesSummary(slug)
                 if (data.sectionItems.isEmpty()) {
                     _partiesSummary.value = DashboardDataState.NoData
                 } else {
@@ -213,7 +253,12 @@ class DashboardViewModel(
         viewModelScope.launch {
             _productsSummary.value = DashboardDataState.Loading
             try {
-                val data = repository.getProductsSummary(businessSlug)
+                val slug = businessSlug
+                if (slug == null) {
+                    _productsSummary.value = DashboardDataState.Error("No business selected")
+                    return@launch
+                }
+                val data = repository.getProductsSummary(slug)
                 if (data.sectionItems.isEmpty()) {
                     _productsSummary.value = DashboardDataState.NoData
                 } else {
