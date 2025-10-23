@@ -10,6 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.hisaabi.hisaabi_kmp.home.dashboard.*
+import com.hisaabi.hisaabi_kmp.sync.presentation.SyncStatusComponent
 import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -53,6 +54,9 @@ fun DashboardScreen() {
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Sync Status Component
+            SyncStatusComponent()
+            
             Spacer(modifier = Modifier.height(4.dp))
             
             // Balance Overview Section

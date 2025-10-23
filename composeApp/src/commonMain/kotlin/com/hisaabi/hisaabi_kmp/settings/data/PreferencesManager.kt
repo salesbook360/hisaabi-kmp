@@ -39,6 +39,28 @@ class PreferencesManager {
         ignoreUnknownKeys = true
     }
     
+    // Generic key-value storage for sync and other features
+    private val _longPreferences = mutableMapOf<String, MutableStateFlow<Long>>()
+    
+    fun getLong(key: String, default: Long): Long {
+        return _longPreferences[key]?.value ?: default
+    }
+    
+    fun setLong(key: String, value: Long) {
+        if (_longPreferences.containsKey(key)) {
+            _longPreferences[key]?.value = value
+        } else {
+            _longPreferences[key] = MutableStateFlow(value)
+        }
+    }
+    
+    fun observeLong(key: String, default: Long): Flow<Long> {
+        if (!_longPreferences.containsKey(key)) {
+            _longPreferences[key] = MutableStateFlow(default)
+        }
+        return _longPreferences[key]!!.asStateFlow()
+    }
+    
     fun getTransactionSettings(): TransactionSettings {
         return _transactionSettings.value
     }

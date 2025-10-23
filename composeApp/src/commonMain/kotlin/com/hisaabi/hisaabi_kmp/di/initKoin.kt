@@ -11,6 +11,7 @@ import com.hisaabi.hisaabi_kmp.products.di.productsModule
 import com.hisaabi.hisaabi_kmp.profile.di.profileModule
 import com.hisaabi.hisaabi_kmp.quantityunits.di.quantityUnitsModule
 import com.hisaabi.hisaabi_kmp.settings.di.settingsModule
+import com.hisaabi.hisaabi_kmp.sync.di.syncModule
 import com.hisaabi.hisaabi_kmp.templates.di.templatesModule
 import com.hisaabi.hisaabi_kmp.transactions.di.transactionsModule
 import com.hisaabi.hisaabi_kmp.warehouses.di.warehousesModule
@@ -24,6 +25,7 @@ fun initKoin(config: KoinAppDeclaration? = null) {
             coreModule, // Core app services
             authModule,
             databaseModule,
+            syncModule,
             partiesModule,
             categoriesModule,
             productsModule,
