@@ -10,56 +10,51 @@ package com.hisaabi.hisaabi_kmp.transactions.domain.model
  * Only add new types with new unique values.
  */
 enum class AllTransactionTypes(val value: Int, val displayName: String, val category: TransactionCategory) {
-    // Basic Transaction Types (1-3)
-    SALE(1, "Sale", TransactionCategory.BASIC),
-    SALE_ORDER(2, "Sale Order", TransactionCategory.BASIC),
-    PURCHASE(3, "Purchase", TransactionCategory.BASIC),
+    // Basic Transaction Types - Matching Legacy IDs
+    SALE(0, "Sale", TransactionCategory.BASIC),
+    CUSTOMER_RETURN(1, "Customer Return", TransactionCategory.BASIC),
+    PURCHASE(2, "Purchase", TransactionCategory.BASIC),
+    VENDOR_RETURN(3, "Vendor Return", TransactionCategory.BASIC),
     
-    // Pay/Get Cash Types (4-7, 11-12)
+    // Pay/Get Cash Types - Matching Legacy IDs
     PAY_TO_VENDOR(4, "Pay Payment to Vendor", TransactionCategory.CASH_PAYMENT),
     GET_FROM_VENDOR(5, "Get Payment from Vendor", TransactionCategory.CASH_PAYMENT),
     PAY_TO_CUSTOMER(6, "Pay Payment to Customer", TransactionCategory.CASH_PAYMENT),
     GET_FROM_CUSTOMER(7, "Get Payment from Customer", TransactionCategory.CASH_PAYMENT),
-    INVESTMENT_DEPOSIT(11, "Investment Deposit", TransactionCategory.CASH_PAYMENT),
-    INVESTMENT_WITHDRAW(12, "Investment Withdraw", TransactionCategory.CASH_PAYMENT),
     
-    // Expense & Income (8-9)
+    // Expense & Income - Matching Legacy IDs
     EXPENSE(8, "Expense", TransactionCategory.EXPENSE_INCOME),
     EXTRA_INCOME(9, "Extra Income", TransactionCategory.EXPENSE_INCOME),
     
-    // Payment Transfer (10)
+    // Payment Transfer - Matching Legacy IDs
     PAYMENT_TRANSFER(10, "Payment Transfer", TransactionCategory.OTHER),
     
-    // Stock Adjustment Types (13-15)
+    // Investment Types - Matching Legacy IDs
+    INVESTMENT_DEPOSIT(11, "Investment Deposit", TransactionCategory.CASH_PAYMENT),
+    INVESTMENT_WITHDRAW(12, "Investment Withdraw", TransactionCategory.CASH_PAYMENT),
+    
+    // Stock Adjustment Types - Matching Legacy IDs
     STOCK_TRANSFER(13, "Stock Transfer", TransactionCategory.STOCK_ADJUSTMENT),
     STOCK_INCREASE(14, "Stock Increase", TransactionCategory.STOCK_ADJUSTMENT),
     STOCK_REDUCE(15, "Stock Reduce", TransactionCategory.STOCK_ADJUSTMENT),
     
-    // Manufacture (16) - NEW
-    MANUFACTURE(16, "Manufacture", TransactionCategory.BASIC),
+    // Order Types - Matching Legacy IDs
+    PURCHASE_ORDER(16, "Purchase Order", TransactionCategory.BASIC),
+    SALE_ORDER(17, "Sale Order", TransactionCategory.BASIC),
+    QUOTATION(18, "Quotation", TransactionCategory.BASIC),
     
-    // Returns (17-18) - REASSIGNED from 5-6 to avoid conflicts
-    CUSTOMER_RETURN(17, "Customer Return", TransactionCategory.BASIC),
-    VENDOR_RETURN(18, "Vendor Return", TransactionCategory.BASIC),
-    
-    // Journal Voucher (19)
+    // Journal Voucher - Matching Legacy IDs
     JOURNAL_VOUCHER(19, "Journal Voucher", TransactionCategory.OTHER),
     
-    // Quotation (20) - REASSIGNED from 7 to avoid conflicts
-    QUOTATION(20, "Quotation", TransactionCategory.BASIC),
+    // Manufacture - Matching Legacy IDs
+    MANUFACTURE(20, "Manufacture", TransactionCategory.BASIC),
     
-    // Record Types (21-25)
+    // Record Types - Matching Legacy IDs
     MEETING(21, "Meeting", TransactionCategory.RECORD),
     TASK(22, "Task", TransactionCategory.RECORD),
     CLIENT_NOTE(23, "Client Note", TransactionCategory.RECORD),
     SELF_NOTE(24, "Self Note", TransactionCategory.RECORD),
     CASH_REMINDER(25, "Cash Reminder", TransactionCategory.RECORD),
-    
-    // Purchase Order (26) - REASSIGNED from 4 to avoid conflicts  
-    PURCHASE_ORDER(26, "Purchase Order", TransactionCategory.BASIC),
-    
-    // Stock Adjustment Generic (27) - REASSIGNED from 8 to avoid conflicts
-    STOCK_ADJUSTMENT(27, "Stock Adjustment", TransactionCategory.STOCK_ADJUSTMENT),
 
     ;
 
@@ -131,7 +126,6 @@ enum class AllTransactionTypes(val value: Int, val displayName: String, val cate
                 STOCK_TRANSFER.value,
                 STOCK_INCREASE.value,
                 STOCK_REDUCE.value,
-                STOCK_ADJUSTMENT.value,
                 MANUFACTURE.value
             )
         }
@@ -211,8 +205,7 @@ enum class AllTransactionTypes(val value: Int, val displayName: String, val cate
             return type in listOf(
                 STOCK_INCREASE.value,
                 STOCK_REDUCE.value,
-                STOCK_TRANSFER.value,
-                STOCK_ADJUSTMENT.value
+                STOCK_TRANSFER.value
             )
         }
     }
