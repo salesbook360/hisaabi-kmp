@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import com.hisaabi.hisaabi_kmp.database.dao.*
 import com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType
+import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import kotlin.math.abs
 
 /**
@@ -98,7 +99,7 @@ class DashboardRepository(
             businessSlug,
             range.fromMilli,
             range.toMilli,
-            TransactionTypeHelper.getPaymentInTransactionTypes()
+            listOf(AllTransactionTypes.GET_FROM_CUSTOMER.value, AllTransactionTypes.GET_FROM_VENDOR.value, AllTransactionTypes.INVESTMENT_DEPOSIT.value)
         ) ?: 0.0
         
         items.add(
@@ -114,7 +115,7 @@ class DashboardRepository(
             businessSlug,
             range.fromMilli,
             range.toMilli,
-            TransactionTypeHelper.getPaymentOutTransactionTypes()
+            listOf(AllTransactionTypes.PAY_TO_CUSTOMER.value, AllTransactionTypes.PAY_TO_VENDOR.value, AllTransactionTypes.INVESTMENT_WITHDRAW.value)
         ) ?: 0.0
         
         items.add(
@@ -153,7 +154,7 @@ class DashboardRepository(
         val range = DateRangeHelper.getDateRange(interval)
         val items = mutableListOf<DashboardSectionDataModel.SectionItem>()
         
-        val saleTypes = TransactionTypeHelper.getSaleTransactionTypes()
+        val saleTypes = listOf(AllTransactionTypes.SALE.value)
         
         // Total Sales Count
         val salesCount = inventoryTransactionDao.getTotalTransactionsCount(
@@ -237,7 +238,7 @@ class DashboardRepository(
         val range = DateRangeHelper.getDateRange(interval)
         val items = mutableListOf<DashboardSectionDataModel.SectionItem>()
         
-        val purchaseTypes = TransactionTypeHelper.getPurchaseTransactionTypes()
+        val purchaseTypes = listOf(AllTransactionTypes.PURCHASE.value)
         
         // No. of Purchases
         val purchaseCount = inventoryTransactionDao.getTotalTransactionsCount(
@@ -276,7 +277,7 @@ class DashboardRepository(
             businessSlug,
             range.fromMilli,
             range.toMilli,
-            TransactionTypeHelper.getPurchaseOrderTransactionTypes()
+            listOf(AllTransactionTypes.PURCHASE_ORDER.value)
         )?.toDouble() ?: 0.0
         
         items.add(
@@ -292,7 +293,7 @@ class DashboardRepository(
             businessSlug,
             range.fromMilli,
             range.toMilli,
-            TransactionTypeHelper.getReturnToVendorTransactionTypes()
+            listOf(AllTransactionTypes.VENDOR_RETURN.value)
         )?.toDouble() ?: 0.0
         
         items.add(
@@ -332,7 +333,7 @@ class DashboardRepository(
             businessSlug,
             0,
             System.currentTimeMillis(),
-            TransactionTypeHelper.getPurchaseOrderTransactionTypes()
+            listOf(AllTransactionTypes.PURCHASE_ORDER.value)
         )
         val willBeReceived = if (purchaseOrderSlugs.isNotEmpty()) {
             transactionDetailDao.calculateTotalQuantity(purchaseOrderSlugs) ?: 0.0
