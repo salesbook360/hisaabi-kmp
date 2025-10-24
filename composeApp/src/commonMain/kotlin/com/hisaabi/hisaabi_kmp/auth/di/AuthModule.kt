@@ -9,10 +9,10 @@ import com.hisaabi.hisaabi_kmp.auth.data.repository.AuthRepository
 import com.hisaabi.hisaabi_kmp.auth.data.repository.AuthRepositoryImpl
 import com.hisaabi.hisaabi_kmp.auth.domain.usecase.*
 import com.hisaabi.hisaabi_kmp.auth.presentation.viewmodel.AuthViewModel
+import com.hisaabi.hisaabi_kmp.network.interceptor.LoggingInterceptor
 import io.ktor.client.*
 import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.plugins.logging.*
 import io.ktor.client.request.header
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
@@ -37,10 +37,8 @@ val authModule = module {
                 })
             }
             
-            install(Logging) {
-                logger = Logger.DEFAULT
-                level = LogLevel.INFO
-            }
+            // Install custom logging interceptor for detailed API logging
+            install(LoggingInterceptor().createPlugin())
             
             install(HttpTimeout) {
                 requestTimeoutMillis = 30000

@@ -248,9 +248,9 @@ private fun UserDto.toDomainModel(): User {
     return User(
         id = id,
         name = name,
-        address = address,
+        address = address.orEmpty(),
         email = email,
-        phone = phone,
+        phone = phone.orEmpty(),
         slug = slug,
         firebaseId = firebaseId,
         pic = pic ?: ""  // Convert null to empty string

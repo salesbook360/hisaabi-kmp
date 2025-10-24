@@ -24,9 +24,9 @@ data class RegisterData(
 data class UserDto(
     val id: Int,
     val name: String,
-    val address: String,
+    val address: String?,
     val email: String,
-    val phone: String,
+    val phone: String?,
     val slug: String,
     val firebaseId: String,
     val pic: String? = null,  // Made nullable as API can return null

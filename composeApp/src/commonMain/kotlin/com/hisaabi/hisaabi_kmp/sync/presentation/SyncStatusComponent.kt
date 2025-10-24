@@ -26,6 +26,7 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import org.koin.compose.koinInject
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.times
 
 /**
  * Sync status indicator component to show on home screen
