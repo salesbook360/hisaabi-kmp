@@ -21,8 +21,8 @@ interface PartyDao {
     @Query("SELECT * FROM Party WHERE business_slug = :businessSlug")
     fun getPartiesByBusiness(businessSlug: String): Flow<List<PartyEntity>>
     
-    @Query("SELECT * FROM Party WHERE sync_status != 0")
-    suspend fun getUnsyncedParties(): List<PartyEntity>
+    @Query("SELECT * FROM Party WHERE sync_status != 2 AND business_slug = :businessSlug")
+    suspend fun getUnsyncedParties(businessSlug: String): List<PartyEntity>
     
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertParty(party: PartyEntity): Long

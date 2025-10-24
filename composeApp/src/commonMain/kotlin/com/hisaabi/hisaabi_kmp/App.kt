@@ -14,6 +14,7 @@ import com.hisaabi.hisaabi_kmp.business.data.datasource.BusinessPreferencesDataS
 import com.hisaabi.hisaabi_kmp.business.presentation.ui.BusinessSelectionGateScreen
 import com.hisaabi.hisaabi_kmp.home.HomeScreen
 import com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType
+import com.hisaabi.hisaabi_kmp.sync.domain.manager.SyncManager
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.KoinContext
 import org.koin.compose.koinInject
@@ -33,10 +34,22 @@ fun App() {
             val businessPreferences: BusinessPreferencesDataSource = koinInject()
             var selectedBusinessId by remember { mutableStateOf<Int?>(null) }
             
+            // Sync manager for background sync
+            val syncManager: SyncManager = koinInject()
+            
             // Observe selected business ID
             LaunchedEffect(Unit) {
                 businessPreferences.observeSelectedBusinessId().collect { businessId ->
                     selectedBusinessId = businessId
+                }
+            }
+            
+            // Start background sync when user is logged in and business is selected
+            LaunchedEffect(isLoggedIn, selectedBusinessId) {
+                if (isLoggedIn && selectedBusinessId != null) {
+                    syncManager.startBackgroundSync()
+                } else {
+                    syncManager.stopBackgroundSync()
                 }
             }
             

@@ -10,7 +10,7 @@ interface CategoryLocalDataSource {
     suspend fun getCategoryBySlug(slug: String): CategoryEntity?
     fun getCategoriesByType(typeId: Int): Flow<List<CategoryEntity>>
     fun getCategoriesByBusiness(businessSlug: String): Flow<List<CategoryEntity>>
-    suspend fun getUnsyncedCategories(): List<CategoryEntity>
+    suspend fun getUnsyncedCategories(businessSlug: String): List<CategoryEntity>
     suspend fun insertCategory(category: CategoryEntity): Long
     suspend fun insertCategories(categories: List<CategoryEntity>)
     suspend fun updateCategory(category: CategoryEntity)
@@ -34,8 +34,8 @@ class CategoryLocalDataSourceImpl(
     override fun getCategoriesByBusiness(businessSlug: String): Flow<List<CategoryEntity>> = 
         categoryDao.getCategoriesByBusiness(businessSlug)
     
-    override suspend fun getUnsyncedCategories(): List<CategoryEntity> = 
-        categoryDao.getUnsyncedCategories()
+    override suspend fun getUnsyncedCategories(businessSlug: String): List<CategoryEntity> = 
+        categoryDao.getUnsyncedCategories(businessSlug)
     
     override suspend fun insertCategory(category: CategoryEntity): Long = 
         categoryDao.insertCategory(category)

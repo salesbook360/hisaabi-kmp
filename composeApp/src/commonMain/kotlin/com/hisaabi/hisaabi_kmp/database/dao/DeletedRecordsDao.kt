@@ -15,8 +15,8 @@ interface DeletedRecordsDao {
     @Query("SELECT * FROM DeletedRecords WHERE record_type = :recordType")
     fun getDeletedRecordsByType(recordType: String): Flow<List<DeletedRecordsEntity>>
     
-    @Query("SELECT * FROM DeletedRecords WHERE sync_status != 0")
-    suspend fun getUnsyncedDeletedRecords(): List<DeletedRecordsEntity>
+    @Query("SELECT * FROM DeletedRecords WHERE sync_status != 2 AND business_slug = :businessSlug")
+    suspend fun getUnsyncedDeletedRecords(businessSlug: String): List<DeletedRecordsEntity>
     
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertDeletedRecord(record: DeletedRecordsEntity): Long

@@ -21,8 +21,8 @@ interface QuantityUnitDao {
     @Query("SELECT * FROM QuantityUnit WHERE business_slug = :businessSlug")
     fun getUnitsByBusiness(businessSlug: String): Flow<List<QuantityUnitEntity>>
     
-    @Query("SELECT * FROM QuantityUnit WHERE sync_status != 0")
-    suspend fun getUnsyncedUnits(): List<QuantityUnitEntity>
+    @Query("SELECT * FROM QuantityUnit WHERE sync_status != 2 AND business_slug = :businessSlug")
+    suspend fun getUnsyncedUnits(businessSlug: String): List<QuantityUnitEntity>
     
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertUnit(unit: QuantityUnitEntity): Long

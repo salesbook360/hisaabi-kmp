@@ -85,7 +85,7 @@ class SyncRepositoryImpl(
     // Categories
     override suspend fun syncCategoriesUp(): Result<Unit> = runCatching {
         val businessSlug = sessionManager.getBusinessSlug() ?: return@runCatching
-        val unsynced = categoryDao.getUnsyncedCategories()
+        val unsynced = categoryDao.getUnsyncedCategories(businessSlug)
         
         if (unsynced.isEmpty()) return@runCatching
         
@@ -123,7 +123,7 @@ class SyncRepositoryImpl(
     // Products
     override suspend fun syncProductsUp(): Result<Unit> = runCatching {
         val businessSlug = sessionManager.getBusinessSlug() ?: return@runCatching
-        val unsynced = productDao.getUnsyncedProducts()
+        val unsynced = productDao.getUnsyncedProducts(businessSlug)
         
         if (unsynced.isEmpty()) return@runCatching
         
@@ -160,7 +160,7 @@ class SyncRepositoryImpl(
     // Parties (Customers/Suppliers)
     override suspend fun syncPartiesUp(): Result<Unit> = runCatching {
         val businessSlug = sessionManager.getBusinessSlug() ?: return@runCatching
-        val unsynced = partyDao.getUnsyncedParties()
+        val unsynced = partyDao.getUnsyncedParties(businessSlug)
         
         if (unsynced.isEmpty()) return@runCatching
         
@@ -197,7 +197,7 @@ class SyncRepositoryImpl(
     // Payment Methods
     override suspend fun syncPaymentMethodsUp(): Result<Unit> = runCatching {
         val businessSlug = sessionManager.getBusinessSlug() ?: return@runCatching
-        val unsynced = paymentMethodDao.getUnsyncedPaymentMethods()
+        val unsynced = paymentMethodDao.getUnsyncedPaymentMethods(businessSlug)
         
         if (unsynced.isEmpty()) return@runCatching
         
@@ -234,7 +234,7 @@ class SyncRepositoryImpl(
     // Quantity Units
     override suspend fun syncQuantityUnitsUp(): Result<Unit> = runCatching {
         val businessSlug = sessionManager.getBusinessSlug() ?: return@runCatching
-        val unsynced = quantityUnitDao.getUnsyncedUnits()
+        val unsynced = quantityUnitDao.getUnsyncedUnits(businessSlug)
         
         if (unsynced.isEmpty()) return@runCatching
         
@@ -271,7 +271,7 @@ class SyncRepositoryImpl(
     // Warehouses
     override suspend fun syncWarehousesUp(): Result<Unit> = runCatching {
         val businessSlug = sessionManager.getBusinessSlug() ?: return@runCatching
-        val unsynced = warehouseDao.getUnsyncedWareHouses()
+        val unsynced = warehouseDao.getUnsyncedWareHouses(businessSlug)
         
         if (unsynced.isEmpty()) return@runCatching
         
@@ -308,7 +308,7 @@ class SyncRepositoryImpl(
     // Transactions
     override suspend fun syncTransactionsUp(): Result<Unit> = runCatching {
         val businessSlug = sessionManager.getBusinessSlug() ?: return@runCatching
-        val unsynced = transactionDao.getUnsyncedTransactions()
+        val unsynced = transactionDao.getUnsyncedTransactions(businessSlug)
         
         if (unsynced.isEmpty()) return@runCatching
         
@@ -345,7 +345,7 @@ class SyncRepositoryImpl(
     // Transaction Details
     override suspend fun syncTransactionDetailsUp(): Result<Unit> = runCatching {
         val businessSlug = sessionManager.getBusinessSlug() ?: return@runCatching
-        val unsynced = transactionDetailDao.getUnsyncedDetails()
+        val unsynced = transactionDetailDao.getUnsyncedDetails(businessSlug)
         
         if (unsynced.isEmpty()) return@runCatching
         
@@ -382,7 +382,7 @@ class SyncRepositoryImpl(
     // Product Quantities
     override suspend fun syncProductQuantitiesUp(): Result<Unit> = runCatching {
         val businessSlug = sessionManager.getBusinessSlug() ?: return@runCatching
-        val unsynced = productQuantitiesDao.getUnsyncedQuantities()
+        val unsynced = productQuantitiesDao.getUnsyncedQuantities(businessSlug)
         
         if (unsynced.isEmpty()) return@runCatching
         
@@ -419,7 +419,7 @@ class SyncRepositoryImpl(
     // Media
     override suspend fun syncMediaUp(): Result<Unit> = runCatching {
         val businessSlug = sessionManager.getBusinessSlug() ?: return@runCatching
-        val unsynced = entityMediaDao.getUnsyncedMedia()
+        val unsynced = entityMediaDao.getUnsyncedMedia(businessSlug)
         
         if (unsynced.isEmpty()) return@runCatching
         
@@ -472,7 +472,7 @@ class SyncRepositoryImpl(
     // Deleted Records
     override suspend fun syncDeletedRecordsUp(): Result<Unit> = runCatching {
         val businessSlug = sessionManager.getBusinessSlug() ?: return@runCatching
-        val unsynced = deletedRecordsDao.getUnsyncedDeletedRecords()
+        val unsynced = deletedRecordsDao.getUnsyncedDeletedRecords(businessSlug)
         
         if (unsynced.isEmpty()) return@runCatching
         

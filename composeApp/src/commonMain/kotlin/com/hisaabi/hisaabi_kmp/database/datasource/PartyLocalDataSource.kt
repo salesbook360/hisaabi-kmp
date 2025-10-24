@@ -10,7 +10,7 @@ interface PartyLocalDataSource {
     suspend fun getPartyBySlug(slug: String): PartyEntity?
     fun getPartiesByRole(roleId: Int): Flow<List<PartyEntity>>
     fun getPartiesByBusiness(businessSlug: String): Flow<List<PartyEntity>>
-    suspend fun getUnsyncedParties(): List<PartyEntity>
+    suspend fun getUnsyncedParties(businessSlug: String): List<PartyEntity>
     suspend fun insertParty(party: PartyEntity): Long
     suspend fun insertParties(parties: List<PartyEntity>)
     suspend fun updateParty(party: PartyEntity)
@@ -34,8 +34,8 @@ class PartyLocalDataSourceImpl(
     override fun getPartiesByBusiness(businessSlug: String): Flow<List<PartyEntity>> = 
         partyDao.getPartiesByBusiness(businessSlug)
     
-    override suspend fun getUnsyncedParties(): List<PartyEntity> = 
-        partyDao.getUnsyncedParties()
+    override suspend fun getUnsyncedParties(businessSlug: String): List<PartyEntity> = 
+        partyDao.getUnsyncedParties(businessSlug)
     
     override suspend fun insertParty(party: PartyEntity): Long = 
         partyDao.insertParty(party)

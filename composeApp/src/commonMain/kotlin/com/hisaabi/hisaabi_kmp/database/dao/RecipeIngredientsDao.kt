@@ -18,8 +18,8 @@ interface RecipeIngredientsDao {
     @Query("SELECT * FROM RecipeIngredients WHERE ingredient_slug = :ingredientSlug")
     fun getRecipesByIngredient(ingredientSlug: String): Flow<List<RecipeIngredientsEntity>>
     
-    @Query("SELECT * FROM RecipeIngredients WHERE sync_status != 0")
-    suspend fun getUnsyncedIngredients(): List<RecipeIngredientsEntity>
+    @Query("SELECT * FROM RecipeIngredients WHERE sync_status != 2 AND business_slug = :businessSlug")
+    suspend fun getUnsyncedIngredients(businessSlug: String): List<RecipeIngredientsEntity>
     
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertRecipeIngredient(ingredient: RecipeIngredientsEntity): Long

@@ -30,8 +30,8 @@ interface InventoryTransactionDao {
     @Query("SELECT * FROM InventoryTransaction WHERE business_slug = :businessSlug AND (parent_slug IS NULL OR parent_slug = '') ORDER BY timestamp DESC")
     fun getTransactionsByBusiness(businessSlug: String): Flow<List<InventoryTransactionEntity>>
     
-    @Query("SELECT * FROM InventoryTransaction WHERE sync_status != 0")
-    suspend fun getUnsyncedTransactions(): List<InventoryTransactionEntity>
+    @Query("SELECT * FROM InventoryTransaction WHERE sync_status != 2 AND business_slug = :businessSlug")
+    suspend fun getUnsyncedTransactions(businessSlug: String): List<InventoryTransactionEntity>
     
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTransaction(transaction: InventoryTransactionEntity): Long

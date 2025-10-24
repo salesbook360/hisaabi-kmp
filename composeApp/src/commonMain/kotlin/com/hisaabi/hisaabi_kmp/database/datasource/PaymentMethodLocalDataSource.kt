@@ -27,8 +27,8 @@ class PaymentMethodLocalDataSource(
         return paymentMethodDao.getPaymentMethodsByBusiness(businessSlug)
     }
     
-    suspend fun getUnsyncedPaymentMethods(): List<PaymentMethodEntity> {
-        return paymentMethodDao.getUnsyncedPaymentMethods()
+    suspend fun getUnsyncedPaymentMethods(businessSlug: String): List<PaymentMethodEntity> {
+        return paymentMethodDao.getUnsyncedPaymentMethods(businessSlug)
     }
     
     suspend fun insertPaymentMethod(paymentMethod: PaymentMethodEntity): Long {

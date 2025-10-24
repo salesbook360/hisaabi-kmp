@@ -21,8 +21,8 @@ interface PaymentMethodDao {
     @Query("SELECT * FROM PaymentMethod WHERE business_slug = :businessSlug")
     fun getPaymentMethodsByBusiness(businessSlug: String): Flow<List<PaymentMethodEntity>>
     
-    @Query("SELECT * FROM PaymentMethod WHERE sync_status != 0")
-    suspend fun getUnsyncedPaymentMethods(): List<PaymentMethodEntity>
+    @Query("SELECT * FROM PaymentMethod WHERE sync_status != 2 AND business_slug = :businessSlug")
+    suspend fun getUnsyncedPaymentMethods(businessSlug: String): List<PaymentMethodEntity>
     
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPaymentMethod(paymentMethod: PaymentMethodEntity): Long

@@ -27,8 +27,8 @@ class WareHouseLocalDataSource(
         return wareHouseDao.getWareHousesByBusiness(businessSlug)
     }
     
-    suspend fun getUnsyncedWareHouses(): List<WareHouseEntity> {
-        return wareHouseDao.getUnsyncedWareHouses()
+    suspend fun getUnsyncedWareHouses(businessSlug: String): List<WareHouseEntity> {
+        return wareHouseDao.getUnsyncedWareHouses(businessSlug)
     }
     
     suspend fun insertWareHouse(wareHouse: WareHouseEntity): Long {

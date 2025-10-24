@@ -21,8 +21,8 @@ interface CategoryDao {
     @Query("SELECT * FROM Category WHERE business_slug = :businessSlug")
     fun getCategoriesByBusiness(businessSlug: String): Flow<List<CategoryEntity>>
     
-    @Query("SELECT * FROM Category WHERE sync_status != 0")
-    suspend fun getUnsyncedCategories(): List<CategoryEntity>
+    @Query("SELECT * FROM Category WHERE sync_status != 2 AND business_slug = :businessSlug")
+    suspend fun getUnsyncedCategories(businessSlug: String): List<CategoryEntity>
     
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertCategory(category: CategoryEntity): Long

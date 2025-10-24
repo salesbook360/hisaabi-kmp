@@ -27,8 +27,8 @@ class QuantityUnitLocalDataSource(
         return quantityUnitDao.getUnitsByBusiness(businessSlug)
     }
     
-    suspend fun getUnsyncedUnits(): List<QuantityUnitEntity> {
-        return quantityUnitDao.getUnsyncedUnits()
+    suspend fun getUnsyncedUnits(businessSlug: String): List<QuantityUnitEntity> {
+        return quantityUnitDao.getUnsyncedUnits(businessSlug)
     }
     
     suspend fun insertUnit(unit: QuantityUnitEntity): Long {

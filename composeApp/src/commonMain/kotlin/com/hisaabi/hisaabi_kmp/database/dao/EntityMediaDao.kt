@@ -18,8 +18,8 @@ interface EntityMediaDao {
     @Query("SELECT * FROM EntityMedia WHERE entity_name = :entityName")
     fun getMediaByEntityName(entityName: String): Flow<List<EntityMediaEntity>>
     
-    @Query("SELECT * FROM EntityMedia WHERE sync_status != 0")
-    suspend fun getUnsyncedMedia(): List<EntityMediaEntity>
+    @Query("SELECT * FROM EntityMedia WHERE sync_status != 2 AND business_slug = :businessSlug")
+    suspend fun getUnsyncedMedia(businessSlug: String): List<EntityMediaEntity>
     
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertEntityMedia(media: EntityMediaEntity): Long

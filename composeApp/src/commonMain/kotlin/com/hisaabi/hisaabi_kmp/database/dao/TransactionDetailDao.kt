@@ -21,8 +21,8 @@ interface TransactionDetailDao {
     @Query("SELECT * FROM TransactionDetail WHERE product_slug = :productSlug")
     fun getDetailsByProduct(productSlug: String): Flow<List<TransactionDetailEntity>>
     
-    @Query("SELECT * FROM TransactionDetail WHERE sync_status != 0")
-    suspend fun getUnsyncedDetails(): List<TransactionDetailEntity>
+    @Query("SELECT * FROM TransactionDetail WHERE sync_status != 2 AND business_slug = :businessSlug")
+    suspend fun getUnsyncedDetails(businessSlug: String): List<TransactionDetailEntity>
     
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTransactionDetail(detail: TransactionDetailEntity): Long

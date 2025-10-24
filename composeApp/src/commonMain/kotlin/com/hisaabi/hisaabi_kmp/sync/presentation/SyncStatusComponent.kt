@@ -41,31 +41,26 @@ fun SyncStatusComponent(
     val lastSyncTime by syncManager.lastSyncTime.collectAsState()
     val scope = rememberCoroutineScope()
     
-    AnimatedVisibility(
-        visible = syncState != SyncState.Idle,
-        enter = slideInVertically() + fadeIn(),
-        exit = slideOutVertically() + fadeOut(),
+    // Always show the sync component (removed AnimatedVisibility hiding on Idle)
+    Card(
         modifier = modifier
-    ) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-                .clickable {
-                    scope.launch {
-                        syncManager.syncData()
-                    }
-                },
-            colors = CardDefaults.cardColors(
-                containerColor = when (syncState) {
-                    is SyncState.InProgress, is SyncState.Progress -> MaterialTheme.colorScheme.primaryContainer
-                    is SyncState.Success -> MaterialTheme.colorScheme.tertiaryContainer
-                    is SyncState.Error -> MaterialTheme.colorScheme.errorContainer
-                    else -> MaterialTheme.colorScheme.surface
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clickable {
+                scope.launch {
+                    syncManager.syncData()
                 }
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-        ) {
+            },
+        colors = CardDefaults.cardColors(
+            containerColor = when (syncState) {
+                is SyncState.InProgress, is SyncState.Progress -> MaterialTheme.colorScheme.primaryContainer
+                is SyncState.Success -> MaterialTheme.colorScheme.tertiaryContainer
+                is SyncState.Error -> MaterialTheme.colorScheme.errorContainer
+                else -> MaterialTheme.colorScheme.surfaceVariant
+            }
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -98,23 +93,30 @@ fun SyncStatusComponent(
                     Column {
                         Text(
                             text = when (syncState) {
-                                is SyncState.Idle -> "Sync"
+                                is SyncState.Idle -> "Tap to sync"
                                 is SyncState.InProgress -> "Syncing..."
                                 is SyncState.Progress -> {
                                     val progress = (syncState as SyncState.Progress).progress
                                     "${progress.recordType}: ${progress.completed}/${progress.total}"
                                 }
-                                is SyncState.Success -> "Synced"
+                                is SyncState.Success -> "Synced successfully"
                                 is SyncState.Error -> "Sync Failed"
                             },
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium
                         )
                         
-                        // Last sync time
-                        lastSyncTime?.let { time ->
+                        // Last sync time or instruction
+                        if (lastSyncTime != null) {
                             Text(
-                                text = formatLastSyncTime(time),
+                                text = "Last synced ${formatLastSyncTime(lastSyncTime!!)}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 11.sp
+                            )
+                        } else {
+                            Text(
+                                text = "Never synced",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 11.sp
@@ -149,14 +151,21 @@ fun SyncStatusComponent(
                             Text("Retry", fontSize = 12.sp)
                         }
                     }
+                    is SyncState.Idle -> {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Sync",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
                     else -> {
-                        // Show nothing or sync icon
+                        // Show nothing for other states
                     }
                 }
             }
         }
     }
-}
+
 
 /**
  * Compact sync status indicator for toolbar/app bar

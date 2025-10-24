@@ -9,7 +9,7 @@ interface TransactionDetailLocalDataSource {
     suspend fun getTransactionDetailById(id: Int): TransactionDetailEntity?
     fun getDetailsByTransaction(transactionSlug: String): Flow<List<TransactionDetailEntity>>
     fun getDetailsByProduct(productSlug: String): Flow<List<TransactionDetailEntity>>
-    suspend fun getUnsyncedDetails(): List<TransactionDetailEntity>
+    suspend fun getUnsyncedDetails(businessSlug: String): List<TransactionDetailEntity>
     suspend fun insertTransactionDetail(detail: TransactionDetailEntity): Long
     suspend fun insertTransactionDetails(details: List<TransactionDetailEntity>)
     suspend fun updateTransactionDetail(detail: TransactionDetailEntity)
@@ -34,8 +34,8 @@ class TransactionDetailLocalDataSourceImpl(
     override fun getDetailsByProduct(productSlug: String): Flow<List<TransactionDetailEntity>> = 
         detailDao.getDetailsByProduct(productSlug)
     
-    override suspend fun getUnsyncedDetails(): List<TransactionDetailEntity> = 
-        detailDao.getUnsyncedDetails()
+    override suspend fun getUnsyncedDetails(businessSlug: String): List<TransactionDetailEntity> = 
+        detailDao.getUnsyncedDetails(businessSlug)
     
     override suspend fun insertTransactionDetail(detail: TransactionDetailEntity): Long = 
         detailDao.insertTransactionDetail(detail)

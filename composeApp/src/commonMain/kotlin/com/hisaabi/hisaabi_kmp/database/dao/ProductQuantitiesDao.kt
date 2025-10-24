@@ -24,8 +24,8 @@ interface ProductQuantitiesDao {
         warehouseSlug: String
     ): ProductQuantitiesEntity?
     
-    @Query("SELECT * FROM ProductQuantities WHERE sync_status != 0")
-    suspend fun getUnsyncedQuantities(): List<ProductQuantitiesEntity>
+    @Query("SELECT * FROM ProductQuantities WHERE sync_status != 2 AND business_slug = :businessSlug")
+    suspend fun getUnsyncedQuantities(businessSlug: String): List<ProductQuantitiesEntity>
     
     @Query("SELECT * FROM ProductQuantities WHERE current_quantity <= minimum_quantity")
     fun getLowStockProducts(): Flow<List<ProductQuantitiesEntity>>

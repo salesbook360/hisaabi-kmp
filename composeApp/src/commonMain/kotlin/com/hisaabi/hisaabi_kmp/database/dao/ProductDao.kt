@@ -21,8 +21,8 @@ interface ProductDao {
     @Query("SELECT * FROM Product WHERE business_slug = :businessSlug")
     fun getProductsByBusiness(businessSlug: String): Flow<List<ProductEntity>>
     
-    @Query("SELECT * FROM Product WHERE sync_status != 0")
-    suspend fun getUnsyncedProducts(): List<ProductEntity>
+    @Query("SELECT * FROM Product WHERE sync_status != 2 AND business_slug = :businessSlug")
+    suspend fun getUnsyncedProducts(businessSlug: String): List<ProductEntity>
     
     @Query("SELECT * FROM Product WHERE status_id = :statusId")
     fun getProductsByStatus(statusId: Int): Flow<List<ProductEntity>>
