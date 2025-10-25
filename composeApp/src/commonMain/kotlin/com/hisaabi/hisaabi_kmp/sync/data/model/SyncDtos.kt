@@ -13,13 +13,12 @@ data class CategoryDto(
     val title: String?,
     val description: String?,
     val thumbnail: String?,
-    val type_id: Int = 0,
+    val typeId: Int = 0,
     val slug: String?,
-    val business_slug: String?,
-    val created_by: String?,
-    val sync_status: Int = 0,
-    val created_at: String?,
-    val updated_at: String?
+    val businessSlug: String?,
+    val createdBy: String?,
+    val createdAt: String?,
+    val updatedAt: String?
 )
 
 @Serializable
@@ -27,7 +26,7 @@ data class ProductDto(
     val id: Int = 0,
     val title: String?,
     val description: String?,
-    val type_id: Int = 0,
+    val typeId: Int = 0,
     val tax_percentage: Double = 0.0,
     val discount_percentage: Double = 0.0,
     val retail_price: Double = 0.0,

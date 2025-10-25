@@ -1,5 +1,6 @@
 package com.hisaabi.hisaabi_kmp.sync.data.model
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -8,10 +9,13 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class SyncResponse<T>(
     val data: SyncData<T>? = null,
-    val status: String,
+    @SerialName("status")
+    val statusCode: Int,
     val message: String? = null,
     val timestamp: String? = null
-)
+) {
+    fun isSuccess(): Boolean = statusCode == 200
+}
 
 @Serializable
 data class SyncData<T>(

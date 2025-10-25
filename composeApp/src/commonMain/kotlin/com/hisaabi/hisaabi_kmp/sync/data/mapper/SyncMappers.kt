@@ -2,6 +2,7 @@ package com.hisaabi.hisaabi_kmp.sync.data.mapper
 
 import com.hisaabi.hisaabi_kmp.database.entity.*
 import com.hisaabi.hisaabi_kmp.sync.data.model.*
+import com.hisaabi.hisaabi_kmp.sync.domain.model.SyncStatus
 
 /**
  * Mapper functions to convert between database entities and sync DTOs
@@ -13,13 +14,12 @@ fun CategoryEntity.toDto() = CategoryDto(
     title = title,
     description = description,
     thumbnail = thumbnail,
-    type_id = type_id,
+    typeId = type_id,
     slug = slug,
-    business_slug = business_slug,
-    created_by = created_by,
-    sync_status = sync_status,
-    created_at = created_at,
-    updated_at = updated_at
+    businessSlug = business_slug,
+    createdBy = created_by,
+    createdAt = created_at,
+    updatedAt = updated_at
 )
 
 fun CategoryDto.toEntity() = CategoryEntity(
@@ -27,13 +27,14 @@ fun CategoryDto.toEntity() = CategoryEntity(
     title = title,
     description = description,
     thumbnail = thumbnail,
-    type_id = type_id,
+    type_id = typeId,
     slug = slug,
-    business_slug = business_slug,
-    created_by = created_by,
-    sync_status = sync_status,
-    created_at = created_at,
-    updated_at = updated_at
+    business_slug = businessSlug,
+    created_by = createdBy,
+    sync_status = SyncStatus.SYNCED.value,
+    created_at = createdAt,
+    updated_at = updatedAt,
+
 )
 
 // Product Mappers
@@ -41,7 +42,7 @@ fun ProductEntity.toDto() = ProductDto(
     id = id,
     title = title,
     description = description,
-    type_id = type_id,
+    typeId = type_id,
     tax_percentage = tax_percentage,
     discount_percentage = discount_percentage,
     retail_price = retail_price,
@@ -72,7 +73,7 @@ fun ProductDto.toEntity() = ProductEntity(
     id = id,
     title = title,
     description = description,
-    type_id = type_id,
+    type_id = typeId,
     tax_percentage = tax_percentage,
     discount_percentage = discount_percentage,
     retail_price = retail_price,

@@ -94,7 +94,7 @@ class SyncRepositoryImpl(
         val dtos = unsynced.map { it.toDto() }
         val response = remoteDataSource.syncCategoriesUp(dtos)
         
-        if (response.status == "success") {
+        if (response.isSuccess()) {
             // Update sync status for synced categories
             response.data?.list?.forEach { dto ->
                 val entity = dto.toEntity().copy(sync_status = SyncStatus.SYNCED.value)
@@ -110,7 +110,7 @@ class SyncRepositoryImpl(
         
         val response = remoteDataSource.syncCategoriesDown(lastSyncTime)
         
-        if (response.status == "success") {
+        if (response.isSuccess()) {
             response.data?.list?.forEach { dto ->
                 val entity = dto.toEntity().copy(sync_status = SyncStatus.SYNCED.value)
                 categoryDao.insertCategory(entity)
@@ -132,7 +132,7 @@ class SyncRepositoryImpl(
         val dtos = unsynced.map { it.toDto() }
         val response = remoteDataSource.syncProductsUp(dtos)
         
-        if (response.status == "success") {
+        if (response.isSuccess()) {
             response.data?.list?.forEach { dto ->
                 val entity = dto.toEntity().copy(sync_status = SyncStatus.SYNCED.value)
                 productDao.updateProduct(entity)
@@ -147,7 +147,7 @@ class SyncRepositoryImpl(
         
         val response = remoteDataSource.syncProductsDown(lastSyncTime)
         
-        if (response.status == "success") {
+        if (response.isSuccess()) {
             response.data?.list?.forEach { dto ->
                 val entity = dto.toEntity().copy(sync_status = SyncStatus.SYNCED.value)
                 productDao.insertProduct(entity)
@@ -169,7 +169,7 @@ class SyncRepositoryImpl(
         val dtos = unsynced.map { it.toDto() }
         val response = remoteDataSource.syncPartiesUp(dtos)
         
-        if (response.status == "success") {
+        if (response.isSuccess()) {
             response.data?.list?.forEach { dto ->
                 val entity = dto.toEntity().copy(sync_status = SyncStatus.SYNCED.value)
                 partyDao.updateParty(entity)
@@ -184,7 +184,7 @@ class SyncRepositoryImpl(
         
         val response = remoteDataSource.syncPartiesDown(lastSyncTime)
         
-        if (response.status == "success") {
+        if (response.isSuccess()) {
             response.data?.list?.forEach { dto ->
                 val entity = dto.toEntity().copy(sync_status = SyncStatus.SYNCED.value)
                 partyDao.insertParty(entity)
@@ -206,7 +206,7 @@ class SyncRepositoryImpl(
         val dtos = unsynced.map { it.toDto() }
         val response = remoteDataSource.syncPaymentMethodsUp(dtos)
         
-        if (response.status == "success") {
+        if (response.isSuccess()) {
             response.data?.list?.forEach { dto ->
                 val entity = dto.toEntity().copy(sync_status = SyncStatus.SYNCED.value)
                 paymentMethodDao.updatePaymentMethod(entity)
@@ -221,7 +221,7 @@ class SyncRepositoryImpl(
         
         val response = remoteDataSource.syncPaymentMethodsDown(lastSyncTime)
         
-        if (response.status == "success") {
+        if (response.isSuccess()) {
             response.data?.list?.forEach { dto ->
                 val entity = dto.toEntity().copy(sync_status = SyncStatus.SYNCED.value)
                 paymentMethodDao.insertPaymentMethod(entity)
@@ -243,7 +243,7 @@ class SyncRepositoryImpl(
         val dtos = unsynced.map { it.toDto() }
         val response = remoteDataSource.syncQuantityUnitsUp(dtos)
         
-        if (response.status == "success") {
+        if (response.isSuccess()) {
             response.data?.list?.forEach { dto ->
                 val entity = dto.toEntity().copy(sync_status = SyncStatus.SYNCED.value)
                 quantityUnitDao.updateUnit(entity)
@@ -258,7 +258,7 @@ class SyncRepositoryImpl(
         
         val response = remoteDataSource.syncQuantityUnitsDown(lastSyncTime)
         
-        if (response.status == "success") {
+        if (response.isSuccess()) {
             response.data?.list?.forEach { dto ->
                 val entity = dto.toEntity().copy(sync_status = SyncStatus.SYNCED.value)
                 quantityUnitDao.insertUnit(entity)
@@ -280,7 +280,7 @@ class SyncRepositoryImpl(
         val dtos = unsynced.map { it.toDto() }
         val response = remoteDataSource.syncWarehousesUp(dtos)
         
-        if (response.status == "success") {
+        if (response.isSuccess()) {
             response.data?.list?.forEach { dto ->
                 val entity = dto.toEntity().copy(sync_status = SyncStatus.SYNCED.value)
                 warehouseDao.updateWareHouse(entity)
@@ -295,7 +295,7 @@ class SyncRepositoryImpl(
         
         val response = remoteDataSource.syncWarehousesDown(lastSyncTime)
         
-        if (response.status == "success") {
+        if (response.isSuccess()) {
             response.data?.list?.forEach { dto ->
                 val entity = dto.toEntity().copy(sync_status = SyncStatus.SYNCED.value)
                 warehouseDao.insertWareHouse(entity)
@@ -317,7 +317,7 @@ class SyncRepositoryImpl(
         val dtos = unsynced.map { it.toDto() }
         val response = remoteDataSource.syncTransactionsUp(dtos)
         
-        if (response.status == "success") {
+        if (response.isSuccess()) {
             response.data?.list?.forEach { dto ->
                 val entity = dto.toEntity().copy(sync_status = SyncStatus.SYNCED.value)
                 transactionDao.updateTransaction(entity)
@@ -332,7 +332,7 @@ class SyncRepositoryImpl(
         
         val response = remoteDataSource.syncTransactionsDown(lastSyncTime)
         
-        if (response.status == "success") {
+        if (response.isSuccess()) {
             response.data?.list?.forEach { dto ->
                 val entity = dto.toEntity().copy(sync_status = SyncStatus.SYNCED.value)
                 transactionDao.insertTransaction(entity)
@@ -354,7 +354,7 @@ class SyncRepositoryImpl(
         val dtos = unsynced.map { it.toDto() }
         val response = remoteDataSource.syncTransactionDetailsUp(dtos)
         
-        if (response.status == "success") {
+        if (response.isSuccess()) {
             response.data?.list?.forEach { dto ->
                 val entity = dto.toEntity().copy(sync_status = SyncStatus.SYNCED.value)
                 transactionDetailDao.updateTransactionDetail(entity)
@@ -369,7 +369,7 @@ class SyncRepositoryImpl(
         
         val response = remoteDataSource.syncTransactionDetailsDown(lastSyncTime)
         
-        if (response.status == "success") {
+        if (response.isSuccess()) {
             response.data?.list?.forEach { dto ->
                 val entity = dto.toEntity().copy(sync_status = SyncStatus.SYNCED.value)
                 transactionDetailDao.insertTransactionDetail(entity)
@@ -391,7 +391,7 @@ class SyncRepositoryImpl(
         val dtos = unsynced.map { it.toDto() }
         val response = remoteDataSource.syncProductQuantitiesUp(dtos)
         
-        if (response.status == "success") {
+        if (response.isSuccess()) {
             response.data?.list?.forEach { dto ->
                 val entity = dto.toEntity().copy(sync_status = SyncStatus.SYNCED.value)
                 productQuantitiesDao.updateProductQuantity(entity)
@@ -406,7 +406,7 @@ class SyncRepositoryImpl(
         
         val response = remoteDataSource.syncProductQuantitiesDown(lastSyncTime)
         
-        if (response.status == "success") {
+        if (response.isSuccess()) {
             response.data?.list?.forEach { dto ->
                 val entity = dto.toEntity().copy(sync_status = SyncStatus.SYNCED.value)
                 productQuantitiesDao.insertProductQuantity(entity)
@@ -428,7 +428,7 @@ class SyncRepositoryImpl(
         val dtos = unsynced.map { it.toDto() }
         val response = remoteDataSource.syncMediaUp(dtos)
         
-        if (response.status == "success") {
+        if (response.isSuccess()) {
             response.data?.list?.forEach { dto ->
                 val entity = dto.toEntity().copy(sync_status = SyncStatus.SYNCED.value)
                 entityMediaDao.updateEntityMedia(entity)
@@ -443,7 +443,7 @@ class SyncRepositoryImpl(
         
         val response = remoteDataSource.syncMediaDown(lastSyncTime)
         
-        if (response.status == "success") {
+        if (response.isSuccess()) {
             response.data?.list?.forEach { dto ->
                 val entity = dto.toEntity().copy(sync_status = SyncStatus.SYNCED.value)
                 entityMediaDao.insertEntityMedia(entity)
@@ -459,7 +459,7 @@ class SyncRepositoryImpl(
         
         val response = remoteDataSource.syncRecipeIngredientsDown(lastSyncTime)
         
-        if (response.status == "success") {
+        if (response.isSuccess()) {
             response.data?.list?.forEach { dto ->
                 val entity = dto.toEntity().copy(sync_status = SyncStatus.SYNCED.value)
                 recipeIngredientsDao.insertRecipeIngredient(entity)
@@ -481,7 +481,7 @@ class SyncRepositoryImpl(
         val dtos = unsynced.map { it.toDto() }
         val response = remoteDataSource.deleteRecords(dtos)
         
-        if (response.status == "success") {
+        if (response.isSuccess()) {
             // Mark as synced
             unsynced.forEach { record ->
                 val updated = record.copy(sync_status = SyncStatus.SYNCED.value)
@@ -498,7 +498,7 @@ class SyncRepositoryImpl(
         val response = remoteDataSource.syncDeletedRecordsDown(lastSyncTime)
         var timestamp: String? = null
         
-        if (response.status == "success") {
+        if (response.isSuccess()) {
             timestamp = response.timestamp
             response.data?.list?.forEach { dto ->
                 val entity = dto.toEntity().copy(sync_status = SyncStatus.SYNCED.value)

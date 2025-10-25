@@ -102,3 +102,4 @@ categoryDao.insertCategory(category)
 
 All entities should now sync properly!
 
+

@@ -21,7 +21,7 @@ interface WareHouseDao {
     @Query("SELECT * FROM WareHouse WHERE business_slug = :businessSlug")
     fun getWareHousesByBusiness(businessSlug: String): Flow<List<WareHouseEntity>>
     
-    @Query("SELECT * FROM WareHouse WHERE sync_status != 2 AND business_slug = :businessSlug")
+    @Query("SELECT * FROM WareHouse WHERE business_slug = :businessSlug and sync_status != 0")
     suspend fun getUnsyncedWareHouses(businessSlug: String): List<WareHouseEntity>
     
     @Insert(onConflict = OnConflictStrategy.REPLACE)
