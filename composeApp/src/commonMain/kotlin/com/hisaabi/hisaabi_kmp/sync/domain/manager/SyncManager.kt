@@ -189,7 +189,7 @@ class SyncManagerImpl(
     private suspend fun syncDownData() {
         try {
             val session = sessionManager.getSessionContext().requireValid()
-            val lastSyncTime = "1970-01-01T00%3A00%3A00Z" // TODO: getLastSyncTimeFormatted(session.businessSlug!!, session.userSlug!!)
+            val lastSyncTime = "1970-01-01T00:00:00Z" // TODO: getLastSyncTimeFormatted(session.businessSlug!!, session.userSlug!!)
             
             // Order matters - dependencies should be synced first
             

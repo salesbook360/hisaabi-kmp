@@ -15,9 +15,7 @@ class CategoriesViewModel(
     private val getCategoriesUseCase: GetCategoriesUseCase,
     private val sessionManager: AppSessionManager
 ) : ViewModel() {
-    
-    private var businessSlug: String? = null
-    
+
     private val _uiState = MutableStateFlow(CategoriesUiState())
     val uiState: StateFlow<CategoriesUiState> = _uiState.asStateFlow()
     

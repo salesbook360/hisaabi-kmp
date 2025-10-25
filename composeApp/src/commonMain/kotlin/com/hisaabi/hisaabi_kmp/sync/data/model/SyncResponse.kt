@@ -10,7 +10,7 @@ import kotlinx.serialization.Serializable
 data class SyncResponse<T>(
     val data: SyncData<T>? = null,
     @SerialName("status")
-    val statusCode: Int,
+    val statusCode: Int? = null,
     val message: String? = null,
     val timestamp: String? = null
 ) {
