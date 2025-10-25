@@ -18,8 +18,8 @@ class GetSelectedBusinessUseCase(
      * Get the selected business as a one-time value.
      */
     suspend operator fun invoke(): Business? {
-        val selectedId = preferencesDataSource.getSelectedBusinessId() ?: return null
-        return repository.getBusinessById(selectedId)
+        val selectedSlug = preferencesDataSource.getSelectedBusinessSlug() ?: return null
+        return repository.getBusinessBySlug(selectedSlug)
     }
     
     /**
@@ -27,11 +27,11 @@ class GetSelectedBusinessUseCase(
      * Emits null if no business is selected or if selected business is deleted.
      */
     fun observe(): Flow<Business?> {
-        return preferencesDataSource.observeSelectedBusinessId().map { selectedId ->
-            if (selectedId == null) {
+        return preferencesDataSource.observeSelectedBusinessSlug().map { selectedSlug ->
+            if (selectedSlug == null) {
                 null
             } else {
-                repository.getBusinessById(selectedId)
+                repository.getBusinessBySlug(selectedSlug)
             }
         }
     }

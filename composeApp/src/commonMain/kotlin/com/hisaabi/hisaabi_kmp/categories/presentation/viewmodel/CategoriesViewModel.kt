@@ -2,6 +2,7 @@ package com.hisaabi.hisaabi_kmp.categories.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hisaabi.hisaabi_kmp.business.data.datasource.BusinessPreferencesDataSource
 import com.hisaabi.hisaabi_kmp.categories.domain.model.Category
 import com.hisaabi.hisaabi_kmp.categories.domain.model.CategoryType
 import com.hisaabi.hisaabi_kmp.categories.domain.usecase.GetCategoriesUseCase
@@ -13,11 +14,14 @@ import kotlinx.coroutines.launch
 
 class CategoriesViewModel(
     private val getCategoriesUseCase: GetCategoriesUseCase,
-    private val sessionManager: AppSessionManager
+    private val sessionManager: AppSessionManager,
+
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CategoriesUiState())
     val uiState: StateFlow<CategoriesUiState> = _uiState.asStateFlow()
+    
+    private var businessSlug: String? = null
     
     init {
         viewModelScope.launch {

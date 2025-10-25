@@ -89,21 +89,21 @@ interface UserAuthDao {
     suspend fun getLastUpdated(): Long?
     
     /**
-     * Get the selected business ID.
+     * Get the selected business slug.
      */
-    @Query("SELECT selected_business_id FROM user_auth WHERE id = 1 LIMIT 1")
-    suspend fun getSelectedBusinessId(): Int?
+    @Query("SELECT selected_business_slug FROM user_auth WHERE id = 1 LIMIT 1")
+    suspend fun getSelectedBusinessSlug(): String?
     
     /**
-     * Update the selected business ID.
+     * Update the selected business slug.
      */
-    @Query("UPDATE user_auth SET selected_business_id = :businessId WHERE id = 1")
-    suspend fun updateSelectedBusinessId(businessId: Int?)
+    @Query("UPDATE user_auth SET selected_business_slug = :businessSlug WHERE id = 1")
+    suspend fun updateSelectedBusinessSlug(businessSlug: String?)
     
     /**
-     * Observe the selected business ID.
+     * Observe the selected business slug.
      */
-    @Query("SELECT selected_business_id FROM user_auth WHERE id = 1 LIMIT 1")
-    fun observeSelectedBusinessId(): kotlinx.coroutines.flow.Flow<Int?>
+    @Query("SELECT selected_business_slug FROM user_auth WHERE id = 1 LIMIT 1")
+    fun observeSelectedBusinessSlug(): kotlinx.coroutines.flow.Flow<String?>
 }
 

@@ -33,8 +33,8 @@ fun BusinessSelectionGateScreen(
     }
     
     // Navigate to home when a business is selected
-    LaunchedEffect(state.selectedBusinessId) {
-        if (state.selectedBusinessId != null) {
+    LaunchedEffect(state.selectedBusinessSlug) {
+        if (state.selectedBusinessSlug != null) {
             onBusinessSelected()
         }
     }

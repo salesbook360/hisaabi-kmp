@@ -72,7 +72,7 @@ class AppSessionManagerImpl(
     }
     
     override suspend fun getBusinessSlug(): String? {
-        return getSelectedBusinessUseCase()?.slug
+        return businessPreferences.getSelectedBusinessSlug()
     }
     
     override fun observeUserSlug(): Flow<String?> {
@@ -80,9 +80,7 @@ class AppSessionManagerImpl(
     }
     
     override fun observeBusinessSlug(): Flow<String?> {
-        return getSelectedBusinessUseCase.observe().map { business -> 
-            business?.slug 
-        }
+        return businessPreferences.observeSelectedBusinessSlug()
     }
     
     override fun observeSessionContext(): Flow<SessionContext> {

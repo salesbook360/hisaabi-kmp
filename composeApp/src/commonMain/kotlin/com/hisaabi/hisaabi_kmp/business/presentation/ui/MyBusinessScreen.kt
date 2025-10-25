@@ -122,7 +122,7 @@ fun MyBusinessScreen(
                         items(state.businesses, key = { it.id }) { business ->
                             BusinessItem(
                                 business = business,
-                                isSelected = business.id == state.selectedBusinessId,
+                                isSelected = business.slug == state.selectedBusinessSlug,
                                 onClick = { 
                                     // Only select the business, don't navigate
                                     viewModel.selectBusiness(business)

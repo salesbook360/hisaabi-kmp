@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 2,
-    "identityHash": "82476f4a682fd05881ca0f270f9d61b8",
+    "identityHash": "2829c5506c962956305ecb4fc553115e",
     "entities": [
       {
         "tableName": "Party",
@@ -1373,7 +1373,7 @@
       },
       {
         "tableName": "user_auth",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `user_id` INTEGER NOT NULL, `name` TEXT NOT NULL, `email` TEXT NOT NULL, `address` TEXT NOT NULL, `phone` TEXT NOT NULL, `slug` TEXT NOT NULL, `firebase_id` TEXT NOT NULL, `pic` TEXT, `access_token` TEXT NOT NULL, `refresh_token` TEXT NOT NULL, `selected_business_id` INTEGER, `last_updated` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `user_id` INTEGER NOT NULL, `name` TEXT NOT NULL, `email` TEXT NOT NULL, `address` TEXT NOT NULL, `phone` TEXT NOT NULL, `slug` TEXT NOT NULL, `firebase_id` TEXT NOT NULL, `pic` TEXT, `access_token` TEXT NOT NULL, `refresh_token` TEXT NOT NULL, `selected_business_slug` TEXT, `last_updated` INTEGER NOT NULL, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -1441,9 +1441,9 @@
             "notNull": true
           },
           {
-            "fieldPath": "selectedBusinessId",
-            "columnName": "selected_business_id",
-            "affinity": "INTEGER"
+            "fieldPath": "selectedBusinessSlug",
+            "columnName": "selected_business_slug",
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "lastUpdated",
@@ -1462,7 +1462,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '82476f4a682fd05881ca0f270f9d61b8')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '2829c5506c962956305ecb4fc553115e')"
     ]
   }
 }

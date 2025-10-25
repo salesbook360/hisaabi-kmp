@@ -32,21 +32,21 @@ fun App() {
             
             // Business preferences for checking selected business
             val businessPreferences: BusinessPreferencesDataSource = koinInject()
-            var selectedBusinessId by remember { mutableStateOf<Int?>(null) }
+            var selectedBusinessSlug by remember { mutableStateOf<String?>(null) }
             
             // Sync manager for background sync
             val syncManager: SyncManager = koinInject()
             
-            // Observe selected business ID
+            // Observe selected business slug
             LaunchedEffect(Unit) {
-                businessPreferences.observeSelectedBusinessId().collect { businessId ->
-                    selectedBusinessId = businessId
+                businessPreferences.observeSelectedBusinessSlug().collect { businessSlug ->
+                    selectedBusinessSlug = businessSlug
                 }
             }
             
             // Start background sync when user is logged in and business is selected
-            LaunchedEffect(isLoggedIn, selectedBusinessId) {
-                if (isLoggedIn && selectedBusinessId != null) {
+            LaunchedEffect(isLoggedIn, selectedBusinessSlug) {
+                if (isLoggedIn && selectedBusinessSlug != null) {
                     syncManager.startBackgroundSync()
                 } else {
                     syncManager.stopBackgroundSync()
@@ -57,18 +57,18 @@ fun App() {
             var currentScreen by remember { mutableStateOf<AppScreen?>(null) }
             
             // Set initial screen after auth check is complete
-            LaunchedEffect(isInitialized, isLoggedIn, selectedBusinessId) {
+            LaunchedEffect(isInitialized, isLoggedIn, selectedBusinessSlug) {
                 if (isInitialized && currentScreen == null) {
                     currentScreen = when {
                         !isLoggedIn -> AppScreen.AUTH
-                        selectedBusinessId == null -> AppScreen.BUSINESS_SELECTION_GATE
+                        selectedBusinessSlug == null -> AppScreen.BUSINESS_SELECTION_GATE
                         else -> AppScreen.HOME
                     }
                 }
             }
             
             // Handle auth and business selection state changes after initialization
-            LaunchedEffect(isLoggedIn, selectedBusinessId) {
+            LaunchedEffect(isLoggedIn, selectedBusinessSlug) {
                 if (currentScreen != null) {
                     when {
                         // User logged out - go to auth
@@ -76,13 +76,13 @@ fun App() {
                             currentScreen = AppScreen.AUTH
                         }
                         // User logged in but no business selected - go to gate
-                        isLoggedIn && selectedBusinessId == null && 
+                        isLoggedIn && selectedBusinessSlug == null && 
                         currentScreen != AppScreen.BUSINESS_SELECTION_GATE &&
                         currentScreen != AppScreen.ADD_BUSINESS -> {
                             currentScreen = AppScreen.BUSINESS_SELECTION_GATE
                         }
                         // User logged in and has selected business - allow navigation
-                        isLoggedIn && selectedBusinessId != null &&
+                        isLoggedIn && selectedBusinessSlug != null &&
                         (currentScreen == AppScreen.AUTH || currentScreen == AppScreen.BUSINESS_SELECTION_GATE) -> {
                             currentScreen = AppScreen.HOME
                         }
@@ -263,7 +263,7 @@ fun App() {
                     AuthNavigation(
                         onNavigateToMain = { 
                             // After login, check if business is selected
-                            currentScreen = if (selectedBusinessId != null) {
+                            currentScreen = if (selectedBusinessSlug != null) {
                                 AppScreen.HOME
                             } else {
                                 AppScreen.BUSINESS_SELECTION_GATE
@@ -621,7 +621,7 @@ fun App() {
                         onNavigateBack = {
                             businessRefreshTrigger++
                             // Go back to gate if no business is selected, otherwise go to MY_BUSINESS
-                            currentScreen = if (selectedBusinessId == null) {
+                            currentScreen = if (selectedBusinessSlug == null) {
                                 AppScreen.BUSINESS_SELECTION_GATE
                             } else {
                                 AppScreen.MY_BUSINESS

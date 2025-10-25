@@ -55,9 +55,9 @@ class AuthLocalDataSourceImpl(
     }
     
     override suspend fun saveUser(user: UserDto) {
-        // Preserve existing selectedBusinessId if any
+        // Preserve existing selectedBusinessSlug if any
         val existingUser = userAuthDao.getUserAuth()
-        val selectedBusinessId = existingUser?.selectedBusinessId
+        val selectedBusinessSlug = existingUser?.selectedBusinessSlug
         
         val userAuthEntity = UserAuthEntity(
             id = 1, // Fixed ID since only one user can be logged in
@@ -71,7 +71,7 @@ class AuthLocalDataSourceImpl(
             pic = user.pic,
             accessToken = user.authInfo.accessToken,
             refreshToken = user.authInfo.refreshToken,
-            selectedBusinessId = selectedBusinessId, // Preserve selected business
+            selectedBusinessSlug = selectedBusinessSlug, // Preserve selected business
             lastUpdated = System.currentTimeMillis()
         )
         userAuthDao.insertUserAuth(userAuthEntity)

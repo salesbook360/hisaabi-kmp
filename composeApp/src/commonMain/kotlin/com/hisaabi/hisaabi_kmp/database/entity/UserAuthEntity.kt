@@ -47,8 +47,8 @@ data class UserAuthEntity(
     val refreshToken: String,
     
     // Selected Business (for multi-business support)
-    @ColumnInfo(name = "selected_business_id")
-    val selectedBusinessId: Int? = null,
+    @ColumnInfo(name = "selected_business_slug")
+    val selectedBusinessSlug: String? = null,
     
     // Metadata
     @ColumnInfo(name = "last_updated")

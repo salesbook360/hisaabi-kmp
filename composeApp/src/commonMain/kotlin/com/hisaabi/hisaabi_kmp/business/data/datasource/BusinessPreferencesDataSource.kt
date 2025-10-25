@@ -7,25 +7,25 @@ import kotlinx.coroutines.flow.Flow
  * Data source for managing business-related preferences, such as selected business.
  */
 interface BusinessPreferencesDataSource {
-    suspend fun getSelectedBusinessId(): Int?
-    suspend fun setSelectedBusinessId(businessId: Int?)
-    fun observeSelectedBusinessId(): Flow<Int?>
+    suspend fun getSelectedBusinessSlug(): String?
+    suspend fun setSelectedBusinessSlug(businessSlug: String?)
+    fun observeSelectedBusinessSlug(): Flow<String?>
 }
 
 class BusinessPreferencesDataSourceImpl(
     private val userAuthDao: UserAuthDao
 ) : BusinessPreferencesDataSource {
     
-    override suspend fun getSelectedBusinessId(): Int? {
-        return userAuthDao.getSelectedBusinessId()
+    override suspend fun getSelectedBusinessSlug(): String? {
+        return userAuthDao.getSelectedBusinessSlug()
     }
     
-    override suspend fun setSelectedBusinessId(businessId: Int?) {
-        userAuthDao.updateSelectedBusinessId(businessId)
+    override suspend fun setSelectedBusinessSlug(businessSlug: String?) {
+        userAuthDao.updateSelectedBusinessSlug(businessSlug)
     }
     
-    override fun observeSelectedBusinessId(): Flow<Int?> {
-        return userAuthDao.observeSelectedBusinessId()
+    override fun observeSelectedBusinessSlug(): Flow<String?> {
+        return userAuthDao.observeSelectedBusinessSlug()
     }
 }
 

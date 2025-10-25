@@ -23,9 +23,9 @@ class MyBusinessViewModel(
     
     private fun observeSelectedBusiness() {
         viewModelScope.launch {
-            preferencesDataSource.observeSelectedBusinessId()
-                .collect { selectedId ->
-                    _state.update { it.copy(selectedBusinessId = selectedId) }
+            preferencesDataSource.observeSelectedBusinessSlug()
+                .collect { selectedSlug ->
+                    _state.update { it.copy(selectedBusinessSlug = selectedSlug) }
                 }
         }
     }
@@ -57,7 +57,7 @@ class MyBusinessViewModel(
     
     fun selectBusiness(business: Business) {
         viewModelScope.launch {
-            preferencesDataSource.setSelectedBusinessId(business.id)
+            preferencesDataSource.setSelectedBusinessSlug(business.slug)
             // State will be automatically updated via observeSelectedBusiness
         }
     }
@@ -71,8 +71,8 @@ class MyBusinessViewModel(
             result.fold(
                 onSuccess = {
                     // If deleted business was selected, clear selection
-                    if (_state.value.selectedBusinessId == business.id) {
-                        preferencesDataSource.setSelectedBusinessId(null)
+                    if (_state.value.selectedBusinessSlug == business.slug) {
+                        preferencesDataSource.setSelectedBusinessSlug(null)
                     }
                     _state.update { it.copy(isLoading = false, error = null) }
                     // Businesses will be automatically updated via Flow
@@ -96,7 +96,7 @@ class MyBusinessViewModel(
 
 data class MyBusinessState(
     val businesses: List<Business> = emptyList(),
-    val selectedBusinessId: Int? = null,
+    val selectedBusinessSlug: String? = null,
     val isLoading: Boolean = false,
     val error: String? = null
 )
