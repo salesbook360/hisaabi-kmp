@@ -7,7 +7,7 @@ data class QuantityUnit(
     val parentSlug: String?,
     val conversionFactor: Double = 1.0,
     val baseConversionUnitSlug: String?,
-    val statusId: Int = 1, // 1=Active, 2=Inactive, 3=Deleted
+    val statusId: Int = 0, // 0=Active, 2=Deleted
     val slug: String?,
     val businessSlug: String?,
     val createdBy: String?,
@@ -19,6 +19,7 @@ data class QuantityUnit(
         get() = title.ifEmpty { "Unknown" }
     
     val isActive: Boolean
-        get() = statusId == 1
+        get() = statusId == 0
+
 }
 

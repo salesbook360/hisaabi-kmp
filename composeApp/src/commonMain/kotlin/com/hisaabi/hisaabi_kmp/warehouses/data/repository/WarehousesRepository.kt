@@ -18,7 +18,7 @@ class WarehousesRepository(
     
     fun getActiveWarehouses(): Flow<List<Warehouse>> {
         return localDataSource.getAllWareHouses().map { entities ->
-            entities.filter { it.status_id == 1 }.map { it.toDomainModel() }
+            entities.filter { it.status_id == 0 }.map { it.toDomainModel() }
         }
     }
     

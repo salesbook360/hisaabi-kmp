@@ -35,7 +35,7 @@ class AddPaymentMethodUseCase(
             description = description,
             amount = openingAmount,
             openingAmount = openingAmount,
-            statusId = 1, // Active
+            statusId = 0, // Active
             slug = slug,
             businessSlug = businessSlug,
             createdBy = createdBy,

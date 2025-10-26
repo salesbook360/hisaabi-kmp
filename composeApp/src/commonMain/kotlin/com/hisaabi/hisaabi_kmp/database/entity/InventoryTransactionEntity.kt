@@ -29,7 +29,7 @@ data class InventoryTransactionEntity(
     val tax: Double = 0.0,
     val description: String?,
     val shipping_address: String?,
-    val status_id: Int = 1,
+    val status_id: Int = 0, // 0=Active, 2=Deleted
     val state_id: Int = 0,
     val remind_at_milliseconds: Long = 0,
     val ware_house_slug_from: String?,

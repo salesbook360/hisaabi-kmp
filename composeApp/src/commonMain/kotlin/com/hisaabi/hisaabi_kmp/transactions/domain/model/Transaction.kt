@@ -27,7 +27,7 @@ data class Transaction(
     val priceTypeId: Int = PriceType.RETAIL.value,
     val description: String? = null,
     val shippingAddress: String? = null,
-    val statusId: Int = 1,
+    val statusId: Int = 0, // 0=Active, 2=Deleted
     val stateId: Int = TransactionState.COMPLETED.value,
     val remindAtMilliseconds: Long = 0,
     val wareHouseSlugFrom: String? = null,
@@ -103,5 +103,9 @@ data class Transaction(
     fun isReturningProducts(): Boolean {
         return AllTransactionTypes.isReturningProducts(transactionType)
     }
+
+    val isActive: Boolean
+        get() = statusId == 0
 }
+
 

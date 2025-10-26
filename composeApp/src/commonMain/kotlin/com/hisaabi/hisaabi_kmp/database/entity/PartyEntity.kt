@@ -18,7 +18,7 @@ data class PartyEntity(
     val opening_balance: Double = 0.0,
     val thumbnail: String?,
     val role_id: Int = 0,
-    val person_status: Int = 1,
+    val person_status: Int = 0, // 0=Active, 2=Deleted
     val digital_id: String?,
     val lat_long: String?,
     val area_slug: String?,

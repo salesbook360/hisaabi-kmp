@@ -38,7 +38,7 @@ class AddWarehouseUseCase(
             latLong = null,
             thumbnail = null,
             typeId = typeId,
-            statusId = 1, // Active
+            statusId = 0, // Active
             slug = slug,
             businessSlug = businessSlug,
             createdBy = createdBy,

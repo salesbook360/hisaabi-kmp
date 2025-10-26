@@ -45,7 +45,7 @@ interface PaymentMethodDao {
     // Dashboard Queries
     @Query("""
         SELECT SUM(amount) FROM PaymentMethod 
-        WHERE status_id != 3 
+        WHERE status_id != 2 
         AND business_slug = :businessSlug
     """)
     suspend fun getTotalCashInHand(businessSlug: String): Double?

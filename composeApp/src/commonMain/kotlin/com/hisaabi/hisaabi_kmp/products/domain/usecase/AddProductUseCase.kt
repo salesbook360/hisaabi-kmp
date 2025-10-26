@@ -42,7 +42,7 @@ class AddProductUseCase(
                 wholesalePrice = wholesalePrice,
                 purchasePrice = finalPurchasePrice,
                 thumbnail = null,
-                statusId = 1, // Active
+                statusId = 0, // Active
                 digitalId = null,
                 baseUnitSlug = null,
                 defaultUnitSlug = null,

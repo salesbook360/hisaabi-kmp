@@ -9,7 +9,7 @@ data class Party(
     val openingBalance: Double = 0.0,
     val thumbnail: String?,
     val roleId: Int,  // UserType: 0=Customer, 1=Vendor, 12=Investor
-    val personStatus: Int = 1,
+    val personStatus: Int = 0, // 0=Active, 2=Deleted
     val digitalId: String?,
     val latLong: String?,
     val areaSlug: String?,
@@ -23,15 +23,7 @@ data class Party(
     val createdAt: String?,
     val updatedAt: String?
 ) {
-    val isCustomer: Boolean
-        get() = roleId == PartyType.CUSTOMER.type || roleId == PartyType.WALK_IN_CUSTOMER.type
-    
-    val isVendor: Boolean
-        get() = roleId == PartyType.VENDOR.type || roleId == PartyType.DEFAULT_VENDOR.type
-    
-    val isInvestor: Boolean
-        get() = roleId == PartyType.INVESTOR.type
-    
+
     val balanceStatus: BalanceStatus
         get() = when {
             balance > 0 -> BalanceStatus.PAYABLE
@@ -41,6 +33,9 @@ data class Party(
     
     val displayName: String
         get() = name.ifEmpty { email ?: "Unknown" }
+
+    val isActive: Boolean
+        get() = personStatus == 0
 }
 
 enum class PartyType(val type: Int, val displayName: String) {

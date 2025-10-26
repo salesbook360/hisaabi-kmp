@@ -8,7 +8,7 @@ data class Warehouse(
     val latLong: String?,
     val thumbnail: String?,
     val typeId: Int = 1, // 1=Main, 2=Branch, 3=Virtual
-    val statusId: Int = 1, // 1=Active, 2=Inactive, 3=Deleted
+    val statusId: Int = 0, // 0=Active, 2=Deleted
     val slug: String?,
     val businessSlug: String?,
     val createdBy: String?,
@@ -20,7 +20,7 @@ data class Warehouse(
         get() = title.ifEmpty { "Unknown" }
     
     val isActive: Boolean
-        get() = statusId == 1
+        get() = statusId == 0
 }
 
 enum class WarehouseType(val typeId: Int, val displayName: String) {
@@ -32,14 +32,3 @@ enum class WarehouseType(val typeId: Int, val displayName: String) {
         fun fromInt(value: Int): WarehouseType? = entries.find { it.typeId == value }
     }
 }
-
-enum class WarehouseStatus(val statusId: Int, val displayName: String) {
-    ACTIVE(1, "Active"),
-    INACTIVE(2, "Inactive"),
-    DELETED(3, "Deleted");
-    
-    companion object {
-        fun fromInt(value: Int): WarehouseStatus? = entries.find { it.statusId == value }
-    }
-}
-

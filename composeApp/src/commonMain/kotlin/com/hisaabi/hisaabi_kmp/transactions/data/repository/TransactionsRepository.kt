@@ -209,7 +209,7 @@ class TransactionsRepository(
                 transactionType = AllTransactionTypes.MANUFACTURE.value, // MANUFACTURE type
                 timestamp = timestamp.toString(),
                 totalPaid = recipeDetail.calculateBill(),
-                statusId = 2, // Completed
+                statusId = 0, // Active
                 wareHouseSlugFrom = warehouseSlug,
                 warehouseFrom = null,
                 wareHouseSlugTo = null,
@@ -242,7 +242,7 @@ class TransactionsRepository(
                 transactionType = 1, // SALE type
                 timestamp = (timestamp + 1).toString(), // +1ms to maintain order
                 totalPaid = ingredients.sumOf { it.calculateBill() } + additionalCharges,
-                statusId = 2,
+                statusId = 0, // Active
                 wareHouseSlugFrom = warehouseSlug,
                 warehouseFrom = null,
                 wareHouseSlugTo = null,
@@ -279,7 +279,7 @@ class TransactionsRepository(
                 transactionType = 2, // PURCHASE type
                 timestamp = (timestamp + 2).toString(), // +2ms to maintain order
                 totalPaid = recipeDetail.calculateBill(),
-                statusId = 2,
+                statusId = 0, // Active
                 wareHouseSlugFrom = warehouseSlug,
                 warehouseFrom = null,
                 wareHouseSlugTo = null,

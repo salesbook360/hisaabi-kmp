@@ -40,7 +40,7 @@ class AddQuantityUnitUseCase(
             parentSlug = null,
             conversionFactor = conversionFactor,
             baseConversionUnitSlug = null,
-            statusId = 1, // Active
+            statusId = 0, // Active
             slug = slug,
             businessSlug = businessSlug,
             createdBy = createdBy,

@@ -56,7 +56,7 @@ interface InventoryTransactionDao {
         SELECT COUNT(*) FROM InventoryTransaction 
         WHERE transaction_type IN (:transactionTypes) 
         AND business_slug = :businessSlug 
-        AND status_id != 3 
+        AND status_id != 2 
         AND timestamp BETWEEN :fromMilli AND :toMilli
     """)
     suspend fun getTotalTransactionsCount(
@@ -71,7 +71,7 @@ interface InventoryTransactionDao {
         FROM InventoryTransaction 
         WHERE transaction_type IN (:transactionTypes) 
         AND business_slug = :businessSlug 
-        AND status_id != 3 
+        AND status_id != 2 
         AND timestamp BETWEEN :fromMilli AND :toMilli
     """)
     suspend fun getTotalRevenue(
@@ -86,7 +86,7 @@ interface InventoryTransactionDao {
         FROM InventoryTransaction 
         WHERE transaction_type IN (:transactionTypes) 
         AND business_slug = :businessSlug 
-        AND status_id != 3 
+        AND status_id != 2 
         AND timestamp BETWEEN :fromMilli AND :toMilli
     """)
     suspend fun getTotalPaid(
@@ -101,7 +101,7 @@ interface InventoryTransactionDao {
         FROM InventoryTransaction 
         WHERE transaction_type IN (:transactionTypes) 
         AND business_slug = :businessSlug 
-        AND status_id != 3 
+        AND status_id != 2 
         AND timestamp BETWEEN :fromMilli AND :toMilli
     """)
     suspend fun getTotalTax(
@@ -115,7 +115,7 @@ interface InventoryTransactionDao {
         SELECT slug FROM InventoryTransaction 
         WHERE transaction_type IN (:transactionTypes) 
         AND business_slug = :businessSlug 
-        AND status_id != 3 
+        AND status_id != 2 
         AND timestamp BETWEEN :fromMilli AND :toMilli
     """)
     suspend fun getTransactionSlugs(

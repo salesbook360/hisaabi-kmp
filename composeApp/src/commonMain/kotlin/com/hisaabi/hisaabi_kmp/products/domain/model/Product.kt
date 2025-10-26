@@ -11,7 +11,7 @@ data class Product(
     val wholesalePrice: Double = 0.0,
     val thumbnail: String?,
     val purchasePrice: Double = 0.0,
-    val statusId: Int = 1,  // ProductStatus enum value
+    val statusId: Int = 0,  // ProductStatus enum value (0=Active, 2=Deleted)
     val digitalId: String?,
     val baseUnitSlug: String?,
     val defaultUnitSlug: String?,
@@ -32,9 +32,9 @@ data class Product(
 ) {
     val productType: ProductType
         get() = ProductType.fromInt(typeId) ?: ProductType.SIMPLE_PRODUCT
-    
-    val productStatus: ProductStatus
-        get() = ProductStatus.fromInt(statusId) ?: ProductStatus.ACTIVE
+
+    val isActive: Boolean
+        get() = statusId == 0
     
     val displayName: String
         get() = title.ifEmpty { "Unknown Product" }
@@ -71,21 +71,6 @@ enum class ProductType(val type: Int, val displayName: String) {
     }
 }
 
-/**
- * Product Status
- * 1 = Active
- * 2 = Inactive
- * 3 = Deleted
- */
-enum class ProductStatus(val status: Int, val displayName: String) {
-    ACTIVE(1, "Active"),
-    INACTIVE(2, "Inactive"),
-    DELETED(3, "Deleted");
-    
-    companion object {
-        fun fromInt(value: Int): ProductStatus? = entries.find { it.status == value }
-    }
-}
 
 /**
  * Recipe Ingredient - represents an ingredient in a recipe
