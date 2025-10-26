@@ -82,13 +82,14 @@ data class PaymentMethodDto(
     val title: String? = null,
     val description: String? = null,
     val thumbnail: String? = null,
-    val balance: Double = 0.0,
-    val opening_balance: Double = 0.0,
+    val amount: Double = 0.0,
+    val openingAmount: Double = 0.0,
     val slug: String? = null,
     val businessSlug: String? = null,
     val createdBy: String? = null,
     val createdAt: String? = null,
-    val updatedAt: String? = null
+    val updatedAt: String? = null,
+    val statusId: Int? = null
 )
 
 @Serializable

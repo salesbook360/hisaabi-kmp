@@ -39,8 +39,6 @@ fun HomeMenuScreen(
     onNavigateToManufacture: () -> Unit = {},
     onNavigateToAddTransaction: (AllTransactionTypes) -> Unit = {}
 ) {
-    var showProductTypeDialog by remember { mutableStateOf(false) }
-    
     Scaffold(
         topBar = {
             TopAppBar(
@@ -126,10 +124,7 @@ fun HomeMenuScreen(
                             "Customers" -> onNavigateToParties(com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.CUSTOMER)
                             "Vendors" -> onNavigateToParties(com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.VENDOR)
                             "Investors" -> onNavigateToParties(com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.INVESTOR)
-                            "Products" -> {
-                                // Show dialog to select product type
-                                showProductTypeDialog = true
-                            }
+                            "Products" -> onNavigateToProducts()
                             "Services" -> onNavigateToAddProduct(com.hisaabi.hisaabi_kmp.products.domain.model.ProductType.SERVICE)
                             "Recipes" -> onNavigateToAddProduct(com.hisaabi.hisaabi_kmp.products.domain.model.ProductType.RECIPE)
                             "Payment Methods" -> onNavigateToPaymentMethods()
@@ -141,17 +136,6 @@ fun HomeMenuScreen(
                 )
             }
         }
-    }
-    
-    // Product Type Selection Dialog
-    if (showProductTypeDialog) {
-        com.hisaabi.hisaabi_kmp.products.presentation.ui.ProductTypeSelectionDialog(
-            onTypeSelected = { type ->
-                showProductTypeDialog = false
-                onNavigateToAddProduct(type)
-            },
-            onDismiss = { showProductTypeDialog = false }
-        )
     }
 }
 

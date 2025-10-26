@@ -62,9 +62,9 @@ data class Product(
  * 2 = Recipe/Manufactured Product (composed of other products)
  */
 enum class ProductType(val type: Int, val displayName: String) {
-    SIMPLE_PRODUCT(0, "Simple Product"),
-    SERVICE(1, "Service"),
-    RECIPE(2, "Recipe");
+    SIMPLE_PRODUCT(1, "Simple Product"),
+    SERVICE(2, "Service"),
+    RECIPE(3, "Recipe");
     
     companion object {
         fun fromInt(value: Int): ProductType? = entries.find { it.type == value }
