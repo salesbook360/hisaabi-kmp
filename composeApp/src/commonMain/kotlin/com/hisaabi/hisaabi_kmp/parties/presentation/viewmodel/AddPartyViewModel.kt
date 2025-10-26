@@ -2,6 +2,7 @@ package com.hisaabi.hisaabi_kmp.parties.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hisaabi.hisaabi_kmp.categories.domain.model.CategoryType
 import com.hisaabi.hisaabi_kmp.core.session.AppSessionManager
 import com.hisaabi.hisaabi_kmp.database.dao.CategoryDao
 import com.hisaabi.hisaabi_kmp.database.entity.CategoryEntity
@@ -53,8 +54,7 @@ class AddPartyViewModel(
         viewModelScope.launch {
             try {
                 val slug = businessSlug ?: return@launch
-                // Type ID 3 = Customer Category (from CategoryTypeEnum)
-                _categories.value = categoryDao.getCategoriesByTypeAndBusiness(3, slug)
+                _categories.value = categoryDao.getCategoriesByTypeAndBusiness(CategoryType.CUSTOMER_CATEGORY.type,slug)
             } catch (e: Exception) {
                 println("Error loading categories: ${e.message}")
             }
@@ -65,8 +65,7 @@ class AddPartyViewModel(
         viewModelScope.launch {
             try {
                 val slug = businessSlug ?: return@launch
-                // Type ID 2 = Area (from CategoryTypeEnum)
-                _areas.value = categoryDao.getCategoriesByTypeAndBusiness(2, slug)
+                _areas.value = categoryDao.getCategoriesByTypeAndBusiness(CategoryType.AREA.type, slug)
             } catch (e: Exception) {
                 println("Error loading areas: ${e.message}")
             }
