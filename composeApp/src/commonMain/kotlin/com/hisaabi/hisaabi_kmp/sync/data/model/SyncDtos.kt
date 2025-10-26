@@ -10,219 +10,208 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class CategoryDto(
     val id: Int = 0,
-    val title: String?,
-    val description: String?,
-    val thumbnail: String?,
+    val title: String? = null,
+    val description: String? = null,
+    val thumbnail: String? = null,
     val typeId: Int = 0,
-    val slug: String?,
-    val businessSlug: String?,
-    val createdBy: String?,
-    val createdAt: String?,
-    val updatedAt: String?
+    val slug: String? = null,
+    val businessSlug: String? = null,
+    val createdBy: String? = null,
+    val createdAt: String? = null,
+    val updatedAt: String? = null
 )
 
 @Serializable
 data class ProductDto(
     val id: Int = 0,
-    val title: String?,
-    val description: String?,
+    val title: String? = null,
+    val description: String? = null,
     val typeId: Int = 0,
     val tax_percentage: Double = 0.0,
     val discount_percentage: Double = 0.0,
     val retail_price: Double = 0.0,
     val wholesale_price: Double = 0.0,
-    val thumbnail: String?,
+    val thumbnail: String? = null,
     val purchase_price: Double = 0.0,
     val status_id: Int = 0,
-    val digital_id: String?,
-    val base_unit_slug: String?,
-    val default_unit_slug: String?,
-    val minimum_quantity_unit_slug: String?,
-    val opening_quantity_unit_slug: String?,
-    val category_slug: String?,
+    val digital_id: String? = null,
+    val base_unit_slug: String? = null,
+    val default_unit_slug: String? = null,
+    val minimum_quantity_unit_slug: String? = null,
+    val opening_quantity_unit_slug: String? = null,
+    val category_slug: String? = null,
     val avg_purchase_price: Double = 0.0,
     val opening_quantity_purchase_price: Double = 0.0,
-    val expiry_date: String?,
-    val expiry_alert: String?,
-    val manufacturer: String?,
-    val slug: String?,
-    val business_slug: String?,
-    val created_by: String?,
-    val sync_status: Int = 0,
-    val created_at: String?,
-    val updated_at: String?
+    val expiry_date: String? = null,
+    val expiry_alert: String? = null,
+    val manufacturer: String? = null,
+    val slug: String? = null,
+    val businessSlug: String? = null,
+    val createdBy: String? = null,
+    val createdAt: String? = null,
+    val updatedAt: String? = null
 )
 
 @Serializable
 data class PartyDto(
     val id: Int = 0,
-    val name: String?,
-    val phone: String?,
-    val address: String?,
+    val name: String? = null,
+    val phone: String? = null,
+    val address: String? = null,
     val balance: Double = 0.0,
     val opening_balance: Double = 0.0,
-    val thumbnail: String?,
+    val thumbnail: String? = null,
     val role_id: Int = 0,
     val person_status: Int = 1,
-    val digital_id: String?,
-    val lat_long: String?,
-    val area_slug: String?,
-    val category_slug: String?,
-    val email: String?,
-    val description: String?,
-    val slug: String?,
-    val business_slug: String?,
-    val created_by: String?,
-    val sync_status: Int = 0,
-    val created_at: String?,
-    val updated_at: String?
+    val digital_id: String? = null,
+    val lat_long: String? = null,
+    val area_slug: String? = null,
+    val category_slug: String? = null,
+    val email: String? = null,
+    val description: String? = null,
+    val slug: String? = null,
+    val businessSlug: String? = null,
+    val createdBy: String? = null,
+    val createdAt: String? = null,
+    val updatedAt: String? = null
 )
 
 @Serializable
 data class PaymentMethodDto(
     val id: Int = 0,
-    val title: String?,
-    val description: String?,
-    val thumbnail: String?,
+    val title: String? = null,
+    val description: String? = null,
+    val thumbnail: String? = null,
     val balance: Double = 0.0,
     val opening_balance: Double = 0.0,
-    val slug: String?,
-    val business_slug: String?,
-    val created_by: String?,
-    val sync_status: Int = 0,
-    val created_at: String?,
-    val updated_at: String?
+    val slug: String? = null,
+    val businessSlug: String? = null,
+    val createdBy: String? = null,
+    val createdAt: String? = null,
+    val updatedAt: String? = null
 )
 
 @Serializable
 data class QuantityUnitDto(
     val id: Int = 0,
-    val title: String?,
-    val description: String?,
-    val parent_slug: String?,
+    val title: String? = null,
+    val description: String? = null,
+    val parent_slug: String? = null,
     val conversion_rate: Double = 0.0,
-    val slug: String?,
-    val business_slug: String?,
-    val created_by: String?,
-    val sync_status: Int = 0,
-    val created_at: String?,
-    val updated_at: String?
+    val slug: String? = null,
+    val businessSlug: String? = null,
+    val createdBy: String? = null,
+    val createdAt: String? = null,
+    val updatedAt: String? = null
 )
 
 @Serializable
 data class WareHouseDto(
     val id: Int = 0,
-    val title: String?,
-    val description: String?,
-    val location: String?,
-    val slug: String?,
-    val business_slug: String?,
-    val created_by: String?,
-    val sync_status: Int = 0,
-    val created_at: String?,
-    val updated_at: String?
+    val title: String? = null,
+    val description: String? = null,
+    val location: String? = null,
+    val slug: String? = null,
+    val businessSlug: String? = null,
+    val createdBy: String? = null,
+    val createdAt: String? = null,
+    val updatedAt: String? = null
 )
 
 @Serializable
 data class TransactionDto(
     val id: Int = 0,
-    val title: String?,
-    val description: String?,
+    val title: String? = null,
+    val description: String? = null,
     val amount: Double = 0.0,
     val discount_percentage: Double = 0.0,
     val tax_percentage: Double = 0.0,
     val transaction_type_id: Int = 0,
-    val party_slug: String?,
-    val payment_method_slug: String?,
-    val warehouse_slug: String?,
-    val category_slug: String?,
-    val transaction_date: String?,
-    val slug: String?,
-    val business_slug: String?,
-    val created_by: String?,
-    val sync_status: Int = 0,
-    val created_at: String?,
-    val updated_at: String?
+    val party_slug: String? = null,
+    val payment_method_slug: String? = null,
+    val warehouse_slug: String? = null,
+    val category_slug: String? = null,
+    val transaction_date: String? = null,
+    val slug: String? = null,
+    val businessSlug: String? = null,
+    val createdBy: String? = null,
+    val createdAt: String? = null,
+    val updatedAt: String? = null
 )
 
 @Serializable
 data class TransactionDetailDto(
     val id: Int = 0,
-    val transaction_slug: String?,
-    val product_slug: String?,
-    val description: String?,
-    val recipe_slug: String?,
+    val transaction_slug: String? = null,
+    val product_slug: String? = null,
+    val description: String? = null,
+    val recipe_slug: String? = null,
     val quantity: Double = 0.0,
-    val quantity_unit_slug: String?,
+    val quantity_unit_slug: String? = null,
     val price: Double = 0.0,
     val profit: Double = 0.0,
     val flat_discount: Double = 0.0,
     val discount_type: Int = 0,
     val flat_tax: Double = 0.0,
     val tax_type: Int = 0,
-    val slug: String?,
-    val business_slug: String?,
-    val created_by: String?,
-    val sync_status: Int = 0,
-    val created_at: String?,
-    val updated_at: String?
+    val slug: String? = null,
+    val businessSlug: String? = null,
+    val createdBy: String? = null,
+    val createdAt: String? = null,
+    val updatedAt: String? = null
 )
 
 @Serializable
 data class ProductQuantitiesDto(
     val id: Int = 0,
-    val product_slug: String?,
-    val quantity_unit_slug: String?,
+    val product_slug: String? = null,
+    val quantity_unit_slug: String? = null,
     val quantity: Double = 0.0,
-    val warehouse_slug: String?,
-    val slug: String?,
-    val business_slug: String?,
-    val created_by: String?,
-    val sync_status: Int = 0,
-    val created_at: String?,
-    val updated_at: String?
+    val warehouse_slug: String? = null,
+    val slug: String? = null,
+    val businessSlug: String? = null,
+    val createdBy: String? = null,
+    val createdAt: String? = null,
+    val updatedAt: String? = null
 )
 
 @Serializable
 data class EntityMediaDto(
     val id: Int = 0,
-    val entity_slug: String?,
-    val entity_type: String?,
-    val media_url: String?,
-    val media_type: String?,
-    val slug: String?,
-    val business_slug: String?,
-    val created_by: String?,
-    val sync_status: Int = 0,
-    val created_at: String?,
-    val updated_at: String?
+    val entity_slug: String? = null,
+    val entity_type: String? = null,
+    val media_url: String? = null,
+    val media_type: String? = null,
+    val slug: String? = null,
+    val businessSlug: String? = null,
+    val createdBy: String? = null,
+    val createdAt: String? = null,
+    val updatedAt: String? = null
 )
 
 @Serializable
 data class RecipeIngredientsDto(
     val id: Int = 0,
-    val product_slug: String?,
-    val ingredient_product_slug: String?,
+    val product_slug: String? = null,
+    val ingredient_product_slug: String? = null,
     val quantity: Double = 0.0,
-    val unit_slug: String?,
-    val slug: String?,
-    val business_slug: String?,
-    val created_by: String?,
-    val sync_status: Int = 0,
-    val created_at: String?,
-    val updated_at: String?
+    val unit_slug: String? = null,
+    val slug: String? = null,
+    val businessSlug: String? = null,
+    val createdBy: String? = null,
+    val createdAt: String? = null,
+    val updatedAt: String? = null
 )
 
 @Serializable
 data class DeletedRecordsDto(
     val id: Int = 0,
-    val entity_slug: String?,
-    val entity_type: String?,
-    val slug: String?,
-    val business_slug: String?,
-    val deleted_by: String?,
-    val sync_status: Int = 0,
-    val deleted_at: String?,
-    val updated_at: String?
+    val entity_slug: String? = null,
+    val entity_type: String? = null,
+    val slug: String? = null,
+    val businessSlug: String? = null,
+    val createdBy: String? = null,
+    val createdAt: String? = null,
+    val updatedAt: String? = null
 )
 

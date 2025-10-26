@@ -62,11 +62,10 @@ fun ProductEntity.toDto() = ProductDto(
     expiry_alert = expiry_alert,
     manufacturer = manufacturer,
     slug = slug,
-    business_slug = business_slug,
-    created_by = created_by,
-    sync_status = sync_status,
-    created_at = created_at,
-    updated_at = updated_at
+    businessSlug = business_slug,
+    createdBy = created_by,
+    createdAt = created_at,
+    updatedAt = updated_at
 )
 
 fun ProductDto.toEntity() = ProductEntity(
@@ -93,11 +92,11 @@ fun ProductDto.toEntity() = ProductEntity(
     expiry_alert = expiry_alert,
     manufacturer = manufacturer,
     slug = slug,
-    business_slug = business_slug,
-    created_by = created_by,
-    sync_status = sync_status,
-    created_at = created_at,
-    updated_at = updated_at
+    business_slug = businessSlug,
+    created_by = createdBy,
+    sync_status = SyncStatus.SYNCED.value,
+    created_at = createdAt,
+    updated_at = updatedAt
 )
 
 // Party Mappers
@@ -118,11 +117,10 @@ fun PartyEntity.toDto() = PartyDto(
     email = email,
     description = description,
     slug = slug,
-    business_slug = business_slug,
-    created_by = created_by,
-    sync_status = sync_status,
-    created_at = created_at,
-    updated_at = updated_at
+    businessSlug = business_slug,
+    createdBy = created_by,
+    createdAt = created_at,
+    updatedAt = updated_at
 )
 
 fun PartyDto.toEntity() = PartyEntity(
@@ -142,11 +140,11 @@ fun PartyDto.toEntity() = PartyEntity(
     email = email,
     description = description,
     slug = slug,
-    business_slug = business_slug,
-    created_by = created_by,
-    sync_status = sync_status,
-    created_at = created_at,
-    updated_at = updated_at
+    business_slug = businessSlug,
+    created_by = createdBy,
+    sync_status = SyncStatus.SYNCED.value,
+    created_at = createdAt,
+    updated_at = updatedAt
 )
 
 // Payment Method Mappers
@@ -158,11 +156,10 @@ fun PaymentMethodEntity.toDto() = PaymentMethodDto(
     balance = amount,
     opening_balance = opening_amount,
     slug = slug,
-    business_slug = business_slug,
-    created_by = created_by,
-    sync_status = sync_status,
-    created_at = created_at,
-    updated_at = updated_at
+    businessSlug = business_slug,
+    createdBy = created_by,
+    createdAt = created_at,
+    updatedAt = updated_at
 )
 
 fun PaymentMethodDto.toEntity() = PaymentMethodEntity(
@@ -173,11 +170,11 @@ fun PaymentMethodDto.toEntity() = PaymentMethodEntity(
     opening_amount = opening_balance,
     status_id = 0,
     slug = slug,
-    business_slug = business_slug,
-    created_by = created_by,
-    sync_status = sync_status,
-    created_at = created_at,
-    updated_at = updated_at
+    business_slug = businessSlug,
+    created_by = createdBy,
+    sync_status = SyncStatus.SYNCED.value,
+    created_at = createdAt,
+    updated_at = updatedAt
 )
 
 // Quantity Unit Mappers
@@ -188,11 +185,10 @@ fun QuantityUnitEntity.toDto() = QuantityUnitDto(
     parent_slug = parent_slug,
     conversion_rate = conversion_factor,
     slug = slug,
-    business_slug = business_slug,
-    created_by = created_by,
-    sync_status = sync_status,
-    created_at = created_at,
-    updated_at = updated_at
+    businessSlug = business_slug,
+    createdBy = created_by,
+    createdAt = created_at,
+    updatedAt = updated_at
 )
 
 fun QuantityUnitDto.toEntity() = QuantityUnitEntity(
@@ -204,11 +200,11 @@ fun QuantityUnitDto.toEntity() = QuantityUnitEntity(
     base_conversion_unit_slug = null,
     status_id = 0,
     slug = slug,
-    business_slug = business_slug,
-    created_by = created_by,
-    sync_status = sync_status,
-    created_at = created_at,
-    updated_at = updated_at
+    business_slug = businessSlug,
+    created_by = createdBy,
+    sync_status = SyncStatus.SYNCED.value,
+    created_at = createdAt,
+    updated_at = updatedAt
 )
 
 // Warehouse Mappers
@@ -218,11 +214,10 @@ fun WareHouseEntity.toDto() = WareHouseDto(
     description = description,
     location = address, // Entity uses 'address' field
     slug = slug,
-    business_slug = business_slug,
-    created_by = created_by,
-    sync_status = sync_status,
-    created_at = created_at,
-    updated_at = updated_at
+    businessSlug = business_slug,
+    createdBy = created_by,
+    createdAt = created_at,
+    updatedAt = updated_at
 )
 
 fun WareHouseDto.toEntity() = WareHouseEntity(
@@ -235,11 +230,11 @@ fun WareHouseDto.toEntity() = WareHouseEntity(
     type_id = 0,
     status_id = 0,
     slug = slug,
-    business_slug = business_slug,
-    created_by = created_by,
-    sync_status = sync_status,
-    created_at = created_at,
-    updated_at = updated_at
+    business_slug = businessSlug,
+    created_by = createdBy,
+    sync_status = SyncStatus.SYNCED.value,
+    created_at = createdAt,
+    updated_at = updatedAt
 )
 
 // Transaction Mappers
@@ -257,11 +252,10 @@ fun InventoryTransactionEntity.toDto() = TransactionDto(
     category_slug = null, // Not in entity
     transaction_date = timestamp,
     slug = slug,
-    business_slug = business_slug,
-    created_by = created_by,
-    sync_status = sync_status,
-    created_at = created_at,
-    updated_at = updated_at
+    businessSlug = business_slug,
+    createdBy = created_by,
+    createdAt = created_at,
+    updatedAt = updated_at
 )
 
 fun TransactionDto.toEntity() = InventoryTransactionEntity(
@@ -290,11 +284,11 @@ fun TransactionDto.toEntity() = InventoryTransactionEntity(
     ware_house_slug_from = null,
     ware_house_slug_to = warehouse_slug,
     slug = slug,
-    business_slug = business_slug,
-    created_by = created_by,
-    sync_status = sync_status,
-    created_at = created_at,
-    updated_at = updated_at
+    business_slug = businessSlug,
+    created_by = createdBy,
+    sync_status = SyncStatus.SYNCED.value,
+    created_at = createdAt,
+    updated_at = updatedAt
 )
 
 // Transaction Detail Mappers
@@ -313,11 +307,10 @@ fun TransactionDetailEntity.toDto() = TransactionDetailDto(
     flat_tax = flat_tax,
     tax_type = tax_type,
     slug = slug,
-    business_slug = business_slug,
-    created_by = created_by,
-    sync_status = sync_status,
-    created_at = created_at,
-    updated_at = updated_at
+    businessSlug = business_slug,
+    createdBy = created_by,
+    createdAt = created_at,
+    updatedAt = updated_at
 )
 
 fun TransactionDetailDto.toEntity() = TransactionDetailEntity(
@@ -335,11 +328,11 @@ fun TransactionDetailDto.toEntity() = TransactionDetailEntity(
     flat_tax = flat_tax,
     tax_type = tax_type,
     slug = slug,
-    business_slug = business_slug,
-    created_by = created_by,
-    sync_status = sync_status,
-    created_at = created_at,
-    updated_at = updated_at
+    business_slug = businessSlug,
+    created_by = createdBy,
+    sync_status = SyncStatus.SYNCED.value,
+    created_at = createdAt,
+    updated_at = updatedAt
 )
 
 // Product Quantities Mappers
@@ -350,11 +343,10 @@ fun ProductQuantitiesEntity.toDto() = ProductQuantitiesDto(
     quantity = current_quantity,
     warehouse_slug = warehouse_slug,
     slug = null, // Not in entity
-    business_slug = business_slug,
-    created_by = null, // Not in entity
-    sync_status = sync_status,
-    created_at = null, // Not in entity
-    updated_at = null // Not in entity
+    businessSlug = business_slug,
+    createdBy = null, // Not in entity
+    createdAt = null, // Not in entity
+    updatedAt = null // Not in entity
 )
 
 fun ProductQuantitiesDto.toEntity() = ProductQuantitiesEntity(
@@ -365,8 +357,8 @@ fun ProductQuantitiesDto.toEntity() = ProductQuantitiesEntity(
     current_quantity = quantity,
     minimum_quantity = 0.0,
     maximum_quantity = 0.0,
-    business_slug = business_slug,
-    sync_status = sync_status
+    business_slug = businessSlug,
+    sync_status = SyncStatus.SYNCED.value
 )
 
 // Entity Media Mappers
@@ -377,11 +369,10 @@ fun EntityMediaEntity.toDto() = EntityMediaDto(
     media_url = url,
     media_type = media_type,
     slug = slug,
-    business_slug = business_slug,
-    created_by = created_by,
-    sync_status = sync_status,
-    created_at = created_at,
-    updated_at = updated_at
+    businessSlug = business_slug,
+    createdBy = created_by,
+    createdAt = created_at,
+    updatedAt = updated_at
 )
 
 fun EntityMediaDto.toEntity() = EntityMediaEntity(
@@ -393,11 +384,11 @@ fun EntityMediaDto.toEntity() = EntityMediaEntity(
     media_type = media_type,
     action_required = null,
     slug = slug,
-    business_slug = business_slug,
-    created_by = created_by,
-    sync_status = sync_status,
-    created_at = created_at,
-    updated_at = updated_at
+    business_slug = businessSlug,
+    created_by = createdBy,
+    sync_status = SyncStatus.SYNCED.value,
+    created_at = createdAt,
+    updated_at = updatedAt
 )
 
 // Recipe Ingredients Mappers
@@ -408,11 +399,10 @@ fun RecipeIngredientsEntity.toDto() = RecipeIngredientsDto(
     quantity = quantity ?: 0.0,
     unit_slug = quantity_unit_slug,
     slug = slug,
-    business_slug = business_slug,
-    created_by = created_by,
-    sync_status = sync_status,
-    created_at = created_at,
-    updated_at = updated_at
+    businessSlug = business_slug,
+    createdBy = created_by,
+    createdAt = created_at,
+    updatedAt = updated_at
 )
 
 fun RecipeIngredientsDto.toEntity() = RecipeIngredientsEntity(
@@ -422,11 +412,11 @@ fun RecipeIngredientsDto.toEntity() = RecipeIngredientsEntity(
     quantity = quantity,
     quantity_unit_slug = unit_slug,
     slug = slug,
-    business_slug = business_slug,
-    created_by = created_by,
-    sync_status = sync_status,
-    created_at = created_at,
-    updated_at = updated_at
+    business_slug = businessSlug,
+    created_by = createdBy,
+    sync_status = SyncStatus.SYNCED.value,
+    created_at = createdAt,
+    updated_at = updatedAt
 )
 
 // Deleted Records Mappers
@@ -435,11 +425,10 @@ fun DeletedRecordsEntity.toDto() = DeletedRecordsDto(
     entity_slug = record_slug, // Entity uses 'record_slug'
     entity_type = record_type, // Entity uses 'record_type'
     slug = slug,
-    business_slug = business_slug,
-    deleted_by = created_by, // Entity uses 'created_by'
-    sync_status = sync_status,
-    deleted_at = created_at, // Entity uses 'created_at' for deletion time
-    updated_at = updated_at
+    businessSlug = business_slug,
+    createdBy  = created_by, // Entity uses 'created_by'
+    createdAt = created_at, // Entity uses 'created_at' for deletion time
+    updatedAt = updated_at
 )
 
 fun DeletedRecordsDto.toEntity() = DeletedRecordsEntity(
@@ -448,10 +437,10 @@ fun DeletedRecordsDto.toEntity() = DeletedRecordsEntity(
     record_type = entity_type,
     deletion_type = null,
     slug = slug,
-    business_slug = business_slug,
-    created_by = deleted_by,
-    sync_status = sync_status,
-    created_at = deleted_at,
-    updated_at = updated_at
+    business_slug = businessSlug,
+    created_by = createdBy,
+    sync_status = SyncStatus.SYNCED.value,
+    created_at = createdAt,
+    updated_at = updatedAt
 )
 

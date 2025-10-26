@@ -194,48 +194,48 @@ class SyncManagerImpl(
             // Order matters - dependencies should be synced first
             
             // 1. Media
-//            syncRepository.syncMediaDown(lastSyncTime)
-//                .onFailure { throw it }
-//
+            syncRepository.syncMediaDown(lastSyncTime)
+                .onFailure { throw it }
+
             // 2. Categories
             syncRepository.syncCategoriesDown(lastSyncTime)
                 .onFailure { throw it }
             
             // 3. Payment Methods
-//            syncRepository.syncPaymentMethodsDown(lastSyncTime)
-//                .onFailure { throw it }
-//
+            syncRepository.syncPaymentMethodsDown(lastSyncTime)
+                .onFailure { throw it }
+
 //            // 4. Quantity Units
-//            syncRepository.syncQuantityUnitsDown(lastSyncTime)
-//                .onFailure { throw it }
-//
+            syncRepository.syncQuantityUnitsDown(lastSyncTime)
+                .onFailure { throw it }
+
 //            // 5. Warehouses
-//            syncRepository.syncWarehousesDown(lastSyncTime)
-//                .onFailure { throw it }
-//
+            syncRepository.syncWarehousesDown(lastSyncTime)
+                .onFailure { throw it }
+
 //            // 6. Products (depends on categories, quantity units)
-//            syncRepository.syncProductsDown(lastSyncTime)
-//                .onFailure { throw it }
-//
+            syncRepository.syncProductsDown(lastSyncTime)
+                .onFailure { throw it }
+
 //            // 7. Recipe Ingredients (depends on products)
-//            syncRepository.syncRecipeIngredientsDown(lastSyncTime)
-//                .onFailure { throw it }
-//
+            syncRepository.syncRecipeIngredientsDown(lastSyncTime)
+                .onFailure { throw it }
+
 //            // 8. Parties (Customers/Suppliers)
-//            syncRepository.syncPartiesDown(lastSyncTime)
-//                .onFailure { throw it }
-//
+            syncRepository.syncPartiesDown(lastSyncTime)
+                .onFailure { throw it }
+
 //            // 9. Transactions (depends on parties, payment methods, warehouses)
-//            syncRepository.syncTransactionsDown(lastSyncTime)
-//                .onFailure { throw it }
+            syncRepository.syncTransactionsDown(lastSyncTime)
+                .onFailure { throw it }
 //
 //            // 10. Transaction Details (depends on transactions, products)
-//            syncRepository.syncTransactionDetailsDown(lastSyncTime)
-//                .onFailure { throw it }
+            syncRepository.syncTransactionDetailsDown(lastSyncTime)
+                .onFailure { throw it }
 //
 //            // 11. Product Quantities (depends on products, warehouses)
-//            syncRepository.syncProductQuantitiesDown(lastSyncTime)
-//                .onFailure { throw it }
+            syncRepository.syncProductQuantitiesDown(lastSyncTime)
+                .onFailure { throw it }
 //
 //            // 12. Deleted Records (returns timestamp)
             val timestamp = syncRepository.syncDeletedRecordsDown(lastSyncTime)
