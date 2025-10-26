@@ -27,6 +27,7 @@ val authModule = module {
     // HTTP Client - created first without interceptor
     single<HttpClient> {
         val authLocalDataSource = get<AuthLocalDataSource>()
+        val businessPreferences = get<com.hisaabi.hisaabi_kmp.business.data.datasource.BusinessPreferencesDataSource>()
         
         HttpClient {
             install(ContentNegotiation) {
@@ -46,8 +47,8 @@ val authModule = module {
                 socketTimeoutMillis = 30000
             }
             
-            // Request interceptor - adds Authorization header
-            install(io.ktor.client.plugins.api.createClientPlugin("AuthorizationInterceptor") {
+            // Request interceptor - adds Authorization and business_key headers
+            install(io.ktor.client.plugins.api.createClientPlugin("AuthAndBusinessInterceptor") {
                 onRequest { request, _ ->
                     // Don't add auth header for login/register/refresh endpoints
                     val url = request.url.toString()
@@ -66,6 +67,17 @@ val authModule = module {
                             println("Added Authorization header to request: ${request.url}")
                         } else {
                             println("Warning: No access token available for request: ${request.url}")
+                        }
+                        
+                        // Add business_key header with selected business slug
+                        val businessSlug = kotlinx.coroutines.runBlocking {
+                            businessPreferences.getSelectedBusinessSlug()
+                        }
+                        if (businessSlug != null) {
+                            request.headers.append("business_key", businessSlug)
+                            println("Added business_key header to request: ${request.url}")
+                        } else {
+                            println("Warning: No business selected for request: ${request.url}")
                         }
                     }
                 }

@@ -23,15 +23,15 @@ fun initKoin(config: KoinAppDeclaration? = null) {
         config?.invoke(this)
         modules(
             coreModule, // Core app services
-            authModule,
             databaseModule,
+            businessModule, // Load before authModule to provide BusinessPreferencesDataSource
+            authModule,
             syncModule,
             partiesModule,
             categoriesModule,
             productsModule,
             paymentMethodsModule,
             warehousesModule,
-            businessModule,
             quantityUnitsModule,
             settingsModule,
             templatesModule,
