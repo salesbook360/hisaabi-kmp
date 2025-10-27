@@ -20,6 +20,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.hisaabi.hisaabi_kmp.core.ui.SegmentedControl
 import com.hisaabi.hisaabi_kmp.products.domain.model.Product
 import com.hisaabi.hisaabi_kmp.products.domain.model.ProductType
 import com.hisaabi.hisaabi_kmp.products.presentation.viewmodel.ProductsViewModel
@@ -161,31 +162,18 @@ private fun ProductTypeFilter(
     onTypeSelected: (ProductType?) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Row(
-        modifier = modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .padding(4.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        // All Products
-        FilterChip(
-            selected = selected == null,
-            onClick = { onTypeSelected(null) },
-            label = { Text("All") },
-            modifier = Modifier.weight(1f)
-        )
-        
-        // Product Types
-        ProductType.entries.forEach { type ->
-            FilterChip(
-                selected = selected == type,
-                onClick = { onTypeSelected(type) },
-                label = { Text(type.displayName) },
-                modifier = Modifier.weight(1f)
-            )
+    // Create list of all product types including "All"
+    val allTypes = listOf(null) + ProductType.entries
+    
+    SegmentedControl(
+        items = allTypes,
+        selectedItem = selected,
+        onItemSelected = onTypeSelected,
+        modifier = modifier,
+        itemDisplayName = { type ->
+            type?.displayName ?: "All"
         }
-    }
+    )
 }
 
 @Composable

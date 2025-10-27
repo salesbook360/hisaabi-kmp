@@ -21,6 +21,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.hisaabi.hisaabi_kmp.core.ui.SegmentedControl
 import com.hisaabi.hisaabi_kmp.parties.domain.model.*
 import com.hisaabi.hisaabi_kmp.parties.presentation.viewmodel.PartiesViewModel
 import com.hisaabi.hisaabi_kmp.utils.format
@@ -123,7 +124,7 @@ fun PartiesScreen(
                 .padding(paddingValues)
         ) {
             // Segment Control
-            SegmentedControl(
+            PartySegmentControl(
                 selected = uiState.selectedSegment,
                 onSegmentSelected = { segment ->
                     viewModel.onSegmentChanged(segment)
@@ -273,7 +274,7 @@ fun PartiesScreen(
 }
 
 @Composable
-private fun SegmentedControl(
+private fun PartySegmentControl(
     selected: PartySegment,
     onSegmentSelected: (PartySegment) -> Unit,
     isExpenseIncomeContext: Boolean = false,
@@ -286,41 +287,19 @@ private fun SegmentedControl(
         listOf(PartySegment.CUSTOMER, PartySegment.VENDOR, PartySegment.INVESTOR)
     }
     
-    Row(
-        modifier = modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .padding(4.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        visibleSegments.forEach { segment ->
-            val isSelected = selected == segment
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(
-                        if (isSelected) MaterialTheme.colorScheme.primary
-                        else Color.Transparent
-                    )
-                    .clickable { onSegmentSelected(segment) }
-                    .padding(vertical = 12.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = when (segment) {
-                        PartySegment.EXPENSE -> "Expense"
-                        PartySegment.EXTRA_INCOME -> "Extra Income"
-                        else -> segment.name
-                    },
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary
-                    else MaterialTheme.colorScheme.onSurfaceVariant
-                )
+    SegmentedControl(
+        items = visibleSegments,
+        selectedItem = selected,
+        onItemSelected = onSegmentSelected,
+        modifier = modifier,
+        itemDisplayName = { segment ->
+            when (segment) {
+                PartySegment.EXPENSE -> "Expense"
+                PartySegment.EXTRA_INCOME -> "Extra Income"
+                else -> segment.name
             }
         }
-    }
+    )
 }
 
 @Composable

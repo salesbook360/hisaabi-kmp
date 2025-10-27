@@ -62,7 +62,7 @@ data class Product(
  * 2 = Recipe/Manufactured Product (composed of other products)
  */
 enum class ProductType(val type: Int, val displayName: String) {
-    SIMPLE_PRODUCT(1, "Simple Product"),
+    SIMPLE_PRODUCT(1, "Product"),
     SERVICE(2, "Service"),
     RECIPE(3, "Recipe");
     
