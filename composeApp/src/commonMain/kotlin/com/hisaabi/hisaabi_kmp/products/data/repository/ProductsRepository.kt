@@ -1,6 +1,7 @@
 package com.hisaabi.hisaabi_kmp.products.data.repository
 
 import com.hisaabi.hisaabi_kmp.database.dao.RecipeIngredientsDao
+import com.hisaabi.hisaabi_kmp.database.dao.QuantityUnitDao
 import com.hisaabi.hisaabi_kmp.database.datasource.ProductLocalDataSource
 import com.hisaabi.hisaabi_kmp.database.entity.ProductEntity
 import com.hisaabi.hisaabi_kmp.database.entity.RecipeIngredientsEntity
@@ -40,7 +41,8 @@ interface ProductsRepository {
 
 class ProductsRepositoryImpl(
     private val productDataSource: ProductLocalDataSource,
-    private val recipeIngredientsDao: RecipeIngredientsDao
+    private val recipeIngredientsDao: RecipeIngredientsDao,
+    private val quantityUnitDao: QuantityUnitDao
 ) : ProductsRepository {
     
     override suspend fun getProducts(
@@ -103,9 +105,15 @@ class ProductsRepositoryImpl(
             .map { entity ->
                 // Load the product details for each ingredient
                 val ingredientProduct = productDataSource.getProductBySlug(entity.ingredient_slug ?: "")
+                
+                // Load the quantity unit title
+                val quantityUnitTitle = entity.quantity_unit_slug?.let { unitSlug ->
+                    quantityUnitDao.getUnitBySlug(unitSlug)?.title
+                }
+                
                 entity.toDomainModel().copy(
                     ingredientTitle = ingredientProduct?.title ?: "Unknown",
-                    quantityUnitTitle = ingredientProduct?.default_unit_slug // Could be enhanced with actual unit title
+                    quantityUnitTitle = quantityUnitTitle
                 )
             }
     }
