@@ -212,8 +212,6 @@ val otherOptions = listOf(
     MenuOption("Warehouse", Icons.Default.Warehouse),
     MenuOption("Reports", Icons.Default.BarChart),
     MenuOption("Payment Methods", Icons.Default.Payment),
-    MenuOption("Settings", Icons.Default.Settings),
-    MenuOption("My Business", Icons.Default.Business),
-    MenuOption("Categories", Icons.Default.Category)
+    MenuOption("My Business", Icons.Default.Business)
 )
 
