@@ -8,6 +8,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.activity.compose.BackHandler
 import com.hisaabi.hisaabi_kmp.auth.AuthNavigation
 import com.hisaabi.hisaabi_kmp.auth.presentation.viewmodel.AuthViewModel
 import com.hisaabi.hisaabi_kmp.business.data.datasource.BusinessPreferencesDataSource
@@ -55,6 +56,32 @@ fun App() {
             
             // Set initial screen based on authentication state
             var currentScreen by remember { mutableStateOf<AppScreen?>(null) }
+            
+            // Navigation stack for back button handling
+            var navigationStack by remember { mutableStateOf<List<AppScreen>>(emptyList()) }
+            
+            // Helper functions for navigation
+            fun navigateTo(screen: AppScreen) {
+                currentScreen?.let { 
+                    navigationStack = navigationStack + it 
+                }
+                currentScreen = screen
+            }
+            
+            fun navigateBack() {
+                if (navigationStack.isNotEmpty()) {
+                    currentScreen = navigationStack.last()
+                    navigationStack = navigationStack.dropLast(1)
+                } else {
+                    // No more screens in stack, exit app
+                    exitProcess(0)
+                }
+            }
+            
+            // Handle Android back button
+            BackHandler {
+                navigateBack()
+            }
             
             // Bottom navigation state - managed at app level to persist across nested navigation
             var selectedBottomNavTab by remember { mutableStateOf(0) }
@@ -208,67 +235,47 @@ fun App() {
                     HomeScreen(
                         selectedTab = selectedBottomNavTab,
                         onTabSelected = { selectedBottomNavTab = it },
-                        onNavigateToAuth = { currentScreen = AppScreen.AUTH },
-                        onNavigateToQuantityUnits = { currentScreen = AppScreen.QUANTITY_UNITS },
-                        onNavigateToTransactionSettings = { currentScreen = AppScreen.TRANSACTION_SETTINGS },
-                        onNavigateToReceiptSettings = { currentScreen = AppScreen.RECEIPT_SETTINGS },
-                        onNavigateToDashboardSettings = { currentScreen = AppScreen.DASHBOARD_SETTINGS },
-                        onNavigateToTemplates = { currentScreen = AppScreen.TEMPLATES },
-                        onNavigateToUpdateProfile = { currentScreen = AppScreen.UPDATE_PROFILE },
+                        onNavigateToAuth = { navigateTo(AppScreen.AUTH) },
+                        onNavigateToQuantityUnits = { navigateTo(AppScreen.QUANTITY_UNITS) },
+                        onNavigateToTransactionSettings = { navigateTo(AppScreen.TRANSACTION_SETTINGS) },
+                        onNavigateToReceiptSettings = { navigateTo(AppScreen.RECEIPT_SETTINGS) },
+                        onNavigateToDashboardSettings = { navigateTo(AppScreen.DASHBOARD_SETTINGS) },
+                        onNavigateToTemplates = { navigateTo(AppScreen.TEMPLATES) },
+                        onNavigateToUpdateProfile = { navigateTo(AppScreen.UPDATE_PROFILE) },
                         onNavigateToParties = { segment ->
                             selectedPartySegment = segment
-                            currentScreen = AppScreen.PARTIES
+                            navigateTo(AppScreen.PARTIES)
                         },
                         onNavigateToProducts = { productType ->
                             // Store the selected product type for ProductsScreen
                             addProductType = productType
-                            currentScreen = AppScreen.PRODUCTS
+                            navigateTo(AppScreen.PRODUCTS)
                         },
                         onNavigateToAddProduct = { type ->
                             addProductType = type
-                            currentScreen = AppScreen.ADD_PRODUCT
+                            navigateTo(AppScreen.ADD_PRODUCT)
                         },
-                        onNavigateToPaymentMethods = {
-                            currentScreen = AppScreen.PAYMENT_METHODS
-                        },
-                        onNavigateToWarehouses = {
-                            currentScreen = AppScreen.WAREHOUSES
-                        },
-                        onNavigateToMyBusiness = {
-                            currentScreen = AppScreen.MY_BUSINESS
-                        },
-                        onNavigateToTransactions = {
-                            currentScreen = AppScreen.TRANSACTIONS_LIST
-                        },
-                        onNavigateToAddRecord = {
-                            currentScreen = AppScreen.ADD_RECORD
-                        },
-                        onNavigateToPayGetCash = {
-                            currentScreen = AppScreen.PAY_GET_CASH
-                        },
+                        onNavigateToPaymentMethods = { navigateTo(AppScreen.PAYMENT_METHODS) },
+                        onNavigateToWarehouses = { navigateTo(AppScreen.WAREHOUSES) },
+                        onNavigateToMyBusiness = { navigateTo(AppScreen.MY_BUSINESS) },
+                        onNavigateToTransactions = { navigateTo(AppScreen.TRANSACTIONS_LIST) },
+                        onNavigateToAddRecord = { navigateTo(AppScreen.ADD_RECORD) },
+                        onNavigateToPayGetCash = { navigateTo(AppScreen.PAY_GET_CASH) },
                         onNavigateToExpense = {
                             expenseIncomeViewModel.setTransactionType(com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.EXPENSE)
-                            currentScreen = AppScreen.ADD_EXPENSE_INCOME
+                            navigateTo(AppScreen.ADD_EXPENSE_INCOME)
                         },
                         onNavigateToExtraIncome = {
                             expenseIncomeViewModel.setTransactionType(com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.EXTRA_INCOME)
-                            currentScreen = AppScreen.ADD_EXPENSE_INCOME
+                            navigateTo(AppScreen.ADD_EXPENSE_INCOME)
                         },
-                        onNavigateToPaymentTransfer = {
-                            currentScreen = AppScreen.PAYMENT_TRANSFER
-                        },
-                        onNavigateToJournalVoucher = {
-                            currentScreen = AppScreen.JOURNAL_VOUCHER
-                        },
-                        onNavigateToStockAdjustment = {
-                            currentScreen = AppScreen.STOCK_ADJUSTMENT
-                        },
-                        onNavigateToManufacture = {
-                            currentScreen = AppScreen.ADD_MANUFACTURE
-                        },
+                        onNavigateToPaymentTransfer = { navigateTo(AppScreen.PAYMENT_TRANSFER) },
+                        onNavigateToJournalVoucher = { navigateTo(AppScreen.JOURNAL_VOUCHER) },
+                        onNavigateToStockAdjustment = { navigateTo(AppScreen.STOCK_ADJUSTMENT) },
+                        onNavigateToManufacture = { navigateTo(AppScreen.ADD_MANUFACTURE) },
                         onNavigateToAddTransaction = { type ->
                             transactionType = type
-                            currentScreen = AppScreen.ADD_TRANSACTION_STEP1
+                            navigateTo(AppScreen.ADD_TRANSACTION_STEP1)
                         }
                     )
                 }
@@ -295,7 +302,7 @@ fun App() {
                         onAddBusinessClick = {
                             // Navigate to add business screen
                             selectedBusinessForEdit = null
-                            currentScreen = AppScreen.ADD_BUSINESS
+                            navigateTo(AppScreen.ADD_BUSINESS)
                         },
                         onExitApp = {
                             // Exit the app when back is pressed without business selection
@@ -629,7 +636,7 @@ fun App() {
                             selectedBusinessForEdit = null
                             currentScreen = AppScreen.ADD_BUSINESS
                         },
-                        onNavigateBack = { currentScreen = AppScreen.HOME },
+                        onNavigateBack = { navigateBack() },
                         refreshTrigger = businessRefreshTrigger
                     )
                 }
@@ -661,7 +668,7 @@ fun App() {
                             selectedUnitForEdit = null
                             currentScreen = AppScreen.ADD_QUANTITY_UNIT
                         },
-                        onNavigateBack = { currentScreen = AppScreen.HOME },
+                        onNavigateBack = { navigateBack() },
                         refreshTrigger = quantityUnitsRefreshTrigger
                     )
                 }
@@ -680,26 +687,26 @@ fun App() {
                 AppScreen.TRANSACTION_SETTINGS -> {
                     com.hisaabi.hisaabi_kmp.settings.presentation.ui.TransactionTypeSelectionScreen(
                         viewModel = org.koin.compose.koinInject(),
-                        onNavigateBack = { currentScreen = AppScreen.HOME }
+                        onNavigateBack = { navigateBack() }
                     )
                 }
                 
                 AppScreen.RECEIPT_SETTINGS -> {
                     com.hisaabi.hisaabi_kmp.settings.presentation.ui.ReceiptSettingsScreen(
                         viewModel = org.koin.compose.koinInject(),
-                        onNavigateBack = { currentScreen = AppScreen.HOME }
+                        onNavigateBack = { navigateBack() }
                     )
                 }
                 AppScreen.DASHBOARD_SETTINGS -> {
                     com.hisaabi.hisaabi_kmp.settings.presentation.ui.DashboardSettingsScreen(
                         viewModel = org.koin.compose.koinInject(),
-                        onNavigateBack = { currentScreen = AppScreen.HOME }
+                        onNavigateBack = { navigateBack() }
                     )
                 }
                 AppScreen.TEMPLATES -> {
                     com.hisaabi.hisaabi_kmp.templates.presentation.ui.TemplatesScreen(
                         viewModel = org.koin.compose.koinInject(),
-                        onNavigateBack = { currentScreen = AppScreen.HOME },
+                        onNavigateBack = { navigateBack() },
                         onAddTemplateClick = {
                             selectedTemplateIdForEdit = null
                             currentScreen = AppScreen.ADD_TEMPLATE
@@ -723,13 +730,13 @@ fun App() {
                 AppScreen.UPDATE_PROFILE -> {
                     com.hisaabi.hisaabi_kmp.profile.presentation.ui.UpdateProfileScreen(
                         viewModel = org.koin.compose.koinInject(),
-                        onNavigateBack = { currentScreen = AppScreen.HOME }
+                        onNavigateBack = { navigateBack() }
                     )
                 }
                 AppScreen.TRANSACTIONS_LIST -> {
                     com.hisaabi.hisaabi_kmp.transactions.presentation.ui.TransactionsListScreen(
                         viewModel = org.koin.compose.koinInject(),
-                        onNavigateBack = { currentScreen = AppScreen.HOME },
+                        onNavigateBack = { navigateBack() },
                         onTransactionClick = { transaction ->
                             selectedTransactionSlug = transaction.slug
                             currentScreen = AppScreen.TRANSACTION_DETAIL
@@ -768,7 +775,7 @@ fun App() {
                     
                     com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddRecordScreen(
                         viewModel = recordViewModel,
-                        onNavigateBack = { currentScreen = AppScreen.HOME },
+                        onNavigateBack = { navigateBack() },
                         onSelectParty = {
                             selectingPartyForTransaction = true
                             returnToScreenAfterPartySelection = AppScreen.ADD_RECORD
@@ -797,7 +804,7 @@ fun App() {
                     
                     com.hisaabi.hisaabi_kmp.transactions.presentation.ui.PayGetCashScreen(
                         viewModel = payGetCashViewModel,
-                        onNavigateBack = { currentScreen = AppScreen.HOME },
+                        onNavigateBack = { navigateBack() },
                         onSelectParty = { partyType ->
                             selectingPartyForTransaction = true
                             returnToScreenAfterPartySelection = AppScreen.PAY_GET_CASH
@@ -842,7 +849,7 @@ fun App() {
                     
                     com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddExpenseIncomeScreen(
                         viewModel = expenseIncomeViewModel,
-                        onNavigateBack = { currentScreen = AppScreen.HOME },
+                        onNavigateBack = { navigateBack() },
                         onSelectParty = {
                             selectingPartyForTransaction = true
                             returnToScreenAfterPartySelection = AppScreen.ADD_EXPENSE_INCOME
@@ -886,7 +893,7 @@ fun App() {
                     
                     com.hisaabi.hisaabi_kmp.transactions.presentation.ui.PaymentTransferScreen(
                         viewModel = paymentTransferViewModel,
-                        onNavigateBack = { currentScreen = AppScreen.HOME },
+                        onNavigateBack = { navigateBack() },
                         onSelectPaymentMethodFrom = {
                             selectingPaymentMethodForTransaction = true
                             returnToScreenAfterPartySelection = AppScreen.PAYMENT_TRANSFER
@@ -938,7 +945,7 @@ fun App() {
 
                     com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddJournalVoucherScreen(
                         viewModel = journalVoucherViewModel,
-                        onNavigateBack = { currentScreen = AppScreen.HOME },
+                        onNavigateBack = { navigateBack() },
                         onSelectAccountType = {
                             showJournalAccountTypeDialog = true
                         },
@@ -1037,7 +1044,7 @@ fun App() {
 
                     com.hisaabi.hisaabi_kmp.transactions.presentation.ui.StockAdjustmentScreen(
                         viewModel = stockAdjustmentViewModel,
-                        onNavigateBack = { currentScreen = AppScreen.HOME },
+                        onNavigateBack = { navigateBack() },
                         onSelectWarehouseFrom = {
                             selectingWarehouseForTransaction = true
                             returnToScreenAfterPartySelection = AppScreen.STOCK_ADJUSTMENT
@@ -1123,7 +1130,7 @@ fun App() {
                     
                     com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddTransactionStep1Screen(
                         viewModel = transactionViewModel,
-                        onNavigateBack = { currentScreen = AppScreen.HOME },
+                        onNavigateBack = { navigateBack() },
                         onSelectParty = { 
                             // Determine party segment based on transaction type
                             val state = transactionViewModel.state.value
@@ -1145,7 +1152,7 @@ fun App() {
                             selectingWarehouseForTransaction = true
                             currentScreen = AppScreen.WAREHOUSES
                         },
-                        onProceedToStep2 = { currentScreen = AppScreen.ADD_TRANSACTION_STEP2 }
+                        onProceedToStep2 = { navigateTo(AppScreen.ADD_TRANSACTION_STEP2) }
                     )
                 }
                 AppScreen.ADD_TRANSACTION_STEP2 -> {
@@ -1159,12 +1166,12 @@ fun App() {
                     
                     com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddTransactionStep2Screen(
                         viewModel = transactionViewModel,
-                        onNavigateBack = { currentScreen = AppScreen.ADD_TRANSACTION_STEP1 },
+                        onNavigateBack = { navigateBack() },
                         onSelectPaymentMethod = { 
                             selectingPaymentMethodForTransaction = true
                             currentScreen = AppScreen.PAYMENT_METHODS
                         },
-                        onTransactionSaved = { currentScreen = AppScreen.HOME }
+                        onTransactionSaved = { navigateTo(AppScreen.HOME) }
                     )
                 }
                 }
