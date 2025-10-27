@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionState
+import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionSortOption
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionsListViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -148,7 +149,9 @@ fun TransactionsListScreen(
         ) {
             FiltersBottomSheetContent(
                 selectedType = state.selectedTransactionType,
+                selectedSortBy = state.sortBy,
                 onTypeSelected = { viewModel.setTransactionTypeFilter(it) },
+                onSortBySelected = { viewModel.setSortBy(it) },
                 onClearFilters = { 
                     viewModel.clearFilters()
                     viewModel.toggleFilters()
@@ -162,7 +165,9 @@ fun TransactionsListScreen(
 @Composable
 private fun FiltersBottomSheetContent(
     selectedType: AllTransactionTypes?,
+    selectedSortBy: TransactionSortOption,
     onTypeSelected: (AllTransactionTypes?) -> Unit,
+    onSortBySelected: (TransactionSortOption) -> Unit,
     onClearFilters: () -> Unit,
     onApplyFilters: () -> Unit
 ) {
@@ -240,6 +245,33 @@ private fun FiltersBottomSheetContent(
                 modifier = Modifier.weight(1f)
             )
             Spacer(Modifier.weight(1f))
+        }
+        
+        Spacer(Modifier.height(8.dp))
+        
+        // Sort by section
+        Text(
+            "Sort by",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+        
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            FilterChip(
+                selected = selectedSortBy == TransactionSortOption.ENTRY_DATE,
+                onClick = { onSortBySelected(TransactionSortOption.ENTRY_DATE) },
+                label = { Text("Entry date") },
+                modifier = Modifier.weight(1f)
+            )
+            FilterChip(
+                selected = selectedSortBy == TransactionSortOption.TRANSACTION_DATE,
+                onClick = { onSortBySelected(TransactionSortOption.TRANSACTION_DATE) },
+                label = { Text("Transaction date") },
+                modifier = Modifier.weight(1f)
+            )
         }
         
         Spacer(Modifier.height(8.dp))
@@ -383,11 +415,32 @@ private fun TransactionCard(
                 }
                 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        transaction.timestamp ?: "",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Column(horizontalAlignment = Alignment.End) {
+                        // Transaction date
+                        transaction.timestamp?.let { timestamp ->
+                            Text(
+                                "Transaction: $timestamp",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        // Entry date
+                        transaction.createdAt?.let { createdAt ->
+                            Text(
+                                "Entry: $createdAt",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        // Transaction ID
+                        transaction.slug?.let { slug ->
+                            Text(
+                                "ID: $slug",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
                     IconButton(onClick = { showOptions = !showOptions }) {
                         Icon(Icons.Default.MoreVert, "Options")
                     }

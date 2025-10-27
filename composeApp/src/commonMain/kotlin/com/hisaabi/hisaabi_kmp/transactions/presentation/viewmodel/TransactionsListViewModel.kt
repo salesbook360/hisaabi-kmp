@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction
+import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionSortOption
 import com.hisaabi.hisaabi_kmp.transactions.domain.usecase.TransactionUseCases
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -19,7 +20,8 @@ data class TransactionsListState(
     val searchQuery: String = "",
     val startDate: String? = null,
     val endDate: String? = null,
-    val showFilters: Boolean = false
+    val showFilters: Boolean = false,
+    val sortBy: TransactionSortOption = TransactionSortOption.TRANSACTION_DATE
 )
 
 class TransactionsListViewModel(
@@ -104,8 +106,15 @@ class TransactionsListViewModel(
             }
         }
         
-        // Sort by timestamp (newest first)
-        return filtered.sortedByDescending { it.timestamp }
+        // Sort by selected option
+        return when (state.sortBy) {
+            TransactionSortOption.ENTRY_DATE -> {
+                filtered.sortedByDescending { it.createdAt }
+            }
+            TransactionSortOption.TRANSACTION_DATE -> {
+                filtered.sortedByDescending { it.timestamp }
+            }
+        }
     }
     
     fun setTransactionTypeFilter(type: AllTransactionTypes?) {
@@ -120,6 +129,11 @@ class TransactionsListViewModel(
     
     fun setSearchQuery(query: String) {
         _state.update { it.copy(searchQuery = query) }
+        refreshFilters()
+    }
+    
+    fun setSortBy(sortBy: TransactionSortOption) {
+        _state.update { it.copy(sortBy = sortBy) }
         refreshFilters()
     }
     
@@ -139,7 +153,8 @@ class TransactionsListViewModel(
                 selectedParty = null,
                 searchQuery = "",
                 startDate = null,
-                endDate = null
+                endDate = null,
+                sortBy = TransactionSortOption.TRANSACTION_DATE
             )
         }
         refreshFilters()
