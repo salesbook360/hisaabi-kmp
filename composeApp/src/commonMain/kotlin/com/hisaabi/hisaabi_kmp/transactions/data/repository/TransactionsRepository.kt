@@ -120,10 +120,35 @@ class TransactionsRepository(
                 paymentMethodsRepository.getPaymentMethodBySlug(it)
             }
             
+            val warehouseFrom = entity.ware_house_slug_from?.let {
+                warehousesRepository.getWarehouseBySlug(it)
+            }
+            
+            val warehouseTo = entity.ware_house_slug_to?.let {
+                warehousesRepository.getWarehouseBySlug(it)
+            }
+            
+            // Load transaction details with product and quantity unit information
+            val detailEntities = entity.slug?.let { localDataSource.getDetailsByTransaction(it) }?.first()
+            val details = detailEntities?.map { detailEntity ->
+                val product = detailEntity.product_slug?.let {
+                    productsRepository.getProductBySlug(it)
+                }
+                
+                val quantityUnit = detailEntity.quantity_unit_slug?.let {
+                    quantityUnitsRepository.getUnitBySlug(it)
+                }
+                
+                detailEntity.toDomainModel(product, quantityUnit)
+            }
+            
             entity.toDomainModel(
+                details = details.orEmpty(),
                 party = party,
                 paymentMethodTo = paymentMethodTo,
-                paymentMethodFrom = paymentMethodFrom
+                paymentMethodFrom = paymentMethodFrom,
+                warehouseFrom = warehouseFrom,
+                warehouseTo = warehouseTo
             )
         }
     }

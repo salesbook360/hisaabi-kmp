@@ -259,7 +259,33 @@ private fun TransactionDetailContent(
                 item { StockAdjustmentDetailsCard(transaction) }
             }
             isManufactureType -> {
-                item { ManufactureDetailsCard(transaction) }
+                // For manufacture transactions, show recipe from Purchase child transaction
+                // and ingredients from Sale child transaction
+                if (childTransactions.isNotEmpty()) {
+                    // Find Purchase transaction (contains recipe)
+                    val purchaseTransaction = childTransactions.find { 
+                        it.transactionType == AllTransactionTypes.PURCHASE.value 
+                    }
+                    
+                    // Find Sale transaction (contains ingredients)
+                    val saleTransaction = childTransactions.find { 
+                        it.transactionType == AllTransactionTypes.SALE.value 
+                    }
+                    
+                    // Show Recipe from Purchase transaction
+                    purchaseTransaction?.let { purchase ->
+                        item {
+                            ManufactureRecipeCard(purchase)
+                        }
+                    }
+                    
+                    // Show Ingredients from Sale transaction
+                    saleTransaction?.let { sale ->
+                        item {
+                            ManufactureIngredientsCard(sale)
+                        }
+                    }
+                }
             }
             isRegularTransaction -> {
                 // Amount Summary Card
@@ -291,8 +317,9 @@ private fun TransactionDetailContent(
             item { WarehouseInfoCard(transaction) }
         }
         
-        // Payment Method Information (if applicable)
-        if (transaction.paymentMethodTo != null || transaction.paymentMethodFrom != null) {
+        // Payment Method Information (if applicable and not Manufacture transaction)
+        if ((transaction.paymentMethodTo != null || transaction.paymentMethodFrom != null) && 
+            transaction.transactionType != AllTransactionTypes.MANUFACTURE.value) {
             item { PaymentMethodInfoCard(transaction) }
         }
         
@@ -817,6 +844,79 @@ private fun ManufactureDetailsCard(transaction: Transaction) {
                 valueColor = MaterialTheme.colorScheme.tertiary,
                 fontWeight = FontWeight.Bold
             )
+        }
+    }
+}
+
+@Composable
+private fun ManufactureRecipeCard(transaction: Transaction) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        )
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                "Recipe",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            
+            Spacer(Modifier.height(12.dp))
+            
+            // Show recipe from first transaction detail
+            val recipeDetail = transaction.transactionDetails.firstOrNull()
+            recipeDetail?.product?.let { product ->
+                DetailRow(
+                    label = "Recipe Name",
+                    value = product.title,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            
+            recipeDetail?.let { detail ->
+                Spacer(Modifier.height(8.dp))
+                DetailRow(
+                    label = "Quantity",
+                    value = detail.getDisplayQuantity(),
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ManufactureIngredientsCard(transaction: Transaction) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer
+        )
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                "Ingredients",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            
+            Spacer(Modifier.height(12.dp))
+            
+            // Show all ingredients from transaction details
+            transaction.transactionDetails.forEachIndexed { index, detail ->
+                if (index > 0) {
+                    Spacer(Modifier.height(8.dp))
+                }
+                
+                detail.product?.let { product ->
+                    DetailRow(
+                        label = product.title,
+                        value = detail.getDisplayQuantity()
+                    )
+                }
+            }
         }
     }
 }

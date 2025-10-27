@@ -2,6 +2,7 @@ package com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction
 import com.hisaabi.hisaabi_kmp.transactions.domain.usecase.GetTransactionWithDetailsUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,8 +32,8 @@ class TransactionDetailViewModel(
             try {
                 val transaction = getTransactionWithDetailsUseCase(transactionSlug)
                 
-                // If it's a journal voucher, load child transactions
-                val childTransactions = if (transaction?.transactionType == 19) {
+                // Load child transactions for journal voucher or manufacture transactions
+                val childTransactions = if (transaction?.transactionType == AllTransactionTypes.JOURNAL_VOUCHER.value || transaction?.transactionType == AllTransactionTypes.MANUFACTURE.value) {
                     transactionsRepository.getChildTransactions(transactionSlug)
                 } else {
                     emptyList()
