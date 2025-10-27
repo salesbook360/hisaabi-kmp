@@ -33,9 +33,17 @@ fun ProductsScreen(
     onProductClick: (Product) -> Unit = {},
     onAddProductClick: (ProductType?) -> Unit = {},
     onNavigateBack: () -> Unit = {},
-    refreshTrigger: Int = 0
+    refreshTrigger: Int = 0,
+    initialProductType: ProductType? = null
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    
+    // Set initial product type when screen loads
+    LaunchedEffect(initialProductType) {
+        if (initialProductType != null) {
+            viewModel.onProductTypeChanged(initialProductType)
+        }
+    }
     
     // Refresh when trigger changes
     LaunchedEffect(refreshTrigger) {

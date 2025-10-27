@@ -23,7 +23,7 @@ import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 @Composable
 fun HomeMenuScreen(
     onNavigateToParties: (com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment) -> Unit = {},
-    onNavigateToProducts: () -> Unit = {},
+    onNavigateToProducts: (com.hisaabi.hisaabi_kmp.products.domain.model.ProductType?) -> Unit = {},
     onNavigateToAddProduct: (com.hisaabi.hisaabi_kmp.products.domain.model.ProductType) -> Unit = {},
     onNavigateToPaymentMethods: () -> Unit = {},
     onNavigateToWarehouses: () -> Unit = {},
@@ -124,9 +124,9 @@ fun HomeMenuScreen(
                             "Customers" -> onNavigateToParties(com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.CUSTOMER)
                             "Vendors" -> onNavigateToParties(com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.VENDOR)
                             "Investors" -> onNavigateToParties(com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.INVESTOR)
-                            "Products" -> onNavigateToProducts()
-                            "Services" -> onNavigateToAddProduct(com.hisaabi.hisaabi_kmp.products.domain.model.ProductType.SERVICE)
-                            "Recipes" -> onNavigateToAddProduct(com.hisaabi.hisaabi_kmp.products.domain.model.ProductType.RECIPE)
+                            "Products" -> onNavigateToProducts(null) // Show all products
+                            "Services" -> onNavigateToProducts(com.hisaabi.hisaabi_kmp.products.domain.model.ProductType.SERVICE)
+                            "Recipes" -> onNavigateToProducts(com.hisaabi.hisaabi_kmp.products.domain.model.ProductType.RECIPE)
                             "Payment Methods" -> onNavigateToPaymentMethods()
                             "Warehouse" -> onNavigateToWarehouses()
                             "My Business" -> onNavigateToMyBusiness()

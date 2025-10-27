@@ -11,6 +11,8 @@ import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 
 @Composable
 fun HomeScreen(
+    selectedTab: Int = 0,
+    onTabSelected: (Int) -> Unit = {},
     onNavigateToAuth: () -> Unit = {},
     onNavigateToQuantityUnits: () -> Unit = {},
     onNavigateToTransactionSettings: () -> Unit = {},
@@ -19,7 +21,7 @@ fun HomeScreen(
     onNavigateToTemplates: () -> Unit = {},
     onNavigateToUpdateProfile: () -> Unit = {},
     onNavigateToParties: (com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment) -> Unit = {},
-    onNavigateToProducts: () -> Unit = {},
+    onNavigateToProducts: (com.hisaabi.hisaabi_kmp.products.domain.model.ProductType?) -> Unit = {},
     onNavigateToAddProduct: (com.hisaabi.hisaabi_kmp.products.domain.model.ProductType) -> Unit = {},
     onNavigateToPaymentMethods: () -> Unit = {},
     onNavigateToWarehouses: () -> Unit = {},
@@ -35,7 +37,6 @@ fun HomeScreen(
     onNavigateToManufacture: () -> Unit = {},
     onNavigateToAddTransaction: (AllTransactionTypes) -> Unit = {}
 ) {
-    var selectedTab by remember { mutableStateOf(0) }
     
     Scaffold(
         bottomBar = {
@@ -45,7 +46,7 @@ fun HomeScreen(
                         icon = { Icon(item.icon, contentDescription = item.title) },
                         label = { Text(item.title) },
                         selected = selectedTab == index,
-                        onClick = { selectedTab = index }
+                        onClick = { onTabSelected(index) }
                     )
                 }
             }
@@ -93,5 +94,31 @@ enum class BottomNavigationItem(
     DASHBOARD("Dashboard", Icons.Default.Dashboard),
     HOME("Home", Icons.Default.Home),
     MORE("More", Icons.Default.MoreVert)
+}
+
+@Composable
+fun MainAppWithBottomNavigation(
+    selectedTab: Int,
+    onTabSelected: (Int) -> Unit,
+    content: @Composable () -> Unit
+) {
+    Scaffold(
+        bottomBar = {
+            NavigationBar {
+                BottomNavigationItem.entries.forEachIndexed { index, item ->
+                    NavigationBarItem(
+                        icon = { Icon(item.icon, contentDescription = item.title) },
+                        label = { Text(item.title) },
+                        selected = selectedTab == index,
+                        onClick = { onTabSelected(index) }
+                    )
+                }
+            }
+        }
+    ) { paddingValues ->
+        Box(modifier = Modifier.padding(paddingValues)) {
+            content()
+        }
+    }
 }
 

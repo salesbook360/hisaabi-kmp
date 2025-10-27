@@ -56,6 +56,15 @@ fun App() {
             // Set initial screen based on authentication state
             var currentScreen by remember { mutableStateOf<AppScreen?>(null) }
             
+            // Bottom navigation state - managed at app level to persist across nested navigation
+            var selectedBottomNavTab by remember { mutableStateOf(0) }
+            
+            // Track if we're navigating from HOME screen to retain bottom nav selection
+            LaunchedEffect(currentScreen) {
+                // When returning to HOME screen, don't reset the bottom nav selection
+                // The selection is already persisted in selectedBottomNavTab
+            }
+            
             // Set initial screen after auth check is complete
             LaunchedEffect(isInitialized, isLoggedIn, selectedBusinessSlug) {
                 if (isInitialized && currentScreen == null) {
@@ -197,6 +206,8 @@ fun App() {
                 when (currentScreen!!) {
                 AppScreen.HOME -> {
                     HomeScreen(
+                        selectedTab = selectedBottomNavTab,
+                        onTabSelected = { selectedBottomNavTab = it },
                         onNavigateToAuth = { currentScreen = AppScreen.AUTH },
                         onNavigateToQuantityUnits = { currentScreen = AppScreen.QUANTITY_UNITS },
                         onNavigateToTransactionSettings = { currentScreen = AppScreen.TRANSACTION_SETTINGS },
@@ -208,7 +219,9 @@ fun App() {
                             selectedPartySegment = segment
                             currentScreen = AppScreen.PARTIES
                         },
-                        onNavigateToProducts = {
+                        onNavigateToProducts = { productType ->
+                            // Store the selected product type for ProductsScreen
+                            addProductType = productType
                             currentScreen = AppScreen.PRODUCTS
                         },
                         onNavigateToAddProduct = { type ->
@@ -441,6 +454,12 @@ fun App() {
                 }
                 
                 AppScreen.PRODUCTS -> {
+                    // Clear the product type after using it to avoid persistence
+                    val currentProductType = addProductType
+                    LaunchedEffect(Unit) {
+                        addProductType = null
+                    }
+                    
                     com.hisaabi.hisaabi_kmp.products.presentation.ui.ProductsScreen(
                         viewModel = org.koin.compose.koinInject(),
                         onProductClick = { product ->
@@ -474,7 +493,8 @@ fun App() {
                                 currentScreen = AppScreen.HOME
                             }
                         },
-                        refreshTrigger = productsRefreshTrigger
+                        refreshTrigger = productsRefreshTrigger,
+                        initialProductType = currentProductType
                     )
                 }
                 
