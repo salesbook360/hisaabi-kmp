@@ -6,6 +6,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
@@ -22,6 +23,59 @@ fun formatDateTime(timestamp: Long): String {
            "${dateTime.year} " +
            "${dateTime.hour.toString().padStart(2, '0')}:" +
            "${dateTime.minute.toString().padStart(2, '0')}"
+}
+
+/**
+ * Formats a transaction date (timestamp in milliseconds) to "dd MMM, yyyy" format.
+ * Example: 15 Jan, 2024
+ */
+fun formatTransactionDate(timestampString: String?): String {
+    if (timestampString == null) return ""
+    
+    return try {
+        val timestamp = timestampString.toLongOrNull() ?: return timestampString
+        val instant = Instant.fromEpochMilliseconds(timestamp)
+        val dateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
+        val monthNames = listOf(
+            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+        )
+        val monthName = monthNames.getOrNull(dateTime.monthNumber - 1) ?: ""
+        "${dateTime.dayOfMonth.toString().padStart(2, '0')} $monthName, ${dateTime.year}"
+    } catch (e: Exception) {
+        timestampString
+    }
+}
+
+/**
+ * Formats an entry date (ISO 8601 string format "yyyy-MM-DDTHH:mm.000Z") to "dd MMM, yyyy" format.
+ * Example: 15 Jan, 2024
+ */
+fun formatEntryDate(isoDateString: String?): String {
+    if (isoDateString == null || isoDateString.isEmpty()) return ""
+    
+    return try {
+        // Parse ISO 8601 format: yyyy-MM-DDTHH:mm.000Z
+        val parts = isoDateString.replace(".000Z", "Z").split("T")
+        if (parts.size != 2) return isoDateString
+        
+        val dateParts = parts[0].split("-")
+        if (dateParts.size != 3) return isoDateString
+        
+        val year = dateParts[0].toIntOrNull() ?: return isoDateString
+        val month = dateParts[1].toIntOrNull() ?: return isoDateString
+        val day = dateParts[2].toIntOrNull() ?: return isoDateString
+        
+        val monthNames = listOf(
+            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+        )
+        val monthName = monthNames.getOrNull(month - 1) ?: ""
+        
+        "${day.toString().padStart(2, '0')} $monthName, $year"
+    } catch (e: Exception) {
+        isoDateString
+    }
 }
 
 /**

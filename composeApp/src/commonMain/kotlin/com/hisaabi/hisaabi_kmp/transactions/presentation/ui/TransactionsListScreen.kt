@@ -18,6 +18,8 @@ import com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionState
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionSortOption
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionsListViewModel
+import com.hisaabi.hisaabi_kmp.utils.formatTransactionDate
+import com.hisaabi.hisaabi_kmp.utils.formatEntryDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -419,7 +421,7 @@ private fun TransactionCard(
                         // Transaction date
                         transaction.timestamp?.let { timestamp ->
                             Text(
-                                "Transaction: $timestamp",
+                                "Transaction Date: ${formatTransactionDate(timestamp)}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -427,7 +429,7 @@ private fun TransactionCard(
                         // Entry date
                         transaction.createdAt?.let { createdAt ->
                             Text(
-                                "Entry: $createdAt",
+                                "Entry: ${formatEntryDate(createdAt)}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
