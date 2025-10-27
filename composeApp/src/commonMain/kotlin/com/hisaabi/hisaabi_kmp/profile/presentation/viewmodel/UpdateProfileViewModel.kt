@@ -2,13 +2,15 @@ package com.hisaabi.hisaabi_kmp.profile.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hisaabi.hisaabi_kmp.auth.data.datasource.AuthLocalDataSource
 import com.hisaabi.hisaabi_kmp.profile.data.ProfileRepository
 import com.hisaabi.hisaabi_kmp.profile.domain.model.UserProfile
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class UpdateProfileViewModel(
-    private val repository: ProfileRepository
+    private val repository: ProfileRepository,
+    private val authLocalDataSource: AuthLocalDataSource
 ) : ViewModel() {
     
     private val _state = MutableStateFlow(UpdateProfileState())
@@ -62,9 +64,16 @@ class UpdateProfileViewModel(
         _state.update { it.copy(profilePicUrl = url, error = null) }
     }
     
-    fun saveProfile(authToken: String = "Bearer mock_token") {
+    fun saveProfile() {
         viewModelScope.launch {
             val currentState = _state.value
+            
+            // Get auth token from local storage
+            val authToken = authLocalDataSource.getAccessToken()
+            if (authToken == null) {
+                _state.update { it.copy(error = "Authentication token not found. Please log in again.") }
+                return@launch
+            }
             
             // Validation
             if (currentState.name.isBlank()) {
@@ -83,7 +92,7 @@ class UpdateProfileViewModel(
             }
             
             // Email validation
-            if (!android.util.Patterns.EMAIL_ADDRESS.matcher(currentState.email).matches()) {
+            if (!isValidEmail(currentState.email)) {
                 _state.update { it.copy(error = "Invalid email format") }
                 return@launch
             }
@@ -138,6 +147,11 @@ class UpdateProfileViewModel(
     
     fun clearMessage() {
         _state.update { it.copy(message = null) }
+    }
+    
+    private fun isValidEmail(email: String): Boolean {
+        val emailRegex = "^[A-Za-z0-9+_.-]+@([A-Za-z0-9.-]+\\.[A-Za-z]{2,})$".toRegex()
+        return emailRegex.matches(email)
     }
 }
 

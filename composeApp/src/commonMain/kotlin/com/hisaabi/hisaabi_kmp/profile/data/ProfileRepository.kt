@@ -1,5 +1,6 @@
 package com.hisaabi.hisaabi_kmp.profile.data
 
+import com.hisaabi.hisaabi_kmp.auth.data.datasource.AuthLocalDataSource
 import com.hisaabi.hisaabi_kmp.profile.domain.model.UpdateProfileRequest
 import com.hisaabi.hisaabi_kmp.profile.domain.model.UpdateProfileResponse
 import com.hisaabi.hisaabi_kmp.profile.domain.model.UserProfile
@@ -9,7 +10,8 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 
 class ProfileRepository(
-    private val httpClient: HttpClient
+    private val httpClient: HttpClient,
+    private val authLocalDataSource: AuthLocalDataSource
 ) {
     private val baseUrl = "http://52.20.167.4:5000"
     
@@ -40,21 +42,23 @@ class ProfileRepository(
         }
     }
     
-    // Mock method to get current user profile
-    // TODO: Replace with actual API call to fetch user profile
+    // Get current user profile from local persistence storage
     suspend fun getCurrentProfile(): Result<UserProfile> {
         return try {
-            // For now, return a mock profile
-            // In production, this should fetch from API or local storage
-            val mockProfile = UserProfile(
-                email = "user@example.com",
-                firebaseId = "mock_firebase_id",
-                name = "John Doe",
-                phone = "923001234567",
-                pic = "",
-                slug = "JD"
-            )
-            Result.success(mockProfile)
+            val userDto = authLocalDataSource.getUser()
+            if (userDto != null) {
+                val profile = UserProfile(
+                    email = userDto.email,
+                    firebaseId = userDto.firebaseId,
+                    name = userDto.name,
+                    phone = userDto.phone ?: "",
+                    pic = userDto.pic ?: "",
+                    slug = userDto.slug
+                )
+                Result.success(profile)
+            } else {
+                Result.failure(Exception("No user data found in local storage"))
+            }
         } catch (e: Exception) {
             Result.failure(e)
         }
