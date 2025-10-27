@@ -32,8 +32,10 @@ fun MoreScreen(
     onNavigateToDashboardSettings: () -> Unit = {},
     onNavigateToTemplates: () -> Unit = {},
     onNavigateToUpdateProfile: () -> Unit = {},
+    onNavigateToBusinessSelection: () -> Unit = {},
     preferencesManager: com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager = org.koin.compose.koinInject(),
-    authViewModel: com.hisaabi.hisaabi_kmp.auth.presentation.viewmodel.AuthViewModel = org.koin.compose.koinInject()
+    authViewModel: com.hisaabi.hisaabi_kmp.auth.presentation.viewmodel.AuthViewModel = org.koin.compose.koinInject(),
+    getSelectedBusinessUseCase: com.hisaabi.hisaabi_kmp.business.domain.usecase.GetSelectedBusinessUseCase = org.koin.compose.koinInject()
 ) {
     val biometricAuthEnabled by preferencesManager.biometricAuthEnabled.collectAsState(initial = false)
     val selectedLanguage by preferencesManager.selectedLanguage.collectAsState(initial = com.hisaabi.hisaabi_kmp.settings.data.Language.ENGLISH)
@@ -42,6 +44,9 @@ fun MoreScreen(
     // Get current user from AuthViewModel
     val authUiState by authViewModel.uiState.collectAsState()
     val currentUser = authUiState.currentUser
+    
+    // Get selected business
+    val selectedBusiness by getSelectedBusinessUseCase.observe().collectAsState(initial = null)
     
     var showLanguageDialog by remember { mutableStateOf(false) }
     var showCurrencyDialog by remember { mutableStateOf(false) }
@@ -98,11 +103,11 @@ fun MoreScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Row(
-                                modifier = Modifier.clickable { /* Select business */ },
+                                modifier = Modifier.clickable { onNavigateToBusinessSelection() },
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "My Business",
+                                    text = selectedBusiness?.title ?: "No Business Selected",
                                     style = MaterialTheme.typography.titleMedium,
                                     color = MaterialTheme.colorScheme.primary
                                 )

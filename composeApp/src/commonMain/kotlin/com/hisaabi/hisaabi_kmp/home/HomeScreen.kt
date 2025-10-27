@@ -20,6 +20,7 @@ fun HomeScreen(
     onNavigateToDashboardSettings: () -> Unit = {},
     onNavigateToTemplates: () -> Unit = {},
     onNavigateToUpdateProfile: () -> Unit = {},
+    onNavigateToBusinessSelection: () -> Unit = {},
     onNavigateToParties: (com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment) -> Unit = {},
     onNavigateToProducts: (com.hisaabi.hisaabi_kmp.products.domain.model.ProductType?) -> Unit = {},
     onNavigateToAddProduct: (com.hisaabi.hisaabi_kmp.products.domain.model.ProductType) -> Unit = {},
@@ -80,7 +81,8 @@ fun HomeScreen(
                     onNavigateToReceiptSettings = onNavigateToReceiptSettings,
                     onNavigateToDashboardSettings = onNavigateToDashboardSettings,
                     onNavigateToTemplates = onNavigateToTemplates,
-                    onNavigateToUpdateProfile = onNavigateToUpdateProfile
+                    onNavigateToUpdateProfile = onNavigateToUpdateProfile,
+                    onNavigateToBusinessSelection = onNavigateToBusinessSelection
                 )
             }
         }

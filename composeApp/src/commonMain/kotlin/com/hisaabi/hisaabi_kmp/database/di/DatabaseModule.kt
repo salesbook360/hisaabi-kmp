@@ -29,8 +29,7 @@ val databaseModule = module {
     single { get<AppDatabase>().entityMediaDao() }
     single { get<AppDatabase>().recipeIngredientsDao() }
     single { get<AppDatabase>().userAuthDao() }
-    // Business DAO removed - now using remote API
-    // single { get<AppDatabase>().businessDao() }
+    single { get<AppDatabase>().businessDao() }
     
     // Data Sources
     single<PartyLocalDataSource> { PartyLocalDataSourceImpl(get()) }
@@ -38,8 +37,7 @@ val databaseModule = module {
     single<InventoryTransactionLocalDataSource> { InventoryTransactionLocalDataSourceImpl(get()) }
     single<TransactionDetailLocalDataSource> { TransactionDetailLocalDataSourceImpl(get()) }
     single<CategoryLocalDataSource> { CategoryLocalDataSourceImpl(get()) }
-    // Business LocalDataSource removed - now using remote API
-    // single<BusinessLocalDataSource> { BusinessLocalDataSourceImpl(get()) }
+    single<BusinessLocalDataSource> { BusinessLocalDataSourceImpl(get()) }
     
     // Dashboard
     single { 

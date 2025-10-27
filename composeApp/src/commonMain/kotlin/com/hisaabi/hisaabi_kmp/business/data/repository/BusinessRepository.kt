@@ -3,14 +3,50 @@ package com.hisaabi.hisaabi_kmp.business.data.repository
 import com.hisaabi.hisaabi_kmp.business.data.datasource.BusinessRemoteDataSource
 import com.hisaabi.hisaabi_kmp.business.data.model.toRequest
 import com.hisaabi.hisaabi_kmp.business.data.model.toDomainModel
+import com.hisaabi.hisaabi_kmp.business.data.model.toEntity
 import com.hisaabi.hisaabi_kmp.business.domain.model.Business
+import com.hisaabi.hisaabi_kmp.database.datasource.BusinessLocalDataSource
 import io.ktor.client.plugins.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 
 class BusinessRepository(
-    private val remoteDataSource: BusinessRemoteDataSource
+    private val remoteDataSource: BusinessRemoteDataSource,
+    private val localDataSource: BusinessLocalDataSource
 ) {
+    /**
+     * Fetch businesses from remote API and cache them locally.
+     * This should be called on app launch to populate local cache.
+     */
+    suspend fun fetchAndCacheBusinesses(): Result<List<Business>> {
+        return try {
+            val response = remoteDataSource.getAllBusinesses()
+            
+            // Check for error response
+            if (response.statusCode != null) {
+                val errorMessage = response.message ?: "Failed to fetch businesses"
+                return Result.failure(Exception(errorMessage))
+            }
+            
+            // Extract businesses from response and cache them locally
+            val businesses = response.data?.list?.map { businessDto ->
+                val businessEntity = businessDto.toEntity()
+                localDataSource.insertBusiness(businessEntity)
+                businessDto.toDomainModel()
+            } ?: emptyList()
+            
+            Result.success(businesses)
+        } catch (e: ResponseException) {
+            println("Fetch And Cache Businesses ResponseException: ${e.message}")
+            Result.failure(Exception(e.message ?: "Failed to fetch businesses"))
+        } catch (e: Exception) {
+            println("Fetch And Cache Businesses Exception: ${e.message}")
+            e.printStackTrace()
+            Result.failure(e)
+        }
+    }
+    
     fun getAllBusinesses(): Flow<List<Business>> = flow {
         try {
             val response = remoteDataSource.getAllBusinesses()
@@ -34,7 +70,17 @@ class BusinessRepository(
         }
     }
     
+    /**
+     * Get business by ID from local cache first, then remote if not found.
+     */
     suspend fun getBusinessById(id: Int): Business? {
+        // Try local first
+        val localBusiness = localDataSource.getBusinessById(id)
+        if (localBusiness != null) {
+            return localBusiness.toDomainModel()
+        }
+        
+        // Fallback to remote
         return try {
             val response = remoteDataSource.getAllBusinesses()
             response.data?.list?.find { it.id == id }?.toDomainModel()
@@ -44,7 +90,17 @@ class BusinessRepository(
         }
     }
     
+    /**
+     * Get business by slug from local cache first, then remote if not found.
+     */
     suspend fun getBusinessBySlug(slug: String): Business? {
+        // Try local first
+        val localBusiness = localDataSource.getBusinessBySlug(slug)
+        if (localBusiness != null) {
+            return localBusiness.toDomainModel()
+        }
+        
+        // Fallback to remote
         return try {
             val response = remoteDataSource.getAllBusinesses()
             response.data?.list?.find { it.slug == slug }?.toDomainModel()

@@ -35,6 +35,9 @@ fun App() {
             val businessPreferences: BusinessPreferencesDataSource = koinInject()
             var selectedBusinessSlug by remember { mutableStateOf<String?>(null) }
             
+            // Business repository for fetching and caching businesses
+            val businessRepository: com.hisaabi.hisaabi_kmp.business.data.repository.BusinessRepository = koinInject()
+            
             // Sync manager for background sync
             val syncManager: SyncManager = koinInject()
             
@@ -42,6 +45,23 @@ fun App() {
             LaunchedEffect(Unit) {
                 businessPreferences.observeSelectedBusinessSlug().collect { businessSlug ->
                     selectedBusinessSlug = businessSlug
+                }
+            }
+            
+            // Fetch and cache businesses on app launch when user is logged in
+            LaunchedEffect(isLoggedIn) {
+                if (isLoggedIn) {
+                    try {
+                        println("=== FETCHING BUSINESSES ON APP LAUNCH ===")
+                        val result = businessRepository.fetchAndCacheBusinesses()
+                        if (result.isSuccess) {
+                            println("Successfully cached ${result.getOrNull()?.size ?: 0} businesses")
+                        } else {
+                            println("Failed to cache businesses: ${result.exceptionOrNull()?.message}")
+                        }
+                    } catch (e: Exception) {
+                        println("Error fetching businesses on app launch: ${e.message}")
+                    }
                 }
             }
             
@@ -242,6 +262,7 @@ fun App() {
                         onNavigateToDashboardSettings = { navigateTo(AppScreen.DASHBOARD_SETTINGS) },
                         onNavigateToTemplates = { navigateTo(AppScreen.TEMPLATES) },
                         onNavigateToUpdateProfile = { navigateTo(AppScreen.UPDATE_PROFILE) },
+                        onNavigateToBusinessSelection = { navigateTo(AppScreen.MY_BUSINESS) },
                         onNavigateToParties = { segment ->
                             selectedPartySegment = segment
                             navigateTo(AppScreen.PARTIES)

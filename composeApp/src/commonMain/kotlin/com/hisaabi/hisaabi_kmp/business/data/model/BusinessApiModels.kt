@@ -1,6 +1,7 @@
 package com.hisaabi.hisaabi_kmp.business.data.model
 
 import com.hisaabi.hisaabi_kmp.business.domain.model.Business
+import com.hisaabi.hisaabi_kmp.database.entity.BusinessEntity
 import kotlinx.serialization.Serializable
 
 /**
@@ -89,6 +90,32 @@ fun Business.toRequest(): BusinessRequest {
     return BusinessRequest(
         id = id,
         title = title,
+        email = email,
+        address = address,
+        phone = phone,
+        logo = logo,
+        slug = slug
+    )
+}
+
+// Extension function for mapping DTO to Entity
+fun BusinessDto.toEntity(): BusinessEntity {
+    return BusinessEntity(
+        id = id,
+        title = title,
+        email = email,
+        address = address,
+        phone = phone,
+        logo = logo,
+        slug = slug
+    )
+}
+
+// Extension function for mapping Entity to Domain Model
+fun BusinessEntity.toDomainModel(): Business {
+    return Business(
+        id = id,
+        title = title ?: "",
         email = email,
         address = address,
         phone = phone,

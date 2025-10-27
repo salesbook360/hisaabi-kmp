@@ -8,6 +8,8 @@ import com.hisaabi.hisaabi_kmp.business.data.repository.BusinessRepository
 import com.hisaabi.hisaabi_kmp.business.domain.usecase.*
 import com.hisaabi.hisaabi_kmp.business.presentation.viewmodel.AddBusinessViewModel
 import com.hisaabi.hisaabi_kmp.business.presentation.viewmodel.MyBusinessViewModel
+import com.hisaabi.hisaabi_kmp.database.datasource.BusinessLocalDataSource
+import com.hisaabi.hisaabi_kmp.database.datasource.BusinessLocalDataSourceImpl
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
@@ -15,11 +17,14 @@ val businessModule = module {
     // Remote Data Source - uses HttpClient from authModule
     single<BusinessRemoteDataSource> { BusinessRemoteDataSourceImpl(get()) }
     
+    // Local Data Source - for caching business data
+    single<BusinessLocalDataSource> { BusinessLocalDataSourceImpl(get()) }
+    
     // Preferences Data Source - for selected business persistence
     single<BusinessPreferencesDataSource> { BusinessPreferencesDataSourceImpl(get()) }
     
     // Repository
-    single { BusinessRepository(get()) }
+    single { BusinessRepository(get(), get()) }
     
     // Use Cases
     single { GetBusinessesUseCase(get()) }
