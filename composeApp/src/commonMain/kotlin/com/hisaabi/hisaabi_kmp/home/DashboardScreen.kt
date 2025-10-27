@@ -36,6 +36,7 @@ fun DashboardScreen() {
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 ),
+                windowInsets = WindowInsets(0),
                 actions = {
                     IconButton(onClick = { viewModel.refresh() }) {
                         Icon(
