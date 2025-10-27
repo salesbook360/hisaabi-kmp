@@ -17,6 +17,10 @@ import androidx.compose.ui.unit.sp
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.*
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionDetailViewModel
 import com.hisaabi.hisaabi_kmp.utils.format
+import com.hisaabi.hisaabi_kmp.utils.formatTransactionDate
+import com.hisaabi.hisaabi_kmp.utils.formatEntryDate
+import com.hisaabi.hisaabi_kmp.utils.calculateManufacturingCost
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -153,8 +157,10 @@ private fun TransactionDetailContent(
     val isPaymentTransferType = AllTransactionTypes.isPaymentTransfer(transaction.transactionType)
     val isJournalVoucherType = AllTransactionTypes.isJournalVoucher(transaction.transactionType)
     val isStockAdjustmentType = AllTransactionTypes.isStockAdjustment(transaction.transactionType)
+    val isManufactureType = transaction.transactionType == AllTransactionTypes.MANUFACTURE.value
     val isRegularTransaction = !isRecordType && !isPayGetCashType && !isExpenseIncomeType && 
-                                !isPaymentTransferType && !isJournalVoucherType && !isStockAdjustmentType
+                                !isPaymentTransferType && !isJournalVoucherType && !isStockAdjustmentType &&
+                                !isManufactureType
     
     LazyColumn(
         modifier = modifier,
@@ -251,6 +257,9 @@ private fun TransactionDetailContent(
             }
             isStockAdjustmentType -> {
                 item { StockAdjustmentDetailsCard(transaction) }
+            }
+            isManufactureType -> {
+                item { ManufactureDetailsCard(transaction) }
             }
             isRegularTransaction -> {
                 // Amount Summary Card
@@ -763,6 +772,50 @@ private fun StockAdjustmentDetailsCard(transaction: Transaction) {
             DetailRow(
                 label = "Total Quantity",
                 value = transaction.calculateTotalQuantity().toString()
+            )
+        }
+    }
+}
+
+@Composable
+private fun ManufactureDetailsCard(transaction: Transaction) {
+    val manufacturedProduct = transaction.transactionDetails.firstOrNull()
+    
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+        )
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            // Recipe Title
+            manufacturedProduct?.product?.let { product ->
+                DetailRow(
+                    label = "Recipe",
+                    value = product.title,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            
+            Spacer(Modifier.height(8.dp))
+            
+            // Manufactured Quantity
+            manufacturedProduct?.let { detail ->
+                DetailRow(
+                    label = "Quantity Manufactured",
+                    value = detail.getDisplayQuantity(),
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            
+            Spacer(Modifier.height(8.dp))
+            
+            // Total Manufacturing Cost
+            DetailRow(
+                label = "Total Manufacturing Cost",
+                value = "₨ ${String.format("%.2f", calculateManufacturingCost(transaction))}",
+                valueColor = MaterialTheme.colorScheme.tertiary,
+                fontWeight = FontWeight.Bold
             )
         }
     }

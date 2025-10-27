@@ -20,6 +20,7 @@ import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionSortOption
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionsListViewModel
 import com.hisaabi.hisaabi_kmp.utils.formatTransactionDate
 import com.hisaabi.hisaabi_kmp.utils.formatEntryDate
+import com.hisaabi.hisaabi_kmp.utils.calculateManufacturingCost
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -869,6 +870,72 @@ private fun TransactionCard(
                             maxLines = 2
                         )
                     }
+                }
+                         } else if (isManufactureType) {
+                // For Manufacture transactions, show only: Recipe title, Manufactured quantity, Total manufacturing cost
+                val manufacturedProduct = transaction.transactionDetails.firstOrNull()
+                
+                // Show Recipe Title
+                manufacturedProduct?.product?.let { product ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Recipe:",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            product.title,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                
+                Spacer(Modifier.height(8.dp))
+                
+                // Show Manufactured Quantity
+                manufacturedProduct?.let { detail ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Quantity:",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            detail.getDisplayQuantity(),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                
+                Spacer(Modifier.height(8.dp))
+                
+                // Show Total Manufacturing Cost
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Total Cost:",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        "₨ ${String.format("%.2f", calculateManufacturingCost(transaction))}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.tertiary
+                    )
                 }
             } else {
                 // Original transaction display
