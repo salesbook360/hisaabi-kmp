@@ -278,14 +278,47 @@ class AddTransactionViewModel(
         return _state.value.transactionDetails.sumOf { it.flatTax }
     }
     
+    fun calculateTransactionDiscount(): Double {
+        val subtotal = calculateSubtotal()
+        val additionalCharges = _state.value.additionalCharges
+        
+        return TransactionCalculator.calculateTransactionDiscount(
+            subtotal,
+            additionalCharges,
+            _state.value.flatDiscount,
+            _state.value.discountType.value
+        )
+    }
+    
+    fun calculateTransactionTax(): Double {
+        val subtotal = calculateSubtotal()
+        val additionalCharges = _state.value.additionalCharges
+        val transactionDiscount = calculateTransactionDiscount()
+        
+        return TransactionCalculator.calculateTransactionTax(
+            subtotal,
+            additionalCharges,
+            transactionDiscount,
+            _state.value.flatTax,
+            _state.value.taxType.value,
+            true // taxBeforeDiscount - you may want to make this configurable
+        )
+    }
+    
     fun calculateGrandTotal(): Double {
         val subtotal = calculateSubtotal()
-        val totalTax = _state.value.flatTax + calculateProductsTax()
-        val totalDiscount = _state.value.flatDiscount + calculateProductsDiscount()
+        val additionalCharges = _state.value.additionalCharges
+        
+        // Calculate transaction-level discount and tax using proper calculation methods
+        val transactionDiscount = calculateTransactionDiscount()
+        val transactionTax = calculateTransactionTax()
+        
+        val totalTax = transactionTax + calculateProductsTax()
+        val totalDiscount = transactionDiscount + calculateProductsDiscount()
         
         return TransactionCalculator.calculateGrandTotal(
             subtotal,
-            _state.value.additionalCharges,
+            additionalCharges,
             totalTax,
             totalDiscount
         )

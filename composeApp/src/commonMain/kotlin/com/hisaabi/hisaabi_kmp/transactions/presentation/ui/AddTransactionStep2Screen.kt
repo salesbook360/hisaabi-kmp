@@ -94,8 +94,8 @@ fun AddTransactionStep2Screen(
                     productsDiscount = viewModel.calculateProductsDiscount(),
                     productsTax = viewModel.calculateProductsTax(),
                     additionalCharges = state.additionalCharges,
-                    transactionDiscount = state.flatDiscount,
-                    transactionTax = state.flatTax,
+                    transactionDiscount = viewModel.calculateTransactionDiscount(),
+                    transactionTax = viewModel.calculateTransactionTax(),
                     grandTotal = viewModel.calculateGrandTotal()
                 )
             }
