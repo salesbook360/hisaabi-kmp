@@ -63,8 +63,23 @@ data class TransactionDetailItem(
     }
     
     fun calculateTotal(): Double {
+        val subtotal = calculateSubtotal()
+        
+        // Calculate actual discount and tax based on type
+        val actualDiscount = if (discountType == FlatOrPercent.PERCENT) {
+            TransactionCalculator.calculateFlatFromPercent(flatDiscount, subtotal)
+        } else {
+            flatDiscount
+        }
+        
+        val actualTax = if (taxType == FlatOrPercent.PERCENT) {
+            TransactionCalculator.calculateFlatFromPercent(flatTax, subtotal)
+        } else {
+            flatTax
+        }
+        
         return TransactionCalculator.roundTo2Decimal(
-            calculateSubtotal() + flatTax - flatDiscount
+            subtotal + actualTax - actualDiscount
         )
     }
 }
@@ -271,11 +286,23 @@ class AddTransactionViewModel(
     }
     
     fun calculateProductsDiscount(): Double {
-        return _state.value.transactionDetails.sumOf { it.flatDiscount }
+        return _state.value.transactionDetails.sumOf { detail ->
+            if (detail.discountType == FlatOrPercent.PERCENT) {
+                TransactionCalculator.calculateFlatFromPercent(detail.flatDiscount, detail.calculateSubtotal())
+            } else {
+                detail.flatDiscount
+            }
+        }
     }
     
     fun calculateProductsTax(): Double {
-        return _state.value.transactionDetails.sumOf { it.flatTax }
+        return _state.value.transactionDetails.sumOf { detail ->
+            if (detail.taxType == FlatOrPercent.PERCENT) {
+                TransactionCalculator.calculateFlatFromPercent(detail.flatTax, detail.calculateSubtotal())
+            } else {
+                detail.flatTax
+            }
+        }
     }
     
     fun calculateTransactionDiscount(): Double {
