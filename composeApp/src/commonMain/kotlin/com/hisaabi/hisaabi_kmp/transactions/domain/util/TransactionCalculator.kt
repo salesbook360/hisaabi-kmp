@@ -106,8 +106,8 @@ object TransactionCalculator {
     /**
      * Calculate payable amount (grand total - paid amount)
      */
-    fun calculatePayable(grandTotal: Double, paidAmount: Double): Double {
-        return roundTo2Decimal(grandTotal - paidAmount)
+    fun calculatePayable(grandTotal: Double, paidAmount: Double, previousBalance : Double): Double {
+        return roundTo2Decimal(grandTotal - paidAmount-previousBalance)
     }
     
     /**

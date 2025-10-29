@@ -284,7 +284,8 @@ class AddTransactionViewModel(
     fun calculatePayable(): Double {
         return TransactionCalculator.calculatePayable(
             calculateGrandTotal(),
-            _state.value.paidNow
+            _state.value.paidNow,
+            _state.value.previousBalance
         )
     }
     

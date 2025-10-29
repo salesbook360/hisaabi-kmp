@@ -571,7 +571,7 @@ private fun PayableAmountCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                if (payable > 0) "Remaining Balance" else "Paid in Full",
+                if (payable > 0) "To be paid" else "Remaining balance",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
