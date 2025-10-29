@@ -38,6 +38,7 @@ data class AddTransactionState(
     val shippingAddress: String = "",
     val selectedPaymentMethod: PaymentMethod? = null,
     val attachments: List<String> = emptyList(),
+    val totalPayable: Double = 0.0,
     
     // UI State
     val currentStep: Int = 1,
@@ -196,8 +197,13 @@ class AddTransactionViewModel(
                 additionalChargesDesc = description
             )
         }
+        updateTotalBillState()
     }
-    
+
+    private fun updateTotalBillState() {
+        _state.update { it.copy(totalPayable = calculatePayable()) }
+    }
+
     fun updateDiscount(amount: Double, type: FlatOrPercent) {
         _state.update { 
             it.copy(
@@ -205,6 +211,7 @@ class AddTransactionViewModel(
                 discountType = type
             )
         }
+        updateTotalBillState()
     }
     
     fun updateTax(amount: Double, type: FlatOrPercent) {
@@ -214,10 +221,12 @@ class AddTransactionViewModel(
                 taxType = type
             )
         }
+        updateTotalBillState()
     }
     
     fun updatePaidNow(amount: Double) {
         _state.update { it.copy(paidNow = amount) }
+        updateTotalBillState()
     }
     
     fun updateRemarks(remarks: String) {
@@ -248,6 +257,7 @@ class AddTransactionViewModel(
     fun goToStep2() {
         if (validateStep1()) {
             _state.update { it.copy(currentStep = 2) }
+            updateTotalBillState()
         }
     }
     

@@ -145,7 +145,7 @@ fun AddTransactionStep2Screen(
             // Payable Amount Display
             item {
                 PayableAmountCard(
-                    payable = viewModel.calculatePayable()
+                    payable = state.totalPayable
                 )
             }
             

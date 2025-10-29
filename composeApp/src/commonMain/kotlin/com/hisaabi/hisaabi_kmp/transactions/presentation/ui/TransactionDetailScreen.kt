@@ -473,7 +473,7 @@ private fun AmountSummaryCard(transaction: Transaction) {
             // Total Bill
             DetailRow(
                 label = "Total Bill",
-                value = "₨ ${"%.2f".format(transaction.totalBill)}",
+                value = "₨ ${"%.2f".format(transaction.calculateGrandTotal())}",
                 labelStyle = MaterialTheme.typography.titleMedium,
                 valueStyle = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
