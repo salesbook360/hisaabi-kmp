@@ -21,6 +21,9 @@ import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionsL
 import com.hisaabi.hisaabi_kmp.utils.formatTransactionDate
 import com.hisaabi.hisaabi_kmp.utils.formatEntryDate
 import com.hisaabi.hisaabi_kmp.utils.calculateManufacturingCost
+import com.hisaabi.hisaabi_kmp.receipt.ReceiptViewModel
+import com.hisaabi.hisaabi_kmp.receipt.ReceiptPreviewDialog
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,10 +38,29 @@ fun TransactionsListScreen(
     val sheetState = rememberModalBottomSheetState()
     var showSearchBar by remember { mutableStateOf(false) }
     
+    // Receipt functionality
+    val receiptViewModel: ReceiptViewModel = koinInject()
+    val receiptState by receiptViewModel.state.collectAsState()
+    
     LaunchedEffect(state.error) {
         state.error?.let { error ->
             snackbarHostState.showSnackbar(error)
             viewModel.clearError()
+        }
+    }
+    
+    // Handle receipt state
+    LaunchedEffect(receiptState.error) {
+        receiptState.error?.let { error ->
+            snackbarHostState.showSnackbar(error)
+            receiptViewModel.clearError()
+        }
+    }
+    
+    LaunchedEffect(receiptState.successMessage) {
+        receiptState.successMessage?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            receiptViewModel.clearSuccess()
         }
     }
     
@@ -130,7 +152,8 @@ fun TransactionsListScreen(
                                 transaction = transaction,
                                 onClick = { onTransactionClick(transaction) },
                                 onDeleteClick = { viewModel.deleteTransaction(transaction) },
-                                transactionDetailsCounts = state.transactionDetailsCounts
+                                transactionDetailsCounts = state.transactionDetailsCounts,
+                                receiptViewModel = receiptViewModel
                             )
                         }
                         
@@ -162,6 +185,21 @@ fun TransactionsListScreen(
                 onApplyFilters = { viewModel.toggleFilters() }
             )
         }
+    }
+    
+    // Receipt Preview Dialog
+    if (receiptState.showPreview && receiptState.currentTransaction != null) {
+        ReceiptPreviewDialog(
+            transaction = receiptState.currentTransaction!!,
+            config = receiptState.receiptConfig,
+            isGenerating = receiptState.isGenerating,
+            onDismiss = { receiptViewModel.hidePreview() },
+            onShare = { 
+                receiptState.currentTransaction?.let { transaction ->
+                    receiptViewModel.generateAndShareReceipt(transaction)
+                }
+            }
+        )
     }
 }
 
@@ -335,7 +373,8 @@ private fun TransactionCard(
     transaction: Transaction,
     onClick: () -> Unit,
     onDeleteClick: () -> Unit,
-    transactionDetailsCounts: Map<String, Int>
+    transactionDetailsCounts: Map<String, Int>,
+    receiptViewModel: ReceiptViewModel
 ) {
     var showOptions by remember { mutableStateOf(false) }
     val isRecordType = AllTransactionTypes.isRecord(transaction.transactionType)
@@ -1039,7 +1078,7 @@ private fun TransactionCard(
                     text = { Text("Generate Receipt") },
                     onClick = {
                         showOptions = false
-                        // TODO: Generate receipt
+                        receiptViewModel.showPreview(transaction)
                     },
                     leadingIcon = { Icon(Icons.Default.Receipt, null) }
                 )

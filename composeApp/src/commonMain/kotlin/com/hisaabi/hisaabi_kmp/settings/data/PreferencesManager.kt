@@ -9,44 +9,49 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.decodeFromString
 
 /**
- * Simple in-memory preferences manager for Transaction Settings, Receipt Config, Dashboard Config, and App Settings
- * TODO: Replace with platform-specific persistent storage (SharedPreferences/UserDefaults/localStorage)
+ * Preferences manager with platform-specific persistent storage
+ * Uses SharedPreferences (Android), UserDefaults (iOS), localStorage (WasmJS), or Properties file (JVM)
  */
-class PreferencesManager {
-    private val _transactionSettings = MutableStateFlow(TransactionSettings.DEFAULT)
-    val transactionSettings: Flow<TransactionSettings> = _transactionSettings.asStateFlow()
-    
-    private val _receiptConfig = MutableStateFlow(ReceiptConfig.DEFAULT)
-    val receiptConfig: Flow<ReceiptConfig> = _receiptConfig.asStateFlow()
-    
-    private val _dashboardConfig = MutableStateFlow(DashboardConfig.DEFAULT)
-    val dashboardConfig: Flow<DashboardConfig> = _dashboardConfig.asStateFlow()
-    
-    // App-level settings
-    private val _biometricAuthEnabled = MutableStateFlow(false)
-    val biometricAuthEnabled: Flow<Boolean> = _biometricAuthEnabled.asStateFlow()
-    
-    private val _selectedLanguage = MutableStateFlow(Language.ENGLISH)
-    val selectedLanguage: Flow<Language> = _selectedLanguage.asStateFlow()
-    
-    private val _selectedCurrency = MutableStateFlow(Currency.PKR)
-    val selectedCurrency: Flow<Currency> = _selectedCurrency.asStateFlow()
-    
+class PreferencesManager(
+    private val storage: KeyValueStorage = createKeyValueStorage()
+) {
     private val json = Json {
         prettyPrint = true
         ignoreUnknownKeys = true
     }
     
+    // State flows with data loaded from storage
+    private val _transactionSettings = MutableStateFlow(loadTransactionSettings())
+    val transactionSettings: Flow<TransactionSettings> = _transactionSettings.asStateFlow()
+    
+    private val _receiptConfig = MutableStateFlow(loadReceiptConfig())
+    val receiptConfig: Flow<ReceiptConfig> = _receiptConfig.asStateFlow()
+    
+    private val _dashboardConfig = MutableStateFlow(loadDashboardConfig())
+    val dashboardConfig: Flow<DashboardConfig> = _dashboardConfig.asStateFlow()
+    
+    // App-level settings
+    private val _biometricAuthEnabled = MutableStateFlow(loadBiometricAuthEnabled())
+    val biometricAuthEnabled: Flow<Boolean> = _biometricAuthEnabled.asStateFlow()
+    
+    private val _selectedLanguage = MutableStateFlow(loadSelectedLanguage())
+    val selectedLanguage: Flow<Language> = _selectedLanguage.asStateFlow()
+    
+    private val _selectedCurrency = MutableStateFlow(loadSelectedCurrency())
+    val selectedCurrency: Flow<Currency> = _selectedCurrency.asStateFlow()
+    
     // Generic key-value storage for sync and other features
     private val _longPreferences = mutableMapOf<String, MutableStateFlow<Long>>()
     
     fun getLong(key: String, default: Long): Long {
-        return _longPreferences[key]?.value ?: default
+        return storage.getLong(key, default)
     }
     
     fun setLong(key: String, value: Long) {
+        storage.putLong(key, value)
         if (_longPreferences.containsKey(key)) {
             _longPreferences[key]?.value = value
         } else {
@@ -56,10 +61,56 @@ class PreferencesManager {
     
     fun observeLong(key: String, default: Long): Flow<Long> {
         if (!_longPreferences.containsKey(key)) {
-            _longPreferences[key] = MutableStateFlow(default)
+            val initialValue = storage.getLong(key, default)
+            _longPreferences[key] = MutableStateFlow(initialValue)
         }
         return _longPreferences[key]!!.asStateFlow()
     }
+    
+    // ========== Load Methods ==========
+    
+    private fun loadTransactionSettings(): TransactionSettings {
+        val json = storage.getString(KEY_TRANSACTION_SETTINGS) ?: return TransactionSettings.DEFAULT
+        return try {
+            this.json.decodeFromString<TransactionSettings>(json)
+        } catch (e: Exception) {
+            TransactionSettings.DEFAULT
+        }
+    }
+    
+    private fun loadReceiptConfig(): ReceiptConfig {
+        val json = storage.getString(KEY_RECEIPT_CONFIG) ?: return ReceiptConfig.DEFAULT
+        return try {
+            this.json.decodeFromString<ReceiptConfig>(json)
+        } catch (e: Exception) {
+            ReceiptConfig.DEFAULT
+        }
+    }
+    
+    private fun loadDashboardConfig(): DashboardConfig {
+        val json = storage.getString(KEY_DASHBOARD_CONFIG) ?: return DashboardConfig.DEFAULT
+        return try {
+            this.json.decodeFromString<DashboardConfig>(json)
+        } catch (e: Exception) {
+            DashboardConfig.DEFAULT
+        }
+    }
+    
+    private fun loadBiometricAuthEnabled(): Boolean {
+        return storage.getBoolean(KEY_BIOMETRIC_AUTH, false)
+    }
+    
+    private fun loadSelectedLanguage(): Language {
+        val code = storage.getString(KEY_LANGUAGE, Language.ENGLISH.code) ?: Language.ENGLISH.code
+        return Language.entries.find { it.code == code } ?: Language.ENGLISH
+    }
+    
+    private fun loadSelectedCurrency(): Currency {
+        val code = storage.getString(KEY_CURRENCY, Currency.PKR.code) ?: Currency.PKR.code
+        return Currency.findByCode(code) ?: Currency.PKR
+    }
+    
+    // ========== Transaction Settings Methods ==========
     
     fun getTransactionSettings(): TransactionSettings {
         return _transactionSettings.value
@@ -67,8 +118,8 @@ class PreferencesManager {
     
     fun saveTransactionSettings(settings: TransactionSettings) {
         _transactionSettings.value = settings
-        // TODO: Persist to platform-specific storage
-        // For now, just keeping in memory
+        val jsonString = json.encodeToString(settings)
+        storage.putString(KEY_TRANSACTION_SETTINGS, jsonString)
     }
     
     fun updateTransactionSettings(update: (TransactionSettings) -> TransactionSettings) {
@@ -101,14 +152,16 @@ class PreferencesManager {
         saveTransactionSettings(TransactionSettings.DEFAULT)
     }
     
-    // Receipt Config Methods
+    // ========== Receipt Config Methods ==========
+    
     fun getReceiptConfig(): ReceiptConfig {
         return _receiptConfig.value
     }
     
     fun saveReceiptConfig(config: ReceiptConfig) {
         _receiptConfig.value = config
-        // TODO: Persist to platform-specific storage
+        val jsonString = json.encodeToString(config)
+        storage.putString(KEY_RECEIPT_CONFIG, jsonString)
     }
     
     fun updateReceiptConfig(update: (ReceiptConfig) -> ReceiptConfig) {
@@ -116,14 +169,16 @@ class PreferencesManager {
         saveReceiptConfig(updated)
     }
     
-    // Dashboard Config Methods
+    // ========== Dashboard Config Methods ==========
+    
     fun getDashboardConfig(): DashboardConfig {
         return _dashboardConfig.value
     }
     
     fun saveDashboardConfig(config: DashboardConfig) {
         _dashboardConfig.value = config
-        // TODO: Persist to platform-specific storage
+        val jsonString = json.encodeToString(config)
+        storage.putString(KEY_DASHBOARD_CONFIG, jsonString)
     }
     
     fun updateDashboardConfig(update: (DashboardConfig) -> DashboardConfig) {
@@ -131,35 +186,49 @@ class PreferencesManager {
         saveDashboardConfig(updated)
     }
     
-    // Biometric Authentication Methods
+    // ========== Biometric Authentication Methods ==========
+    
     fun getBiometricAuthEnabled(): Boolean {
         return _biometricAuthEnabled.value
     }
     
     fun setBiometricAuthEnabled(enabled: Boolean) {
         _biometricAuthEnabled.value = enabled
-        // TODO: Persist to platform-specific storage
+        storage.putBoolean(KEY_BIOMETRIC_AUTH, enabled)
     }
     
-    // Language Methods
+    // ========== Language Methods ==========
+    
     fun getSelectedLanguage(): Language {
         return _selectedLanguage.value
     }
     
     fun setSelectedLanguage(language: Language) {
         _selectedLanguage.value = language
-        // TODO: Persist to platform-specific storage
+        storage.putString(KEY_LANGUAGE, language.code)
         // TODO: Apply language change to app
     }
     
-    // Currency Methods
+    // ========== Currency Methods ==========
+    
     fun getSelectedCurrency(): Currency {
         return _selectedCurrency.value
     }
     
     fun setSelectedCurrency(currency: Currency) {
         _selectedCurrency.value = currency
-        // TODO: Persist to platform-specific storage
+        storage.putString(KEY_CURRENCY, currency.code)
+    }
+    
+    // ========== Storage Keys ==========
+    
+    companion object {
+        private const val KEY_TRANSACTION_SETTINGS = "transaction_settings"
+        private const val KEY_RECEIPT_CONFIG = "receipt_config"
+        private const val KEY_DASHBOARD_CONFIG = "dashboard_config"
+        private const val KEY_BIOMETRIC_AUTH = "biometric_auth_enabled"
+        private const val KEY_LANGUAGE = "selected_language"
+        private const val KEY_CURRENCY = "selected_currency"
     }
 }
 

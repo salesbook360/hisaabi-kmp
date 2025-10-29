@@ -1,5 +1,6 @@
 package com.hisaabi.hisaabi_kmp.settings.di
 
+import com.hisaabi.hisaabi_kmp.receipt.ReceiptViewModel
 import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
 import com.hisaabi.hisaabi_kmp.settings.presentation.viewmodel.DashboardSettingsViewModel
 import com.hisaabi.hisaabi_kmp.settings.presentation.viewmodel.ReceiptSettingsViewModel
@@ -15,5 +16,6 @@ val settingsModule = module {
     viewModel { TransactionSettingsViewModel(get()) }
     viewModel { ReceiptSettingsViewModel(get()) }
     viewModel { DashboardSettingsViewModel(get()) }
+    viewModel { ReceiptViewModel(get(), get()) }
 }
 
