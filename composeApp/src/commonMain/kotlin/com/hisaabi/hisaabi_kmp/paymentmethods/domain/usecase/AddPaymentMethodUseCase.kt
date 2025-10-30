@@ -2,6 +2,7 @@ package com.hisaabi.hisaabi_kmp.paymentmethods.domain.usecase
 
 import com.hisaabi.hisaabi_kmp.paymentmethods.data.repository.PaymentMethodsRepository
 import com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod
+import com.hisaabi.hisaabi_kmp.utils.getCurrentTimestamp
 import kotlinx.datetime.Clock
 
 class AddPaymentMethodUseCase(
@@ -28,7 +29,8 @@ class AddPaymentMethodUseCase(
             return Result.failure(IllegalArgumentException("Payment method with this title already exists"))
         }
         
-        val now = Clock.System.now().toString()
+        // Get current timestamp in ISO 8601 format
+        val now = getCurrentTimestamp()
         
         val paymentMethod = PaymentMethod(
             title = title,

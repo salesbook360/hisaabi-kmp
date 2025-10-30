@@ -8,6 +8,7 @@ import com.hisaabi.hisaabi_kmp.database.entity.RecipeIngredientsEntity
 import com.hisaabi.hisaabi_kmp.products.domain.model.Product
 import com.hisaabi.hisaabi_kmp.products.domain.model.ProductType
 import com.hisaabi.hisaabi_kmp.products.domain.model.RecipeIngredient
+import com.hisaabi.hisaabi_kmp.utils.getCurrentTimestamp
 import kotlinx.coroutines.flow.first
 
 interface ProductsRepository {
@@ -75,12 +76,17 @@ class ProductsRepositoryImpl(
         // Generate slug based on ID
         val slug = "PRD_${newId}"
         
-        // Update the product with generated slug and business info
+        // Get current timestamp for both created_at and updated_at
+        val now = getCurrentTimestamp()
+        
+        // Update the product with generated slug, business info, and timestamps
         val updatedEntity = entity.copy(
             id = newId.toInt(),
             slug = slug,
             business_slug = businessSlug,
-            created_by = userSlug
+            created_by = userSlug,
+            created_at = now,
+            updated_at = now
         )
         
         productDataSource.updateProduct(updatedEntity)
@@ -88,7 +94,11 @@ class ProductsRepositoryImpl(
     }
     
     override suspend fun updateProduct(product: Product): String {
-        productDataSource.updateProduct(product.toEntity())
+        // Update only the updated_at timestamp, preserve created_at
+        val entity = product.toEntity().copy(
+            updated_at = getCurrentTimestamp()
+        )
+        productDataSource.updateProduct(entity)
         return product.slug
     }
     
@@ -129,12 +139,17 @@ class ProductsRepositoryImpl(
         // Generate slug based on ID
         val slug = "ING_${newId}"
         
-        // Update with generated slug
+        // Get current timestamp for both created_at and updated_at
+        val now = getCurrentTimestamp()
+        
+        // Update with generated slug, business info, and timestamps
         val updatedEntity = entity.copy(
             id = newId.toInt(),
             slug = slug,
             business_slug = businessSlug,
-            created_by = userSlug
+            created_by = userSlug,
+            created_at = now,
+            updated_at = now
         )
         
         recipeIngredientsDao.updateRecipeIngredient(updatedEntity)

@@ -2,6 +2,7 @@ package com.hisaabi.hisaabi_kmp.quantityunits.domain.usecase
 
 import com.hisaabi.hisaabi_kmp.quantityunits.data.repository.QuantityUnitsRepository
 import com.hisaabi.hisaabi_kmp.quantityunits.domain.model.QuantityUnit
+import com.hisaabi.hisaabi_kmp.utils.getCurrentTimestamp
 import kotlinx.datetime.Clock
 
 class AddQuantityUnitUseCase(
@@ -32,7 +33,8 @@ class AddQuantityUnitUseCase(
             return Result.failure(IllegalArgumentException("Unit with this name already exists"))
         }
         
-        val now = Clock.System.now().toString()
+        // Get current timestamp in ISO 8601 format
+        val now = getCurrentTimestamp()
         
         val unit = QuantityUnit(
             title = title,

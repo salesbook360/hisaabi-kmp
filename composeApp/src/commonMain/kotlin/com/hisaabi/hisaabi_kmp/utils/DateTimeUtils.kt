@@ -5,11 +5,29 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
+
+/**
+ * Generates the current timestamp in ISO 8601 format with milliseconds.
+ * Format: 2024-10-01T16:30:42.000Z
+ * This format is used for database created_at and updated_at fields.
+ */
+fun getCurrentTimestamp(): String {
+    val instant = Clock.System.now()
+    val dateTime = instant.toLocalDateTime(TimeZone.UTC)
+    
+    return "${dateTime.year}-" +
+           "${dateTime.monthNumber.toString().padStart(2, '0')}-" +
+           "${dateTime.dayOfMonth.toString().padStart(2, '0')}T" +
+           "${dateTime.hour.toString().padStart(2, '0')}:" +
+           "${dateTime.minute.toString().padStart(2, '0')}:" +
+           "${dateTime.second.toString().padStart(2, '0')}.000Z"
+}
 
 /**
  * Formats a timestamp (in milliseconds) to a readable date-time string.

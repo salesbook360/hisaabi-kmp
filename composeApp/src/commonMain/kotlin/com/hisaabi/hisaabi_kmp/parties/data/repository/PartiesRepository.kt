@@ -4,6 +4,7 @@ import com.hisaabi.hisaabi_kmp.database.dao.PartyDao
 import com.hisaabi.hisaabi_kmp.database.entity.PartyEntity
 import com.hisaabi.hisaabi_kmp.parties.domain.model.PartiesFilter
 import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
+import com.hisaabi.hisaabi_kmp.utils.getCurrentTimestamp
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -101,12 +102,17 @@ class PartiesRepositoryImpl(
         // Generate slug based on ID
         val slug = "PTY_${newId}"
         
-        // Update the party with generated slug and business info
+        // Get current timestamp for both created_at and updated_at
+        val now = getCurrentTimestamp()
+        
+        // Update the party with generated slug, business info, and timestamps
         val updatedEntity = entity.copy(
             id = newId.toInt(),
             slug = slug,
             business_slug = businessSlug,
-            created_by = userSlug
+            created_by = userSlug,
+            created_at = now,
+            updated_at = now
         )
         
         partyDao.updateParty(updatedEntity)
@@ -114,7 +120,11 @@ class PartiesRepositoryImpl(
     }
     
     override suspend fun updateParty(party: Party): String {
-        partyDao.updateParty(party.toEntity())
+        // Update only the updated_at timestamp, preserve created_at
+        val entity = party.toEntity().copy(
+            updated_at = getCurrentTimestamp()
+        )
+        partyDao.updateParty(entity)
         return party.slug
     }
     

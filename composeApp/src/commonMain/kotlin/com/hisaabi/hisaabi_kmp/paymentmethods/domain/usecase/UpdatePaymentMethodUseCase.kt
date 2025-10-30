@@ -2,6 +2,7 @@ package com.hisaabi.hisaabi_kmp.paymentmethods.domain.usecase
 
 import com.hisaabi.hisaabi_kmp.paymentmethods.data.repository.PaymentMethodsRepository
 import com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod
+import com.hisaabi.hisaabi_kmp.utils.getCurrentTimestamp
 import kotlinx.datetime.Clock
 
 class UpdatePaymentMethodUseCase(
@@ -13,7 +14,8 @@ class UpdatePaymentMethodUseCase(
             return Result.failure(IllegalArgumentException("Title cannot be empty"))
         }
         
-        val now = Clock.System.now().toString()
+        // Get current timestamp in ISO 8601 format
+        val now = getCurrentTimestamp()
         
         val updatedPaymentMethod = paymentMethod.copy(
             syncStatus = 1, // Needs sync

@@ -11,6 +11,7 @@ import com.hisaabi.hisaabi_kmp.warehouses.data.repository.WarehousesRepository
 import com.hisaabi.hisaabi_kmp.products.data.repository.ProductsRepository
 import com.hisaabi.hisaabi_kmp.quantityunits.data.repository.QuantityUnitsRepository
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
+import com.hisaabi.hisaabi_kmp.utils.getCurrentTimestamp
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -156,14 +157,23 @@ class TransactionsRepository(
     suspend fun insertTransaction(transaction: Transaction): Result<String> {
         return try {
             val slug = transaction.slug ?: generateSlug()
-            val entity = transaction.toEntity(slug)
+            val now = getCurrentTimestamp()
+            
+            // Set timestamps on transaction entity
+            val entity = transaction.toEntity(slug).copy(
+                created_at = now,
+                updated_at = now
+            )
             
             // Insert transaction
             localDataSource.insertTransaction(entity)
             
-            // Insert transaction details
+            // Insert transaction details with timestamps
             val detailEntities = transaction.transactionDetails.map { detail ->
-                detail.toEntity(slug)
+                detail.toEntity(slug).copy(
+                    created_at = now,
+                    updated_at = now
+                )
             }
             localDataSource.insertTransactionDetails(detailEntities)
             
@@ -176,15 +186,21 @@ class TransactionsRepository(
     suspend fun updateTransaction(transaction: Transaction): Result<Unit> {
         return try {
             val slug = transaction.slug ?: return Result.failure(Exception("Transaction slug is required"))
-            val entity = transaction.toEntity(slug)
+            val now = getCurrentTimestamp()
             
-            // Update transaction
+            // Update transaction with only updated_at timestamp
+            val entity = transaction.toEntity(slug).copy(
+                updated_at = now
+            )
             localDataSource.updateTransaction(entity)
             
-            // Delete old details and insert new ones
+            // Delete old details and insert new ones with timestamps
             localDataSource.deleteDetailsByTransaction(slug)
             val detailEntities = transaction.transactionDetails.map { detail ->
-                detail.toEntity(slug)
+                detail.toEntity(slug).copy(
+                    created_at = now,
+                    updated_at = now
+                )
             }
             localDataSource.insertTransactionDetails(detailEntities)
             
@@ -224,6 +240,8 @@ class TransactionsRepository(
         userSlug: String
     ): Result<String> {
         return try {
+            val now = getCurrentTimestamp()
+            
             // 1. Create and save parent manufacture transaction
             val parentSlug = generateSlug()
             val parentTransaction = Transaction(
@@ -255,7 +273,12 @@ class TransactionsRepository(
                 parentSlug = null
             )
             
-            localDataSource.insertTransaction(parentTransaction.toEntity(parentSlug))
+            localDataSource.insertTransaction(
+                parentTransaction.toEntity(parentSlug).copy(
+                    created_at = now,
+                    updated_at = now
+                )
+            )
             
             // 2. Create and save child Sale transaction (ingredients stock out)
             val saleSlug = generateSlug()
@@ -288,10 +311,20 @@ class TransactionsRepository(
                 parentSlug = parentSlug
             )
             
-            localDataSource.insertTransaction(saleTransaction.toEntity(saleSlug))
+            localDataSource.insertTransaction(
+                saleTransaction.toEntity(saleSlug).copy(
+                    created_at = now,
+                    updated_at = now
+                )
+            )
             
-            // Insert ingredients as sale transaction details
-            val saleDetailEntities = ingredients.map { it.toEntity(saleSlug) }
+            // Insert ingredients as sale transaction details with timestamps
+            val saleDetailEntities = ingredients.map { 
+                it.toEntity(saleSlug).copy(
+                    created_at = now,
+                    updated_at = now
+                )
+            }
             localDataSource.insertTransactionDetails(saleDetailEntities)
             
             // 3. Create and save child Purchase transaction (recipe stock in)
@@ -325,10 +358,18 @@ class TransactionsRepository(
                 parentSlug = parentSlug
             )
             
-            localDataSource.insertTransaction(purchaseTransaction.toEntity(purchaseSlug))
+            localDataSource.insertTransaction(
+                purchaseTransaction.toEntity(purchaseSlug).copy(
+                    created_at = now,
+                    updated_at = now
+                )
+            )
             
-            // Insert recipe as purchase transaction detail
-            val purchaseDetailEntity = recipeDetail.toEntity(purchaseSlug)
+            // Insert recipe as purchase transaction detail with timestamps
+            val purchaseDetailEntity = recipeDetail.toEntity(purchaseSlug).copy(
+                created_at = now,
+                updated_at = now
+            )
             localDataSource.insertTransactionDetails(listOf(purchaseDetailEntity))
             
             Result.success(parentSlug)

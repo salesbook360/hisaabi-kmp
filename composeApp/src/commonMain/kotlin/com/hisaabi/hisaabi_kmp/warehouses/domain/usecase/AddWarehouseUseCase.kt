@@ -2,6 +2,7 @@ package com.hisaabi.hisaabi_kmp.warehouses.domain.usecase
 
 import com.hisaabi.hisaabi_kmp.warehouses.data.repository.WarehousesRepository
 import com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse
+import com.hisaabi.hisaabi_kmp.utils.getCurrentTimestamp
 import kotlinx.datetime.Clock
 
 class AddWarehouseUseCase(
@@ -29,7 +30,8 @@ class AddWarehouseUseCase(
             return Result.failure(IllegalArgumentException("Warehouse with this title already exists"))
         }
         
-        val now = Clock.System.now().toString()
+        // Get current timestamp in ISO 8601 format
+        val now = getCurrentTimestamp()
         
         val warehouse = Warehouse(
             title = title,

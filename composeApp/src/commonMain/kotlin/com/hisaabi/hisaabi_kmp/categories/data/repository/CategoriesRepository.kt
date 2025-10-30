@@ -4,6 +4,7 @@ import com.hisaabi.hisaabi_kmp.categories.domain.model.Category
 import com.hisaabi.hisaabi_kmp.categories.domain.model.CategoryType
 import com.hisaabi.hisaabi_kmp.database.dao.CategoryDao
 import com.hisaabi.hisaabi_kmp.database.entity.CategoryEntity
+import com.hisaabi.hisaabi_kmp.utils.getCurrentTimestamp
 
 interface CategoriesRepository {
     suspend fun getCategoriesByType(
@@ -45,12 +46,17 @@ class CategoriesRepositoryImpl(
         // Generate slug based on ID
         val slug = "CAT_${newId}"
         
-        // Update the category with generated slug and business info
+        // Get current timestamp for both created_at and updated_at
+        val now = getCurrentTimestamp()
+        
+        // Update the category with generated slug, business info, and timestamps
         val updatedEntity = entity.copy(
             id = newId.toInt(),
             slug = slug,
             business_slug = businessSlug,
-            created_by = userSlug
+            created_by = userSlug,
+            created_at = now,
+            updated_at = now
         )
         
         categoryDao.updateCategory(updatedEntity)
@@ -58,7 +64,11 @@ class CategoriesRepositoryImpl(
     }
     
     override suspend fun updateCategory(category: Category): String {
-        categoryDao.updateCategory(category.toEntity())
+        // Update only the updated_at timestamp, preserve created_at
+        val entity = category.toEntity().copy(
+            updated_at = getCurrentTimestamp()
+        )
+        categoryDao.updateCategory(entity)
         return category.slug
     }
     

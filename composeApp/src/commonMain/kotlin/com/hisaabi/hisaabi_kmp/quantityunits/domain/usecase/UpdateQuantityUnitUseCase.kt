@@ -2,6 +2,7 @@ package com.hisaabi.hisaabi_kmp.quantityunits.domain.usecase
 
 import com.hisaabi.hisaabi_kmp.quantityunits.data.repository.QuantityUnitsRepository
 import com.hisaabi.hisaabi_kmp.quantityunits.domain.model.QuantityUnit
+import com.hisaabi.hisaabi_kmp.utils.getCurrentTimestamp
 import kotlinx.datetime.Clock
 
 class UpdateQuantityUnitUseCase(
@@ -17,7 +18,8 @@ class UpdateQuantityUnitUseCase(
             return Result.failure(IllegalArgumentException("Conversion factor must be greater than 0"))
         }
         
-        val now = Clock.System.now().toString()
+        // Get current timestamp in ISO 8601 format
+        val now = getCurrentTimestamp()
         
         val updatedUnit = unit.copy(
             syncStatus = 1, // Needs sync
