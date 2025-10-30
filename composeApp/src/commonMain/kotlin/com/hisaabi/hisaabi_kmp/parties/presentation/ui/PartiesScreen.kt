@@ -51,6 +51,7 @@ fun PartiesScreen(
     var showFilterMenu by remember { mutableStateOf(false) }
     var selectedParty by remember { mutableStateOf<Party?>(null) }
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var showSearchBar by remember { mutableStateOf(false) }
     
     // Set initial segment if provided
     LaunchedEffect(initialSegment) {
@@ -112,7 +113,7 @@ fun PartiesScreen(
                     }
                     
                     // Search Button
-                    IconButton(onClick = { /* TODO: Show search bar */ }) {
+                    IconButton(onClick = { showSearchBar = !showSearchBar }) {
                         Icon(Icons.Default.Search, contentDescription = "Search")
                     }
                 }
@@ -132,6 +133,26 @@ fun PartiesScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            // Search bar
+            if (showSearchBar || uiState.searchQuery.isNotEmpty()) {
+                OutlinedTextField(
+                    value = uiState.searchQuery,
+                    onValueChange = { viewModel.onSearchQueryChanged(it) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    placeholder = { Text("Search parties...") },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+                    trailingIcon = {
+                        if (uiState.searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { viewModel.onSearchQueryChanged(""); showSearchBar = false }) {
+                                Icon(Icons.Default.Clear, contentDescription = "Clear")
+                            }
+                        }
+                    },
+                    singleLine = true
+                )
+            }
             // Segment Control
             PartySegmentControl(
                 selected = uiState.selectedSegment,
