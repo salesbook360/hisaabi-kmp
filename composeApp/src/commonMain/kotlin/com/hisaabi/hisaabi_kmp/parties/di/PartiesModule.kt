@@ -3,6 +3,7 @@ package com.hisaabi.hisaabi_kmp.parties.di
 import com.hisaabi.hisaabi_kmp.parties.data.repository.PartiesRepository
 import com.hisaabi.hisaabi_kmp.parties.data.repository.PartiesRepositoryImpl
 import com.hisaabi.hisaabi_kmp.parties.domain.usecase.AddPartyUseCase
+import com.hisaabi.hisaabi_kmp.parties.domain.usecase.DeletePartyUseCase
 import com.hisaabi.hisaabi_kmp.parties.domain.usecase.GetPartiesCountUseCase
 import com.hisaabi.hisaabi_kmp.parties.domain.usecase.GetPartiesUseCase
 import com.hisaabi.hisaabi_kmp.parties.domain.usecase.GetTotalBalanceUseCase
@@ -25,6 +26,7 @@ val partiesModule = module {
     singleOf(::GetPartiesCountUseCase)
     singleOf(::GetTotalBalanceUseCase)
     singleOf(::AddPartyUseCase)
+    singleOf(::DeletePartyUseCase)
     
     // ViewModels
     singleOf(::PartiesViewModel)

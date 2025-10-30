@@ -9,6 +9,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.activity.compose.BackHandler
+import androidx.compose.runtime.key
 import com.hisaabi.hisaabi_kmp.auth.AuthNavigation
 import com.hisaabi.hisaabi_kmp.auth.presentation.viewmodel.AuthViewModel
 import com.hisaabi.hisaabi_kmp.business.data.datasource.BusinessPreferencesDataSource
@@ -148,6 +149,10 @@ fun App() {
             var selectedPartySegment by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment?>(null) }
             var addPartyType by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType?>(null) }
             var partiesRefreshTrigger by remember { mutableStateOf(0) }
+            var addPartyScreenKey by remember { mutableStateOf(0) }  // Key to force reset AddPartyScreen
+            var selectedPartyForBalanceHistory by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.parties.domain.model.Party?>(null) }
+            var selectedPartyForTransactionFilter by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.parties.domain.model.Party?>(null) }
+            var selectedPartyForEdit by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.parties.domain.model.Party?>(null) }
             
             // Category navigation state
             var categoryType by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.categories.domain.model.CategoryType?>(null) }
@@ -342,7 +347,7 @@ fun App() {
                                 // Return to the appropriate screen
                                 currentScreen = returnToScreenAfterPartySelection ?: AppScreen.ADD_TRANSACTION_STEP1
                             } else {
-                                // TODO: Navigate to party details
+                                // Party click handled by bottom sheet
                             }
                         },
                         onAddPartyClick = {
@@ -360,6 +365,7 @@ fun App() {
                                     com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType.EXTRA_INCOME
                                 else -> com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType.CUSTOMER
                             }
+                            addPartyScreenKey++  // Increment key to force reset
                             currentScreen = AppScreen.ADD_PARTY
                         },
                         onNavigateBack = { 
@@ -380,19 +386,68 @@ fun App() {
                         },
                         initialSegment = selectedPartySegment,
                         refreshTrigger = partiesRefreshTrigger,
-                        isExpenseIncomeContext = isExpenseIncomePartySelection  // Pass the flag
+                        isExpenseIncomeContext = isExpenseIncomePartySelection,  // Pass the flag
+                        // Bottom sheet action callbacks
+                        onPayGetPayment = { party ->
+                            selectedPartyForTransaction = party
+                            navigateTo(AppScreen.PAY_GET_CASH)
+                        },
+                        onEditParty = { party ->
+                            selectedPartyForEdit = party
+                            addPartyType = com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType.fromInt(party.roleId)
+                            addPartyScreenKey++  // Increment key to force reset
+                            navigateTo(AppScreen.ADD_PARTY)
+                        },
+                        onViewTransactions = { party ->
+                            selectedPartyForTransactionFilter = party
+                            navigateTo(AppScreen.TRANSACTIONS_LIST)
+                        },
+                        onViewBalanceHistory = { party ->
+                            selectedPartyForBalanceHistory = party
+                            navigateTo(AppScreen.BALANCE_HISTORY)
+                        },
+                        onPaymentReminder = { party ->
+                            // Navigate to templates screen for reminder
+                            navigateTo(AppScreen.TEMPLATES)
+                        },
+                        onNewTransaction = { party, transactionTypeValue ->
+                            // Set up for new transaction with selected party and type
+                            selectedPartyForTransaction = party
+                            val txType = com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.fromValue(transactionTypeValue)
+                            
+                            // Navigate to the appropriate transaction screen
+                            when (txType) {
+                                com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.SALE,
+                                com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.PURCHASE,
+                                com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.CUSTOMER_RETURN,
+                                com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.VENDOR_RETURN -> {
+                                    transactionViewModel.reset()
+                                    transactionViewModel.setTransactionType(txType!!)
+                                    navigateTo(AppScreen.ADD_TRANSACTION_STEP1)
+                                }
+                                else -> {
+                                    // Handle other transaction types if needed
+                                    navigateTo(AppScreen.ADD_TRANSACTION_STEP1)
+                                }
+                            }
+                        }
                     )
                 }
                 AppScreen.ADD_PARTY -> {
                     addPartyType?.let { type ->
-                        com.hisaabi.hisaabi_kmp.parties.presentation.ui.AddPartyScreen(
-                            viewModel = org.koin.compose.koinInject(),
-                            partyType = type,
-                            onNavigateBack = { 
-                                if (!returnToAddParty) {
-                                    partiesRefreshTrigger++  // Trigger refresh
-                                    currentScreen = AppScreen.PARTIES
-                                }
+                        // Use key to force recomposition when navigating to edit
+                        key(addPartyScreenKey) {
+                            com.hisaabi.hisaabi_kmp.parties.presentation.ui.AddPartyScreen(
+                                viewModel = org.koin.compose.koinInject(),
+                                partyType = type,
+                                partyToEdit = selectedPartyForEdit,
+                                onNavigateBack = { 
+                                // Trigger refresh and navigate first
+                                partiesRefreshTrigger++
+                                currentScreen = AppScreen.PARTIES
+                                // Then clear state after navigation
+                                selectedPartyForEdit = null
+                                addPartyType = null
                                 returnToAddParty = false
                             },
                             onNavigateToCategories = {
@@ -408,6 +463,7 @@ fun App() {
                             selectedCategoryFromNav = selectedCategoryForParty,
                             selectedAreaFromNav = selectedAreaForParty
                         )
+                        }
                     }
                 }
                 
@@ -755,9 +811,21 @@ fun App() {
                     )
                 }
                 AppScreen.TRANSACTIONS_LIST -> {
+                    val transactionsListViewModel: com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionsListViewModel = org.koin.compose.koinInject()
+                    
+                    // Set party filter if coming from party actions
+                    LaunchedEffect(selectedPartyForTransactionFilter) {
+                        selectedPartyForTransactionFilter?.let { party ->
+                            transactionsListViewModel.setPartyFilter(party)
+                        }
+                    }
+                    
                     com.hisaabi.hisaabi_kmp.transactions.presentation.ui.TransactionsListScreen(
-                        viewModel = org.koin.compose.koinInject(),
-                        onNavigateBack = { navigateBack() },
+                        viewModel = transactionsListViewModel,
+                        onNavigateBack = { 
+                            selectedPartyForTransactionFilter = null
+                            navigateBack() 
+                        },
                         onTransactionClick = { transaction ->
                             selectedTransactionSlug = transaction.slug
                             currentScreen = AppScreen.TRANSACTION_DETAIL
@@ -782,6 +850,31 @@ fun App() {
                     } ?: run {
                         // If no transaction slug, go back to list
                         currentScreen = AppScreen.TRANSACTIONS_LIST
+                    }
+                }
+                
+                AppScreen.BALANCE_HISTORY -> {
+                    selectedPartyForBalanceHistory?.let { party ->
+                        // Fetch transactions for this party
+                        val transactionsListViewModel: com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionsListViewModel = org.koin.compose.koinInject()
+                        val transactionsState by transactionsListViewModel.state.collectAsState()
+                        
+                        // Set party filter to get transactions for this party
+                        LaunchedEffect(party) {
+                            transactionsListViewModel.setPartyFilter(party)
+                        }
+                        
+                        com.hisaabi.hisaabi_kmp.parties.presentation.ui.BalanceHistoryScreen(
+                            party = party,
+                            transactions = transactionsState.transactions,
+                            onNavigateBack = { 
+                                selectedPartyForBalanceHistory = null
+                                navigateBack() 
+                            }
+                        )
+                    } ?: run {
+                        // If no party selected, go back to parties
+                        currentScreen = AppScreen.PARTIES
                     }
                 }
                 
@@ -1236,5 +1329,6 @@ enum class AppScreen {
     ADD_MANUFACTURE,
     ADD_TRANSACTION_STEP1,
     ADD_TRANSACTION_STEP2,
-    TRANSACTION_DETAIL
+    TRANSACTION_DETAIL,
+    BALANCE_HISTORY
 }

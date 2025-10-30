@@ -6,6 +6,7 @@ import com.hisaabi.hisaabi_kmp.core.session.AppSessionManager
 import com.hisaabi.hisaabi_kmp.parties.domain.model.PartiesFilter
 import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
 import com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment
+import com.hisaabi.hisaabi_kmp.parties.domain.usecase.DeletePartyUseCase
 import com.hisaabi.hisaabi_kmp.parties.domain.usecase.GetPartiesCountUseCase
 import com.hisaabi.hisaabi_kmp.parties.domain.usecase.GetPartiesUseCase
 import com.hisaabi.hisaabi_kmp.parties.domain.usecase.GetTotalBalanceUseCase
@@ -18,6 +19,7 @@ class PartiesViewModel(
     private val getPartiesUseCase: GetPartiesUseCase,
     private val getPartiesCountUseCase: GetPartiesCountUseCase,
     private val getTotalBalanceUseCase: GetTotalBalanceUseCase,
+    private val deletePartyUseCase: DeletePartyUseCase,
     private val sessionManager: AppSessionManager
 ) : ViewModel() {
     
@@ -77,6 +79,23 @@ class PartiesViewModel(
     
     fun clearError() {
         _uiState.value = _uiState.value.copy(error = null)
+    }
+    
+    fun deleteParty(party: Party) {
+        viewModelScope.launch {
+            val result = deletePartyUseCase(party)
+            result.fold(
+                onSuccess = {
+                    // Refresh the list after deletion
+                    refresh()
+                },
+                onFailure = { error ->
+                    _uiState.value = _uiState.value.copy(
+                        error = error.message ?: "Failed to delete party"
+                    )
+                }
+            )
+        }
     }
     
     private fun loadParties(reset: Boolean) {

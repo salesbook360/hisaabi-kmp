@@ -6,6 +6,8 @@ import com.hisaabi.hisaabi_kmp.categories.domain.model.CategoryType
 import com.hisaabi.hisaabi_kmp.core.session.AppSessionManager
 import com.hisaabi.hisaabi_kmp.database.dao.CategoryDao
 import com.hisaabi.hisaabi_kmp.database.entity.CategoryEntity
+import com.hisaabi.hisaabi_kmp.parties.data.repository.PartiesRepository
+import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
 import com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType
 import com.hisaabi.hisaabi_kmp.parties.domain.usecase.AddPartyUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,6 +17,7 @@ import kotlinx.coroutines.launch
 
 class AddPartyViewModel(
     private val addPartyUseCase: AddPartyUseCase,
+    private val partiesRepository: PartiesRepository,
     private val categoryDao: CategoryDao,
     private val sessionManager: AppSessionManager
 ) : ViewModel() {
@@ -32,6 +35,8 @@ class AddPartyViewModel(
     private val _areas = MutableStateFlow<List<CategoryEntity>>(emptyList())
     val areas: StateFlow<List<CategoryEntity>> = _areas.asStateFlow()
     
+    private var partyToEdit: Party? = null
+    
     init {
         // Observe session context changes
         viewModelScope.launch {
@@ -48,6 +53,19 @@ class AddPartyViewModel(
     
     fun resetState() {
         _uiState.value = AddPartyUiState()
+        partyToEdit = null
+        // Reload categories and areas
+        loadCategories()
+        loadAreas()
+    }
+    
+    fun setPartyToEdit(party: Party) {
+        partyToEdit = party
+        // Reset UI state to clear any previous success/error states
+        _uiState.value = AddPartyUiState()
+        // Reload categories and areas
+        loadCategories()
+        loadAreas()
     }
     
     private fun loadCategories() {
@@ -134,6 +152,65 @@ class AddPartyViewModel(
                     )
                 }
             )
+        }
+    }
+    
+    fun updateParty(
+        party: Party,
+        name: String,
+        phone: String?,
+        address: String?,
+        email: String?,
+        description: String?,
+        openingBalance: Double,
+        isBalancePayable: Boolean,
+        categorySlug: String? = null,
+        areaSlug: String? = null,
+        latitude: Double? = null,
+        longitude: Double? = null
+    ) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            
+            try {
+                // Create lat/long string if both are provided
+                val latLong = if (latitude != null && longitude != null) {
+                    "$latitude,$longitude"
+                } else null
+                
+                // Calculate balance adjustment based on isBalancePayable
+                val adjustedBalance = if (isBalancePayable) openingBalance else -openingBalance
+                
+                // Create updated party
+                val updatedParty = party.copy(
+                    name = name,
+                    phone = phone,
+                    address = address,
+                    email = email,
+                    description = description,
+                    openingBalance = adjustedBalance,
+                    categorySlug = categorySlug,
+                    areaSlug = areaSlug,
+                    latLong = latLong
+                )
+                
+                // Update party in repository
+                partiesRepository.updateParty(updatedParty)
+                
+                println("Party updated successfully")
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    isSuccess = true,
+                    error = null
+                )
+            } catch (e: Exception) {
+                println("Failed to update party: ${e.message}")
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    isSuccess = false,
+                    error = e.message ?: "Failed to update party"
+                )
+            }
         }
     }
     

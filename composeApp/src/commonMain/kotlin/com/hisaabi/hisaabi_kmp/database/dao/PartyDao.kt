@@ -46,7 +46,7 @@ interface PartyDao {
     @Query("""
         SELECT COUNT(*) FROM Party 
         WHERE role_id = :roleId 
-        AND person_status != 3 
+        AND person_status NOT IN (2, 3)
         AND business_slug = :businessSlug
     """)
     suspend fun getCountByRole(roleId: Int, businessSlug: String): Int?
@@ -54,7 +54,7 @@ interface PartyDao {
     @Query("""
         SELECT SUM(balance) FROM Party 
         WHERE role_id IN (:roleIds) 
-        AND person_status != 3 
+        AND person_status NOT IN (2, 3)
         AND business_slug = :businessSlug
     """)
     suspend fun getTotalBalance(roleIds: List<Int>, businessSlug: String): Double?
@@ -66,7 +66,7 @@ interface PartyDao {
     @Query("""
         SELECT * FROM Party 
         WHERE role_id IN (:roleIds)
-        AND person_status != 3
+        AND person_status NOT IN (2, 3)
         AND business_slug = :businessSlug
         AND (:searchQuery IS NULL OR name LIKE '%' || :searchQuery || '%' 
              OR address LIKE '%' || :searchQuery || '%' 
@@ -85,7 +85,7 @@ interface PartyDao {
     @Query("""
         SELECT * FROM Party 
         WHERE role_id IN (:roleIds)
-        AND person_status != 3
+        AND person_status NOT IN (2, 3)
         AND business_slug = :businessSlug
         AND balance > 0
         AND (:searchQuery IS NULL OR name LIKE '%' || :searchQuery || '%' 
@@ -105,7 +105,7 @@ interface PartyDao {
     @Query("""
         SELECT * FROM Party 
         WHERE role_id IN (:roleIds)
-        AND person_status != 3
+        AND person_status NOT IN (2, 3)
         AND business_slug = :businessSlug
         AND balance < 0
         AND (:searchQuery IS NULL OR name LIKE '%' || :searchQuery || '%' 
@@ -125,7 +125,7 @@ interface PartyDao {
     @Query("""
         SELECT * FROM Party 
         WHERE role_id IN (:roleIds)
-        AND person_status != 3
+        AND person_status NOT IN (2, 3)
         AND business_slug = :businessSlug
         AND balance = 0
         AND (:searchQuery IS NULL OR name LIKE '%' || :searchQuery || '%' 
@@ -145,7 +145,7 @@ interface PartyDao {
     @Query("""
         SELECT COUNT(*) FROM Party 
         WHERE role_id IN (:roleIds)
-        AND person_status != 3
+        AND person_status NOT IN (2, 3)
         AND business_slug = :businessSlug
         AND (:searchQuery IS NULL OR name LIKE '%' || :searchQuery || '%' 
              OR address LIKE '%' || :searchQuery || '%' 

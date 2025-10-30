@@ -37,11 +37,20 @@ fun PartiesScreen(
     onSegmentChanged: (PartySegment) -> Unit = {},  // Callback to notify parent of segment changes
     initialSegment: PartySegment? = null,
     refreshTrigger: Int = 0,  // Increment this to trigger a refresh
-    isExpenseIncomeContext: Boolean = false  // Flag to show only Expense/Income segments
+    isExpenseIncomeContext: Boolean = false,  // Flag to show only Expense/Income segments
+    // Navigation callbacks for bottom sheet actions
+    onPayGetPayment: (Party) -> Unit = {},
+    onEditParty: (Party) -> Unit = {},
+    onViewTransactions: (Party) -> Unit = {},
+    onViewBalanceHistory: (Party) -> Unit = {},
+    onPaymentReminder: (Party) -> Unit = {},
+    onNewTransaction: (Party, Int) -> Unit = { _, _ -> }  // Party and transaction type
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val listState = rememberLazyListState()
     var showFilterMenu by remember { mutableStateOf(false) }
+    var selectedParty by remember { mutableStateOf<Party?>(null) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
     
     // Set initial segment if provided
     LaunchedEffect(initialSegment) {
@@ -247,7 +256,10 @@ fun PartiesScreen(
                     items(uiState.parties, key = { it.id }) { party ->
                         PartyItem(
                             party = party,
-                            onClick = { onPartyClick(party) }
+                            onClick = { 
+                                selectedParty = party
+                                onPartyClick(party)
+                            }
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                     }
@@ -269,6 +281,41 @@ fun PartiesScreen(
                     }
                 }
             }
+        }
+        
+        // Bottom Sheet for Party Actions
+        selectedParty?.let { party ->
+            PartyActionsBottomSheet(
+                party = party,
+                onDismiss = { selectedParty = null },
+                onPayGetPayment = { onPayGetPayment(party) },
+                onEdit = { onEditParty(party) },
+                onDelete = { 
+                    showDeleteDialog = true
+                },
+                onTransactions = { onViewTransactions(party) },
+                onBalanceHistory = { onViewBalanceHistory(party) },
+                onPaymentReminder = { onPaymentReminder(party) },
+                onNewTransaction = { transactionType ->
+                    onNewTransaction(party, transactionType)
+                }
+            )
+        }
+        
+        // Delete Confirmation Dialog
+        if (showDeleteDialog && selectedParty != null) {
+            DeletePartyDialog(
+                party = selectedParty!!,
+                onConfirm = {
+                    viewModel.deleteParty(selectedParty!!)
+                    showDeleteDialog = false
+                    selectedParty = null  // This closes the bottom sheet too
+                },
+                onDismiss = {
+                    showDeleteDialog = false
+                    // Keep selectedParty so bottom sheet stays open
+                }
+            )
         }
     }
 }

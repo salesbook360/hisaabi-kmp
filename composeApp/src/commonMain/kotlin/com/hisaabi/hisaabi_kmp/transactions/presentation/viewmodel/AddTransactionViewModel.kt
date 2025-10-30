@@ -402,6 +402,10 @@ class AddTransactionViewModel(
         _state.update { it.copy(successMessage = null) }
     }
     
+    fun reset() {
+        _state.value = AddTransactionState()
+    }
+    
     // Private Helper Functions
     private fun updateDefaultPriceType(type: AllTransactionTypes) {
         val priceType = when {

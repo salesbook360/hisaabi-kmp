@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.hisaabi.hisaabi_kmp.database.entity.CategoryEntity
+import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
 import com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType
 import com.hisaabi.hisaabi_kmp.parties.presentation.viewmodel.AddPartyViewModel
 import com.hisaabi.hisaabi_kmp.utils.format
@@ -25,36 +26,75 @@ import com.hisaabi.hisaabi_kmp.utils.format
 fun AddPartyScreen(
     viewModel: AddPartyViewModel,
     partyType: PartyType,
+    partyToEdit: Party? = null,
     onNavigateBack: () -> Unit,
     onNavigateToCategories: () -> Unit = {},
     onNavigateToAreas: () -> Unit = {},
     selectedCategoryFromNav: CategoryEntity? = null,
     selectedAreaFromNav: CategoryEntity? = null
 ) {
-    var name by remember { mutableStateOf("") }
-    var phone by remember { mutableStateOf("") }
-    var address by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    var openingBalance by remember { mutableStateOf("") }
-    var isBalancePayable by remember { mutableStateOf(true) }
+    var name by remember { mutableStateOf(partyToEdit?.name ?: "") }
+    var phone by remember { mutableStateOf(partyToEdit?.phone ?: "") }
+    var address by remember { mutableStateOf(partyToEdit?.address ?: "") }
+    var email by remember { mutableStateOf(partyToEdit?.email ?: "") }
+    var description by remember { mutableStateOf(partyToEdit?.description ?: "") }
+    var openingBalance by remember { mutableStateOf(partyToEdit?.openingBalance?.toString() ?: "") }
+    var isBalancePayable by remember { mutableStateOf(partyToEdit?.openingBalance?.let { it >= 0 } ?: true) }
     
     // Category and Area
     var selectedCategory by remember { mutableStateOf<CategoryEntity?>(null) }
     var selectedArea by remember { mutableStateOf<CategoryEntity?>(null) }
     
     // Location
-    var latitude by remember { mutableStateOf<Double?>(null) }
-    var longitude by remember { mutableStateOf<Double?>(null) }
+    var latitude by remember { mutableStateOf<Double?>(partyToEdit?.latLong?.split(",")?.getOrNull(0)?.toDoubleOrNull()) }
+    var longitude by remember { mutableStateOf<Double?>(partyToEdit?.latLong?.split(",")?.getOrNull(1)?.toDoubleOrNull()) }
     var showLocationPicker by remember { mutableStateOf(false) }
     
     val uiState by viewModel.uiState.collectAsState()
     val categories by viewModel.categories.collectAsState()
     val areas by viewModel.areas.collectAsState()
     
-    // Reset state when screen is first opened
-    LaunchedEffect(Unit) {
-        viewModel.resetState()
+    // Reset state and set party to edit when partyToEdit changes
+    // This ensures clean state every time we navigate to this screen
+    LaunchedEffect(partyToEdit) {
+        if (partyToEdit != null) {
+            viewModel.setPartyToEdit(partyToEdit)
+        } else {
+            viewModel.resetState()
+        }
+    }
+    
+    // Set initial category and area from partyToEdit when categories/areas are loaded
+    LaunchedEffect(categories, partyToEdit) {
+        if (partyToEdit != null) {
+            // Find and set category if it exists
+            partyToEdit.categorySlug?.let { slug ->
+                categories.find { it.slug == slug }?.let { category ->
+                    if (selectedCategory == null) {  // Only set if not already set
+                        selectedCategory = category
+                    }
+                }
+            }
+        } else {
+            // Clear category when adding a new party
+            selectedCategory = null
+        }
+    }
+    
+    LaunchedEffect(areas, partyToEdit) {
+        if (partyToEdit != null) {
+            // Find and set area if it exists
+            partyToEdit.areaSlug?.let { slug ->
+                areas.find { it.slug == slug }?.let { area ->
+                    if (selectedArea == null) {  // Only set if not already set
+                        selectedArea = area
+                    }
+                }
+            }
+        } else {
+            // Clear area when adding a new party
+            selectedArea = null
+        }
     }
     
     // Navigate back on success
@@ -76,6 +116,7 @@ fun AddPartyScreen(
     
     // Check if this is an expense/income type
     val isExpenseIncomeType = partyType == PartyType.EXPENSE || partyType == PartyType.EXTRA_INCOME
+    val isEditing = partyToEdit != null
     
     Scaffold(
         topBar = {
@@ -83,12 +124,12 @@ fun AddPartyScreen(
                 title = { 
                     Text(
                         when (partyType) {
-                            PartyType.CUSTOMER -> "Add New Customer"
-                            PartyType.VENDOR -> "Add New Vendor"
-                            PartyType.INVESTOR -> "Add New Investor"
-                            PartyType.EXPENSE -> "Add Expense Type"
-                            PartyType.EXTRA_INCOME -> "Add Income Type"
-                            else -> "Add New Party"
+                            PartyType.CUSTOMER -> "${if (isEditing) "Edit" else "Add New"} Customer"
+                            PartyType.VENDOR -> "${if (isEditing) "Edit" else "Add New"} Vendor"
+                            PartyType.INVESTOR -> "${if (isEditing) "Edit" else "Add New"} Investor"
+                            PartyType.EXPENSE -> "${if (isEditing) "Edit" else "Add"} Expense Type"
+                            PartyType.EXTRA_INCOME -> "${if (isEditing) "Edit" else "Add"} Income Type"
+                            else -> "${if (isEditing) "Edit" else "Add New"} Party"
                         }
                     ) 
                 },
@@ -282,7 +323,7 @@ fun AddPartyScreen(
                 Spacer(modifier = Modifier.height(24.dp))
                 
                 Text(
-                    text = "Opening Balance",
+                    text = "Opening Balance${if (isEditing) " (Read-only)" else ""}",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -291,19 +332,30 @@ fun AddPartyScreen(
                 
                 OutlinedTextField(
                     value = openingBalance,
-                    onValueChange = { openingBalance = it },
+                    onValueChange = { if (!isEditing) openingBalance = it },
                     label = { Text("Amount") },
                     leadingIcon = {
                         Icon(Icons.Default.AccountBalance, contentDescription = "Balance")
                     },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    enabled = !isEditing,
+                    colors = if (isEditing) {
+                        OutlinedTextFieldDefaults.colors(
+                            disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                            disabledBorderColor = MaterialTheme.colorScheme.outline,
+                            disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        OutlinedTextFieldDefaults.colors()
+                    }
                 )
                 
                 Spacer(modifier = Modifier.height(8.dp))
                 
-                // Balance Type Radio Buttons
+                // Balance Type Radio Buttons (Disabled when editing)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -314,12 +366,14 @@ fun AddPartyScreen(
                     ) {
                         RadioButton(
                             selected = isBalancePayable,
-                            onClick = { isBalancePayable = true }
+                            onClick = { if (!isEditing) isBalancePayable = true },
+                            enabled = !isEditing
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = "Payable (You'll Pay)",
-                            style = MaterialTheme.typography.bodyMedium
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (isEditing) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f) else MaterialTheme.colorScheme.onSurface
                         )
                     }
                     
@@ -329,12 +383,14 @@ fun AddPartyScreen(
                     ) {
                         RadioButton(
                             selected = !isBalancePayable,
-                            onClick = { isBalancePayable = false }
+                            onClick = { if (!isEditing) isBalancePayable = false },
+                            enabled = !isEditing
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = "Receivable (You'll Get)",
-                            style = MaterialTheme.typography.bodyMedium
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (isEditing) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f) else MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
@@ -362,20 +418,37 @@ fun AddPartyScreen(
             // Save Button
             Button(
                 onClick = {
-                    viewModel.addParty(
-                        name = name,
-                        phone = phone.takeIf { it.isNotBlank() },
-                        address = address.takeIf { it.isNotBlank() },
-                        email = email.takeIf { it.isNotBlank() },
-                        description = description.takeIf { it.isNotBlank() },
-                        openingBalance = openingBalance.toDoubleOrNull() ?: 0.0,
-                        isBalancePayable = isBalancePayable,
-                        partyType = partyType,
-                        categorySlug = selectedCategory?.slug,
-                        areaSlug = selectedArea?.slug,
-                        latitude = latitude,
-                        longitude = longitude
-                    )
+                    if (isEditing && partyToEdit != null) {
+                        viewModel.updateParty(
+                            party = partyToEdit,
+                            name = name,
+                            phone = phone.takeIf { it.isNotBlank() },
+                            address = address.takeIf { it.isNotBlank() },
+                            email = email.takeIf { it.isNotBlank() },
+                            description = description.takeIf { it.isNotBlank() },
+                            openingBalance = openingBalance.toDoubleOrNull() ?: 0.0,
+                            isBalancePayable = isBalancePayable,
+                            categorySlug = selectedCategory?.slug,
+                            areaSlug = selectedArea?.slug,
+                            latitude = latitude,
+                            longitude = longitude
+                        )
+                    } else {
+                        viewModel.addParty(
+                            name = name,
+                            phone = phone.takeIf { it.isNotBlank() },
+                            address = address.takeIf { it.isNotBlank() },
+                            email = email.takeIf { it.isNotBlank() },
+                            description = description.takeIf { it.isNotBlank() },
+                            openingBalance = openingBalance.toDoubleOrNull() ?: 0.0,
+                            isBalancePayable = isBalancePayable,
+                            partyType = partyType,
+                            categorySlug = selectedCategory?.slug,
+                            areaSlug = selectedArea?.slug,
+                            latitude = latitude,
+                            longitude = longitude
+                        )
+                    }
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !uiState.isLoading && name.isNotBlank()
@@ -389,10 +462,10 @@ fun AddPartyScreen(
                 }
                 Text(
                     text = when (partyType) {
-                        PartyType.CUSTOMER -> "Add Customer"
-                        PartyType.VENDOR -> "Add Vendor"
-                        PartyType.INVESTOR -> "Add Investor"
-                        else -> "Add Party"
+                        PartyType.CUSTOMER -> if (isEditing) "Update Customer" else "Add Customer"
+                        PartyType.VENDOR -> if (isEditing) "Update Vendor" else "Add Vendor"
+                        PartyType.INVESTOR -> if (isEditing) "Update Investor" else "Add Investor"
+                        else -> if (isEditing) "Update Party" else "Add Party"
                     }
                 )
             }
