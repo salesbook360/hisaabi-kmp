@@ -42,8 +42,6 @@ fun AddPartyScreen(
     // Category and Area
     var selectedCategory by remember { mutableStateOf<CategoryEntity?>(null) }
     var selectedArea by remember { mutableStateOf<CategoryEntity?>(null) }
-    var showCategoryPicker by remember { mutableStateOf(false) }
-    var showAreaPicker by remember { mutableStateOf(false) }
     
     // Location
     var latitude by remember { mutableStateOf<Double?>(null) }
@@ -213,25 +211,13 @@ fun AddPartyScreen(
                         Icon(Icons.Default.Category, contentDescription = "Category")
                     },
                     trailingIcon = {
-                        if (categories.isNotEmpty()) {
-                            IconButton(onClick = { showCategoryPicker = true }) {
-                                Icon(Icons.Default.ArrowDropDown, contentDescription = "Select Category")
-                            }
-                        } else {
-                            IconButton(onClick = onNavigateToCategories) {
-                                Icon(Icons.Default.Add, contentDescription = "Add Category")
-                            }
+                        IconButton(onClick = onNavigateToCategories) {
+                            Icon(Icons.Default.ArrowDropDown, contentDescription = "Select Category")
                         }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable {
-                            if (categories.isNotEmpty()) {
-                                showCategoryPicker = true
-                            } else {
-                                onNavigateToCategories()
-                            }
-                        },
+                        .clickable { onNavigateToCategories() },
                     readOnly = true,
                     enabled = true
                 )
@@ -248,25 +234,13 @@ fun AddPartyScreen(
                         Icon(Icons.Default.Place, contentDescription = "Area")
                     },
                     trailingIcon = {
-                        if (areas.isNotEmpty()) {
-                            IconButton(onClick = { showAreaPicker = true }) {
-                                Icon(Icons.Default.ArrowDropDown, contentDescription = "Select Area")
-                            }
-                        } else {
-                            IconButton(onClick = onNavigateToAreas) {
-                                Icon(Icons.Default.Add, contentDescription = "Add Area")
-                            }
+                        IconButton(onClick = onNavigateToAreas) {
+                            Icon(Icons.Default.ArrowDropDown, contentDescription = "Select Area")
                         }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable {
-                            if (areas.isNotEmpty()) {
-                                showAreaPicker = true
-                            } else {
-                                onNavigateToAreas()
-                            }
-                        },
+                        .clickable { onNavigateToAreas() },
                     readOnly = true,
                     enabled = true
                 )
@@ -427,31 +401,6 @@ fun AddPartyScreen(
         }
     }
     
-    // Category Picker Dialog
-    if (showCategoryPicker) {
-        CategoryPickerDialog(
-            categories = categories,
-            onCategorySelected = { category ->
-                selectedCategory = category
-                showCategoryPicker = false
-            },
-            onDismiss = { showCategoryPicker = false }
-        )
-    }
-    
-    // Area Picker Dialog
-    if (showAreaPicker) {
-        CategoryPickerDialog(
-            categories = areas,
-            title = "Select Area",
-            onCategorySelected = { area ->
-                selectedArea = area
-                showAreaPicker = false
-            },
-            onDismiss = { showAreaPicker = false }
-        )
-    }
-    
     // Location Picker Dialog
     if (showLocationPicker) {
         LocationPickerDialog(
@@ -465,43 +414,6 @@ fun AddPartyScreen(
             onDismiss = { showLocationPicker = false }
         )
     }
-}
-
-@Composable
-private fun CategoryPickerDialog(
-    categories: List<com.hisaabi.hisaabi_kmp.database.entity.CategoryEntity>,
-    title: String = "Select Category",
-    onCategorySelected: (com.hisaabi.hisaabi_kmp.database.entity.CategoryEntity) -> Unit,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = {
-            if (categories.isEmpty()) {
-                Text("No categories available. Please create categories first.")
-            } else {
-                Column {
-                    categories.forEach { category ->
-                        TextButton(
-                            onClick = { onCategorySelected(category) },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                text = category.title ?: "Unknown",
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        }
-    )
 }
 
 @Composable
