@@ -41,5 +41,8 @@ interface EntityMediaDao {
     
     @Query("DELETE FROM EntityMedia")
     suspend fun deleteAllEntityMedia()
+    
+    @Query("SELECT MAX(id) FROM EntityMedia")
+    suspend fun getMaxId(): Int?
 }
 

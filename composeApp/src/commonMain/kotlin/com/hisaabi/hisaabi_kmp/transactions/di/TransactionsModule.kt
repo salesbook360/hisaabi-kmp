@@ -33,7 +33,8 @@ val transactionsModule = module {
             paymentMethodsRepository = get(),
             warehousesRepository = get(),
             productsRepository = get(),
-            quantityUnitsRepository = get()
+            quantityUnitsRepository = get(),
+            slugGenerator = get()
         ) 
     }
     

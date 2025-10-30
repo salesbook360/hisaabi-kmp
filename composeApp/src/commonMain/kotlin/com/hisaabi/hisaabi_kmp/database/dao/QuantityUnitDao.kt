@@ -41,5 +41,8 @@ interface QuantityUnitDao {
     
     @Query("DELETE FROM QuantityUnit")
     suspend fun deleteAllUnits()
+    
+    @Query("SELECT MAX(id) FROM QuantityUnit")
+    suspend fun getMaxId(): Int?
 }
 

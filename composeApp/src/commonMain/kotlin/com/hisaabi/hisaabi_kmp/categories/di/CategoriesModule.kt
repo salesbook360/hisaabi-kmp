@@ -11,7 +11,12 @@ import org.koin.dsl.module
 
 val categoriesModule = module {
     // Repository
-    single<CategoriesRepository> { CategoriesRepositoryImpl(get()) }
+    single<CategoriesRepository> { 
+        CategoriesRepositoryImpl(
+            categoryDao = get(),
+            slugGenerator = get()
+        ) 
+    }
     
     // Use Cases
     singleOf(::GetCategoriesUseCase)

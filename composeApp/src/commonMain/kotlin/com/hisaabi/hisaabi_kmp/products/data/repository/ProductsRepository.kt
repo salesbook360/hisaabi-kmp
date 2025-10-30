@@ -1,5 +1,7 @@
 package com.hisaabi.hisaabi_kmp.products.data.repository
 
+import com.hisaabi.hisaabi_kmp.core.domain.model.EntityTypeEnum
+import com.hisaabi.hisaabi_kmp.core.util.SlugGenerator
 import com.hisaabi.hisaabi_kmp.database.dao.RecipeIngredientsDao
 import com.hisaabi.hisaabi_kmp.database.dao.QuantityUnitDao
 import com.hisaabi.hisaabi_kmp.database.datasource.ProductLocalDataSource
@@ -43,7 +45,8 @@ interface ProductsRepository {
 class ProductsRepositoryImpl(
     private val productDataSource: ProductLocalDataSource,
     private val recipeIngredientsDao: RecipeIngredientsDao,
-    private val quantityUnitDao: QuantityUnitDao
+    private val quantityUnitDao: QuantityUnitDao,
+    private val slugGenerator: SlugGenerator
 ) : ProductsRepository {
     
     override suspend fun getProducts(
@@ -70,18 +73,15 @@ class ProductsRepositoryImpl(
         businessSlug: String,
         userSlug: String
     ): String {
-        val entity = product.toEntity()
-        val newId = productDataSource.insertProduct(entity)
-        
-        // Generate slug based on ID
-        val slug = "PRD_${newId}"
+        // Generate slug using centralized slug generator
+        val slug = slugGenerator.generateSlug(EntityTypeEnum.ENTITY_TYPE_PRODUCT)
+            ?: throw IllegalStateException("Failed to generate slug: Invalid session context")
         
         // Get current timestamp for both created_at and updated_at
         val now = getCurrentTimestamp()
         
-        // Update the product with generated slug, business info, and timestamps
-        val updatedEntity = entity.copy(
-            id = newId.toInt(),
+        // Create entity with generated slug, business info, and timestamps
+        val entity = product.toEntity().copy(
             slug = slug,
             business_slug = businessSlug,
             created_by = userSlug,
@@ -89,7 +89,7 @@ class ProductsRepositoryImpl(
             updated_at = now
         )
         
-        productDataSource.updateProduct(updatedEntity)
+        productDataSource.insertProduct(entity)
         return slug
     }
     
@@ -133,18 +133,15 @@ class ProductsRepositoryImpl(
         businessSlug: String,
         userSlug: String
     ): String {
-        val entity = ingredient.toEntity()
-        val newId = recipeIngredientsDao.insertRecipeIngredient(entity)
-        
-        // Generate slug based on ID
-        val slug = "ING_${newId}"
+        // Generate slug using centralized slug generator
+        val slug = slugGenerator.generateSlug(EntityTypeEnum.ENTITY_TYPE_RECIPE_INGREDIENTS)
+            ?: throw IllegalStateException("Failed to generate slug: Invalid session context")
         
         // Get current timestamp for both created_at and updated_at
         val now = getCurrentTimestamp()
         
-        // Update with generated slug, business info, and timestamps
-        val updatedEntity = entity.copy(
-            id = newId.toInt(),
+        // Create entity with generated slug, business info, and timestamps
+        val entity = ingredient.toEntity().copy(
             slug = slug,
             business_slug = businessSlug,
             created_by = userSlug,
@@ -152,7 +149,7 @@ class ProductsRepositoryImpl(
             updated_at = now
         )
         
-        recipeIngredientsDao.updateRecipeIngredient(updatedEntity)
+        recipeIngredientsDao.insertRecipeIngredient(entity)
         return slug
     }
     

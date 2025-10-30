@@ -41,5 +41,8 @@ interface RecipeIngredientsDao {
     
     @Query("DELETE FROM RecipeIngredients")
     suspend fun deleteAllRecipeIngredients()
+    
+    @Query("SELECT MAX(id) FROM RecipeIngredients")
+    suspend fun getMaxId(): Int?
 }
 

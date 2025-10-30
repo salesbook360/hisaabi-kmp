@@ -17,7 +17,14 @@ val productsModule = module {
     single<ProductLocalDataSource> { ProductLocalDataSourceImpl(get()) }
     
     // Repository
-    single<ProductsRepository> { ProductsRepositoryImpl(get(), get(), get()) }
+    single<ProductsRepository> { 
+        ProductsRepositoryImpl(
+            productDataSource = get(),
+            recipeIngredientsDao = get(),
+            quantityUnitDao = get(),
+            slugGenerator = get()
+        ) 
+    }
     
     // Use Cases
     singleOf(::GetProductsUseCase)

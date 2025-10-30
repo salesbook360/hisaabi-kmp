@@ -13,7 +13,12 @@ import org.koin.dsl.module
 
 val partiesModule = module {
     // Repository
-    single<PartiesRepository> { PartiesRepositoryImpl(get()) }
+    single<PartiesRepository> { 
+        PartiesRepositoryImpl(
+            partyDao = get(),
+            slugGenerator = get()
+        ) 
+    }
     
     // Use Cases
     singleOf(::GetPartiesUseCase)

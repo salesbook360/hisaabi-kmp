@@ -51,5 +51,8 @@ interface ProductDao {
         WHERE business_slug = :businessSlug
     """)
     suspend fun getTotalProductsCount(businessSlug: String): Int?
+    
+    @Query("SELECT MAX(id) FROM Product")
+    suspend fun getMaxId(): Int?
 }
 

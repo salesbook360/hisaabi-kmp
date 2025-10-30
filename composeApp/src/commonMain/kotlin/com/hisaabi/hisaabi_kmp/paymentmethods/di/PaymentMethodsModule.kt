@@ -17,7 +17,7 @@ val paymentMethodsModule = module {
     
     // Use Cases
     single { GetPaymentMethodsUseCase(get()) }
-    single { AddPaymentMethodUseCase(get()) }
+    single { AddPaymentMethodUseCase(repository = get(), slugGenerator = get()) }
     single { UpdatePaymentMethodUseCase(get()) }
     single { DeletePaymentMethodUseCase(get()) }
     

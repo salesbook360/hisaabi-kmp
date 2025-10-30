@@ -45,6 +45,9 @@ interface TransactionDetailDao {
     @Query("DELETE FROM TransactionDetail")
     suspend fun deleteAllTransactionDetails()
     
+    @Query("SELECT MAX(id) FROM TransactionDetail")
+    suspend fun getMaxId(): Int?
+    
     // Dashboard Queries
     @Query("""
         SELECT SUM(profit + flat_tax - flat_discount) 

@@ -17,7 +17,7 @@ val quantityUnitsModule = module {
     
     // Use Cases
     single { GetQuantityUnitsUseCase(get()) }
-    single { AddQuantityUnitUseCase(get()) }
+    single { AddQuantityUnitUseCase(repository = get(), slugGenerator = get()) }
     single { UpdateQuantityUnitUseCase(get()) }
     single { DeleteQuantityUnitUseCase(get()) }
     

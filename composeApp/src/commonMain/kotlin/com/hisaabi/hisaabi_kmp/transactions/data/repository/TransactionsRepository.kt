@@ -1,5 +1,7 @@
 package com.hisaabi.hisaabi_kmp.transactions.data.repository
 
+import com.hisaabi.hisaabi_kmp.core.domain.model.EntityTypeEnum
+import com.hisaabi.hisaabi_kmp.core.util.SlugGenerator
 import com.hisaabi.hisaabi_kmp.database.datasource.TransactionLocalDataSource
 import com.hisaabi.hisaabi_kmp.database.entity.InventoryTransactionEntity
 import com.hisaabi.hisaabi_kmp.database.entity.TransactionDetailEntity
@@ -15,7 +17,6 @@ import com.hisaabi.hisaabi_kmp.utils.getCurrentTimestamp
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import java.util.UUID
 
 class TransactionsRepository(
     private val localDataSource: TransactionLocalDataSource,
@@ -23,7 +24,8 @@ class TransactionsRepository(
     private val paymentMethodsRepository: PaymentMethodsRepository,
     private val warehousesRepository: WarehousesRepository,
     private val productsRepository: ProductsRepository,
-    private val quantityUnitsRepository: QuantityUnitsRepository
+    private val quantityUnitsRepository: QuantityUnitsRepository,
+    private val slugGenerator: SlugGenerator
 ) {
     
     fun getAllTransactions(): Flow<List<Transaction>> {
@@ -156,11 +158,14 @@ class TransactionsRepository(
     
     suspend fun insertTransaction(transaction: Transaction): Result<String> {
         return try {
-            val slug = transaction.slug ?: generateSlug()
+            // Generate slugs using centralized slug generator
+            val transactionSlug = transaction.slug ?: (slugGenerator.generateSlug(EntityTypeEnum.ENTITY_TYPE_TRANSACTION)
+                ?: throw IllegalStateException("Failed to generate transaction slug: Invalid session context"))
+            
             val now = getCurrentTimestamp()
             
             // Set timestamps on transaction entity
-            val entity = transaction.toEntity(slug).copy(
+            val entity = transaction.toEntity(transactionSlug).copy(
                 created_at = now,
                 updated_at = now
             )
@@ -168,16 +173,20 @@ class TransactionsRepository(
             // Insert transaction
             localDataSource.insertTransaction(entity)
             
-            // Insert transaction details with timestamps
+            // Insert transaction details with timestamps and generated slugs
             val detailEntities = transaction.transactionDetails.map { detail ->
-                detail.toEntity(slug).copy(
+                val detailSlug = slugGenerator.generateSlug(EntityTypeEnum.ENTITY_TYPE_TRANSACTION_DETAIL)
+                    ?: throw IllegalStateException("Failed to generate detail slug: Invalid session context")
+                
+                detail.toEntity(transactionSlug).copy(
+                    slug = detailSlug,
                     created_at = now,
                     updated_at = now
                 )
             }
             localDataSource.insertTransactionDetails(detailEntities)
             
-            Result.success(slug)
+            Result.success(transactionSlug)
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -194,10 +203,14 @@ class TransactionsRepository(
             )
             localDataSource.updateTransaction(entity)
             
-            // Delete old details and insert new ones with timestamps
+            // Delete old details and insert new ones with timestamps and generated slugs
             localDataSource.deleteDetailsByTransaction(slug)
             val detailEntities = transaction.transactionDetails.map { detail ->
+                val detailSlug = slugGenerator.generateSlug(EntityTypeEnum.ENTITY_TYPE_TRANSACTION_DETAIL)
+                    ?: throw IllegalStateException("Failed to generate detail slug: Invalid session context")
+                
                 detail.toEntity(slug).copy(
+                    slug = detailSlug,
                     created_at = now,
                     updated_at = now
                 )
@@ -242,8 +255,15 @@ class TransactionsRepository(
         return try {
             val now = getCurrentTimestamp()
             
+            // Generate slugs using centralized slug generator
+            val parentSlug = slugGenerator.generateSlug(EntityTypeEnum.ENTITY_TYPE_TRANSACTION)
+                ?: throw IllegalStateException("Failed to generate parent transaction slug: Invalid session context")
+            val saleSlug = slugGenerator.generateSlug(EntityTypeEnum.ENTITY_TYPE_TRANSACTION)
+                ?: throw IllegalStateException("Failed to generate sale transaction slug: Invalid session context")
+            val purchaseSlug = slugGenerator.generateSlug(EntityTypeEnum.ENTITY_TYPE_TRANSACTION)
+                ?: throw IllegalStateException("Failed to generate purchase transaction slug: Invalid session context")
+            
             // 1. Create and save parent manufacture transaction
-            val parentSlug = generateSlug()
             val parentTransaction = Transaction(
                 id = 0,
                 customerSlug = null, // No customer for manufacture
@@ -281,7 +301,6 @@ class TransactionsRepository(
             )
             
             // 2. Create and save child Sale transaction (ingredients stock out)
-            val saleSlug = generateSlug()
             val saleTransaction = Transaction(
                 id = 0,
                 customerSlug = null,
@@ -318,9 +337,13 @@ class TransactionsRepository(
                 )
             )
             
-            // Insert ingredients as sale transaction details with timestamps
-            val saleDetailEntities = ingredients.map { 
-                it.toEntity(saleSlug).copy(
+            // Insert ingredients as sale transaction details with timestamps and generated slugs
+            val saleDetailEntities = ingredients.map { ingredient ->
+                val detailSlug = slugGenerator.generateSlug(EntityTypeEnum.ENTITY_TYPE_TRANSACTION_DETAIL)
+                    ?: throw IllegalStateException("Failed to generate sale detail slug: Invalid session context")
+                
+                ingredient.toEntity(saleSlug).copy(
+                    slug = detailSlug,
                     created_at = now,
                     updated_at = now
                 )
@@ -328,7 +351,6 @@ class TransactionsRepository(
             localDataSource.insertTransactionDetails(saleDetailEntities)
             
             // 3. Create and save child Purchase transaction (recipe stock in)
-            val purchaseSlug = generateSlug()
             val purchaseTransaction = Transaction(
                 id = 0,
                 customerSlug = null,
@@ -365,8 +387,12 @@ class TransactionsRepository(
                 )
             )
             
-            // Insert recipe as purchase transaction detail with timestamps
+            // Insert recipe as purchase transaction detail with timestamps and generated slug
+            val purchaseDetailSlug = slugGenerator.generateSlug(EntityTypeEnum.ENTITY_TYPE_TRANSACTION_DETAIL)
+                ?: throw IllegalStateException("Failed to generate purchase detail slug: Invalid session context")
+            
             val purchaseDetailEntity = recipeDetail.toEntity(purchaseSlug).copy(
+                slug = purchaseDetailSlug,
                 created_at = now,
                 updated_at = now
             )
@@ -378,9 +404,6 @@ class TransactionsRepository(
         }
     }
     
-    private fun generateSlug(): String {
-        return UUID.randomUUID().toString().substring(0, 8).uppercase()
-    }
     
     // Entity to Domain Model mapping
     private fun InventoryTransactionEntity.toDomainModel(

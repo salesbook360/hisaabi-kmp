@@ -59,6 +59,9 @@ interface PartyDao {
     """)
     suspend fun getTotalBalance(roleIds: List<Int>, businessSlug: String): Double?
     
+    @Query("SELECT MAX(id) FROM Party")
+    suspend fun getMaxId(): Int?
+    
     // Parties List Screen Queries
     @Query("""
         SELECT * FROM Party 

@@ -59,5 +59,8 @@ interface CategoryDao {
         ORDER BY title ASC
     """)
     suspend fun getCategoriesByTypeAndBusiness(typeId: Int, businessSlug: String): List<CategoryEntity>
+    
+    @Query("SELECT MAX(id) FROM Category")
+    suspend fun getMaxId(): Int?
 }
 

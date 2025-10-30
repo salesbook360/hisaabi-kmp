@@ -35,5 +35,8 @@ interface DeletedRecordsDao {
     
     @Query("DELETE FROM DeletedRecords")
     suspend fun deleteAllDeletedRecords()
+    
+    @Query("SELECT MAX(id) FROM DeletedRecords")
+    suspend fun getMaxId(): Int?
 }
 

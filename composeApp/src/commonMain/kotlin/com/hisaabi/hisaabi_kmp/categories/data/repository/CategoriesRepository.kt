@@ -2,6 +2,8 @@ package com.hisaabi.hisaabi_kmp.categories.data.repository
 
 import com.hisaabi.hisaabi_kmp.categories.domain.model.Category
 import com.hisaabi.hisaabi_kmp.categories.domain.model.CategoryType
+import com.hisaabi.hisaabi_kmp.core.domain.model.EntityTypeEnum
+import com.hisaabi.hisaabi_kmp.core.util.SlugGenerator
 import com.hisaabi.hisaabi_kmp.database.dao.CategoryDao
 import com.hisaabi.hisaabi_kmp.database.entity.CategoryEntity
 import com.hisaabi.hisaabi_kmp.utils.getCurrentTimestamp
@@ -24,7 +26,8 @@ interface CategoriesRepository {
 }
 
 class CategoriesRepositoryImpl(
-    private val categoryDao: CategoryDao
+    private val categoryDao: CategoryDao,
+    private val slugGenerator: SlugGenerator
 ) : CategoriesRepository {
     
     override suspend fun getCategoriesByType(
@@ -40,18 +43,15 @@ class CategoriesRepositoryImpl(
         businessSlug: String,
         userSlug: String
     ): String {
-        val entity = category.toEntity()
-        val newId = categoryDao.insertCategory(entity)
-        
-        // Generate slug based on ID
-        val slug = "CAT_${newId}"
+        // Generate slug using centralized slug generator
+        val slug = slugGenerator.generateSlug(EntityTypeEnum.ENTITY_TYPE_CATEGORY)
+            ?: throw IllegalStateException("Failed to generate slug: Invalid session context")
         
         // Get current timestamp for both created_at and updated_at
         val now = getCurrentTimestamp()
         
-        // Update the category with generated slug, business info, and timestamps
-        val updatedEntity = entity.copy(
-            id = newId.toInt(),
+        // Create entity with generated slug, business info, and timestamps
+        val entity = category.toEntity().copy(
             slug = slug,
             business_slug = businessSlug,
             created_by = userSlug,
@@ -59,7 +59,7 @@ class CategoriesRepositoryImpl(
             updated_at = now
         )
         
-        categoryDao.updateCategory(updatedEntity)
+        categoryDao.insertCategory(entity)
         return slug
     }
     

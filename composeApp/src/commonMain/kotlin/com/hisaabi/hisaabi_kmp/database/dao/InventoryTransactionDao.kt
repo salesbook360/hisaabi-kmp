@@ -124,5 +124,8 @@ interface InventoryTransactionDao {
         toMilli: Long,
         transactionTypes: List<Int>
     ): List<String>
+    
+    @Query("SELECT MAX(id) FROM InventoryTransaction")
+    suspend fun getMaxId(): Int?
 }
 

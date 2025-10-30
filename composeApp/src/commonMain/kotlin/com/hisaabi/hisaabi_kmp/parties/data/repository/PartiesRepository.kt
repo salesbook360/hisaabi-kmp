@@ -1,5 +1,7 @@
 package com.hisaabi.hisaabi_kmp.parties.data.repository
 
+import com.hisaabi.hisaabi_kmp.core.domain.model.EntityTypeEnum
+import com.hisaabi.hisaabi_kmp.core.util.SlugGenerator
 import com.hisaabi.hisaabi_kmp.database.dao.PartyDao
 import com.hisaabi.hisaabi_kmp.database.entity.PartyEntity
 import com.hisaabi.hisaabi_kmp.parties.domain.model.PartiesFilter
@@ -43,7 +45,8 @@ interface PartiesRepository {
 }
 
 class PartiesRepositoryImpl(
-    private val partyDao: PartyDao
+    private val partyDao: PartyDao,
+    private val slugGenerator: SlugGenerator
 ) : PartiesRepository {
     
     override suspend fun searchParties(
@@ -96,18 +99,15 @@ class PartiesRepositoryImpl(
         businessSlug: String,
         userSlug: String
     ): String {
-        val entity = party.toEntity()
-        val newId = partyDao.insertParty(entity)
-        
-        // Generate slug based on ID
-        val slug = "PTY_${newId}"
+        // Generate slug using centralized slug generator
+        val slug = slugGenerator.generateSlug(EntityTypeEnum.ENTITY_TYPE_PARTY)
+            ?: throw IllegalStateException("Failed to generate slug: Invalid session context")
         
         // Get current timestamp for both created_at and updated_at
         val now = getCurrentTimestamp()
         
-        // Update the party with generated slug, business info, and timestamps
-        val updatedEntity = entity.copy(
-            id = newId.toInt(),
+        // Create entity with generated slug, business info, and timestamps
+        val entity = party.toEntity().copy(
             slug = slug,
             business_slug = businessSlug,
             created_by = userSlug,
@@ -115,7 +115,7 @@ class PartiesRepositoryImpl(
             updated_at = now
         )
         
-        partyDao.updateParty(updatedEntity)
+        partyDao.insertParty(entity)
         return slug
     }
     

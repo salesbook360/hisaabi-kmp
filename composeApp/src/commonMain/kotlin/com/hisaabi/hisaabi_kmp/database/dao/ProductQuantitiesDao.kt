@@ -61,5 +61,8 @@ interface ProductQuantitiesDao {
         AND business_slug = :businessSlug
     """)
     suspend fun getLowStockCount(businessSlug: String): Int?
+    
+    @Query("SELECT MAX(id) FROM ProductQuantities")
+    suspend fun getMaxId(): Int?
 }
 

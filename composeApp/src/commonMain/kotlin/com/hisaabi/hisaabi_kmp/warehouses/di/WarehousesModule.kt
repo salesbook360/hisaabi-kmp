@@ -17,7 +17,7 @@ val warehousesModule = module {
     
     // Use Cases
     single { GetWarehousesUseCase(get()) }
-    single { AddWarehouseUseCase(get()) }
+    single { AddWarehouseUseCase(repository = get(), slugGenerator = get()) }
     single { UpdateWarehouseUseCase(get()) }
     single { DeleteWarehouseUseCase(get()) }
     

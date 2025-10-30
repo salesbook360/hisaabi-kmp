@@ -1,12 +1,14 @@
 package com.hisaabi.hisaabi_kmp.paymentmethods.domain.usecase
 
+import com.hisaabi.hisaabi_kmp.core.domain.model.EntityTypeEnum
+import com.hisaabi.hisaabi_kmp.core.util.SlugGenerator
 import com.hisaabi.hisaabi_kmp.paymentmethods.data.repository.PaymentMethodsRepository
 import com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod
 import com.hisaabi.hisaabi_kmp.utils.getCurrentTimestamp
-import kotlinx.datetime.Clock
 
 class AddPaymentMethodUseCase(
-    private val repository: PaymentMethodsRepository
+    private val repository: PaymentMethodsRepository,
+    private val slugGenerator: SlugGenerator
 ) {
     suspend operator fun invoke(
         title: String,
@@ -20,14 +22,9 @@ class AddPaymentMethodUseCase(
             return Result.failure(IllegalArgumentException("Title cannot be empty"))
         }
         
-        // Generate slug from title
-        val slug = generateSlug(title)
-        
-        // Check if payment method with same slug exists
-        val existing = repository.getPaymentMethodBySlug(slug)
-        if (existing != null) {
-            return Result.failure(IllegalArgumentException("Payment method with this title already exists"))
-        }
+        // Generate slug using centralized slug generator
+        val slug = slugGenerator.generateSlug(EntityTypeEnum.ENTITY_TYPE_PAYMENT_METHOD)
+            ?: return Result.failure(IllegalStateException("Failed to generate slug: Invalid session context"))
         
         // Get current timestamp in ISO 8601 format
         val now = getCurrentTimestamp()
@@ -47,11 +44,6 @@ class AddPaymentMethodUseCase(
         )
         
         return repository.insertPaymentMethod(paymentMethod)
-    }
-    
-    private fun generateSlug(title: String): String {
-        val timestamp = Clock.System.now().toEpochMilliseconds()
-        return "${title.lowercase().replace(Regex("[^a-z0-9]+"), "-")}-$timestamp"
     }
 }
 

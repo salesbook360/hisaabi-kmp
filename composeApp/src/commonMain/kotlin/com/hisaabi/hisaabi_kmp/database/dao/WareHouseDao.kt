@@ -41,5 +41,8 @@ interface WareHouseDao {
     
     @Query("DELETE FROM WareHouse")
     suspend fun deleteAllWareHouses()
+    
+    @Query("SELECT MAX(id) FROM WareHouse")
+    suspend fun getMaxId(): Int?
 }
 
