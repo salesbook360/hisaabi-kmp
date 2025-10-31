@@ -36,12 +36,18 @@ fun ProductsScreen(
     onNavigateToIngredients: (Product) -> Unit = {},
     onNavigateBack: () -> Unit = {},
     refreshTrigger: Int = 0,
-    initialProductType: ProductType? = null
+    initialProductType: ProductType? = null,
+    isSelectionMode: Boolean = false,
+    selectedProducts: Set<String> = emptySet(),
+    onSelectionChanged: (Set<String>) -> Unit = {},
+    onSelectionDone: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var selectedProduct by remember { mutableStateOf<Product?>(null) }
     var showBottomSheet by remember { mutableStateOf(false) }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
+    var selectionMode by remember { mutableStateOf(isSelectionMode) }
+    var selectedProductSlugs by remember { mutableStateOf(selectedProducts.toMutableSet()) }
     
     // Set initial product type when screen loads
     LaunchedEffect(initialProductType) {
@@ -60,7 +66,13 @@ fun ProductsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Products") },
+                title = { 
+                    if (selectionMode) {
+                        Text("Select Products (${selectedProductSlugs.size})")
+                    } else {
+                        Text("Products")
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
@@ -70,19 +82,40 @@ fun ProductsScreen(
                     }
                 },
                 actions = {
-                    // Search Button
-                    IconButton(onClick = { /* TODO: Show search bar */ }) {
-                        Icon(Icons.Default.Search, contentDescription = "Search")
+                    if (selectionMode) {
+                        // Done button with count
+                        TextButton(
+                            onClick = {
+                                onSelectionChanged(selectedProductSlugs.toSet())
+                                onSelectionDone()
+                            },
+                            enabled = selectedProductSlugs.isNotEmpty()
+                        ) {
+                            Text(
+                                "Done (${selectedProductSlugs.size})",
+                                color = if (selectedProductSlugs.isNotEmpty()) 
+                                    MaterialTheme.colorScheme.primary 
+                                else 
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                            )
+                        }
+                    } else {
+                        // Search Button
+                        IconButton(onClick = { /* TODO: Show search bar */ }) {
+                            Icon(Icons.Default.Search, contentDescription = "Search")
+                        }
                     }
                 }
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { onAddProductClick(uiState.selectedProductType) },
-                containerColor = MaterialTheme.colorScheme.primary
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Product")
+            if (!selectionMode) {
+                FloatingActionButton(
+                    onClick = { onAddProductClick(uiState.selectedProductType) },
+                    containerColor = MaterialTheme.colorScheme.primary
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Add Product")
+                }
             }
         }
     ) { paddingValues ->
@@ -160,9 +193,23 @@ fun ProductsScreen(
                         ProductItem(
                             product = product,
                             onClick = { 
-                                selectedProduct = product
-                                showBottomSheet = true
-                            }
+                                if (selectionMode) {
+                                    // Toggle selection
+                                    val newSelection = selectedProductSlugs.toMutableSet()
+                                    if (newSelection.contains(product.slug)) {
+                                        newSelection.remove(product.slug)
+                                    } else {
+                                        newSelection.add(product.slug)
+                                    }
+                                    selectedProductSlugs = newSelection
+                                    onSelectionChanged(selectedProductSlugs.toSet())
+                                } else {
+                                    selectedProduct = product
+                                    showBottomSheet = true
+                                }
+                            },
+                            isSelected = selectionMode && selectedProductSlugs.contains(product.slug),
+                            showCheckbox = selectionMode
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                     }
@@ -360,7 +407,9 @@ private fun ProductTypeFilter(
 @Composable
 private fun ProductItem(
     product: Product,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    isSelected: Boolean = false,
+    showCheckbox: Boolean = false
 ) {
     Card(
         modifier = Modifier
@@ -374,6 +423,15 @@ private fun ProductItem(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Checkbox (if in selection mode)
+            if (showCheckbox) {
+                Checkbox(
+                    checked = isSelected,
+                    onCheckedChange = { onClick() },
+                    modifier = Modifier.padding(end = 8.dp)
+                )
+            }
+            
             // Product Icon/Avatar
             Box(
                 modifier = Modifier

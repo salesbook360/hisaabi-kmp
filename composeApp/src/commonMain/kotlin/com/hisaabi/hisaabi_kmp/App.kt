@@ -39,6 +39,9 @@ fun App() {
             // Business repository for fetching and caching businesses
             val businessRepository: com.hisaabi.hisaabi_kmp.business.data.repository.BusinessRepository = koinInject()
             
+            // Products repository for fetching products by slugs
+            val productsRepository: com.hisaabi.hisaabi_kmp.products.data.repository.ProductsRepository = koinInject()
+            
             // Sync manager for background sync
             val syncManager: SyncManager = koinInject()
             
@@ -210,6 +213,7 @@ fun App() {
             var selectedWarehouseForTransaction by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse?>(null) }
             var selectingProductsForTransaction by remember { mutableStateOf(false) }
             var selectedProductsForTransaction by remember { mutableStateOf<List<com.hisaabi.hisaabi_kmp.products.domain.model.Product>>(emptyList()) }
+            var selectedProductSlugsForTransaction by remember { mutableStateOf<Set<String>>(emptySet()) }
             var returnToScreenAfterProductSelection by remember { mutableStateOf<AppScreen?>(null) }
             var selectingPaymentMethodForTransaction by remember { mutableStateOf(false) }
             var selectedPaymentMethodForTransaction by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod?>(null) }
@@ -548,11 +552,12 @@ fun App() {
                     com.hisaabi.hisaabi_kmp.products.presentation.ui.ProductsScreen(
                         viewModel = org.koin.compose.koinInject(),
                         onProductClick = { product ->
-                            if (selectingProductsForTransaction) {
-                                // Add product to selection list
-                                selectedProductsForTransaction = selectedProductsForTransaction + product
-                                // Return to the appropriate screen (don't clear flags yet - let target screen handle it)
-                                currentScreen = returnToScreenAfterProductSelection ?: AppScreen.ADD_TRANSACTION_STEP1
+                            // This is no longer used in selection mode - handled via onSelectionChanged
+                            if (!selectingProductsForTransaction) {
+                                // Navigate to edit product screen (reuse ADD_PRODUCT with edit mode)
+                                selectedProductForEdit = product
+                                addProductType = product.productType
+                                currentScreen = AppScreen.ADD_PRODUCT
                             }
                         },
                         onEditProductClick = { product ->
@@ -575,6 +580,7 @@ fun App() {
                             if (selectingProductsForTransaction) {
                                 // Navigate back without selecting - clear the selection state
                                 selectingProductsForTransaction = false
+                                selectedProductSlugsForTransaction = emptySet()
                                 returnToScreenAfterProductSelection = null
                                 currentScreen = AppScreen.ADD_TRANSACTION_STEP1
                             } else {
@@ -582,7 +588,18 @@ fun App() {
                             }
                         },
                         refreshTrigger = productsRefreshTrigger,
-                        initialProductType = currentProductType
+                        initialProductType = currentProductType,
+                        isSelectionMode = selectingProductsForTransaction,
+                        selectedProducts = selectedProductSlugsForTransaction,
+                        onSelectionChanged = { slugs ->
+                            selectedProductSlugsForTransaction = slugs
+                        },
+                        onSelectionDone = {
+                            // When Done is clicked in selection mode, fetch the actual products by their slugs
+                            // For now, we need to trigger the LaunchedEffect to load products
+                            selectingProductsForTransaction = false
+                            currentScreen = returnToScreenAfterProductSelection ?: AppScreen.ADD_TRANSACTION_STEP1
+                        }
                     )
                 }
                 
@@ -1237,14 +1254,19 @@ fun App() {
                     }
                     
                     // Add selected products if returned from product selection
-                    LaunchedEffect(selectedProductsForTransaction.size) {
-                        if (selectedProductsForTransaction.isNotEmpty()) {
-                            selectedProductsForTransaction.forEach { product ->
+                    LaunchedEffect(selectedProductSlugsForTransaction.size, selectedBusinessSlug) {
+                        val businessSlug = selectedBusinessSlug
+                        if (selectedProductSlugsForTransaction.isNotEmpty() && businessSlug != null) {
+                            // Fetch products by their slugs
+                            val allProducts = productsRepository.getProducts(businessSlug)
+                            val products = allProducts.filter { it.slug in selectedProductSlugsForTransaction }
+                            
+                            products.forEach { product ->
                                 // Get default unit for the product
                                 val defaultUnit = null // TODO: Fetch from quantity units
                                 transactionViewModel.addProduct(product, defaultUnit)
                             }
-                            selectedProductsForTransaction = emptyList() // Clear after adding
+                            selectedProductSlugsForTransaction = emptySet() // Clear after adding
                         }
                     }
                     
