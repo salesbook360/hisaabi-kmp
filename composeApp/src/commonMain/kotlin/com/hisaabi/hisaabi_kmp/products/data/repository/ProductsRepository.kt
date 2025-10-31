@@ -160,9 +160,7 @@ class ProductsRepositoryImpl(
     }
     
     override suspend fun deleteRecipeIngredient(ingredientSlug: String) {
-        // Since we don't have getBySlug, we'll need to delete by recipe
-        // This is a simplified version - in production you'd add the query
-        recipeIngredientsDao.deleteAllRecipeIngredients()
+        recipeIngredientsDao.deleteRecipeIngredientBySlug(ingredientSlug)
     }
 }
 

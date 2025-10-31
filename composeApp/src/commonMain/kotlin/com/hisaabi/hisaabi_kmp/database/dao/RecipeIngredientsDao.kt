@@ -18,6 +18,9 @@ interface RecipeIngredientsDao {
     @Query("SELECT * FROM RecipeIngredients WHERE ingredient_slug = :ingredientSlug")
     fun getRecipesByIngredient(ingredientSlug: String): Flow<List<RecipeIngredientsEntity>>
     
+    @Query("SELECT * FROM RecipeIngredients WHERE slug = :slug")
+    suspend fun getRecipeIngredientBySlug(slug: String): RecipeIngredientsEntity?
+    
     @Query("SELECT * FROM RecipeIngredients WHERE sync_status != 2 AND business_slug = :businessSlug")
     suspend fun getUnsyncedIngredients(businessSlug: String): List<RecipeIngredientsEntity>
     
@@ -38,6 +41,9 @@ interface RecipeIngredientsDao {
     
     @Query("DELETE FROM RecipeIngredients WHERE recipe_slug = :recipeSlug")
     suspend fun deleteIngredientsByRecipe(recipeSlug: String)
+    
+    @Query("DELETE FROM RecipeIngredients WHERE slug = :slug")
+    suspend fun deleteRecipeIngredientBySlug(slug: String)
     
     @Query("DELETE FROM RecipeIngredients")
     suspend fun deleteAllRecipeIngredients()
