@@ -116,11 +116,11 @@ class AddTransactionViewModel(
         updateProductPrices(priceType)
     }
     
-    fun addProduct(product: Product, unit: QuantityUnit?) {
+    fun addProduct(product: Product, unit: QuantityUnit?, quantity: Double = 1.0) {
         val price = getProductPrice(product, _state.value.priceType)
         val newDetail = TransactionDetailItem(
             product = product,
-            quantity = 1.0,
+            quantity = quantity,
             price = price,
             flatDiscount = 0.0,
             flatTax = 0.0,

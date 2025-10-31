@@ -2,6 +2,7 @@ package com.hisaabi.hisaabi_kmp.products.presentation.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -38,8 +39,8 @@ fun ProductsScreen(
     refreshTrigger: Int = 0,
     initialProductType: ProductType? = null,
     isSelectionMode: Boolean = false,
-    selectedProducts: Set<String> = emptySet(),
-    onSelectionChanged: (Set<String>) -> Unit = {},
+    selectedProducts: Map<String, Int> = emptyMap(),
+    onSelectionChanged: (Map<String, Int>) -> Unit = {},
     onSelectionDone: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -47,7 +48,7 @@ fun ProductsScreen(
     var showBottomSheet by remember { mutableStateOf(false) }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
     var selectionMode by remember { mutableStateOf(isSelectionMode) }
-    var selectedProductSlugs by remember { mutableStateOf(selectedProducts.toMutableSet()) }
+    var selectedProductQuantities by remember { mutableStateOf(selectedProducts.toMutableMap()) }
     
     // Set initial product type when screen loads
     LaunchedEffect(initialProductType) {
@@ -68,7 +69,7 @@ fun ProductsScreen(
             TopAppBar(
                 title = { 
                     if (selectionMode) {
-                        Text("Select Products (${selectedProductSlugs.size})")
+                        Text("Select Products (${selectedProductQuantities.size})")
                     } else {
                         Text("Products")
                     }
@@ -84,16 +85,17 @@ fun ProductsScreen(
                 actions = {
                     if (selectionMode) {
                         // Done button with count
+                        val totalItems = selectedProductQuantities.values.sum()
                         TextButton(
                             onClick = {
-                                onSelectionChanged(selectedProductSlugs.toSet())
+                                onSelectionChanged(selectedProductQuantities.toMap())
                                 onSelectionDone()
                             },
-                            enabled = selectedProductSlugs.isNotEmpty()
+                            enabled = selectedProductQuantities.isNotEmpty()
                         ) {
                             Text(
-                                "Done (${selectedProductSlugs.size})",
-                                color = if (selectedProductSlugs.isNotEmpty()) 
+                                "Done ($totalItems)",
+                                color = if (selectedProductQuantities.isNotEmpty()) 
                                     MaterialTheme.colorScheme.primary 
                                 else 
                                     MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
@@ -190,26 +192,40 @@ fun ProductsScreen(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                 ) {
                     items(uiState.products, key = { it.id }) { product ->
+                        val currentQuantity = selectedProductQuantities[product.slug] ?: 0
                         ProductItem(
                             product = product,
                             onClick = { 
                                 if (selectionMode) {
-                                    // Toggle selection
-                                    val newSelection = selectedProductSlugs.toMutableSet()
-                                    if (newSelection.contains(product.slug)) {
-                                        newSelection.remove(product.slug)
-                                    } else {
-                                        newSelection.add(product.slug)
-                                    }
-                                    selectedProductSlugs = newSelection
-                                    onSelectionChanged(selectedProductSlugs.toSet())
+                                    // Increment quantity on tap
+                                    val newQuantities = selectedProductQuantities.toMutableMap()
+                                    val newQuantity = currentQuantity + 1
+                                    newQuantities[product.slug] = newQuantity
+                                    selectedProductQuantities = newQuantities
+                                    onSelectionChanged(selectedProductQuantities.toMap())
                                 } else {
                                     selectedProduct = product
                                     showBottomSheet = true
                                 }
                             },
-                            isSelected = selectionMode && selectedProductSlugs.contains(product.slug),
-                            showCheckbox = selectionMode
+                            isSelected = false, // Not used anymore
+                            showCheckbox = selectionMode,
+                            quantity = currentQuantity,
+                            onIncrementQuantity = {
+                                // Increment quantity
+                                val newQuantities = selectedProductQuantities.toMutableMap()
+                                val newQuantity = currentQuantity + 1
+                                newQuantities[product.slug] = newQuantity
+                                selectedProductQuantities = newQuantities
+                                onSelectionChanged(selectedProductQuantities.toMap())
+                            },
+                            onResetQuantity = {
+                                // Reset quantity for this product
+                                val newQuantities = selectedProductQuantities.toMutableMap()
+                                newQuantities.remove(product.slug)
+                                selectedProductQuantities = newQuantities
+                                onSelectionChanged(selectedProductQuantities.toMap())
+                            }
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                     }
@@ -409,101 +425,144 @@ private fun ProductItem(
     product: Product,
     onClick: () -> Unit,
     isSelected: Boolean = false,
-    showCheckbox: Boolean = false
+    showCheckbox: Boolean = false,
+    quantity: Int = 0,
+    onIncrementQuantity: () -> Unit = {},
+    onResetQuantity: () -> Unit = {}
 ) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Row(
+    Box(modifier = Modifier.fillMaxWidth()) {
+        Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .clickable(onClick = onClick),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
-            // Checkbox (if in selection mode)
-            if (showCheckbox) {
-                Checkbox(
-                    checked = isSelected,
-                    onCheckedChange = { onClick() },
-                    modifier = Modifier.padding(end = 8.dp)
-                )
-            }
-            
-            // Product Icon/Avatar
-            Box(
+            Row(
                 modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(
-                        when (product.productType) {
-                            ProductType.SIMPLE_PRODUCT -> Color(0xFF4CAF50)
-                            ProductType.SERVICE -> Color(0xFF2196F3)
-                            ProductType.RECIPE -> Color(0xFFFF9800)
-                        }
-                    ),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = when (product.productType) {
-                        ProductType.SIMPLE_PRODUCT -> Icons.Default.Inventory
-                        ProductType.SERVICE -> Icons.Default.Build
-                        ProductType.RECIPE -> Icons.Default.Restaurant
-                    },
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-            
-            Spacer(modifier = Modifier.width(16.dp))
-            
-            // Product Info
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = product.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                // Product Icon/Avatar with count overlay
+                Box {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .background(
+                                when (product.productType) {
+                                    ProductType.SIMPLE_PRODUCT -> Color(0xFF4CAF50)
+                                    ProductType.SERVICE -> Color(0xFF2196F3)
+                                    ProductType.RECIPE -> Color(0xFFFF9800)
+                                }
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = when (product.productType) {
+                                ProductType.SIMPLE_PRODUCT -> Icons.Default.Inventory
+                                ProductType.SERVICE -> Icons.Default.Build
+                                ProductType.RECIPE -> Icons.Default.Restaurant
+                            },
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                    
+                    // Count badge overlay with cross button
+                    if (showCheckbox && quantity > 0) {
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .offset(x = 8.dp, y = (-4).dp)
+                        ) {
+                            // Badge background
+                            Box(
+                                modifier = Modifier
+                                    .background(
+                                        MaterialTheme.colorScheme.primary,
+                                        CircleShape
+                                    )
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Text(
+                                        text = quantity.toString(),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White,
+                                        fontSize = 12.sp
+                                    )
+                                    // Cross button to reset
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Reset",
+                                        tint = Color.White,
+                                        modifier = Modifier
+                                            .size(12.dp)
+                                            .clickable(
+                                                onClick = onResetQuantity,
+                                                indication = null,
+                                                interactionSource = remember { MutableInteractionSource() }
+                                            )
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
                 
-                Text(
-                    text = product.productType.displayName,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Spacer(modifier = Modifier.width(16.dp))
                 
-                if (!product.description.isNullOrBlank()) {
+                // Product Info
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = product.description,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        text = product.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                }
-            }
-            
-            Spacer(modifier = Modifier.width(16.dp))
-            
-            // Price
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = "₨ %.2f".format(product.retailPrice),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                
-                if (product.wholesalePrice > 0 && product.wholesalePrice != product.retailPrice) {
+                    
                     Text(
-                        text = "W: ₨ %.2f".format(product.wholesalePrice),
+                        text = product.productType.displayName,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    
+                    if (!product.description.isNullOrBlank()) {
+                        Text(
+                            text = product.description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+                
+                Spacer(modifier = Modifier.width(16.dp))
+                
+                // Price
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = "₨ %.2f".format(product.retailPrice),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    
+                    if (product.wholesalePrice > 0 && product.wholesalePrice != product.retailPrice) {
+                        Text(
+                            text = "W: ₨ %.2f".format(product.wholesalePrice),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }

@@ -213,7 +213,7 @@ fun App() {
             var selectedWarehouseForTransaction by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse?>(null) }
             var selectingProductsForTransaction by remember { mutableStateOf(false) }
             var selectedProductsForTransaction by remember { mutableStateOf<List<com.hisaabi.hisaabi_kmp.products.domain.model.Product>>(emptyList()) }
-            var selectedProductSlugsForTransaction by remember { mutableStateOf<Set<String>>(emptySet()) }
+            var selectedProductQuantitiesForTransaction by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
             var returnToScreenAfterProductSelection by remember { mutableStateOf<AppScreen?>(null) }
             var selectingPaymentMethodForTransaction by remember { mutableStateOf(false) }
             var selectedPaymentMethodForTransaction by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod?>(null) }
@@ -580,7 +580,7 @@ fun App() {
                             if (selectingProductsForTransaction) {
                                 // Navigate back without selecting - clear the selection state
                                 selectingProductsForTransaction = false
-                                selectedProductSlugsForTransaction = emptySet()
+                                selectedProductQuantitiesForTransaction = emptyMap()
                                 returnToScreenAfterProductSelection = null
                                 currentScreen = AppScreen.ADD_TRANSACTION_STEP1
                             } else {
@@ -590,9 +590,9 @@ fun App() {
                         refreshTrigger = productsRefreshTrigger,
                         initialProductType = currentProductType,
                         isSelectionMode = selectingProductsForTransaction,
-                        selectedProducts = selectedProductSlugsForTransaction,
-                        onSelectionChanged = { slugs ->
-                            selectedProductSlugsForTransaction = slugs
+                        selectedProducts = selectedProductQuantitiesForTransaction,
+                        onSelectionChanged = { quantities ->
+                            selectedProductQuantitiesForTransaction = quantities
                         },
                         onSelectionDone = {
                             // When Done is clicked in selection mode, fetch the actual products by their slugs
@@ -1254,19 +1254,23 @@ fun App() {
                     }
                     
                     // Add selected products if returned from product selection
-                    LaunchedEffect(selectedProductSlugsForTransaction.size, selectedBusinessSlug) {
+                    LaunchedEffect(selectedProductQuantitiesForTransaction.size, selectedBusinessSlug) {
                         val businessSlug = selectedBusinessSlug
-                        if (selectedProductSlugsForTransaction.isNotEmpty() && businessSlug != null) {
+                        if (selectedProductQuantitiesForTransaction.isNotEmpty() && businessSlug != null) {
                             // Fetch products by their slugs
                             val allProducts = productsRepository.getProducts(businessSlug)
-                            val products = allProducts.filter { it.slug in selectedProductSlugsForTransaction }
+                            val selectedSlugs = selectedProductQuantitiesForTransaction.keys.toSet()
+                            val products = allProducts.filter { it.slug in selectedSlugs }
                             
                             products.forEach { product ->
+                                // Get the quantity for this product
+                                val quantity = selectedProductQuantitiesForTransaction[product.slug] ?: 1
                                 // Get default unit for the product
                                 val defaultUnit = null // TODO: Fetch from quantity units
-                                transactionViewModel.addProduct(product, defaultUnit)
+                                // Add product with the specified quantity
+                                transactionViewModel.addProduct(product, defaultUnit, quantity.toDouble())
                             }
-                            selectedProductSlugsForTransaction = emptySet() // Clear after adding
+                            selectedProductQuantitiesForTransaction = emptyMap() // Clear after adding
                         }
                     }
                     
