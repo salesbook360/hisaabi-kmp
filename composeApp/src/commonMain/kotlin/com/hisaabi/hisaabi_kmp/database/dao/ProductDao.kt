@@ -9,16 +9,19 @@ interface ProductDao {
     @Query("SELECT * FROM Product")
     fun getAllProducts(): Flow<List<ProductEntity>>
     
-    @Query("SELECT * FROM Product WHERE id = :id")
+    @Query("SELECT * FROM Product WHERE id = :id AND status_id != 2")
     suspend fun getProductById(id: Int): ProductEntity?
     
-    @Query("SELECT * FROM Product WHERE slug = :slug")
+    @Query("SELECT * FROM Product WHERE slug = :slug AND status_id != 2")
     suspend fun getProductBySlug(slug: String): ProductEntity?
+    
+    @Query("SELECT * FROM Product WHERE slug = :slug")
+    suspend fun getProductBySlugAnyStatus(slug: String): ProductEntity?
     
     @Query("SELECT * FROM Product WHERE category_slug = :categorySlug")
     fun getProductsByCategory(categorySlug: String): Flow<List<ProductEntity>>
     
-    @Query("SELECT * FROM Product WHERE business_slug = :businessSlug")
+    @Query("SELECT * FROM Product WHERE business_slug = :businessSlug AND status_id != 2")
     fun getProductsByBusiness(businessSlug: String): Flow<List<ProductEntity>>
     
     @Query("SELECT * FROM Product WHERE sync_status != 2 AND business_slug = :businessSlug")

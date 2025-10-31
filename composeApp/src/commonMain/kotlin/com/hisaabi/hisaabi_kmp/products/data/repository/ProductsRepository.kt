@@ -21,6 +21,8 @@ interface ProductsRepository {
     
     suspend fun getProductBySlug(slug: String): Product?
     
+    suspend fun getProductBySlugAnyStatus(slug: String): Product?
+    
     suspend fun addProduct(
         product: Product,
         businessSlug: String,
@@ -66,6 +68,10 @@ class ProductsRepositoryImpl(
     
     override suspend fun getProductBySlug(slug: String): Product? {
         return productDataSource.getProductBySlug(slug)?.toDomainModel()
+    }
+    
+    override suspend fun getProductBySlugAnyStatus(slug: String): Product? {
+        return productDataSource.getProductBySlugAnyStatus(slug)?.toDomainModel()
     }
     
     override suspend fun addProduct(

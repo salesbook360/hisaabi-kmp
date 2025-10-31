@@ -10,6 +10,7 @@ interface ProductLocalDataSource {
     fun getProductsByBusiness(businessSlug: String): Flow<List<ProductEntity>>
     suspend fun getProductsByBusinessList(businessSlug: String): List<ProductEntity>
     suspend fun getProductBySlug(slug: String): ProductEntity?
+    suspend fun getProductBySlugAnyStatus(slug: String): ProductEntity?
     suspend fun insertProduct(product: ProductEntity): Long
     suspend fun updateProduct(product: ProductEntity)
     suspend fun deleteProduct(product: ProductEntity)
@@ -33,6 +34,10 @@ class ProductLocalDataSourceImpl(
     
     override suspend fun getProductBySlug(slug: String): ProductEntity? {
         return productDao.getProductBySlug(slug)
+    }
+    
+    override suspend fun getProductBySlugAnyStatus(slug: String): ProductEntity? {
+        return productDao.getProductBySlugAnyStatus(slug)
     }
     
     override suspend fun insertProduct(product: ProductEntity): Long {

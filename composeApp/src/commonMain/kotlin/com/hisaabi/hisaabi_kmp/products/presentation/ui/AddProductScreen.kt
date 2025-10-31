@@ -13,14 +13,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.hisaabi.hisaabi_kmp.products.domain.model.Product
 import com.hisaabi.hisaabi_kmp.products.domain.model.ProductType
 import com.hisaabi.hisaabi_kmp.products.presentation.viewmodel.AddProductViewModel
+import com.hisaabi.hisaabi_kmp.utils.format
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddProductScreen(
     viewModel: AddProductViewModel,
     productType: ProductType,
+    productToEdit: Product? = null,
     onNavigateBack: () -> Unit,
     onNavigateToIngredients: ((String) -> Unit)? = null  // Recipe slug
 ) {
@@ -32,6 +35,20 @@ fun AddProductScreen(
     var taxPercentage by remember { mutableStateOf("") }
     var discountPercentage by remember { mutableStateOf("") }
     var manufacturer by remember { mutableStateOf("") }
+    
+    // Update fields when productToEdit changes
+    LaunchedEffect(productToEdit) {
+        if (productToEdit != null) {
+            title = productToEdit.title
+            description = productToEdit.description ?: ""
+            retailPrice = "%.2f".format(productToEdit.retailPrice)
+            wholesalePrice = "%.2f".format(productToEdit.wholesalePrice)
+            purchasePrice = "%.2f".format(productToEdit.purchasePrice)
+            taxPercentage = "%.2f".format(productToEdit.taxPercentage)
+            discountPercentage = "%.2f".format(productToEdit.discountPercentage)
+            manufacturer = productToEdit.manufacturer ?: ""
+        }
+    }
     
     val uiState by viewModel.uiState.collectAsState()
     
@@ -49,15 +66,25 @@ fun AddProductScreen(
         }
     }
     
+    val isEditMode = productToEdit != null
+    
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { 
                     Text(
-                        when (productType) {
-                            ProductType.SIMPLE_PRODUCT -> "Add Simple Product"
-                            ProductType.SERVICE -> "Add Service"
-                            ProductType.RECIPE -> "Add Recipe"
+                        if (isEditMode) {
+                            when (productType) {
+                                ProductType.SIMPLE_PRODUCT -> "Edit Simple Product"
+                                ProductType.SERVICE -> "Edit Service"
+                                ProductType.RECIPE -> "Edit Recipe"
+                            }
+                        } else {
+                            when (productType) {
+                                ProductType.SIMPLE_PRODUCT -> "Add Simple Product"
+                                ProductType.SERVICE -> "Add Service"
+                                ProductType.RECIPE -> "Add Recipe"
+                            }
                         }
                     ) 
                 },
@@ -315,7 +342,8 @@ fun AddProductScreen(
             // Save Button
             Button(
                 onClick = {
-                    viewModel.addProduct(
+                    viewModel.saveProduct(
+                        productToEdit = productToEdit,
                         title = title,
                         description = description.takeIf { it.isNotBlank() },
                         productType = productType,
@@ -338,10 +366,18 @@ fun AddProductScreen(
                     Spacer(modifier = Modifier.width(8.dp))
                 }
                 Text(
-                    text = when (productType) {
-                        ProductType.SIMPLE_PRODUCT -> "Add Product"
-                        ProductType.SERVICE -> "Add Service"
-                        ProductType.RECIPE -> "Add Recipe"
+                    text = if (isEditMode) {
+                        when (productType) {
+                            ProductType.SIMPLE_PRODUCT -> "Update Product"
+                            ProductType.SERVICE -> "Update Service"
+                            ProductType.RECIPE -> "Update Recipe"
+                        }
+                    } else {
+                        when (productType) {
+                            ProductType.SIMPLE_PRODUCT -> "Add Product"
+                            ProductType.SERVICE -> "Add Service"
+                            ProductType.RECIPE -> "Add Recipe"
+                        }
                     }
                 )
             }

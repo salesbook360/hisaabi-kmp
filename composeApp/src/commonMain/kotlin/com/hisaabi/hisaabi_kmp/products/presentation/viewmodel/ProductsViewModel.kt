@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.hisaabi.hisaabi_kmp.core.session.AppSessionManager
 import com.hisaabi.hisaabi_kmp.products.domain.model.Product
 import com.hisaabi.hisaabi_kmp.products.domain.model.ProductType
+import com.hisaabi.hisaabi_kmp.products.domain.usecase.DeleteProductUseCase
 import com.hisaabi.hisaabi_kmp.products.domain.usecase.GetProductsUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,6 +14,7 @@ import kotlinx.coroutines.launch
 
 class ProductsViewModel(
     private val getProductsUseCase: GetProductsUseCase,
+    private val deleteProductUseCase: DeleteProductUseCase,
     private val sessionManager: AppSessionManager
 ) : ViewModel() {
     
@@ -50,6 +52,23 @@ class ProductsViewModel(
     
     fun clearError() {
         _uiState.value = _uiState.value.copy(error = null)
+    }
+    
+    fun deleteProduct(productSlug: String) {
+        viewModelScope.launch {
+            val result = deleteProductUseCase(productSlug)
+            result.fold(
+                onSuccess = {
+                    // Refresh the products list after successful deletion
+                    loadProducts()
+                },
+                onFailure = { error ->
+                    _uiState.value = _uiState.value.copy(
+                        error = error.message ?: "Failed to delete product"
+                    )
+                }
+            )
+        }
     }
     
     private fun loadProducts() {

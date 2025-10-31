@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.hisaabi.hisaabi_kmp.core.session.AppSessionManager
 import com.hisaabi.hisaabi_kmp.products.domain.model.ProductType
 import com.hisaabi.hisaabi_kmp.products.domain.usecase.AddProductUseCase
+import com.hisaabi.hisaabi_kmp.products.domain.usecase.UpdateProductUseCase
+import com.hisaabi.hisaabi_kmp.utils.getCurrentTimestamp
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -12,6 +14,7 @@ import kotlinx.coroutines.launch
 
 class AddProductViewModel(
     private val addProductUseCase: AddProductUseCase,
+    private val updateProductUseCase: UpdateProductUseCase,
     private val sessionManager: AppSessionManager
 ) : ViewModel() {
     
@@ -89,6 +92,110 @@ class AddProductViewModel(
                         isLoading = false,
                         isSuccess = false,
                         error = error.message ?: "Failed to add product"
+                    )
+                }
+            )
+        }
+    }
+    
+    fun saveProduct(
+        productToEdit: com.hisaabi.hisaabi_kmp.products.domain.model.Product?,
+        title: String,
+        description: String?,
+        productType: ProductType,
+        retailPrice: Double = 0.0,
+        wholesalePrice: Double = 0.0,
+        purchasePrice: Double = 0.0,
+        taxPercentage: Double = 0.0,
+        discountPercentage: Double = 0.0,
+        categorySlug: String? = null,
+        manufacturer: String? = null
+    ) {
+        if (productToEdit != null) {
+            // Update existing product
+            updateProduct(
+                productToEdit = productToEdit,
+                title = title,
+                description = description,
+                productType = productType,
+                retailPrice = retailPrice,
+                wholesalePrice = wholesalePrice,
+                purchasePrice = purchasePrice,
+                taxPercentage = taxPercentage,
+                discountPercentage = discountPercentage,
+                manufacturer = manufacturer
+            )
+        } else {
+            // Add new product
+            addProduct(
+                title = title,
+                description = description,
+                productType = productType,
+                retailPrice = retailPrice,
+                wholesalePrice = wholesalePrice,
+                purchasePrice = purchasePrice,
+                taxPercentage = taxPercentage,
+                discountPercentage = discountPercentage,
+                categorySlug = categorySlug,
+                manufacturer = manufacturer
+            )
+        }
+    }
+    
+    private fun updateProduct(
+        productToEdit: com.hisaabi.hisaabi_kmp.products.domain.model.Product,
+        title: String,
+        description: String?,
+        productType: ProductType,
+        retailPrice: Double = 0.0,
+        wholesalePrice: Double = 0.0,
+        purchasePrice: Double = 0.0,
+        taxPercentage: Double = 0.0,
+        discountPercentage: Double = 0.0,
+        manufacturer: String? = null
+    ) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            
+            val bSlug = businessSlug
+            if (bSlug == null) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = "No business context available"
+                )
+                return@launch
+            }
+            
+            // Create updated product with all fields from the original
+            val updatedProduct = productToEdit.copy(
+                title = title,
+                description = description,
+                retailPrice = retailPrice,
+                wholesalePrice = wholesalePrice,
+                purchasePrice = purchasePrice,
+                taxPercentage = taxPercentage,
+                discountPercentage = discountPercentage,
+                manufacturer = manufacturer,
+                updatedAt = getCurrentTimestamp()
+            )
+            
+            val result = updateProductUseCase(updatedProduct)
+            
+            result.fold(
+                onSuccess = { slug ->
+                    println("Product updated successfully with slug: $slug")
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        isSuccess = true,
+                        error = null
+                    )
+                },
+                onFailure = { error ->
+                    println("Failed to update product: ${error.message}")
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        isSuccess = false,
+                        error = error.message ?: "Failed to update product"
                     )
                 }
             )

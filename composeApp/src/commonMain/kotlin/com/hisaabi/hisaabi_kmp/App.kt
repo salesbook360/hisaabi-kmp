@@ -165,6 +165,7 @@ fun App() {
             var addProductType by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.products.domain.model.ProductType?>(null) }
             var productsRefreshTrigger by remember { mutableStateOf(0) }
             var selectedRecipeProduct by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.products.domain.model.Product?>(null) }
+            var selectedProductForEdit by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.products.domain.model.Product?>(null) }
             
             // Payment Methods navigation state
             var paymentMethodsRefreshTrigger by remember { mutableStateOf(0) }
@@ -552,20 +553,23 @@ fun App() {
                                 selectedProductsForTransaction = selectedProductsForTransaction + product
                                 // Return to the appropriate screen (don't clear flags yet - let target screen handle it)
                                 currentScreen = returnToScreenAfterProductSelection ?: AppScreen.ADD_TRANSACTION_STEP1
-                            } else {
-                                // If it's a recipe, navigate to ingredients screen
-                                if (product.isRecipe) {
-                                    selectedRecipeProduct = product
-                                    currentScreen = AppScreen.MANAGE_RECIPE_INGREDIENTS
-                                } else {
-                                    // TODO: Navigate to product details
-                                }
                             }
+                        },
+                        onEditProductClick = { product ->
+                            // Navigate to edit product screen (reuse ADD_PRODUCT with edit mode)
+                            selectedProductForEdit = product
+                            addProductType = product.productType
+                            currentScreen = AppScreen.ADD_PRODUCT
                         },
                         onAddProductClick = { selectedType ->
                             // Use the selected product type, or default to simple product if none selected
                             addProductType = selectedType ?: com.hisaabi.hisaabi_kmp.products.domain.model.ProductType.SIMPLE_PRODUCT
+                            selectedProductForEdit = null // Clear any selected product for editing
                             currentScreen = AppScreen.ADD_PRODUCT
+                        },
+                        onNavigateToIngredients = { product ->
+                            selectedRecipeProduct = product
+                            currentScreen = AppScreen.MANAGE_RECIPE_INGREDIENTS
                         },
                         onNavigateBack = { 
                             if (selectingProductsForTransaction) {
@@ -584,9 +588,11 @@ fun App() {
                 
                 AppScreen.ADD_PRODUCT -> {
                     addProductType?.let { type ->
+                        val productToEdit = selectedProductForEdit
                         com.hisaabi.hisaabi_kmp.products.presentation.ui.AddProductScreen(
                             viewModel = org.koin.compose.koinInject(),
                             productType = type,
+                            productToEdit = productToEdit,
                             onNavigateBack = {
                                 productsRefreshTrigger++  // Trigger refresh
                                 currentScreen = AppScreen.PRODUCTS
