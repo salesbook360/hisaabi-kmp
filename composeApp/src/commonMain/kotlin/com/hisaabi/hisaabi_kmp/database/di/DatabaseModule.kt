@@ -30,6 +30,7 @@ val databaseModule = module {
     single { get<AppDatabase>().recipeIngredientsDao() }
     single { get<AppDatabase>().userAuthDao() }
     single { get<AppDatabase>().businessDao() }
+    single { get<AppDatabase>().transactionProcessorDao() }
     
     // Data Sources
     single<PartyLocalDataSource> { PartyLocalDataSourceImpl(get()) }

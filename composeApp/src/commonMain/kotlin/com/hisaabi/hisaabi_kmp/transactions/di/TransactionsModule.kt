@@ -2,6 +2,7 @@ package com.hisaabi.hisaabi_kmp.transactions.di
 
 import com.hisaabi.hisaabi_kmp.database.datasource.TransactionLocalDataSource
 import com.hisaabi.hisaabi_kmp.transactions.data.repository.TransactionsRepository
+import com.hisaabi.hisaabi_kmp.transactions.data.repository.TransactionProcessor
 import com.hisaabi.hisaabi_kmp.transactions.domain.usecase.*
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddTransactionViewModel
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionsListViewModel
@@ -25,6 +26,14 @@ val transactionsModule = module {
         )
     }
     
+    // Transaction Processor
+    single {
+        TransactionProcessor(
+            transactionProcessorDao = get(),
+            productQuantitiesDao = get()
+        )
+    }
+    
     // Repository
     single { 
         TransactionsRepository(
@@ -34,7 +43,8 @@ val transactionsModule = module {
             warehousesRepository = get(),
             productsRepository = get(),
             quantityUnitsRepository = get(),
-            slugGenerator = get()
+            slugGenerator = get(),
+            transactionProcessor = get()
         ) 
     }
     

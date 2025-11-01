@@ -2,6 +2,7 @@ package com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hisaabi.hisaabi_kmp.core.session.AppSessionManager
 import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
 import com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod
 import com.hisaabi.hisaabi_kmp.products.domain.model.Product
@@ -85,7 +86,8 @@ data class TransactionDetailItem(
 }
 
 class AddTransactionViewModel(
-    private val useCases: TransactionUseCases
+    private val useCases: TransactionUseCases,
+    private val sessionManager: AppSessionManager
 ) : ViewModel() {
     
     private val _state = MutableStateFlow(AddTransactionState())
@@ -361,11 +363,30 @@ class AddTransactionViewModel(
     
     // Save Transaction
     fun saveTransaction() {
+        val currentState = _state.value
+        
+        // Validation: Check if payment method is selected
+        if (currentState.selectedPaymentMethod == null) {
+            _state.update { it.copy(error = "Please select a payment method") }
+            return
+        }
+        
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
             
             try {
-                val transaction = buildTransaction()
+                val businessSlug = sessionManager.getBusinessSlug()
+                if (businessSlug == null) {
+                    _state.update { 
+                        it.copy(
+                            isLoading = false,
+                            error = "No business selected. Please select a business first."
+                        )
+                    }
+                    return@launch
+                }
+                
+                val transaction = buildTransaction(businessSlug)
                 val result = useCases.addTransaction(transaction)
                 
                 result.onSuccess { slug ->
@@ -448,7 +469,7 @@ class AddTransactionViewModel(
         return true
     }
     
-    private fun buildTransaction(): Transaction {
+    private fun buildTransaction(businessSlug: String): Transaction {
         val state = _state.value
         
         val transactionDetails = state.transactionDetails.map { item ->
@@ -485,7 +506,8 @@ class AddTransactionViewModel(
             description = state.remarks,
             shippingAddress = state.shippingAddress,
             wareHouseSlugFrom = state.selectedWarehouse?.slug,
-            transactionDetails = transactionDetails
+            transactionDetails = transactionDetails,
+            businessSlug = businessSlug
         )
     }
 }

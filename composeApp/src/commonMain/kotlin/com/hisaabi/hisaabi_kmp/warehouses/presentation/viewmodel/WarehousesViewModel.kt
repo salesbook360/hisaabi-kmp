@@ -2,27 +2,50 @@ package com.hisaabi.hisaabi_kmp.warehouses.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hisaabi.hisaabi_kmp.core.session.AppSessionManager
 import com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse
 import com.hisaabi.hisaabi_kmp.warehouses.domain.usecase.WarehouseUseCases
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class WarehousesViewModel(
-    private val useCases: WarehouseUseCases
+    private val useCases: WarehouseUseCases,
+    private val sessionManager: AppSessionManager
 ) : ViewModel() {
     
     private val _state = MutableStateFlow(WarehousesState())
     val state: StateFlow<WarehousesState> = _state.asStateFlow()
     
+    private var businessSlug: String? = null
+    
     init {
-        loadWarehouses()
+        viewModelScope.launch {
+            sessionManager.observeBusinessSlug().collect { newBusinessSlug ->
+                businessSlug = newBusinessSlug
+                if (newBusinessSlug != null) {
+                    loadWarehouses()
+                }
+            }
+        }
     }
     
     fun loadWarehouses() {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
             
-            useCases.getWarehouses()
+            val slug = businessSlug
+            if (slug == null) {
+                _state.update { 
+                    it.copy(
+                        isLoading = false, 
+                        warehouses = emptyList(),
+                        error = "No business selected"
+                    )
+                }
+                return@launch
+            }
+            
+            useCases.getWarehouses(slug)
                 .catch { error ->
                     _state.update { 
                         it.copy(

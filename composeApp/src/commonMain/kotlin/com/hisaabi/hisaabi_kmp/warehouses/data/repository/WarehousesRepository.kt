@@ -28,6 +28,12 @@ class WarehousesRepository(
         }
     }
     
+    fun getWarehousesByBusiness(businessSlug: String): Flow<List<Warehouse>> {
+        return localDataSource.getWareHousesByBusiness(businessSlug).map { entities ->
+            entities.map { it.toDomainModel() }
+        }
+    }
+    
     suspend fun getWarehouseById(id: Int): Warehouse? {
         return localDataSource.getWareHouseById(id)?.toDomainModel()
     }

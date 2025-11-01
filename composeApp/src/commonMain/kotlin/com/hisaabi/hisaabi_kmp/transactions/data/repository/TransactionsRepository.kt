@@ -25,7 +25,8 @@ class TransactionsRepository(
     private val warehousesRepository: WarehousesRepository,
     private val productsRepository: ProductsRepository,
     private val quantityUnitsRepository: QuantityUnitsRepository,
-    private val slugGenerator: SlugGenerator
+    private val slugGenerator: SlugGenerator,
+    private val transactionProcessor: TransactionProcessor
 ) {
     
     fun getAllTransactions(): Flow<List<Transaction>> {
@@ -186,6 +187,13 @@ class TransactionsRepository(
             }
             localDataSource.insertTransactionDetails(detailEntities)
             
+            // Load transaction with all details for processing
+            val transactionWithDetails = getTransactionWithDetails(transactionSlug)
+            if (transactionWithDetails != null) {
+                // Process transaction to update balances (party, payment method, stock)
+                transactionProcessor.processTransaction(transactionWithDetails, isReverse = false)
+            }
+            
             Result.success(transactionSlug)
         } catch (e: Exception) {
             Result.failure(e)
@@ -195,6 +203,14 @@ class TransactionsRepository(
     suspend fun updateTransaction(transaction: Transaction): Result<Unit> {
         return try {
             val slug = transaction.slug ?: return Result.failure(Exception("Transaction slug is required"))
+            
+            // Load old transaction first to reverse its effects
+            val oldTransaction = getTransactionWithDetails(slug)
+            if (oldTransaction != null) {
+                // Reverse old transaction
+                transactionProcessor.reverseTransaction(oldTransaction)
+            }
+            
             val now = getCurrentTimestamp()
             
             // Update transaction with only updated_at timestamp
@@ -217,6 +233,13 @@ class TransactionsRepository(
             }
             localDataSource.insertTransactionDetails(detailEntities)
             
+            // Load new transaction and process it
+            val updatedTransaction = getTransactionWithDetails(slug)
+            if (updatedTransaction != null) {
+                // Process new transaction
+                transactionProcessor.processTransaction(updatedTransaction, isReverse = false)
+            }
+            
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -225,7 +248,12 @@ class TransactionsRepository(
     
     suspend fun deleteTransaction(transaction: Transaction): Result<Unit> {
         return try {
+            // Reverse transaction effects before deleting
             transaction.slug?.let { slug ->
+                val transactionToDelete = getTransactionWithDetails(slug)
+                if (transactionToDelete != null) {
+                    transactionProcessor.reverseTransaction(transactionToDelete)
+                }
                 localDataSource.deleteDetailsByTransaction(slug)
             }
             localDataSource.deleteTransactionById(transaction.id)
@@ -397,6 +425,19 @@ class TransactionsRepository(
                 updated_at = now
             )
             localDataSource.insertTransactionDetails(listOf(purchaseDetailEntity))
+            
+            // Process child transactions to update balances
+            // 1. Process Sale transaction (ingredients stock out)
+            val saleTransactionWithDetails = getTransactionWithDetails(saleSlug)
+            if (saleTransactionWithDetails != null) {
+                transactionProcessor.processNestedTransaction(saleTransactionWithDetails, isReverse = false)
+            }
+            
+            // 2. Process Purchase transaction (recipe stock in)
+            val purchaseTransactionWithDetails = getTransactionWithDetails(purchaseSlug)
+            if (purchaseTransactionWithDetails != null) {
+                transactionProcessor.processNestedTransaction(purchaseTransactionWithDetails, isReverse = false)
+            }
             
             Result.success(parentSlug)
         } catch (e: Exception) {

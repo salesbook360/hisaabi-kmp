@@ -154,7 +154,8 @@ fun AddTransactionStep2Screen(
             item {
                 PaymentMethodSection(
                     selectedMethod = state.selectedPaymentMethod,
-                    onSelectMethod = onSelectPaymentMethod
+                    onSelectMethod = onSelectPaymentMethod,
+                    showError = state.error?.contains("payment method", ignoreCase = true) == true
                 )
             }
             
@@ -588,12 +589,19 @@ private fun PayableAmountCard(
 @Composable
 private fun PaymentMethodSection(
     selectedMethod: PaymentMethod?,
-    onSelectMethod: () -> Unit
+    onSelectMethod: () -> Unit,
+    showError: Boolean = false
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onSelectMethod)
+            .clickable(onClick = onSelectMethod),
+        colors = CardDefaults.cardColors(
+            containerColor = if (showError && selectedMethod == null)
+                MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+            else
+                MaterialTheme.colorScheme.surface
+        )
     ) {
         Row(
             modifier = Modifier
@@ -601,18 +609,42 @@ private fun PaymentMethodSection(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Default.Payment, contentDescription = null, modifier = Modifier.size(32.dp))
+            Icon(
+                Icons.Default.Payment,
+                contentDescription = null,
+                modifier = Modifier.size(32.dp),
+                tint = if (showError && selectedMethod == null)
+                    MaterialTheme.colorScheme.error
+                else
+                    MaterialTheme.colorScheme.primary
+            )
             Spacer(Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     "Payment Method",
-                    style = MaterialTheme.typography.labelMedium
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (showError && selectedMethod == null)
+                        MaterialTheme.colorScheme.error
+                    else
+                        MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     selectedMethod?.title ?: "Select Payment Method",
                     style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = if (showError && selectedMethod == null)
+                        MaterialTheme.colorScheme.error
+                    else
+                        MaterialTheme.colorScheme.onSurface
                 )
+                if (showError && selectedMethod == null) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Payment method is required",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
             }
             Icon(Icons.Default.ChevronRight, contentDescription = null)
         }

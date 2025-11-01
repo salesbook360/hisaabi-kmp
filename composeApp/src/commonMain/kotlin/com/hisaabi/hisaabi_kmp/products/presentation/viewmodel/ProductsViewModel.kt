@@ -7,21 +7,31 @@ import com.hisaabi.hisaabi_kmp.products.domain.model.Product
 import com.hisaabi.hisaabi_kmp.products.domain.model.ProductType
 import com.hisaabi.hisaabi_kmp.products.domain.usecase.DeleteProductUseCase
 import com.hisaabi.hisaabi_kmp.products.domain.usecase.GetProductsUseCase
+import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
+import com.hisaabi.hisaabi_kmp.settings.domain.model.TransactionSettings
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class ProductsViewModel(
     private val getProductsUseCase: GetProductsUseCase,
     private val deleteProductUseCase: DeleteProductUseCase,
-    private val sessionManager: AppSessionManager
+    private val sessionManager: AppSessionManager,
+    private val preferencesManager: PreferencesManager
 ) : ViewModel() {
     
     private var businessSlug: String? = null
     
     private val _uiState = MutableStateFlow(ProductsUiState())
     val uiState: StateFlow<ProductsUiState> = _uiState.asStateFlow()
+    
+    val transactionSettings: StateFlow<TransactionSettings> = preferencesManager.transactionSettings.stateIn(
+        scope = viewModelScope,
+        started = kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5000),
+        initialValue = preferencesManager.getTransactionSettings()
+    )
     
     init {
         viewModelScope.launch {

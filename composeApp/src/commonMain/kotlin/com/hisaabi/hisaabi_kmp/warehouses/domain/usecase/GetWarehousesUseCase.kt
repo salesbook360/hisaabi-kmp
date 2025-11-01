@@ -7,8 +7,12 @@ import kotlinx.coroutines.flow.Flow
 class GetWarehousesUseCase(
     private val repository: WarehousesRepository
 ) {
-    operator fun invoke(): Flow<List<Warehouse>> {
-        return repository.getAllWarehouses()
+    operator fun invoke(businessSlug: String?): Flow<List<Warehouse>> {
+        return if (businessSlug != null) {
+            repository.getWarehousesByBusiness(businessSlug)
+        } else {
+            repository.getAllWarehouses()
+        }
     }
     
     fun getActiveWarehouses(): Flow<List<Warehouse>> {

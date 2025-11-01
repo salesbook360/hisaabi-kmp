@@ -22,7 +22,7 @@ import com.hisaabi.hisaabi_kmp.database.entity.*
         BusinessEntity::class,
         UserAuthEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -40,6 +40,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun recipeIngredientsDao(): RecipeIngredientsDao
     abstract fun businessDao(): BusinessDao
     abstract fun userAuthDao(): UserAuthDao
+    abstract fun transactionProcessorDao(): TransactionProcessorDao
     
     companion object {
         const val DATABASE_NAME = "hisaabi_database.db"

@@ -436,8 +436,19 @@ private fun PartyItem(
                     overflow = TextOverflow.Ellipsis
                 )
                 
+                // Slug
+                if (!party.slug.isBlank()) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "Slug: ${party.slug}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                
                 // For expense/income types, show type label instead of phone/address
                 if (isExpenseIncomeType) {
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = if (party.roleId == 14) "Expense Type" else "Income Type",
                         style = MaterialTheme.typography.bodySmall,
@@ -445,6 +456,7 @@ private fun PartyItem(
                     )
                 } else {
                     if (!party.phone.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = party.phone,
                             style = MaterialTheme.typography.bodySmall,
@@ -455,6 +467,7 @@ private fun PartyItem(
                     }
                     
                     if (!party.address.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = party.address,
                             style = MaterialTheme.typography.bodySmall,

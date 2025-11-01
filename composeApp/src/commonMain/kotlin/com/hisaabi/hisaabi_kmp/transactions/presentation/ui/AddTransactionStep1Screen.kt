@@ -1,11 +1,9 @@
 package com.hisaabi.hisaabi_kmp.transactions.presentation.ui
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -15,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.hisaabi.hisaabi_kmp.core.ui.FilterChipWithColors
 import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.FlatOrPercent
@@ -23,7 +22,6 @@ import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionCategory
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddTransactionViewModel
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionDetailItem
 import com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse
-import com.hisaabi.hisaabi_kmp.core.ui.FilterChipWithColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,21 +35,21 @@ fun AddTransactionStep1Screen(
 ) {
     val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    
+
     LaunchedEffect(state.error) {
         state.error?.let { error ->
             snackbarHostState.showSnackbar(error)
             viewModel.clearError()
         }
     }
-    
+
     // Navigate to step 2 when validation passes
     LaunchedEffect(state.currentStep) {
         if (state.currentStep == 2) {
             onProceedToStep2()
         }
     }
-    
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
@@ -112,7 +110,7 @@ fun AddTransactionStep1Screen(
                     onSelectParty = onSelectParty
                 )
             }
-            
+
             // Warehouse Selection Card (if needed)
             if (AllTransactionTypes.affectsStock(state.transactionType.value)) {
                 item {
@@ -122,7 +120,7 @@ fun AddTransactionStep1Screen(
                     )
                 }
             }
-            
+
             // Price Type Selector
             item {
                 PriceTypeSelector(
@@ -131,7 +129,7 @@ fun AddTransactionStep1Screen(
                     onPriceTypeSelected = { viewModel.setPriceType(it) }
                 )
             }
-            
+
             // Products Header
             item {
                 Row(
@@ -154,7 +152,7 @@ fun AddTransactionStep1Screen(
                     }
                 }
             }
-            
+
             // Product List
             if (state.transactionDetails.isEmpty()) {
                 item {
@@ -200,7 +198,7 @@ fun AddTransactionStep1Screen(
                     )
                 }
             }
-            
+
             // Summary Card
             if (state.transactionDetails.isNotEmpty()) {
                 item {
@@ -210,7 +208,7 @@ fun AddTransactionStep1Screen(
                     )
                 }
             }
-            
+
             // Bottom padding for FAB
             item {
                 Spacer(Modifier.height(80.dp))
@@ -230,9 +228,9 @@ private fun PartySelectionCard(
             .fillMaxWidth()
             .clickable(onClick = onSelectParty),
         colors = CardDefaults.cardColors(
-            containerColor = if (selectedParty == null) 
-                MaterialTheme.colorScheme.errorContainer 
-            else 
+            containerColor = if (selectedParty == null)
+                MaterialTheme.colorScheme.errorContainer
+            else
                 MaterialTheme.colorScheme.primaryContainer
         )
     ) {
@@ -246,9 +244,9 @@ private fun PartySelectionCard(
                 Icons.Default.Person,
                 contentDescription = null,
                 modifier = Modifier.size(40.dp),
-                tint = if (selectedParty == null) 
-                    MaterialTheme.colorScheme.onErrorContainer 
-                else 
+                tint = if (selectedParty == null)
+                    MaterialTheme.colorScheme.onErrorContainer
+                else
                     MaterialTheme.colorScheme.onPrimaryContainer
             )
             Spacer(Modifier.width(16.dp))
@@ -256,27 +254,32 @@ private fun PartySelectionCard(
                 Text(
                     if (AllTransactionTypes.isDealingWithVendor(transactionType.value)) "Vendor" else "Customer",
                     style = MaterialTheme.typography.labelMedium,
-                    color = if (selectedParty == null) 
-                        MaterialTheme.colorScheme.onErrorContainer 
-                    else 
+                    color = if (selectedParty == null)
+                        MaterialTheme.colorScheme.onErrorContainer
+                    else
                         MaterialTheme.colorScheme.onPrimaryContainer
                 )
                 Text(
-                    selectedParty?.name ?: "Select ${if (AllTransactionTypes.isDealingWithVendor(transactionType.value)) "Vendor" else "Customer"}",
+                    selectedParty?.name ?: "Select ${
+                        if (AllTransactionTypes.isDealingWithVendor(
+                                transactionType.value
+                            )
+                        ) "Vendor" else "Customer"
+                    }",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = if (selectedParty == null) 
-                        MaterialTheme.colorScheme.onErrorContainer 
-                    else 
+                    color = if (selectedParty == null)
+                        MaterialTheme.colorScheme.onErrorContainer
+                    else
                         MaterialTheme.colorScheme.onPrimaryContainer
                 )
                 selectedParty?.let {
                     Text(
                         "Balance: ₨ ${String.format("%.2f", kotlin.math.abs(it.balance))}",
                         style = MaterialTheme.typography.bodySmall,
-                        color = if (selectedParty == null) 
-                            MaterialTheme.colorScheme.onErrorContainer 
-                        else 
+                        color = if (selectedParty == null)
+                            MaterialTheme.colorScheme.onErrorContainer
+                        else
                             MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 }
@@ -284,9 +287,9 @@ private fun PartySelectionCard(
             Icon(
                 Icons.Default.ChevronRight,
                 contentDescription = null,
-                tint = if (selectedParty == null) 
-                    MaterialTheme.colorScheme.onErrorContainer 
-                else 
+                tint = if (selectedParty == null)
+                    MaterialTheme.colorScheme.onErrorContainer
+                else
                     MaterialTheme.colorScheme.onPrimaryContainer
             )
         }
@@ -340,7 +343,7 @@ private fun PriceTypeSelector(
     if (AllTransactionTypes.isDealingWithVendor(transactionType.value)) {
         return // Purchase transactions only use purchase price
     }
-    
+
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
@@ -373,7 +376,7 @@ private fun ProductItemCard(
     viewModel: AddTransactionViewModel
 ) {
     var expanded by remember { mutableStateOf(false) }
-    
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -410,9 +413,9 @@ private fun ProductItemCard(
                     }
                 }
             }
-            
+
             Spacer(Modifier.height(12.dp))
-            
+
             // Quantity and Price Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -421,8 +424,8 @@ private fun ProductItemCard(
                 // Quantity
                 OutlinedTextField(
                     value = item.quantity.toString(),
-                    onValueChange = { 
-                        it.toDoubleOrNull()?.let { qty -> 
+                    onValueChange = {
+                        it.toDoubleOrNull()?.let { qty ->
                             viewModel.updateProductQuantity(index, qty)
                         }
                     },
@@ -430,12 +433,12 @@ private fun ProductItemCard(
                     modifier = Modifier.weight(1f),
                     singleLine = true
                 )
-                
+
                 // Price
                 OutlinedTextField(
                     value = item.price.toString(),
-                    onValueChange = { 
-                        it.toDoubleOrNull()?.let { price -> 
+                    onValueChange = {
+                        it.toDoubleOrNull()?.let { price ->
                             viewModel.updateProductPrice(index, price)
                         }
                     },
@@ -445,17 +448,17 @@ private fun ProductItemCard(
                     prefix = { Text("₨ ") }
                 )
             }
-            
+
             // Expanded Details
             if (expanded) {
                 Spacer(Modifier.height(12.dp))
                 HorizontalDivider()
                 Spacer(Modifier.height(12.dp))
-                
+
                 // Discount
                 var discountValue by remember { mutableStateOf(item.flatDiscount.toString()) }
                 var discountType by remember { mutableStateOf(item.discountType) }
-                
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -463,9 +466,9 @@ private fun ProductItemCard(
                 ) {
                     OutlinedTextField(
                         value = discountValue,
-                        onValueChange = { 
+                        onValueChange = {
                             discountValue = it
-                            it.toDoubleOrNull()?.let { disc -> 
+                            it.toDoubleOrNull()?.let { disc ->
                                 viewModel.updateProductDiscount(index, disc, discountType)
                             }
                         },
@@ -473,10 +476,10 @@ private fun ProductItemCard(
                         modifier = Modifier.weight(1f),
                         singleLine = true
                     )
-                    
+
                     FilterChipWithColors(
                         selected = discountType == FlatOrPercent.FLAT,
-                        onClick = { 
+                        onClick = {
                             discountType = FlatOrPercent.FLAT
                             discountValue.toDoubleOrNull()?.let { disc ->
                                 viewModel.updateProductDiscount(index, disc, discountType)
@@ -486,7 +489,7 @@ private fun ProductItemCard(
                     )
                     FilterChipWithColors(
                         selected = discountType == FlatOrPercent.PERCENT,
-                        onClick = { 
+                        onClick = {
                             discountType = FlatOrPercent.PERCENT
                             discountValue.toDoubleOrNull()?.let { disc ->
                                 viewModel.updateProductDiscount(index, disc, discountType)
@@ -495,13 +498,13 @@ private fun ProductItemCard(
                         label = "%"
                     )
                 }
-                
+
                 Spacer(Modifier.height(8.dp))
-                
+
                 // Tax
                 var taxValue by remember { mutableStateOf(item.flatTax.toString()) }
                 var taxType by remember { mutableStateOf(item.taxType) }
-                
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -509,9 +512,9 @@ private fun ProductItemCard(
                 ) {
                     OutlinedTextField(
                         value = taxValue,
-                        onValueChange = { 
+                        onValueChange = {
                             taxValue = it
-                            it.toDoubleOrNull()?.let { tax -> 
+                            it.toDoubleOrNull()?.let { tax ->
                                 viewModel.updateProductTax(index, tax, taxType)
                             }
                         },
@@ -519,10 +522,10 @@ private fun ProductItemCard(
                         modifier = Modifier.weight(1f),
                         singleLine = true
                     )
-                    
+
                     FilterChipWithColors(
                         selected = taxType == FlatOrPercent.FLAT,
-                        onClick = { 
+                        onClick = {
                             taxType = FlatOrPercent.FLAT
                             taxValue.toDoubleOrNull()?.let { tax ->
                                 viewModel.updateProductTax(index, tax, taxType)
@@ -532,7 +535,7 @@ private fun ProductItemCard(
                     )
                     FilterChipWithColors(
                         selected = taxType == FlatOrPercent.PERCENT,
-                        onClick = { 
+                        onClick = {
                             taxType = FlatOrPercent.PERCENT
                             taxValue.toDoubleOrNull()?.let { tax ->
                                 viewModel.updateProductTax(index, tax, taxType)
@@ -541,9 +544,9 @@ private fun ProductItemCard(
                         label = "%"
                     )
                 }
-                
+
                 Spacer(Modifier.height(8.dp))
-                
+
                 // Description
                 OutlinedTextField(
                     value = item.description,

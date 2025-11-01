@@ -197,6 +197,16 @@ private fun WarehouseItem(
                     color = MaterialTheme.colorScheme.primary
                 )
                 
+                // Slug
+                if (!warehouse.slug.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "Slug: ${warehouse.slug}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                
                 // Address
                 if (!warehouse.address.isNullOrBlank()) {
                     Spacer(modifier = Modifier.height(4.dp))

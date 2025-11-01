@@ -31,7 +31,7 @@ val warehousesModule = module {
     }
     
     // ViewModels
-    viewModel { WarehousesViewModel(get()) }
+    viewModel { WarehousesViewModel(get(), get()) }
     viewModel { AddWarehouseViewModel(get()) }
 }
 
