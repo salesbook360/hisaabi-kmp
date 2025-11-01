@@ -26,16 +26,10 @@ class AuthLocalDataSourceImpl(
     private val userAuthDao: UserAuthDao
 ) : AuthLocalDataSource {
     
-    // In-memory cache for fast synchronous access in interceptors
-    @Volatile private var cachedAccessToken: String? = null
-    @Volatile private var cachedBusinessSlug: String? = null
-    
     override suspend fun saveAccessToken(token: String) {
         val currentAuth = userAuthDao.getUserAuth()
         if (currentAuth != null) {
             userAuthDao.updateAccessToken(token)
-            // Update cache
-            cachedAccessToken = token
         } else {
             // This shouldn't happen in normal flow, but handle it gracefully
             println("Warning: Attempting to save access token without user data")
@@ -46,29 +40,11 @@ class AuthLocalDataSourceImpl(
         return userAuthDao.getAccessToken()
     }
     
-    /**
-     * Get access token synchronously from cache.
-     * This is used by request interceptors to avoid blocking.
-     * Cache is updated when tokens are saved.
-     */
-    fun getAccessTokenSync(): String? {
-        return cachedAccessToken
-    }
-    
-    /**
-     * Get business slug synchronously from cache.
-     * This is used by request interceptors to avoid blocking.
-     */
-    fun getBusinessSlugSync(): String? {
-        return cachedBusinessSlug
-    }
-    
     override suspend fun saveRefreshToken(token: String) {
         val currentAuth = userAuthDao.getUserAuth()
         if (currentAuth != null) {
             val accessToken = currentAuth.accessToken
             userAuthDao.updateTokens(accessToken, token)
-            // Note: access token cache stays the same here
         } else {
             println("Warning: Attempting to save refresh token without user data")
         }
@@ -99,10 +75,6 @@ class AuthLocalDataSourceImpl(
             lastUpdated = System.currentTimeMillis()
         )
         userAuthDao.insertUserAuth(userAuthEntity)
-        
-        // Update cache
-        cachedAccessToken = user.authInfo.accessToken
-        cachedBusinessSlug = selectedBusinessSlug
     }
     
     override suspend fun getUser(): UserDto? {
@@ -147,9 +119,6 @@ class AuthLocalDataSourceImpl(
     
     override suspend fun clearAuthData() {
         userAuthDao.clearUserAuth()
-        // Clear cache
-        cachedAccessToken = null
-        cachedBusinessSlug = null
     }
     
     override suspend fun isLoggedIn(): Boolean {
