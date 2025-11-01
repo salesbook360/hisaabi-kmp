@@ -11,7 +11,7 @@ import androidx.compose.ui.Modifier
  * A styled FilterChip with custom colors matching the design system.
  * 
  * Selected state: Primary color background with white text
- * Unselected state: Gray (surfaceVariant) background with gray text
+ * Unselected state: Outline color background with gray text for better contrast
  * No border in both states
  */
 @Composable
@@ -32,7 +32,7 @@ fun FilterChipWithColors(
             containerColor = if (selected) 
                 MaterialTheme.colorScheme.primary 
             else 
-                MaterialTheme.colorScheme.surfaceVariant,
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
             selectedContainerColor = MaterialTheme.colorScheme.primary,
             labelColor = if (selected)
                 MaterialTheme.colorScheme.onPrimary
