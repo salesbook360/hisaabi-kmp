@@ -17,23 +17,24 @@ import org.koin.dsl.module
 val productsModule = module {
     // Data Source
     single<ProductLocalDataSource> { ProductLocalDataSourceImpl(get()) }
-    
+
     // Repository
-    single<ProductsRepository> { 
+    single<ProductsRepository> {
         ProductsRepositoryImpl(
             productDataSource = get(),
             recipeIngredientsDao = get(),
             quantityUnitDao = get(),
-            slugGenerator = get()
-        ) 
+            slugGenerator = get(),
+            productQuantitiesDataSource = get()
+        )
     }
-    
+
     // Use Cases
     singleOf(::GetProductsUseCase)
     singleOf(::AddProductUseCase)
     singleOf(::UpdateProductUseCase)
     singleOf(::DeleteProductUseCase)
-    
+
     // ViewModels
     singleOf(::ProductsViewModel)
     singleOf(::AddProductViewModel)

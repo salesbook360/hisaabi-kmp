@@ -5,6 +5,7 @@ import com.hisaabi.hisaabi_kmp.core.util.SlugGenerator
 import com.hisaabi.hisaabi_kmp.database.dao.RecipeIngredientsDao
 import com.hisaabi.hisaabi_kmp.database.dao.QuantityUnitDao
 import com.hisaabi.hisaabi_kmp.database.datasource.ProductLocalDataSource
+import com.hisaabi.hisaabi_kmp.database.datasource.ProductQuantitiesLocalDataSource
 import com.hisaabi.hisaabi_kmp.database.entity.ProductEntity
 import com.hisaabi.hisaabi_kmp.database.entity.RecipeIngredientsEntity
 import com.hisaabi.hisaabi_kmp.products.domain.model.Product
@@ -42,13 +43,21 @@ interface ProductsRepository {
     ): String
     
     suspend fun deleteRecipeIngredient(ingredientSlug: String)
+    
+    suspend fun getProductQuantity(
+        productSlug: String,
+        warehouseSlug: String
+    ): Double?
+    
+    suspend fun getQuantitiesByWarehouse(warehouseSlug: String): Map<String, Double>
 }
 
 class ProductsRepositoryImpl(
     private val productDataSource: ProductLocalDataSource,
     private val recipeIngredientsDao: RecipeIngredientsDao,
     private val quantityUnitDao: QuantityUnitDao,
-    private val slugGenerator: SlugGenerator
+    private val slugGenerator: SlugGenerator,
+    private val productQuantitiesDataSource: ProductQuantitiesLocalDataSource
 ) : ProductsRepository {
     
     override suspend fun getProducts(
@@ -161,6 +170,21 @@ class ProductsRepositoryImpl(
     
     override suspend fun deleteRecipeIngredient(ingredientSlug: String) {
         recipeIngredientsDao.deleteRecipeIngredientBySlug(ingredientSlug)
+    }
+    
+    override suspend fun getProductQuantity(
+        productSlug: String,
+        warehouseSlug: String
+    ): Double? {
+        return productQuantitiesDataSource.getQuantityByProductAndWarehouse(productSlug, warehouseSlug)
+            ?.current_quantity
+    }
+    
+    override suspend fun getQuantitiesByWarehouse(warehouseSlug: String): Map<String, Double> {
+        val quantities = productQuantitiesDataSource.getQuantitiesByWarehouseList(warehouseSlug)
+        return quantities.associate { 
+            (it.product_slug ?: "") to it.current_quantity 
+        }
     }
 }
 

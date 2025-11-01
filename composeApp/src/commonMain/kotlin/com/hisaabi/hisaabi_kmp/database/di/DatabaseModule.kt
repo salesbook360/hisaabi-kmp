@@ -39,6 +39,7 @@ val databaseModule = module {
     single<TransactionDetailLocalDataSource> { TransactionDetailLocalDataSourceImpl(get()) }
     single<CategoryLocalDataSource> { CategoryLocalDataSourceImpl(get()) }
     single<BusinessLocalDataSource> { BusinessLocalDataSourceImpl(get()) }
+    single<ProductQuantitiesLocalDataSource> { ProductQuantitiesLocalDataSourceImpl(get()) }
     
     // Dashboard
     single { 

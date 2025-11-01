@@ -27,6 +27,7 @@ import com.hisaabi.hisaabi_kmp.products.domain.model.ProductType
 import com.hisaabi.hisaabi_kmp.products.presentation.viewmodel.ProductsViewModel
 import com.hisaabi.hisaabi_kmp.settings.domain.model.TransactionSettings
 import com.hisaabi.hisaabi_kmp.utils.format
+import com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,7 +43,8 @@ fun ProductsScreen(
     isSelectionMode: Boolean = false,
     selectedProducts: Map<String, Int> = emptyMap(),
     onSelectionChanged: (Map<String, Int>) -> Unit = {},
-    onSelectionDone: () -> Unit = {}
+    onSelectionDone: () -> Unit = {},
+    onNavigateToWarehouses: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val transactionSettings by viewModel.transactionSettings.collectAsState()
@@ -132,13 +134,23 @@ fun ProductsScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            // Warehouse Selector
+            WarehouseSelectorCard(
+                selectedWarehouse = uiState.selectedWarehouse,
+                availableWarehouses = uiState.availableWarehouses,
+                onSelectWarehouse = onNavigateToWarehouses,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+            
             // Product Type Filter
             ProductTypeFilter(
                 selected = uiState.selectedProductType,
                 onTypeSelected = { viewModel.onProductTypeChanged(it) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
             )
             
             // Search Bar
@@ -214,9 +226,11 @@ fun ProductsScreen(
                 ) {
                     items(uiState.products, key = { it.id }) { product ->
                         val currentQuantity = selectedProductQuantities[product.slug] ?: 0
+                        val availableQuantity = uiState.productQuantities[product.slug] ?: 0.0
                         ProductItem(
                             product = product,
                             transactionSettings = transactionSettings,
+                            availableQuantity = availableQuantity,
                             onClick = { 
                                 if (selectionMode) {
                                     // Increment quantity on tap
@@ -446,6 +460,7 @@ private fun ProductTypeFilter(
 private fun ProductItem(
     product: Product,
     transactionSettings: TransactionSettings,
+    availableQuantity: Double = 0.0,
     onClick: () -> Unit,
     isSelected: Boolean = false,
     showCheckbox: Boolean = false,
@@ -688,8 +703,78 @@ private fun ProductItem(
                             )
                         }
                     }
+                    
+                    // Available Quantity
+                    if (availableQuantity > 0) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.Inventory,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "Qty: %.2f".format(availableQuantity),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun WarehouseSelectorCard(
+    selectedWarehouse: Warehouse?,
+    availableWarehouses: List<Warehouse>,
+    onSelectWarehouse: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onSelectWarehouse),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Default.Warehouse,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "Warehouse",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    selectedWarehouse?.title ?: "Select Warehouse",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+            Icon(
+                Icons.Default.ChevronRight,
+                contentDescription = "Change Warehouse",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

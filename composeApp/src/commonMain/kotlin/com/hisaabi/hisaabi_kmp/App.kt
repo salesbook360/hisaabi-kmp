@@ -248,6 +248,9 @@ fun App() {
             val transactionDetailViewModel = remember(koin) {
                 koin.get<com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionDetailViewModel>()
             }
+            val productsViewModel = remember(koin) {
+                koin.get<com.hisaabi.hisaabi_kmp.products.presentation.viewmodel.ProductsViewModel>()
+            }
 
             // Journal Voucher state
             var showJournalAccountTypeDialog by remember { mutableStateOf(false) }
@@ -550,7 +553,7 @@ fun App() {
                     }
                     
                     com.hisaabi.hisaabi_kmp.products.presentation.ui.ProductsScreen(
-                        viewModel = org.koin.compose.koinInject(),
+                        viewModel = productsViewModel,
                         onProductClick = { product ->
                             // This is no longer used in selection mode - handled via onSelectionChanged
                             if (!selectingProductsForTransaction) {
@@ -599,8 +602,26 @@ fun App() {
                             // For now, we need to trigger the LaunchedEffect to load products
                             selectingProductsForTransaction = false
                             currentScreen = returnToScreenAfterProductSelection ?: AppScreen.ADD_TRANSACTION_STEP1
+                        },
+                        onNavigateToWarehouses = {
+                            selectingWarehouseForTransaction = true
+                            returnToScreenAfterPartySelection = AppScreen.PRODUCTS
+                            currentScreen = AppScreen.WAREHOUSES
                         }
                     )
+                    
+                    // Handle warehouse selection for Products screen
+                    LaunchedEffect(selectedWarehouseForTransaction) {
+                        selectedWarehouseForTransaction?.let { warehouse ->
+                            if (selectingWarehouseForTransaction && returnToScreenAfterPartySelection == AppScreen.PRODUCTS) {
+                                productsViewModel.selectWarehouse(warehouse)
+                                selectedWarehouseForTransaction = null
+                                selectingWarehouseForTransaction = false
+                                returnToScreenAfterPartySelection = null
+                                currentScreen = AppScreen.PRODUCTS
+                            }
+                        }
+                    }
                 }
                 
                 AppScreen.ADD_PRODUCT -> {

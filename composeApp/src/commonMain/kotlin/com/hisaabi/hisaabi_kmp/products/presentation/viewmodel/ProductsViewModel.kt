@@ -3,12 +3,15 @@ package com.hisaabi.hisaabi_kmp.products.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hisaabi.hisaabi_kmp.core.session.AppSessionManager
+import com.hisaabi.hisaabi_kmp.products.data.repository.ProductsRepository
 import com.hisaabi.hisaabi_kmp.products.domain.model.Product
 import com.hisaabi.hisaabi_kmp.products.domain.model.ProductType
 import com.hisaabi.hisaabi_kmp.products.domain.usecase.DeleteProductUseCase
 import com.hisaabi.hisaabi_kmp.products.domain.usecase.GetProductsUseCase
 import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
 import com.hisaabi.hisaabi_kmp.settings.domain.model.TransactionSettings
+import com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse
+import com.hisaabi.hisaabi_kmp.warehouses.domain.usecase.WarehouseUseCases
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,7 +22,9 @@ class ProductsViewModel(
     private val getProductsUseCase: GetProductsUseCase,
     private val deleteProductUseCase: DeleteProductUseCase,
     private val sessionManager: AppSessionManager,
-    private val preferencesManager: PreferencesManager
+    private val preferencesManager: PreferencesManager,
+    private val warehouseUseCases: WarehouseUseCases,
+    private val productsRepository: ProductsRepository
 ) : ViewModel() {
     
     private var businessSlug: String? = null
@@ -38,6 +43,7 @@ class ProductsViewModel(
             sessionManager.observeBusinessSlug().collect { newBusinessSlug ->
                 businessSlug = newBusinessSlug
                 if (newBusinessSlug != null) {
+                    loadWarehouses()
                     loadProducts()
                 }
             }
@@ -83,6 +89,15 @@ class ProductsViewModel(
         )
     }
     
+    fun selectWarehouse(warehouse: Warehouse?) {
+        _uiState.value = _uiState.value.copy(selectedWarehouse = warehouse)
+        if (warehouse != null) {
+            loadQuantities(warehouse.slug ?: "")
+        } else {
+            _uiState.value = _uiState.value.copy(productQuantities = emptyMap())
+        }
+    }
+    
     fun deleteProduct(productSlug: String) {
         viewModelScope.launch {
             val result = deleteProductUseCase(productSlug)
@@ -90,6 +105,10 @@ class ProductsViewModel(
                 onSuccess = {
                     // Refresh the products list after successful deletion
                     loadProducts()
+                    // Reload quantities if warehouse is selected
+                    _uiState.value.selectedWarehouse?.slug?.let { warehouseSlug ->
+                        loadQuantities(warehouseSlug)
+                    }
                 },
                 onFailure = { error ->
                     _uiState.value = _uiState.value.copy(
@@ -97,6 +116,34 @@ class ProductsViewModel(
                     )
                 }
             )
+        }
+    }
+    
+    private fun loadWarehouses() {
+        viewModelScope.launch {
+            val slug = businessSlug
+            if (slug == null) return@launch
+            
+            warehouseUseCases.getWarehouses(slug).collect { warehouses ->
+                _uiState.value = _uiState.value.copy(availableWarehouses = warehouses)
+                
+                // Auto-select first warehouse if none selected and warehouses are available
+                if (_uiState.value.selectedWarehouse == null && warehouses.isNotEmpty()) {
+                    selectWarehouse(warehouses.first())
+                }
+            }
+        }
+    }
+    
+    private fun loadQuantities(warehouseSlug: String) {
+        viewModelScope.launch {
+            try {
+                val quantities = productsRepository.getQuantitiesByWarehouse(warehouseSlug)
+                _uiState.value = _uiState.value.copy(productQuantities = quantities)
+            } catch (e: Exception) {
+                // Silently handle errors - quantities might not exist for all products
+                _uiState.value = _uiState.value.copy(productQuantities = emptyMap())
+            }
         }
     }
     
@@ -156,7 +203,10 @@ data class ProductsUiState(
     val selectedProductType: ProductType? = null,
     val searchQuery: String = "",
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val availableWarehouses: List<Warehouse> = emptyList(),
+    val selectedWarehouse: Warehouse? = null,
+    val productQuantities: Map<String, Double> = emptyMap() // productSlug -> quantity
 ) {
     fun filterProducts(): List<Product> {
         if (searchQuery.isBlank()) {
