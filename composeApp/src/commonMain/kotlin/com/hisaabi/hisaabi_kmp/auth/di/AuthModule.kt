@@ -59,10 +59,8 @@ val authModule = module {
                                        url.contains("/forgot-password")
                     
                     if (!shouldSkipAuth) {
-                        // Use runBlocking here since we're in a callback context
-                        val token = kotlinx.coroutines.runBlocking {
-                            authLocalDataSource.getAccessToken()
-                        }
+                        // Use sync methods to avoid blocking
+                        val token = (authLocalDataSource as AuthLocalDataSourceImpl).getAccessTokenSync()
                         if (token != null) {
                             request.headers.append("Authorization", token)
                             println("Added Authorization header to request: ${request.url}")
@@ -71,9 +69,7 @@ val authModule = module {
                         }
                         
                         // Add business_key header with selected business slug
-                        val businessSlug = kotlinx.coroutines.runBlocking {
-                            businessPreferences.getSelectedBusinessSlug()
-                        }
+                        val businessSlug = (businessPreferences as com.hisaabi.hisaabi_kmp.business.data.datasource.BusinessPreferencesDataSourceImpl).getSelectedBusinessSlugSync()
                         if (businessSlug != null) {
                             request.headers.append("business_key", businessSlug)
                             println("Added business_key header to request: ${request.url}")
