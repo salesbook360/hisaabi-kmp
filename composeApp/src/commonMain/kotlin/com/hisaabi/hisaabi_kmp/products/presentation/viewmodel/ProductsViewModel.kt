@@ -43,7 +43,19 @@ class ProductsViewModel(
     
     fun onSearchQueryChanged(query: String) {
         _uiState.value = _uiState.value.copy(searchQuery = query)
-        // TODO: Implement search filtering
+        
+        // Filter products based on search query
+        val filteredProducts = if (query.isBlank()) {
+            _uiState.value.allProducts
+        } else {
+            val searchQuery = query.lowercase().trim()
+            _uiState.value.allProducts.filter { product ->
+                product.title.lowercase().contains(searchQuery) ||
+                product.description?.lowercase()?.contains(searchQuery) == true
+            }
+        }
+        
+        _uiState.value = _uiState.value.copy(products = filteredProducts)
     }
     
     fun refresh() {
@@ -52,6 +64,13 @@ class ProductsViewModel(
     
     fun clearError() {
         _uiState.value = _uiState.value.copy(error = null)
+    }
+    
+    fun clearSearch() {
+        _uiState.value = _uiState.value.copy(
+            searchQuery = "",
+            products = _uiState.value.allProducts
+        )
     }
     
     fun deleteProduct(productSlug: String) {
@@ -94,8 +113,18 @@ class ProductsViewModel(
             
             result.fold(
                 onSuccess = { products ->
+                    val filteredProducts = if (_uiState.value.searchQuery.isBlank()) {
+                        products
+                    } else {
+                        products.filter { product ->
+                            val query = _uiState.value.searchQuery.lowercase().trim()
+                            product.title.lowercase().contains(query) ||
+                            product.description?.lowercase()?.contains(query) == true
+                        }
+                    }
                     _uiState.value = _uiState.value.copy(
-                        products = products,
+                        allProducts = products,
+                        products = filteredProducts,
                         isLoading = false,
                         error = null
                     )
@@ -112,11 +141,23 @@ class ProductsViewModel(
 }
 
 data class ProductsUiState(
+    val allProducts: List<Product> = emptyList(),
     val products: List<Product> = emptyList(),
     val selectedProductType: ProductType? = null,
     val searchQuery: String = "",
     val isLoading: Boolean = false,
     val error: String? = null
-)
+) {
+    fun filterProducts(): List<Product> {
+        if (searchQuery.isBlank()) {
+            return allProducts
+        }
+        val query = searchQuery.lowercase().trim()
+        return allProducts.filter { product ->
+            product.title.lowercase().contains(query) ||
+            product.description?.lowercase()?.contains(query) == true
+        }
+    }
+}
 
 

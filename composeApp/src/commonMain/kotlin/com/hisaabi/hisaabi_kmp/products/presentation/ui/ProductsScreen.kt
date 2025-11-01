@@ -49,6 +49,7 @@ fun ProductsScreen(
     var showDeleteConfirmation by remember { mutableStateOf(false) }
     var selectionMode by remember { mutableStateOf(isSelectionMode) }
     var selectedProductQuantities by remember { mutableStateOf(selectedProducts.toMutableMap()) }
+    var isSearchActive by remember { mutableStateOf(false) }
     
     // Set initial product type when screen loads
     LaunchedEffect(initialProductType) {
@@ -75,7 +76,10 @@ fun ProductsScreen(
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(onClick = {
+                        viewModel.clearSearch()
+                        onNavigateBack()
+                    }) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Back"
@@ -83,6 +87,11 @@ fun ProductsScreen(
                     }
                 },
                 actions = {
+                    // Search Button - show in both modes
+                    IconButton(onClick = { isSearchActive = !isSearchActive }) {
+                        Icon(Icons.Default.Search, contentDescription = "Search")
+                    }
+                    
                     if (selectionMode) {
                         // Done button with count
                         val totalItems = selectedProductQuantities.values.sum()
@@ -100,11 +109,6 @@ fun ProductsScreen(
                                 else 
                                     MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                             )
-                        }
-                    } else {
-                        // Search Button
-                        IconButton(onClick = { /* TODO: Show search bar */ }) {
-                            Icon(Icons.Default.Search, contentDescription = "Search")
                         }
                     }
                 }
@@ -134,6 +138,21 @@ fun ProductsScreen(
                     .fillMaxWidth()
                     .padding(16.dp)
             )
+            
+            // Search Bar
+            if (isSearchActive) {
+                ProductSearchBar(
+                    searchQuery = uiState.searchQuery,
+                    onSearchQueryChanged = { viewModel.onSearchQueryChanged(it) },
+                    onClearSearch = { 
+                        viewModel.onSearchQueryChanged("")
+                        isSearchActive = false
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                )
+            }
             
             // Products List
             if (uiState.isLoading) {
@@ -567,5 +586,41 @@ private fun ProductItem(
             }
         }
     }
+}
+
+@Composable
+private fun ProductSearchBar(
+    searchQuery: String,
+    onSearchQueryChanged: (String) -> Unit,
+    onClearSearch: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    OutlinedTextField(
+        value = searchQuery,
+        onValueChange = onSearchQueryChanged,
+        modifier = modifier,
+        placeholder = { Text("Search products...") },
+        leadingIcon = {
+            Icon(
+                imageVector = Icons.Default.Search,
+                contentDescription = "Search"
+            )
+        },
+        trailingIcon = {
+            if (searchQuery.isNotEmpty()) {
+                IconButton(onClick = onClearSearch) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Clear search"
+                    )
+                }
+            }
+        },
+        singleLine = true,
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = MaterialTheme.colorScheme.primary,
+            unfocusedBorderColor = MaterialTheme.colorScheme.outline
+        )
+    )
 }
 
