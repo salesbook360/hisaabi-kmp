@@ -50,6 +50,21 @@ interface ProductsRepository {
     ): Double?
     
     suspend fun getQuantitiesByWarehouse(warehouseSlug: String): Map<String, Double>
+    
+    suspend fun getQuantitiesWithMinimumByWarehouse(warehouseSlug: String): Map<String, Pair<Double, Double>> // productSlug -> (currentQuantity, minimumQuantity)
+    
+    suspend fun saveProductQuantity(
+        productSlug: String,
+        warehouseSlug: String,
+        openingQuantity: Double,
+        minimumQuantity: Double,
+        businessSlug: String
+    ): Result<Unit>
+    
+    suspend fun getProductQuantityForWarehouse(
+        productSlug: String,
+        warehouseSlug: String
+    ): Pair<Double, Double>? // Returns (openingQuantity, minimumQuantity) if exists
 }
 
 class ProductsRepositoryImpl(
@@ -185,6 +200,65 @@ class ProductsRepositoryImpl(
         return quantities.associate { 
             (it.product_slug ?: "") to it.current_quantity 
         }
+    }
+    
+    override suspend fun getQuantitiesWithMinimumByWarehouse(warehouseSlug: String): Map<String, Pair<Double, Double>> {
+        val quantities = productQuantitiesDataSource.getQuantitiesByWarehouseList(warehouseSlug)
+        return quantities.associate { 
+            (it.product_slug ?: "") to (it.current_quantity to it.minimum_quantity)
+        }
+    }
+    
+    override suspend fun saveProductQuantity(
+        productSlug: String,
+        warehouseSlug: String,
+        openingQuantity: Double,
+        minimumQuantity: Double,
+        businessSlug: String
+    ): Result<Unit> {
+        return try {
+            val existingQuantity = productQuantitiesDataSource.getQuantityByProductAndWarehouse(
+                productSlug,
+                warehouseSlug
+            )
+            
+            val quantityEntity = if (existingQuantity != null) {
+                // Update existing
+                existingQuantity.copy(
+                    opening_quantity = openingQuantity,
+                    minimum_quantity = minimumQuantity,
+                    current_quantity = if (existingQuantity.current_quantity == 0.0) openingQuantity else existingQuantity.current_quantity
+                )
+            } else {
+                // Create new
+                com.hisaabi.hisaabi_kmp.database.entity.ProductQuantitiesEntity(
+                    product_slug = productSlug,
+                    warehouse_slug = warehouseSlug,
+                    opening_quantity = openingQuantity,
+                    current_quantity = openingQuantity,
+                    minimum_quantity = minimumQuantity,
+                    maximum_quantity = 0.0,
+                    business_slug = businessSlug,
+                    sync_status = 1 // Needs sync
+                )
+            }
+            
+            productQuantitiesDataSource.saveProductQuantity(quantityEntity)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    override suspend fun getProductQuantityForWarehouse(
+        productSlug: String,
+        warehouseSlug: String
+    ): Pair<Double, Double>? {
+        val quantity = productQuantitiesDataSource.getQuantityByProductAndWarehouse(
+            productSlug,
+            warehouseSlug
+        )
+        return quantity?.let { it.opening_quantity to it.minimum_quantity }
     }
 }
 

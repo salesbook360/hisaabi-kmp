@@ -2,6 +2,7 @@ package com.hisaabi.hisaabi_kmp.warehouses.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hisaabi.hisaabi_kmp.core.session.AppSessionManager
 import com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse
 import com.hisaabi.hisaabi_kmp.warehouses.domain.model.WarehouseType
 import com.hisaabi.hisaabi_kmp.warehouses.domain.usecase.WarehouseUseCases
@@ -9,11 +10,24 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class AddWarehouseViewModel(
-    private val useCases: WarehouseUseCases
+    private val useCases: WarehouseUseCases,
+    private val sessionManager: AppSessionManager
 ) : ViewModel() {
     
     private val _state = MutableStateFlow(AddWarehouseState())
     val state: StateFlow<AddWarehouseState> = _state.asStateFlow()
+    
+    private var businessSlug: String? = null
+    private var userSlug: String? = null
+    
+    init {
+        viewModelScope.launch {
+            sessionManager.observeSessionContext().collect { context ->
+                businessSlug = context.businessSlug
+                userSlug = context.userSlug
+            }
+        }
+    }
     
     fun onTitleChanged(title: String) {
         _state.update { it.copy(title = title, titleError = null) }
@@ -88,13 +102,26 @@ class AddWarehouseViewModel(
                 )
             } else {
                 // Add new warehouse
+                val bSlug = businessSlug
+                val uSlug = userSlug
+                
+                if (bSlug == null || uSlug == null) {
+                    _state.update { 
+                        it.copy(
+                            isLoading = false,
+                            error = "No business or user context available. Please ensure you're logged in and have selected a business."
+                        )
+                    }
+                    return@launch
+                }
+                
                 val result = useCases.addWarehouse(
                     title = currentState.title,
                     address = currentState.address.ifBlank { null },
                     description = currentState.description.ifBlank { null },
                     typeId = currentState.selectedType.typeId,
-                    businessSlug = null, // TODO: Get from business context
-                    createdBy = null // TODO: Get from auth context
+                    businessSlug = bSlug,
+                    createdBy = uSlug
                 )
                 
                 result.fold(

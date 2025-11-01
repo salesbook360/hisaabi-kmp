@@ -25,6 +25,7 @@ import com.hisaabi.hisaabi_kmp.core.ui.SegmentedControl
 import com.hisaabi.hisaabi_kmp.products.domain.model.Product
 import com.hisaabi.hisaabi_kmp.products.domain.model.ProductType
 import com.hisaabi.hisaabi_kmp.products.presentation.viewmodel.ProductsViewModel
+import com.hisaabi.hisaabi_kmp.products.presentation.viewmodel.QuantityFilter
 import com.hisaabi.hisaabi_kmp.settings.domain.model.TransactionSettings
 import com.hisaabi.hisaabi_kmp.utils.format
 import com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse
@@ -54,6 +55,7 @@ fun ProductsScreen(
     var selectionMode by remember { mutableStateOf(isSelectionMode) }
     var selectedProductQuantities by remember { mutableStateOf(selectedProducts.toMutableMap()) }
     var isSearchActive by remember { mutableStateOf(false) }
+    var showFilterSheet by remember { mutableStateOf(false) }
     
     // Set initial product type when screen loads
     LaunchedEffect(initialProductType) {
@@ -94,6 +96,20 @@ fun ProductsScreen(
                     // Search Button - show in both modes
                     IconButton(onClick = { isSearchActive = !isSearchActive }) {
                         Icon(Icons.Default.Search, contentDescription = "Search")
+                    }
+                    
+                    // Filter Button - show when not in selection mode
+                    if (!selectionMode) {
+                        IconButton(onClick = { showFilterSheet = true }) {
+                            Icon(
+                                Icons.Default.FilterList,
+                                contentDescription = "Filter",
+                                tint = if (uiState.quantityFilter != QuantityFilter.ALL)
+                                    MaterialTheme.colorScheme.primary
+                                else
+                                    MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
                     
                     if (selectionMode) {
@@ -290,6 +306,18 @@ fun ProductsScreen(
                 showBottomSheet = false
                 onNavigateToIngredients(selectedProduct!!)
             }
+        )
+    }
+    
+    // Filter Bottom Sheet
+    if (showFilterSheet && !selectionMode) {
+        ProductFilterBottomSheet(
+            selectedFilter = uiState.quantityFilter,
+            onFilterSelected = { filter ->
+                viewModel.setQuantityFilter(filter)
+                showFilterSheet = false
+            },
+            onDismiss = { showFilterSheet = false }
         )
     }
     
@@ -776,6 +804,77 @@ private fun WarehouseSelectorCard(
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ProductFilterBottomSheet(
+    selectedFilter: QuantityFilter,
+    onFilterSelected: (QuantityFilter) -> Unit,
+    onDismiss: () -> Unit
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Text(
+                text = "Filter Products",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+            
+            QuantityFilter.values().forEach { filter ->
+                FilterOptionItem(
+                    title = when (filter) {
+                        QuantityFilter.ALL -> "All Products"
+                        QuantityFilter.GREATER_THAN_MINIMUM -> "Greater than minimum quantity"
+                        QuantityFilter.GREATER_THAN_ZERO -> "Greater than 0 quantity"
+                        QuantityFilter.LESS_THAN_MINIMUM -> "Less than minimum quantity"
+                        QuantityFilter.ZERO_QUANTITY -> "Having 0 quantity"
+                    },
+                    isSelected = filter == selectedFilter,
+                    onClick = { onFilterSelected(filter) }
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
+}
+
+@Composable
+private fun FilterOptionItem(
+    title: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        RadioButton(
+            selected = isSelected,
+            onClick = onClick
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodyLarge,
+            color = if (isSelected) 
+                MaterialTheme.colorScheme.primary 
+            else 
+                MaterialTheme.colorScheme.onSurface
+        )
     }
 }
 

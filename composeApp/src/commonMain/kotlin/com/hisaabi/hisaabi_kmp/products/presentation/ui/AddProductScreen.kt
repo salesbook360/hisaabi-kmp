@@ -13,10 +13,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.Alignment
 import com.hisaabi.hisaabi_kmp.products.domain.model.Product
 import com.hisaabi.hisaabi_kmp.products.domain.model.ProductType
 import com.hisaabi.hisaabi_kmp.products.presentation.viewmodel.AddProductViewModel
 import com.hisaabi.hisaabi_kmp.utils.format
+import com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -25,7 +28,8 @@ fun AddProductScreen(
     productType: ProductType,
     productToEdit: Product? = null,
     onNavigateBack: () -> Unit,
-    onNavigateToIngredients: ((String) -> Unit)? = null  // Recipe slug
+    onNavigateToIngredients: ((String) -> Unit)? = null,  // Recipe slug
+    onNavigateToWarehouses: () -> Unit = {}
 ) {
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
@@ -36,9 +40,12 @@ fun AddProductScreen(
     var discountPercentage by remember { mutableStateOf("") }
     var manufacturer by remember { mutableStateOf("") }
     
+    val uiState by viewModel.uiState.collectAsState()
+    
     // Update fields when productToEdit changes
     LaunchedEffect(productToEdit) {
         if (productToEdit != null) {
+            viewModel.setProductToEdit(productToEdit)
             title = productToEdit.title
             description = productToEdit.description ?: ""
             retailPrice = "%.2f".format(productToEdit.retailPrice)
@@ -47,14 +54,16 @@ fun AddProductScreen(
             taxPercentage = "%.2f".format(productToEdit.taxPercentage)
             discountPercentage = "%.2f".format(productToEdit.discountPercentage)
             manufacturer = productToEdit.manufacturer ?: ""
+        } else {
+            viewModel.resetState()
         }
     }
     
-    val uiState by viewModel.uiState.collectAsState()
-    
     // Reset state when screen is first opened
     LaunchedEffect(Unit) {
-        viewModel.resetState()
+        if (productToEdit == null) {
+            viewModel.resetState()
+        }
     }
     
     // Navigate back on success (or to ingredients for recipes)
@@ -278,6 +287,57 @@ fun AddProductScreen(
                 Spacer(modifier = Modifier.height(16.dp))
             }
             
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            // Quantity Information Section
+            Text(
+                text = "Quantity Information",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            // Warehouse Selection
+            WarehouseSelectionCard(
+                selectedWarehouse = uiState.selectedWarehouse,
+                onSelectWarehouse = onNavigateToWarehouses
+            )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Opening Quantity (only shown when warehouse is selected)
+            if (uiState.selectedWarehouse != null) {
+                OutlinedTextField(
+                    value = uiState.openingQuantity,
+                    onValueChange = { viewModel.setOpeningQuantity(it) },
+                    label = { Text("Opening Quantity") },
+                    leadingIcon = {
+                        Icon(Icons.Default.Inventory, contentDescription = "Opening Quantity")
+                    },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Minimum Quantity
+                OutlinedTextField(
+                    value = uiState.minimumQuantity,
+                    onValueChange = { viewModel.setMinimumQuantity(it) },
+                    label = { Text("Minimum Quantity") },
+                    leadingIcon = {
+                        Icon(Icons.Default.Warning, contentDescription = "Minimum Quantity")
+                    },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+            
             // Recipe Note and Ingredients Button
             if (productType == ProductType.RECIPE) {
                 Card(
@@ -352,7 +412,10 @@ fun AddProductScreen(
                         purchasePrice = purchasePrice.toDoubleOrNull() ?: 0.0,
                         taxPercentage = taxPercentage.toDoubleOrNull() ?: 0.0,
                         discountPercentage = discountPercentage.toDoubleOrNull() ?: 0.0,
-                        manufacturer = manufacturer.takeIf { it.isNotBlank() }
+                        manufacturer = manufacturer.takeIf { it.isNotBlank() },
+                        warehouseSlug = uiState.selectedWarehouse?.slug,
+                        openingQuantity = uiState.openingQuantity.toDoubleOrNull() ?: 0.0,
+                        minimumQuantity = uiState.minimumQuantity.toDoubleOrNull() ?: 0.0
                     )
                 },
                 modifier = Modifier.fillMaxWidth(),
@@ -383,6 +446,54 @@ fun AddProductScreen(
             }
             
             Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
+}
+
+@Composable
+private fun WarehouseSelectionCard(
+    selectedWarehouse: Warehouse?,
+    onSelectWarehouse: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onSelectWarehouse),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Default.Warehouse,
+                contentDescription = null,
+                modifier = Modifier.size(32.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "Warehouse",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    selectedWarehouse?.title ?: "Select Warehouse",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+            Icon(
+                Icons.Default.ChevronRight,
+                contentDescription = "Change Warehouse",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

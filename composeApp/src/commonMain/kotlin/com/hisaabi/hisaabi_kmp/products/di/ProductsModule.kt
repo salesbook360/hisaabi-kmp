@@ -12,6 +12,7 @@ import com.hisaabi.hisaabi_kmp.products.presentation.viewmodel.AddProductViewMod
 import com.hisaabi.hisaabi_kmp.products.presentation.viewmodel.ManageRecipeIngredientsViewModel
 import com.hisaabi.hisaabi_kmp.products.presentation.viewmodel.ProductsViewModel
 import org.koin.core.module.dsl.singleOf
+import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val productsModule = module {
@@ -36,8 +37,8 @@ val productsModule = module {
     singleOf(::DeleteProductUseCase)
 
     // ViewModels
-    singleOf(::ProductsViewModel)
-    singleOf(::AddProductViewModel)
+    viewModel { ProductsViewModel(get(), get(), get(), get(), get(), get()) }
+    viewModel { AddProductViewModel(get(), get(), get(), get()) }
     singleOf(::ManageRecipeIngredientsViewModel)
 }
 

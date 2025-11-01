@@ -627,8 +627,12 @@ fun App() {
                 AppScreen.ADD_PRODUCT -> {
                     addProductType?.let { type ->
                         val productToEdit = selectedProductForEdit
+                        val addProductViewModel = remember(koin) {
+                            koin.get<com.hisaabi.hisaabi_kmp.products.presentation.viewmodel.AddProductViewModel>()
+                        }
+                        
                         com.hisaabi.hisaabi_kmp.products.presentation.ui.AddProductScreen(
-                            viewModel = org.koin.compose.koinInject(),
+                            viewModel = addProductViewModel,
                             productType = type,
                             productToEdit = productToEdit,
                             onNavigateBack = {
@@ -639,8 +643,26 @@ fun App() {
                                 // TODO: Load the recipe product by slug
                                 // For now, create a placeholder
                                 currentScreen = AppScreen.MANAGE_RECIPE_INGREDIENTS
+                            },
+                            onNavigateToWarehouses = {
+                                selectingWarehouseForTransaction = true
+                                returnToScreenAfterPartySelection = AppScreen.ADD_PRODUCT
+                                currentScreen = AppScreen.WAREHOUSES
                             }
                         )
+                        
+                        // Handle warehouse selection for Add Product screen
+                        LaunchedEffect(selectedWarehouseForTransaction) {
+                            selectedWarehouseForTransaction?.let { warehouse ->
+                                if (selectingWarehouseForTransaction && returnToScreenAfterPartySelection == AppScreen.ADD_PRODUCT) {
+                                    addProductViewModel.setSelectedWarehouse(warehouse)
+                                    selectedWarehouseForTransaction = null
+                                    selectingWarehouseForTransaction = false
+                                    returnToScreenAfterPartySelection = null
+                                    currentScreen = AppScreen.ADD_PRODUCT
+                                }
+                            }
+                        }
                     }
                 }
                 

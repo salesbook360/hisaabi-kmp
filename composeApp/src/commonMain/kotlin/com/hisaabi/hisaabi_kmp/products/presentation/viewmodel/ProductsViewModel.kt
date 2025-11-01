@@ -59,19 +59,7 @@ class ProductsViewModel(
     
     fun onSearchQueryChanged(query: String) {
         _uiState.value = _uiState.value.copy(searchQuery = query)
-        
-        // Filter products based on search query
-        val filteredProducts = if (query.isBlank()) {
-            _uiState.value.allProducts
-        } else {
-            val searchQuery = query.lowercase().trim()
-            _uiState.value.allProducts.filter { product ->
-                product.title.lowercase().contains(searchQuery) ||
-                product.description?.lowercase()?.contains(searchQuery) == true
-            }
-        }
-        
-        _uiState.value = _uiState.value.copy(products = filteredProducts)
+        applyFilters()
     }
     
     fun refresh() {
@@ -94,8 +82,53 @@ class ProductsViewModel(
         if (warehouse != null) {
             loadQuantities(warehouse.slug ?: "")
         } else {
-            _uiState.value = _uiState.value.copy(productQuantities = emptyMap())
+            _uiState.value = _uiState.value.copy(
+                productQuantities = emptyMap(),
+                productQuantitiesWithMinimum = emptyMap()
+            )
         }
+        applyFilters()
+    }
+    
+    fun setQuantityFilter(filter: QuantityFilter) {
+        _uiState.value = _uiState.value.copy(quantityFilter = filter)
+        applyFilters()
+    }
+    
+    private fun applyFilters() {
+        val state = _uiState.value
+        var filteredProducts = state.allProducts
+        
+        // Apply search filter first
+        if (state.searchQuery.isNotBlank()) {
+            val searchQuery = state.searchQuery.lowercase().trim()
+            filteredProducts = filteredProducts.filter { product ->
+                product.title.lowercase().contains(searchQuery) ||
+                product.description?.lowercase()?.contains(searchQuery) == true
+            }
+        }
+        
+        // Apply quantity filter
+        if (state.quantityFilter != QuantityFilter.ALL && state.selectedWarehouse != null) {
+            filteredProducts = filteredProducts.filter { product ->
+                val quantityData = state.productQuantitiesWithMinimum[product.slug]
+                if (quantityData == null) {
+                    // If no quantity data, show for ALL filter only
+                    state.quantityFilter == QuantityFilter.ALL
+                } else {
+                    val (currentQuantity, minimumQuantity) = quantityData
+                    when (state.quantityFilter) {
+                        QuantityFilter.ALL -> true
+                        QuantityFilter.GREATER_THAN_MINIMUM -> currentQuantity > minimumQuantity
+                        QuantityFilter.GREATER_THAN_ZERO -> currentQuantity > 0
+                        QuantityFilter.LESS_THAN_MINIMUM -> currentQuantity < minimumQuantity && minimumQuantity > 0
+                        QuantityFilter.ZERO_QUANTITY -> currentQuantity == 0.0
+                    }
+                }
+            }
+        }
+        
+        _uiState.value = state.copy(products = filteredProducts)
     }
     
     fun deleteProduct(productSlug: String) {
@@ -139,10 +172,19 @@ class ProductsViewModel(
         viewModelScope.launch {
             try {
                 val quantities = productsRepository.getQuantitiesByWarehouse(warehouseSlug)
-                _uiState.value = _uiState.value.copy(productQuantities = quantities)
+                val quantitiesWithMinimum = productsRepository.getQuantitiesWithMinimumByWarehouse(warehouseSlug)
+                _uiState.value = _uiState.value.copy(
+                    productQuantities = quantities,
+                    productQuantitiesWithMinimum = quantitiesWithMinimum
+                )
+                applyFilters()
             } catch (e: Exception) {
                 // Silently handle errors - quantities might not exist for all products
-                _uiState.value = _uiState.value.copy(productQuantities = emptyMap())
+                _uiState.value = _uiState.value.copy(
+                    productQuantities = emptyMap(),
+                    productQuantitiesWithMinimum = emptyMap()
+                )
+                applyFilters()
             }
         }
     }
@@ -170,21 +212,12 @@ class ProductsViewModel(
             
             result.fold(
                 onSuccess = { products ->
-                    val filteredProducts = if (_uiState.value.searchQuery.isBlank()) {
-                        products
-                    } else {
-                        products.filter { product ->
-                            val query = _uiState.value.searchQuery.lowercase().trim()
-                            product.title.lowercase().contains(query) ||
-                            product.description?.lowercase()?.contains(query) == true
-                        }
-                    }
                     _uiState.value = _uiState.value.copy(
                         allProducts = products,
-                        products = filteredProducts,
                         isLoading = false,
                         error = null
                     )
+                    applyFilters()
                 },
                 onFailure = { error ->
                     _uiState.value = _uiState.value.copy(
@@ -197,6 +230,14 @@ class ProductsViewModel(
     }
 }
 
+enum class QuantityFilter {
+    ALL,
+    GREATER_THAN_MINIMUM,
+    GREATER_THAN_ZERO,
+    LESS_THAN_MINIMUM,
+    ZERO_QUANTITY
+}
+
 data class ProductsUiState(
     val allProducts: List<Product> = emptyList(),
     val products: List<Product> = emptyList(),
@@ -206,7 +247,9 @@ data class ProductsUiState(
     val error: String? = null,
     val availableWarehouses: List<Warehouse> = emptyList(),
     val selectedWarehouse: Warehouse? = null,
-    val productQuantities: Map<String, Double> = emptyMap() // productSlug -> quantity
+    val productQuantities: Map<String, Double> = emptyMap(), // productSlug -> currentQuantity
+    val productQuantitiesWithMinimum: Map<String, Pair<Double, Double>> = emptyMap(), // productSlug -> (currentQuantity, minimumQuantity)
+    val quantityFilter: QuantityFilter = QuantityFilter.ALL
 ) {
     fun filterProducts(): List<Product> {
         if (searchQuery.isBlank()) {

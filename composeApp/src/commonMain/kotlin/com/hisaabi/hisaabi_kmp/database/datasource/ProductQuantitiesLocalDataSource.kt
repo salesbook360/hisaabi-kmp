@@ -12,6 +12,7 @@ interface ProductQuantitiesLocalDataSource {
         warehouseSlug: String
     ): ProductQuantitiesEntity?
     suspend fun getQuantitiesByWarehouseList(warehouseSlug: String): List<ProductQuantitiesEntity>
+    suspend fun saveProductQuantity(quantity: ProductQuantitiesEntity)
 }
 
 class ProductQuantitiesLocalDataSourceImpl(
@@ -31,6 +32,14 @@ class ProductQuantitiesLocalDataSourceImpl(
     
     override suspend fun getQuantitiesByWarehouseList(warehouseSlug: String): List<ProductQuantitiesEntity> {
         return productQuantitiesDao.getQuantitiesByWarehouse(warehouseSlug).first()
+    }
+    
+    override suspend fun saveProductQuantity(quantity: ProductQuantitiesEntity) {
+        if (quantity.id > 0) {
+            productQuantitiesDao.updateProductQuantity(quantity)
+        } else {
+            productQuantitiesDao.insertProductQuantity(quantity)
+        }
     }
 }
 
