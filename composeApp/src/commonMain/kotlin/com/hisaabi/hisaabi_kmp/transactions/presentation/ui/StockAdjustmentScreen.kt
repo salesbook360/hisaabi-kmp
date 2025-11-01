@@ -19,6 +19,7 @@ import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.StockAdjustme
 import com.hisaabi.hisaabi_kmp.utils.SimpleDateTimePickerDialog
 import com.hisaabi.hisaabi_kmp.utils.formatDateTime
 import com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse
+import com.hisaabi.hisaabi_kmp.core.ui.FilterChipWithColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -113,19 +114,16 @@ fun StockAdjustmentScreen(
                             AllTransactionTypes.STOCK_REDUCE,
                             AllTransactionTypes.STOCK_TRANSFER
                         ).forEach { type ->
-                            FilterChip(
+                            val labelText = when (type) {
+                                AllTransactionTypes.STOCK_INCREASE -> "Increase"
+                                AllTransactionTypes.STOCK_REDUCE -> "Reduce"
+                                AllTransactionTypes.STOCK_TRANSFER -> "Transfer"
+                                else -> "Unknown"
+                            }
+                            FilterChipWithColors(
                                 selected = state.adjustmentType == type,
                                 onClick = { viewModel.setAdjustmentType(type) },
-                                label = { 
-                                    Text(
-                                        when (type) {
-                                            AllTransactionTypes.STOCK_INCREASE -> "Increase"
-                                            AllTransactionTypes.STOCK_REDUCE -> "Reduce"
-                                            AllTransactionTypes.STOCK_TRANSFER -> "Transfer"
-                                            else -> "Unknown"
-                                        }
-                                    ) 
-                                },
+                                label = labelText,
                                 modifier = Modifier.weight(1f),
                                 leadingIcon = if (state.adjustmentType == type) {
                                     { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }

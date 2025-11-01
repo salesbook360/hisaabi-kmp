@@ -24,6 +24,7 @@ import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.PayGetCashVie
 import com.hisaabi.hisaabi_kmp.utils.SimpleDateTimePickerDialog
 import com.hisaabi.hisaabi_kmp.utils.format
 import com.hisaabi.hisaabi_kmp.utils.formatDateTime
+import com.hisaabi.hisaabi_kmp.core.ui.FilterChipWithColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -105,10 +106,10 @@ fun PayGetCashScreen(
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         PayGetCashType.values().forEach { type ->
-                            FilterChip(
+                            FilterChipWithColors(
                                 selected = state.payGetCashType == type,
                                 onClick = { viewModel.setPayGetCashType(type) },
-                                label = { Text(type.displayName) },
+                                label = type.displayName,
                                 modifier = Modifier.weight(1f),
                                 leadingIcon = {
                                     Icon(

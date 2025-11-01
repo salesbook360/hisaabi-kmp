@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.FlatOrPercent
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddTransactionViewModel
+import com.hisaabi.hisaabi_kmp.core.ui.FilterChipWithColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -414,7 +415,7 @@ private fun DiscountSection(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                 )
                 
-                FilterChip(
+                FilterChipWithColors(
                     selected = selectedType == FlatOrPercent.FLAT,
                     onClick = { 
                         selectedType = FlatOrPercent.FLAT
@@ -422,9 +423,9 @@ private fun DiscountSection(
                             onUpdate(amt, selectedType)
                         }
                     },
-                    label = { Text("₨") }
+                    label = "₨"
                 )
-                FilterChip(
+                FilterChipWithColors(
                     selected = selectedType == FlatOrPercent.PERCENT,
                     onClick = { 
                         selectedType = FlatOrPercent.PERCENT
@@ -432,7 +433,7 @@ private fun DiscountSection(
                             onUpdate(amt, selectedType)
                         }
                     },
-                    label = { Text("%") }
+                    label = "%"
                 )
             }
         }
@@ -476,7 +477,7 @@ private fun TaxSection(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                 )
                 
-                FilterChip(
+                FilterChipWithColors(
                     selected = selectedType == FlatOrPercent.FLAT,
                     onClick = { 
                         selectedType = FlatOrPercent.FLAT
@@ -484,9 +485,9 @@ private fun TaxSection(
                             onUpdate(amt, selectedType)
                         }
                     },
-                    label = { Text("₨") }
+                    label = "₨"
                 )
-                FilterChip(
+                FilterChipWithColors(
                     selected = selectedType == FlatOrPercent.PERCENT,
                     onClick = { 
                         selectedType = FlatOrPercent.PERCENT
@@ -494,7 +495,7 @@ private fun TaxSection(
                             onUpdate(amt, selectedType)
                         }
                     },
-                    label = { Text("%") }
+                    label = "%"
                 )
             }
         }

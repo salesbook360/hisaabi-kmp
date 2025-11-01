@@ -23,6 +23,7 @@ import com.hisaabi.hisaabi_kmp.utils.formatEntryDate
 import com.hisaabi.hisaabi_kmp.utils.calculateManufacturingCost
 import com.hisaabi.hisaabi_kmp.receipt.ReceiptViewModel
 import com.hisaabi.hisaabi_kmp.receipt.ReceiptPreviewDialog
+import com.hisaabi.hisaabi_kmp.core.ui.FilterChipWithColors
 import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -248,22 +249,22 @@ private fun FiltersBottomSheetContent(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            FilterChip(
+            FilterChipWithColors(
                 selected = selectedType == null,
                 onClick = { onTypeSelected(null) },
-                label = { Text("All") },
+                label = "All",
                 modifier = Modifier.weight(1f)
             )
-            FilterChip(
+            FilterChipWithColors(
                 selected = selectedType == AllTransactionTypes.SALE,
                 onClick = { onTypeSelected(AllTransactionTypes.SALE) },
-                label = { Text("Sale") },
+                label = "Sale",
                 modifier = Modifier.weight(1f)
             )
-            FilterChip(
+            FilterChipWithColors(
                 selected = selectedType == AllTransactionTypes.PURCHASE,
                 onClick = { onTypeSelected(AllTransactionTypes.PURCHASE) },
-                label = { Text("Purchase") },
+                label = "Purchase",
                 modifier = Modifier.weight(1f)
             )
         }
@@ -273,16 +274,16 @@ private fun FiltersBottomSheetContent(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            FilterChip(
+            FilterChipWithColors(
                 selected = selectedType == AllTransactionTypes.CUSTOMER_RETURN,
                 onClick = { onTypeSelected(AllTransactionTypes.CUSTOMER_RETURN) },
-                label = { Text("Return") },
+                label = "Return",
                 modifier = Modifier.weight(1f)
             )
-            FilterChip(
+            FilterChipWithColors(
                 selected = selectedType == AllTransactionTypes.SALE_ORDER,
                 onClick = { onTypeSelected(AllTransactionTypes.SALE_ORDER) },
-                label = { Text("Order") },
+                label = "Order",
                 modifier = Modifier.weight(1f)
             )
             Spacer(Modifier.weight(1f))
@@ -301,16 +302,16 @@ private fun FiltersBottomSheetContent(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            FilterChip(
+            FilterChipWithColors(
                 selected = selectedSortBy == TransactionSortOption.ENTRY_DATE,
                 onClick = { onSortBySelected(TransactionSortOption.ENTRY_DATE) },
-                label = { Text("Entry date") },
+                label = "Entry date",
                 modifier = Modifier.weight(1f)
             )
-            FilterChip(
+            FilterChipWithColors(
                 selected = selectedSortBy == TransactionSortOption.TRANSACTION_DATE,
                 onClick = { onSortBySelected(TransactionSortOption.TRANSACTION_DATE) },
-                label = { Text("Transaction date") },
+                label = "Transaction date",
                 modifier = Modifier.weight(1f)
             )
         }

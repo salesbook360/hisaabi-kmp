@@ -23,6 +23,7 @@ import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionCategory
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddTransactionViewModel
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionDetailItem
 import com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse
+import com.hisaabi.hisaabi_kmp.core.ui.FilterChipWithColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -353,10 +354,10 @@ private fun PriceTypeSelector(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 listOf(PriceType.RETAIL, PriceType.WHOLESALE).forEach { priceType ->
-                    FilterChip(
+                    FilterChipWithColors(
                         selected = selectedPriceType == priceType,
                         onClick = { onPriceTypeSelected(priceType) },
-                        label = { Text(priceType.displayName) },
+                        label = priceType.displayName,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -473,7 +474,7 @@ private fun ProductItemCard(
                         singleLine = true
                     )
                     
-                    FilterChip(
+                    FilterChipWithColors(
                         selected = discountType == FlatOrPercent.FLAT,
                         onClick = { 
                             discountType = FlatOrPercent.FLAT
@@ -481,9 +482,9 @@ private fun ProductItemCard(
                                 viewModel.updateProductDiscount(index, disc, discountType)
                             }
                         },
-                        label = { Text("₨") }
+                        label = "₨"
                     )
-                    FilterChip(
+                    FilterChipWithColors(
                         selected = discountType == FlatOrPercent.PERCENT,
                         onClick = { 
                             discountType = FlatOrPercent.PERCENT
@@ -491,7 +492,7 @@ private fun ProductItemCard(
                                 viewModel.updateProductDiscount(index, disc, discountType)
                             }
                         },
-                        label = { Text("%") }
+                        label = "%"
                     )
                 }
                 
@@ -519,7 +520,7 @@ private fun ProductItemCard(
                         singleLine = true
                     )
                     
-                    FilterChip(
+                    FilterChipWithColors(
                         selected = taxType == FlatOrPercent.FLAT,
                         onClick = { 
                             taxType = FlatOrPercent.FLAT
@@ -527,9 +528,9 @@ private fun ProductItemCard(
                                 viewModel.updateProductTax(index, tax, taxType)
                             }
                         },
-                        label = { Text("₨") }
+                        label = "₨"
                     )
-                    FilterChip(
+                    FilterChipWithColors(
                         selected = taxType == FlatOrPercent.PERCENT,
                         onClick = { 
                             taxType = FlatOrPercent.PERCENT
@@ -537,7 +538,7 @@ private fun ProductItemCard(
                                 viewModel.updateProductTax(index, tax, taxType)
                             }
                         },
-                        label = { Text("%") }
+                        label = "%"
                     )
                 }
                 

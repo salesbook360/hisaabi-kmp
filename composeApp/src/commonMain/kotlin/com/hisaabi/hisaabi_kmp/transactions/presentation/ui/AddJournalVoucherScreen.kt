@@ -24,6 +24,7 @@ import com.hisaabi.hisaabi_kmp.transactions.domain.model.JournalAccountType
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddJournalVoucherViewModel
 import com.hisaabi.hisaabi_kmp.utils.SimpleDateTimePickerDialog
 import com.hisaabi.hisaabi_kmp.utils.formatDateTime
+import com.hisaabi.hisaabi_kmp.core.ui.FilterChipWithColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -373,27 +374,16 @@ private fun JournalAccountCard(
                 )
 
                 // Debit/Credit Toggle
-                FilterChip(
+                FilterChipWithColors(
                     selected = account.isDebit,
                     onClick = onToggleDebitCredit,
-                    label = { 
-                        Text(
-                            if (account.isDebit) "Debit" else "Credit",
-                            fontWeight = FontWeight.Bold
-                        ) 
-                    },
+                    label = if (account.isDebit) "Debit" else "Credit",
                     leadingIcon = {
                         Icon(
                             if (account.isDebit) Icons.Default.Remove else Icons.Default.Add,
                             contentDescription = null
                         )
-                    },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = if (account.isDebit) 
-                            MaterialTheme.colorScheme.errorContainer 
-                        else 
-                            MaterialTheme.colorScheme.primaryContainer
-                    )
+                    }
                 )
             }
         }

@@ -15,6 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.hisaabi.hisaabi_kmp.templates.domain.model.TemplatePlaceholder
 import com.hisaabi.hisaabi_kmp.templates.presentation.viewmodel.AddTemplateViewModel
+import com.hisaabi.hisaabi_kmp.core.ui.FilterChipWithColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -144,10 +145,10 @@ fun AddTemplateScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         TemplatePlaceholder.getAllPlaceholders().forEach { placeholder ->
-                            FilterChip(
+                            FilterChipWithColors(
                                 selected = false,
                                 onClick = { viewModel.insertPlaceholder(placeholder) },
-                                label = { Text(placeholder.key) },
+                                label = placeholder.key,
                                 leadingIcon = {
                                     Icon(
                                         Icons.Default.Add,

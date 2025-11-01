@@ -19,6 +19,7 @@ import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddExpenseIncomeViewModel
 import com.hisaabi.hisaabi_kmp.utils.SimpleDateTimePickerDialog
 import com.hisaabi.hisaabi_kmp.utils.formatDateTime
+import com.hisaabi.hisaabi_kmp.core.ui.FilterChipWithColors
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -193,10 +194,10 @@ private fun TransactionTypeSelector(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 listOf(AllTransactionTypes.EXPENSE, AllTransactionTypes.EXTRA_INCOME).forEach { type ->
-                    FilterChip(
+                    FilterChipWithColors(
                         selected = selectedType == type,
                         onClick = { onTypeSelected(type) },
-                        label = { Text(AllTransactionTypes.getDisplayName(type.value)) },
+                        label = AllTransactionTypes.getDisplayName(type.value),
                         modifier = Modifier.weight(1f),
                         leadingIcon = {
                             Icon(
