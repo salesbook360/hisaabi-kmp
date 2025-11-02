@@ -27,7 +27,8 @@ data class PayGetCashState(
     val dateTime: Long = Clock.System.now().toEpochMilliseconds(),
     val isLoading: Boolean = false,
     val error: String? = null,
-    val successMessage: String? = null
+    val successMessage: String? = null,
+    val savedTransactionSlug: String? = null
 )
 
 class PayGetCashViewModel(
@@ -131,11 +132,12 @@ class PayGetCashViewModel(
                 )
                 
                 transactionUseCases.addTransaction(transaction)
-                    .onSuccess {
+                    .onSuccess { transactionSlug ->
                         _state.update { 
                             it.copy(
                                 isLoading = false,
-                                successMessage = "Transaction saved successfully"
+                                successMessage = "Transaction saved successfully",
+                                savedTransactionSlug = transactionSlug
                             )
                         }
                     }

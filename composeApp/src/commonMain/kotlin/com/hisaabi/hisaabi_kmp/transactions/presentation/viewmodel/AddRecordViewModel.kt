@@ -21,7 +21,8 @@ data class AddRecordState(
     val remindDateTime: Long? = null,
     val isLoading: Boolean = false,
     val error: String? = null,
-    val successMessage: String? = null
+    val successMessage: String? = null,
+    val savedTransactionSlug: String? = null
 )
 
 class AddRecordViewModel(
@@ -98,11 +99,12 @@ class AddRecordViewModel(
                 )
                 
                 transactionUseCases.addTransaction(transaction)
-                    .onSuccess {
+                    .onSuccess { transactionSlug ->
                         _state.update { 
                             it.copy(
                                 isLoading = false,
-                                successMessage = "Record saved successfully"
+                                successMessage = "Record saved successfully",
+                                savedTransactionSlug = transactionSlug
                             )
                         }
                     }

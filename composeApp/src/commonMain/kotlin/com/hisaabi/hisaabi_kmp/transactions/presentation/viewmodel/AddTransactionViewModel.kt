@@ -45,7 +45,8 @@ data class AddTransactionState(
     val currentStep: Int = 1,
     val isLoading: Boolean = false,
     val error: String? = null,
-    val successMessage: String? = null
+    val successMessage: String? = null,
+    val savedTransactionSlug: String? = null
 )
 
 data class TransactionDetailItem(
@@ -393,7 +394,8 @@ class AddTransactionViewModel(
                     _state.update { 
                         it.copy(
                             isLoading = false,
-                            successMessage = "Transaction saved successfully! (ID: $slug)"
+                            successMessage = "Transaction saved successfully! (ID: $slug)",
+                            savedTransactionSlug = slug
                         )
                     }
                 }.onFailure { error ->

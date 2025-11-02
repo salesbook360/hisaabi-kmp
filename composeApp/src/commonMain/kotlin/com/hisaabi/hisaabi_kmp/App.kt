@@ -27,6 +27,9 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.KoinContext
 import org.koin.compose.koinInject
+import com.hisaabi.hisaabi_kmp.receipt.ReceiptViewModel
+import com.hisaabi.hisaabi_kmp.receipt.ReceiptPreviewDialog
+import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
 import kotlin.system.exitProcess
 
 @Composable
@@ -103,6 +106,20 @@ fun App() {
                         duration = androidx.compose.material3.SnackbarDuration.Short
                     )
                     toastMessage = null  // Clear after showing
+                }
+            }
+            
+            // Receipt generation
+            val receiptViewModel: ReceiptViewModel = koinInject()
+            val receiptState by receiptViewModel.state.collectAsState()
+            val preferencesManager: PreferencesManager = koinInject()
+            val receiptConfig by preferencesManager.receiptConfig.collectAsState(initial = com.hisaabi.hisaabi_kmp.settings.domain.model.ReceiptConfig.DEFAULT)
+            
+            // Handle receipt errors (only show errors, not success messages)
+            LaunchedEffect(receiptState.error) {
+                receiptState.error?.let { error ->
+                    toastMessage = error
+                    receiptViewModel.clearError()
                 }
             }
             
@@ -1145,12 +1162,24 @@ fun App() {
                     recordViewModel?.let { viewModel ->
                         com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddRecordScreen(
                             viewModel = viewModel,
-                            onNavigateBack = { successMessage ->
+                            onNavigateBack = { successMessage, transactionSlug ->
                                 isInAddRecordFlow = false
                                 partiesRefreshTrigger++ // Refresh parties to show updated balances
-                                // Show toast if there's a success message
+                                // Show receipt if enabled and transaction slug is available, otherwise show toast
                                 successMessage?.let {
-                                    toastMessage = it
+                                    if (receiptConfig.isReceiptEnabled && transactionSlug != null) {
+                                        // Show receipt instead of toast
+                                        viewModel.state.value.recordType?.let { recordType ->
+                                            val transaction = com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction(
+                                                slug = transactionSlug,
+                                                transactionType = recordType.value
+                                            )
+                                            receiptViewModel.showPreview(transaction)
+                                        }
+                                    } else {
+                                        // Show toast only if not showing receipt
+                                        toastMessage = it
+                                    }
                                 }
                                 navigateBack() 
                             },
@@ -1193,12 +1222,46 @@ fun App() {
                     payGetCashViewModel?.let { viewModel ->
                         com.hisaabi.hisaabi_kmp.transactions.presentation.ui.PayGetCashScreen(
                             viewModel = viewModel,
-                            onNavigateBack = { successMessage ->
+                            onNavigateBack = { successMessage, transactionSlug ->
                                 isInPayGetCashFlow = false
                                 partiesRefreshTrigger++ // Refresh parties to show updated balances
-                                // Show toast if there's a success message
+                                // Show receipt if enabled and transaction slug is available, otherwise show toast
                                 successMessage?.let {
-                                    toastMessage = it
+                                    if (receiptConfig.isReceiptEnabled && transactionSlug != null) {
+                                        // Show receipt instead of toast
+                                        val currentState = viewModel.state.value
+                                        val transactionType = when (currentState.partyType) {
+                                            PartyType.CUSTOMER -> {
+                                                if (currentState.payGetCashType == com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.PayGetCashType.PAY_CASH) 
+                                                    com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.PAY_TO_CUSTOMER.value
+                                                else 
+                                                    com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.GET_FROM_CUSTOMER.value
+                                            }
+                                            PartyType.VENDOR -> {
+                                                if (currentState.payGetCashType == com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.PayGetCashType.PAY_CASH) 
+                                                    com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.PAY_TO_VENDOR.value
+                                                else 
+                                                    com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.GET_FROM_VENDOR.value
+                                            }
+                                            PartyType.INVESTOR -> {
+                                                if (currentState.payGetCashType == com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.PayGetCashType.PAY_CASH) 
+                                                    com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.INVESTMENT_WITHDRAW.value
+                                                else 
+                                                    com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.INVESTMENT_DEPOSIT.value
+                                            }
+                                            else -> {
+                                                com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.PAY_TO_CUSTOMER.value
+                                            }
+                                        }
+                                        val transaction = com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction(
+                                            slug = transactionSlug,
+                                            transactionType = transactionType
+                                        )
+                                        receiptViewModel.showPreview(transaction)
+                                    } else {
+                                        // Show toast only if not showing receipt
+                                        toastMessage = it
+                                    }
                                 }
                                 navigateBack() 
                             },
@@ -1645,14 +1708,6 @@ fun App() {
                 AppScreen.ADD_TRANSACTION_STEP2 -> {
                     // Use shared ViewModel instance created at app level
                     transactionViewModel?.let { viewModel ->
-                        // Capture success message for toast
-                        val state by viewModel.state.collectAsState()
-                        LaunchedEffect(state.successMessage) {
-                            state.successMessage?.let { message ->
-                                toastMessage = message
-                            }
-                        }
-                        
                         // Set selected payment method if returned from payment method selection
                         LaunchedEffect(selectedPaymentMethodForTransaction) {
                             selectedPaymentMethodForTransaction?.let { paymentMethod ->
@@ -1673,10 +1728,24 @@ fun App() {
                                 returnToScreenAfterPartySelection = AppScreen.ADD_TRANSACTION_STEP2
                                 currentScreen = AppScreen.PAYMENT_METHODS
                             },
-                            onTransactionSaved = {
+                            onTransactionSaved = { transactionSlug, transactionType ->
                                 // Exit transaction flow and navigate to home
                                 isInTransactionFlow = false
                                 partiesRefreshTrigger++ // Refresh parties to show updated balances
+                                
+                                // Show receipt if enabled and transaction slug is available, otherwise show toast
+                                if (receiptConfig.isReceiptEnabled && transactionSlug != null) {
+                                    // Show receipt instead of toast
+                                    val transaction = com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction(
+                                        slug = transactionSlug,
+                                        transactionType = transactionType
+                                    )
+                                    receiptViewModel.showPreview(transaction)
+                                } else {
+                                    // Show toast only if not showing receipt
+                                    toastMessage = "Transaction saved successfully!"
+                                }
+                                
                                 currentScreen = AppScreen.HOME
                             }
                         )
@@ -1690,6 +1759,21 @@ fun App() {
                         modifier = androidx.compose.ui.Modifier
                             .align(androidx.compose.ui.Alignment.BottomCenter)
                             .padding(bottom = 16.dp)
+                    )
+                }
+                
+                // Receipt Preview Dialog
+                if (receiptState.showPreview && receiptState.currentTransaction != null) {
+                    ReceiptPreviewDialog(
+                        transaction = receiptState.currentTransaction!!,
+                        config = receiptConfig,
+                        isGenerating = receiptState.isGenerating,
+                        onDismiss = { receiptViewModel.hidePreview() },
+                        onShare = {
+                            receiptState.currentTransaction?.let { transaction ->
+                                receiptViewModel.generateAndShareReceipt(transaction)
+                            }
+                        }
                     )
                 }
             }

@@ -25,7 +25,7 @@ import kotlinx.datetime.Clock
 @Composable
 fun AddRecordScreen(
     viewModel: AddRecordViewModel,
-    onNavigateBack: (successMessage: String?) -> Unit,
+    onNavigateBack: (successMessage: String?, transactionSlug: String?) -> Unit,
     onSelectParty: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
@@ -43,8 +43,9 @@ fun AddRecordScreen(
     
     LaunchedEffect(state.successMessage) {
         state.successMessage?.let { message ->
+            val transactionSlug = state.savedTransactionSlug
             viewModel.clearSuccess()
-            onNavigateBack(message)
+            onNavigateBack(message, transactionSlug)
         }
     }
     
@@ -54,7 +55,7 @@ fun AddRecordScreen(
             TopAppBar(
                 title = { Text("New Record") },
                 navigationIcon = {
-                    IconButton(onClick = { onNavigateBack(null) }) {
+                    IconButton(onClick = { onNavigateBack(null, null) }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                     }
                 }

@@ -26,7 +26,7 @@ fun AddTransactionStep2Screen(
     viewModel: AddTransactionViewModel,
     onNavigateBack: () -> Unit,
     onSelectPaymentMethod: () -> Unit,
-    onTransactionSaved: () -> Unit
+    onTransactionSaved: (transactionSlug: String?, transactionType: Int) -> Unit
 ) {
     val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -40,8 +40,10 @@ fun AddTransactionStep2Screen(
     
     LaunchedEffect(state.successMessage) {
         state.successMessage?.let { message ->
+            val transactionSlug = state.savedTransactionSlug
+            val transactionType = state.transactionType.value
             viewModel.clearSuccess()
-            onTransactionSaved()
+            onTransactionSaved(transactionSlug, transactionType)
         }
     }
     
