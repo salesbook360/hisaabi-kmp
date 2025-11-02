@@ -40,7 +40,6 @@ fun AddTransactionStep2Screen(
     
     LaunchedEffect(state.successMessage) {
         state.successMessage?.let { message ->
-            snackbarHostState.showSnackbar(message)
             viewModel.clearSuccess()
             onTransactionSaved()
         }

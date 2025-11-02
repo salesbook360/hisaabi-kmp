@@ -28,7 +28,8 @@ import kotlinx.datetime.toLocalDateTime
 fun AddManufactureScreen(
     viewModel: AddManufactureViewModel,
     onNavigateBack: () -> Unit,
-    onSelectWarehouse: () -> Unit = {}
+    onSelectWarehouse: () -> Unit = {},
+    onSaveSuccess: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -59,6 +60,7 @@ fun AddManufactureScreen(
                     if (!state.isSaving) {
                         IconButton(onClick = {
                             viewModel.saveManufactureTransaction(onSuccess = { _ ->
+                                onSaveSuccess()
                                 onNavigateBack()
                             })
                         }) {

@@ -25,7 +25,7 @@ import com.hisaabi.hisaabi_kmp.core.ui.FilterChipWithColors
 @Composable
 fun StockAdjustmentScreen(
     viewModel: StockAdjustmentViewModel,
-    onNavigateBack: () -> Unit,
+    onNavigateBack: (success: Boolean) -> Unit,
     onSelectWarehouseFrom: () -> Unit,
     onSelectWarehouseTo: () -> Unit,
     onSelectProducts: () -> Unit
@@ -45,9 +45,8 @@ fun StockAdjustmentScreen(
     // Navigate back on success
     LaunchedEffect(state.success) {
         if (state.success) {
-            snackbarHostState.showSnackbar("Stock adjustment saved successfully")
             viewModel.clearSuccess()
-            onNavigateBack()
+            onNavigateBack(true)
         }
     }
 
@@ -57,7 +56,7 @@ fun StockAdjustmentScreen(
             TopAppBar(
                 title = { Text("Stock Adjustment") },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(onClick = { onNavigateBack(false) }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                     }
                 }

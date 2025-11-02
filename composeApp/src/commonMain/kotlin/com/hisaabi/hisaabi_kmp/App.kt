@@ -9,7 +9,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.key
+import androidx.compose.ui.unit.dp
 import com.hisaabi.hisaabi_kmp.auth.AuthNavigation
 import com.hisaabi.hisaabi_kmp.auth.presentation.viewmodel.AuthViewModel
 import com.hisaabi.hisaabi_kmp.business.data.datasource.BusinessPreferencesDataSource
@@ -20,6 +23,7 @@ import com.hisaabi.hisaabi_kmp.products.presentation.viewmodel.AddProductViewMod
 import com.hisaabi.hisaabi_kmp.products.presentation.viewmodel.ProductsViewModel
 import com.hisaabi.hisaabi_kmp.sync.domain.manager.SyncManager
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionDetailViewModel
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.KoinContext
 import org.koin.compose.koinInject
@@ -86,6 +90,21 @@ fun App() {
             
             // Navigation stack for back button handling
             var navigationStack by remember { mutableStateOf<List<AppScreen>>(emptyList()) }
+            
+            // Global toast/snackbar state for success messages
+            val snackbarHostState = remember { androidx.compose.material3.SnackbarHostState() }
+            var toastMessage by remember { mutableStateOf<String?>(null) }
+            
+            // Show toast message
+            LaunchedEffect(toastMessage) {
+                toastMessage?.let { message ->
+                    snackbarHostState.showSnackbar(
+                        message = message,
+                        duration = androidx.compose.material3.SnackbarDuration.Short
+                    )
+                    toastMessage = null  // Clear after showing
+                }
+            }
             
             // Helper functions for navigation
             fun navigateTo(screen: AppScreen) {
@@ -427,9 +446,11 @@ fun App() {
             if (currentScreen == null) {
                 SplashScreen()
             } else {
-                // Show content only when currentScreen is initialized
-                when (currentScreen!!) {
-                AppScreen.HOME -> {
+                // Wrap content with Box to show snackbar overlay
+                androidx.compose.foundation.layout.Box(modifier = androidx.compose.ui.Modifier.fillMaxSize()) {
+                    // Show content only when currentScreen is initialized
+                    when (currentScreen!!) {
+                    AppScreen.HOME -> {
                     HomeScreen(
                         selectedTab = selectedBottomNavTab,
                         onTabSelected = { selectedBottomNavTab = it },
@@ -1124,9 +1145,13 @@ fun App() {
                     recordViewModel?.let { viewModel ->
                         com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddRecordScreen(
                             viewModel = viewModel,
-                            onNavigateBack = { 
+                            onNavigateBack = { successMessage ->
                                 isInAddRecordFlow = false
                                 partiesRefreshTrigger++ // Refresh parties to show updated balances
+                                // Show toast if there's a success message
+                                successMessage?.let {
+                                    toastMessage = it
+                                }
                                 navigateBack() 
                             },
                             onSelectParty = {
@@ -1168,9 +1193,13 @@ fun App() {
                     payGetCashViewModel?.let { viewModel ->
                         com.hisaabi.hisaabi_kmp.transactions.presentation.ui.PayGetCashScreen(
                             viewModel = viewModel,
-                            onNavigateBack = { 
+                            onNavigateBack = { successMessage ->
                                 isInPayGetCashFlow = false
                                 partiesRefreshTrigger++ // Refresh parties to show updated balances
+                                // Show toast if there's a success message
+                                successMessage?.let {
+                                    toastMessage = it
+                                }
                                 navigateBack() 
                             },
                         onSelectParty = { partyType ->
@@ -1229,9 +1258,17 @@ fun App() {
                     expenseIncomeViewModel?.let { viewModel ->
                         com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddExpenseIncomeScreen(
                             viewModel = viewModel,
-                            onNavigateBack = { 
+                            onNavigateBack = { success, transactionType ->
                                 isInExpenseIncomeFlow = false
                                 partiesRefreshTrigger++ // Refresh parties to show updated balances
+                                // Show toast if transaction was saved successfully
+                                if (success) {
+                                    toastMessage = if (transactionType == com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.EXPENSE) {
+                                        "Expense saved successfully"
+                                    } else {
+                                        "Extra income saved successfully"
+                                    }
+                                }
                                 navigateBack() 
                             },
                             onSelectParty = {
@@ -1280,9 +1317,13 @@ fun App() {
                     paymentTransferViewModel?.let { viewModel ->
                         com.hisaabi.hisaabi_kmp.transactions.presentation.ui.PaymentTransferScreen(
                             viewModel = viewModel,
-                            onNavigateBack = { 
+                            onNavigateBack = { success ->
                                 isInPaymentTransferFlow = false
                                 partiesRefreshTrigger++ // Refresh parties to show updated balances
+                                // Show toast if transaction was saved successfully
+                                if (success) {
+                                    toastMessage = "Payment transfer saved successfully"
+                                }
                                 navigateBack() 
                             },
                         onSelectPaymentMethodFrom = {
@@ -1339,9 +1380,13 @@ fun App() {
                     journalVoucherViewModel?.let { viewModel ->
                         com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddJournalVoucherScreen(
                             viewModel = viewModel,
-                            onNavigateBack = { 
+                            onNavigateBack = { success ->
                                 isInJournalVoucherFlow = false
                                 partiesRefreshTrigger++ // Refresh parties to show updated balances
+                                // Show toast if transaction was saved successfully
+                                if (success) {
+                                    toastMessage = "Journal voucher saved successfully"
+                                }
                                 navigateBack() 
                             },
                         onSelectAccountType = {
@@ -1445,9 +1490,13 @@ fun App() {
                     stockAdjustmentViewModel?.let { viewModel ->
                         com.hisaabi.hisaabi_kmp.transactions.presentation.ui.StockAdjustmentScreen(
                             viewModel = viewModel,
-                            onNavigateBack = { 
+                            onNavigateBack = { success ->
                                 isInStockAdjustmentFlow = false
                                 partiesRefreshTrigger++ // Refresh parties to show updated balances (if any)
+                                // Show toast if transaction was saved successfully
+                                if (success) {
+                                    toastMessage = "Stock adjustment saved successfully"
+                                }
                                 navigateBack() 
                             },
                         onSelectWarehouseFrom = {
@@ -1498,6 +1547,9 @@ fun App() {
                                 selectingWarehouseForTransaction = true
                                 returnToScreenAfterPartySelection = AppScreen.ADD_MANUFACTURE
                                 currentScreen = AppScreen.WAREHOUSES
+                            },
+                            onSaveSuccess = {
+                                toastMessage = "Manufacture transaction saved successfully"
                             }
                         )
                     }
@@ -1593,6 +1645,14 @@ fun App() {
                 AppScreen.ADD_TRANSACTION_STEP2 -> {
                     // Use shared ViewModel instance created at app level
                     transactionViewModel?.let { viewModel ->
+                        // Capture success message for toast
+                        val state by viewModel.state.collectAsState()
+                        LaunchedEffect(state.successMessage) {
+                            state.successMessage?.let { message ->
+                                toastMessage = message
+                            }
+                        }
+                        
                         // Set selected payment method if returned from payment method selection
                         LaunchedEffect(selectedPaymentMethodForTransaction) {
                             selectedPaymentMethodForTransaction?.let { paymentMethod ->
@@ -1622,6 +1682,15 @@ fun App() {
                         )
                     }
                 }
+                }
+                
+                    // Snackbar Host at bottom for toast messages
+                    androidx.compose.material3.SnackbarHost(
+                        hostState = snackbarHostState,
+                        modifier = androidx.compose.ui.Modifier
+                            .align(androidx.compose.ui.Alignment.BottomCenter)
+                            .padding(bottom = 16.dp)
+                    )
                 }
             }
         }

@@ -28,7 +28,7 @@ import kotlinx.datetime.toLocalDateTime
 @Composable
 fun AddExpenseIncomeScreen(
     viewModel: AddExpenseIncomeViewModel,
-    onNavigateBack: () -> Unit,
+    onNavigateBack: (success: Boolean, transactionType: com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes?) -> Unit,
     onSelectParty: () -> Unit,
     onSelectPaymentMethod: () -> Unit
 ) {
@@ -47,9 +47,9 @@ fun AddExpenseIncomeScreen(
     // Navigate back on success
     LaunchedEffect(state.success) {
         if (state.success) {
-            snackbarHostState.showSnackbar("Transaction saved successfully")
+            val transactionType = state.transactionType
             viewModel.clearSuccess()
-            onNavigateBack()
+            onNavigateBack(true, transactionType)
         }
     }
 
@@ -66,7 +66,7 @@ fun AddExpenseIncomeScreen(
                     ) 
                 },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(onClick = { onNavigateBack(false, null) }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                     }
                 }

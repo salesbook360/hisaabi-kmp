@@ -22,7 +22,7 @@ import com.hisaabi.hisaabi_kmp.utils.formatDateTime
 @Composable
 fun PaymentTransferScreen(
     viewModel: PaymentTransferViewModel,
-    onNavigateBack: () -> Unit,
+    onNavigateBack: (success: Boolean) -> Unit,
     onSelectPaymentMethodFrom: () -> Unit,
     onSelectPaymentMethodTo: () -> Unit
 ) {
@@ -41,9 +41,8 @@ fun PaymentTransferScreen(
     // Navigate back on success
     LaunchedEffect(state.success) {
         if (state.success) {
-            snackbarHostState.showSnackbar("Payment transfer saved successfully")
             viewModel.clearSuccess()
-            onNavigateBack()
+            onNavigateBack(true)
         }
     }
 
@@ -53,7 +52,7 @@ fun PaymentTransferScreen(
             TopAppBar(
                 title = { Text("Payment Transfer") },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(onClick = { onNavigateBack(false) }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                     }
                 }

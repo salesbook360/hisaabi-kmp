@@ -30,7 +30,7 @@ import com.hisaabi.hisaabi_kmp.core.ui.FilterChipWithColors
 @Composable
 fun AddJournalVoucherScreen(
     viewModel: AddJournalVoucherViewModel,
-    onNavigateBack: () -> Unit,
+    onNavigateBack: (success: Boolean) -> Unit,
     onSelectAccountType: () -> Unit,
     onSelectPaymentMethod: () -> Unit
 ) {
@@ -49,9 +49,8 @@ fun AddJournalVoucherScreen(
     // Navigate back on success
     LaunchedEffect(state.success) {
         if (state.success) {
-            snackbarHostState.showSnackbar("Journal voucher saved successfully")
             viewModel.clearSuccess()
-            onNavigateBack()
+            onNavigateBack(true)
         }
     }
 
@@ -61,7 +60,7 @@ fun AddJournalVoucherScreen(
             TopAppBar(
                 title = { Text("Journal Voucher") },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(onClick = { onNavigateBack(false) }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                     }
                 }

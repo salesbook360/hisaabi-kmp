@@ -30,7 +30,7 @@ import com.hisaabi.hisaabi_kmp.core.ui.FilterChipWithColors
 @Composable
 fun PayGetCashScreen(
     viewModel: PayGetCashViewModel,
-    onNavigateBack: () -> Unit,
+    onNavigateBack: (successMessage: String?) -> Unit,
     onSelectParty: (PartyType) -> Unit,
     onSelectPaymentMethod: () -> Unit
 ) {
@@ -47,9 +47,8 @@ fun PayGetCashScreen(
     
     LaunchedEffect(state.successMessage) {
         state.successMessage?.let { message ->
-            snackbarHostState.showSnackbar(message)
             viewModel.clearSuccess()
-            onNavigateBack()
+            onNavigateBack(message)
         }
     }
     
@@ -59,7 +58,7 @@ fun PayGetCashScreen(
             TopAppBar(
                 title = { Text("Pay or Get Payment") },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(onClick = { onNavigateBack(null) }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                     }
                 }
