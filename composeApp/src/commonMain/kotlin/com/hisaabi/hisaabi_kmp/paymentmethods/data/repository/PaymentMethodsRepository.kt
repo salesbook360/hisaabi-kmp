@@ -16,6 +16,12 @@ class PaymentMethodsRepository(
         }
     }
     
+    fun getPaymentMethodsByBusiness(businessSlug: String): Flow<List<PaymentMethod>> {
+        return localDataSource.getPaymentMethodsByBusiness(businessSlug).map { entities ->
+            entities.map { it.toDomainModel() }
+        }
+    }
+    
     fun getActivePaymentMethods(): Flow<List<PaymentMethod>> {
         return localDataSource.getPaymentMethodsByStatus(1).map { entities ->
             entities.map { it.toDomainModel() }

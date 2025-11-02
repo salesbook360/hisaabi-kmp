@@ -7,8 +7,12 @@ import kotlinx.coroutines.flow.Flow
 class GetPaymentMethodsUseCase(
     private val repository: PaymentMethodsRepository
 ) {
-    operator fun invoke(): Flow<List<PaymentMethod>> {
-        return repository.getAllPaymentMethods()
+    operator fun invoke(businessSlug: String?): Flow<List<PaymentMethod>> {
+        return if (businessSlug != null) {
+            repository.getPaymentMethodsByBusiness(businessSlug)
+        } else {
+            repository.getAllPaymentMethods()
+        }
     }
     
     fun getActivePaymentMethods(): Flow<List<PaymentMethod>> {

@@ -190,7 +190,18 @@ private fun PaymentMethodItem(
                     fontWeight = FontWeight.SemiBold
                 )
                 
+                // Slug
+                if (!paymentMethod.slug.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "Slug: ${paymentMethod.slug}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                
                 if (!paymentMethod.description.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = paymentMethod.description,
                         style = MaterialTheme.typography.bodySmall,
@@ -211,6 +222,7 @@ private fun PaymentMethodItem(
                 )
                 
                 if (!paymentMethod.isActive) {
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "Inactive",
                         style = MaterialTheme.typography.bodySmall,

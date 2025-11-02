@@ -15,6 +15,7 @@ import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.StockAdjustme
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionDetailViewModel
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddManufactureViewModel
 import org.koin.core.module.dsl.singleOf
+import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val transactionsModule = module {
@@ -67,22 +68,22 @@ val transactionsModule = module {
         )
     }
     
-    // ViewModels
-    singleOf(::AddTransactionViewModel)
-    singleOf(::TransactionsListViewModel)
-    singleOf(::AddRecordViewModel)
-    singleOf(::PayGetCashViewModel)
-    singleOf(::AddExpenseIncomeViewModel)
-    singleOf(::PaymentTransferViewModel)
-    singleOf(::AddJournalVoucherViewModel)
-    singleOf(::StockAdjustmentViewModel)
-    single {
+    // ViewModels - use viewModel scope instead of single to reset state when navigating
+    viewModel { AddTransactionViewModel(get(), get()) }
+    viewModel { TransactionsListViewModel(get()) }
+    viewModel { AddRecordViewModel(get()) }
+    viewModel { PayGetCashViewModel(get()) }
+    viewModel { AddExpenseIncomeViewModel(get()) }
+    viewModel { PaymentTransferViewModel(get()) }
+    viewModel { AddJournalVoucherViewModel(get()) }
+    viewModel { StockAdjustmentViewModel(get()) }
+    viewModel {
         TransactionDetailViewModel(
             getTransactionWithDetailsUseCase = get(),
             transactionsRepository = get()
         )
     }
-    single {
+    viewModel {
         AddManufactureViewModel(
             transactionsRepository = get(),
             productsRepository = get(),

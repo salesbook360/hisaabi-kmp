@@ -114,10 +114,10 @@ class SyncManagerImpl(
 //            }
             
             // Sync Down - Cloud to Local
-            if (syncDown) {
-                syncDownData()
-            }
-            
+//            if (syncDown) {
+//                syncDownData()
+//            }
+//
             // Update last sync time
             val now = Clock.System.now()
             preferencesDataSource.setLastSyncTime(businessSlug, userSlug, now)

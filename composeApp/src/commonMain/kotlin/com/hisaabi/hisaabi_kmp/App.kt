@@ -16,7 +16,10 @@ import com.hisaabi.hisaabi_kmp.business.data.datasource.BusinessPreferencesDataS
 import com.hisaabi.hisaabi_kmp.business.presentation.ui.BusinessSelectionGateScreen
 import com.hisaabi.hisaabi_kmp.home.HomeScreen
 import com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType
+import com.hisaabi.hisaabi_kmp.products.presentation.viewmodel.AddProductViewModel
+import com.hisaabi.hisaabi_kmp.products.presentation.viewmodel.ProductsViewModel
 import com.hisaabi.hisaabi_kmp.sync.domain.manager.SyncManager
+import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionDetailViewModel
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.KoinContext
 import org.koin.compose.koinInject
@@ -219,39 +222,201 @@ fun App() {
             var selectedPaymentMethodForTransaction by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod?>(null) }
             var selectedTransactionSlug by remember { mutableStateOf<String?>(null) }
             
-            // Create transaction ViewModel once and reuse it across both steps
-            val koin = org.koin.compose.getKoin()
-            val transactionViewModel = remember(koin) {
-                koin.get<com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddTransactionViewModel>()
+            // Track if we're in a transaction creation flow (including selection screens)
+            var isInTransactionFlow by remember { mutableStateOf(false) }
+            var isInPayGetCashFlow by remember { mutableStateOf(false) }
+            var isInAddRecordFlow by remember { mutableStateOf(false) }
+            var isInExpenseIncomeFlow by remember { mutableStateOf(false) }
+            var isInPaymentTransferFlow by remember { mutableStateOf(false) }
+            var isInJournalVoucherFlow by remember { mutableStateOf(false) }
+            var isInStockAdjustmentFlow by remember { mutableStateOf(false) }
+            var isInManufactureFlow by remember { mutableStateOf(false) }
+            
+            // Update flow state based on current screen
+            LaunchedEffect(currentScreen, returnToScreenAfterPartySelection, returnToScreenAfterProductSelection) {
+                // Reset all flows first
+                val previousTransactionFlow = isInTransactionFlow
+                val previousPayGetCashFlow = isInPayGetCashFlow
+                val previousAddRecordFlow = isInAddRecordFlow
+                val previousExpenseIncomeFlow = isInExpenseIncomeFlow
+                val previousPaymentTransferFlow = isInPaymentTransferFlow
+                val previousJournalVoucherFlow = isInJournalVoucherFlow
+                val previousStockAdjustmentFlow = isInStockAdjustmentFlow
+                val previousManufactureFlow = isInManufactureFlow
+                
+                when (currentScreen) {
+                    AppScreen.ADD_TRANSACTION_STEP1, AppScreen.ADD_TRANSACTION_STEP2 -> {
+                        isInTransactionFlow = true
+                    }
+                    AppScreen.PAY_GET_CASH -> {
+                        isInPayGetCashFlow = true
+                    }
+                    AppScreen.ADD_RECORD -> {
+                        isInAddRecordFlow = true
+                    }
+                    AppScreen.ADD_EXPENSE_INCOME -> {
+                        isInExpenseIncomeFlow = true
+                    }
+                    AppScreen.PAYMENT_TRANSFER -> {
+                        isInPaymentTransferFlow = true
+                    }
+                    AppScreen.JOURNAL_VOUCHER -> {
+                        isInJournalVoucherFlow = true
+                    }
+                    AppScreen.STOCK_ADJUSTMENT -> {
+                        isInStockAdjustmentFlow = true
+                    }
+                    AppScreen.ADD_MANUFACTURE -> {
+                        isInManufactureFlow = true
+                    }
+                    AppScreen.HOME -> {
+                        // Explicitly exiting all flows
+                        isInTransactionFlow = false
+                        isInPayGetCashFlow = false
+                        isInAddRecordFlow = false
+                        isInExpenseIncomeFlow = false
+                        isInPaymentTransferFlow = false
+                        isInJournalVoucherFlow = false
+                        isInStockAdjustmentFlow = false
+                        isInManufactureFlow = false
+                    }
+                    // Keep flows active when selecting resources
+                    AppScreen.PARTIES -> {
+                        when (returnToScreenAfterPartySelection) {
+                            AppScreen.ADD_TRANSACTION_STEP1 -> isInTransactionFlow = previousTransactionFlow
+                            AppScreen.PAY_GET_CASH -> isInPayGetCashFlow = previousPayGetCashFlow
+                            AppScreen.ADD_RECORD -> isInAddRecordFlow = previousAddRecordFlow
+                            AppScreen.ADD_EXPENSE_INCOME -> isInExpenseIncomeFlow = previousExpenseIncomeFlow
+                            AppScreen.JOURNAL_VOUCHER -> isInJournalVoucherFlow = previousJournalVoucherFlow
+                            else -> {
+                                // Exit all flows if not returning to any known screen
+                                isInTransactionFlow = false
+                                isInPayGetCashFlow = false
+                                isInAddRecordFlow = false
+                                isInExpenseIncomeFlow = false
+                                isInPaymentTransferFlow = false
+                                isInJournalVoucherFlow = false
+                                isInStockAdjustmentFlow = false
+                                isInManufactureFlow = false
+                            }
+                        }
+                    }
+                    AppScreen.WAREHOUSES -> {
+                        when (returnToScreenAfterPartySelection) {
+                            AppScreen.ADD_TRANSACTION_STEP1 -> isInTransactionFlow = previousTransactionFlow
+                            AppScreen.STOCK_ADJUSTMENT -> isInStockAdjustmentFlow = previousStockAdjustmentFlow
+                            AppScreen.ADD_MANUFACTURE -> isInManufactureFlow = previousManufactureFlow
+                            else -> {
+                                isInTransactionFlow = false
+                                isInPayGetCashFlow = false
+                                isInAddRecordFlow = false
+                                isInExpenseIncomeFlow = false
+                                isInPaymentTransferFlow = false
+                                isInJournalVoucherFlow = false
+                                isInStockAdjustmentFlow = false
+                                isInManufactureFlow = false
+                            }
+                        }
+                    }
+                    AppScreen.PRODUCTS -> {
+                        when (returnToScreenAfterProductSelection) {
+                            AppScreen.ADD_TRANSACTION_STEP1 -> isInTransactionFlow = previousTransactionFlow
+                            AppScreen.STOCK_ADJUSTMENT -> isInStockAdjustmentFlow = previousStockAdjustmentFlow
+                            else -> {
+                                isInTransactionFlow = false
+                                isInPayGetCashFlow = false
+                                isInAddRecordFlow = false
+                                isInExpenseIncomeFlow = false
+                                isInPaymentTransferFlow = false
+                                isInJournalVoucherFlow = false
+                                isInStockAdjustmentFlow = false
+                                isInManufactureFlow = false
+                            }
+                        }
+                    }
+                    AppScreen.PAYMENT_METHODS -> {
+                        when (returnToScreenAfterPartySelection) {
+                            AppScreen.ADD_TRANSACTION_STEP2 -> isInTransactionFlow = previousTransactionFlow
+                            AppScreen.PAY_GET_CASH -> isInPayGetCashFlow = previousPayGetCashFlow
+                            AppScreen.ADD_EXPENSE_INCOME -> isInExpenseIncomeFlow = previousExpenseIncomeFlow
+                            AppScreen.PAYMENT_TRANSFER -> isInPaymentTransferFlow = previousPaymentTransferFlow
+                            AppScreen.JOURNAL_VOUCHER -> isInJournalVoucherFlow = previousJournalVoucherFlow
+                            else -> {
+                                isInTransactionFlow = false
+                                isInPayGetCashFlow = false
+                                isInAddRecordFlow = false
+                                isInExpenseIncomeFlow = false
+                                isInPaymentTransferFlow = false
+                                isInJournalVoucherFlow = false
+                                isInStockAdjustmentFlow = false
+                                isInManufactureFlow = false
+                            }
+                        }
+                    }
+                    else -> {
+                        // Any other screen exits all flows
+                        isInTransactionFlow = false
+                        isInPayGetCashFlow = false
+                        isInAddRecordFlow = false
+                        isInExpenseIncomeFlow = false
+                        isInPaymentTransferFlow = false
+                        isInJournalVoucherFlow = false
+                        isInStockAdjustmentFlow = false
+                        isInManufactureFlow = false
+                    }
+                }
             }
-            val recordViewModel = remember(koin) {
-                koin.get<com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddRecordViewModel>()
+            
+            // Create ViewModels for each flow - will be disposed when navigating away from their respective flows
+            // koinInject() must be called at composable scope, not inside remember lambda
+            val transactionViewModel: com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddTransactionViewModel? = if (isInTransactionFlow) {
+                koinInject()
+            } else {
+                null
             }
-            val payGetCashViewModel = remember(koin) {
-                koin.get<com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.PayGetCashViewModel>()
+            
+            val payGetCashViewModel: com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.PayGetCashViewModel? = if (isInPayGetCashFlow) {
+                koinInject()
+            } else {
+                null
             }
-            val expenseIncomeViewModel = remember(koin) {
-                koin.get<com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddExpenseIncomeViewModel>()
+            
+            val recordViewModel: com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddRecordViewModel? = if (isInAddRecordFlow) {
+                koinInject()
+            } else {
+                null
             }
-            val paymentTransferViewModel = remember(koin) {
-                koin.get<com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.PaymentTransferViewModel>()
+            
+            val expenseIncomeViewModel: com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddExpenseIncomeViewModel? = if (isInExpenseIncomeFlow) {
+                koinInject()
+            } else {
+                null
             }
-            val journalVoucherViewModel = remember(koin) {
-                koin.get<com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddJournalVoucherViewModel>()
+            
+            val paymentTransferViewModel: com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.PaymentTransferViewModel? = if (isInPaymentTransferFlow) {
+                koinInject()
+            } else {
+                null
             }
-            val stockAdjustmentViewModel = remember(koin) {
-                koin.get<com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.StockAdjustmentViewModel>()
+            
+            val journalVoucherViewModel: com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddJournalVoucherViewModel? = if (isInJournalVoucherFlow) {
+                koinInject()
+            } else {
+                null
             }
-            val manufactureViewModel = remember(koin) {
-                koin.get<com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddManufactureViewModel>()
+            
+            val stockAdjustmentViewModel: com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.StockAdjustmentViewModel? = if (isInStockAdjustmentFlow) {
+                koinInject()
+            } else {
+                null
             }
-            val transactionDetailViewModel = remember(koin) {
-                koin.get<com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionDetailViewModel>()
+            
+            val manufactureViewModel: com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddManufactureViewModel? = if (isInManufactureFlow) {
+                koinInject()
+            } else {
+                null
             }
-            val productsViewModel = remember(koin) {
-                koin.get<com.hisaabi.hisaabi_kmp.products.presentation.viewmodel.ProductsViewModel>()
-            }
-
+            
             // Journal Voucher state
             var showJournalAccountTypeDialog by remember { mutableStateOf(false) }
             
@@ -296,11 +461,9 @@ fun App() {
                         onNavigateToAddRecord = { navigateTo(AppScreen.ADD_RECORD) },
                         onNavigateToPayGetCash = { navigateTo(AppScreen.PAY_GET_CASH) },
                         onNavigateToExpense = {
-                            expenseIncomeViewModel.setTransactionType(com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.EXPENSE)
                             navigateTo(AppScreen.ADD_EXPENSE_INCOME)
                         },
                         onNavigateToExtraIncome = {
-                            expenseIncomeViewModel.setTransactionType(com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.EXTRA_INCOME)
                             navigateTo(AppScreen.ADD_EXPENSE_INCOME)
                         },
                         onNavigateToPaymentTransfer = { navigateTo(AppScreen.PAYMENT_TRANSFER) },
@@ -346,7 +509,7 @@ fun App() {
                 }
                 AppScreen.PARTIES -> {
                     com.hisaabi.hisaabi_kmp.parties.presentation.ui.PartiesScreen(
-                        viewModel = org.koin.compose.koinInject(),
+                        viewModel = koinInject(),
                         onPartyClick = { party ->
                             if (selectingPartyForTransaction) {
                                 // Store selected party and return to transaction or record
@@ -429,8 +592,8 @@ fun App() {
                                 com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.PURCHASE,
                                 com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.CUSTOMER_RETURN,
                                 com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.VENDOR_RETURN -> {
-                                    transactionViewModel.reset()
-                                    transactionViewModel.setTransactionType(txType!!)
+                                    transactionViewModel?.reset()
+                                    transactionViewModel?.setTransactionType(txType!!)
                                     navigateTo(AppScreen.ADD_TRANSACTION_STEP1)
                                 }
                                 else -> {
@@ -446,7 +609,7 @@ fun App() {
                         // Use key to force recomposition when navigating to edit
                         key(addPartyScreenKey) {
                             com.hisaabi.hisaabi_kmp.parties.presentation.ui.AddPartyScreen(
-                                viewModel = org.koin.compose.koinInject(),
+                                viewModel = koinInject(),
                                 partyType = type,
                                 partyToEdit = selectedPartyForEdit,
                                 onNavigateBack = { 
@@ -478,7 +641,7 @@ fun App() {
                 AppScreen.CATEGORIES -> {
                     categoryType?.let { type ->
                         com.hisaabi.hisaabi_kmp.categories.presentation.ui.CategoriesScreen(
-                            viewModel = org.koin.compose.koinInject(),
+                            viewModel = koinInject(),
                             categoryType = type,
                             onCategorySelected = { category ->
                                 // Store selected category based on type
@@ -535,7 +698,7 @@ fun App() {
                 AppScreen.ADD_CATEGORY -> {
                     categoryType?.let { type ->
                         com.hisaabi.hisaabi_kmp.categories.presentation.ui.AddCategoryScreen(
-                            viewModel = org.koin.compose.koinInject(),
+                            viewModel = koinInject(),
                             categoryType = type,
                             onNavigateBack = {
                                 categoriesRefreshTrigger++  // Trigger refresh
@@ -547,6 +710,7 @@ fun App() {
                 
                 AppScreen.PRODUCTS -> {
                     // Clear the product type after using it to avoid persistence
+                    val productsViewModel = koinInject<ProductsViewModel>()
                     val currentProductType = addProductType
                     LaunchedEffect(Unit) {
                         addProductType = null
@@ -598,9 +762,8 @@ fun App() {
                             selectedProductQuantitiesForTransaction = quantities
                         },
                         onSelectionDone = {
-                            // When Done is clicked in selection mode, fetch the actual products by their slugs
-                            // For now, we need to trigger the LaunchedEffect to load products
-                            selectingProductsForTransaction = false
+                            // When Done is clicked in selection mode, navigate back
+                            // The LaunchedEffect in ADD_TRANSACTION_STEP1 will handle adding products and clearing flags
                             currentScreen = returnToScreenAfterProductSelection ?: AppScreen.ADD_TRANSACTION_STEP1
                         },
                         onNavigateToWarehouses = {
@@ -625,12 +788,9 @@ fun App() {
                 }
                 
                 AppScreen.ADD_PRODUCT -> {
+                    val addProductViewModel : AddProductViewModel = koinInject()
                     addProductType?.let { type ->
                         val productToEdit = selectedProductForEdit
-                        val addProductViewModel = remember(koin) {
-                            koin.get<com.hisaabi.hisaabi_kmp.products.presentation.viewmodel.AddProductViewModel>()
-                        }
-                        
                         com.hisaabi.hisaabi_kmp.products.presentation.ui.AddProductScreen(
                             viewModel = addProductViewModel,
                             productType = type,
@@ -679,7 +839,7 @@ fun App() {
                 
                 AppScreen.PAYMENT_METHODS -> {
                     com.hisaabi.hisaabi_kmp.paymentmethods.presentation.ui.PaymentMethodsScreen(
-                        viewModel = org.koin.compose.koinInject(),
+                        viewModel = koinInject(),
                         onPaymentMethodClick = { paymentMethod ->
                             if (selectingPaymentMethodForTransaction) {
                                 // Store selected payment method and return to appropriate screen
@@ -714,7 +874,7 @@ fun App() {
                 
                 AppScreen.ADD_PAYMENT_METHOD -> {
                     com.hisaabi.hisaabi_kmp.paymentmethods.presentation.ui.AddPaymentMethodScreen(
-                        viewModel = org.koin.compose.koinInject(),
+                        viewModel = koinInject(),
                         paymentMethodToEdit = selectedPaymentMethodForEdit,
                         onNavigateBack = {
                             paymentMethodsRefreshTrigger++  // Trigger refresh
@@ -725,7 +885,7 @@ fun App() {
                 
                 AppScreen.WAREHOUSES -> {
                     com.hisaabi.hisaabi_kmp.warehouses.presentation.ui.WarehousesScreen(
-                        viewModel = org.koin.compose.koinInject(),
+                        viewModel = koinInject(),
                         onWarehouseClick = { warehouse ->
                             if (selectingWarehouseForTransaction) {
                                 // Store selected warehouse and return to the appropriate screen
@@ -759,7 +919,7 @@ fun App() {
                 
                 AppScreen.ADD_WAREHOUSE -> {
                     com.hisaabi.hisaabi_kmp.warehouses.presentation.ui.AddWarehouseScreen(
-                        viewModel = org.koin.compose.koinInject(),
+                        viewModel = koinInject(),
                         warehouseToEdit = selectedWarehouseForEdit,
                         onNavigateBack = {
                             warehousesRefreshTrigger++  // Trigger refresh
@@ -770,7 +930,7 @@ fun App() {
                 
                 AppScreen.MY_BUSINESS -> {
                     com.hisaabi.hisaabi_kmp.business.presentation.ui.MyBusinessScreen(
-                        viewModel = org.koin.compose.koinInject(),
+                        viewModel = koinInject(),
                         onBusinessClick = { business ->
                             selectedBusinessForEdit = business
                             currentScreen = AppScreen.ADD_BUSINESS
@@ -786,7 +946,7 @@ fun App() {
                 
                 AppScreen.ADD_BUSINESS -> {
                     com.hisaabi.hisaabi_kmp.business.presentation.ui.AddBusinessScreen(
-                        viewModel = org.koin.compose.koinInject(),
+                        viewModel = koinInject(),
                         businessToEdit = selectedBusinessForEdit,
                         onNavigateBack = {
                             businessRefreshTrigger++
@@ -802,7 +962,7 @@ fun App() {
                 
                 AppScreen.QUANTITY_UNITS -> {
                     com.hisaabi.hisaabi_kmp.quantityunits.presentation.ui.QuantityUnitsScreen(
-                        viewModel = org.koin.compose.koinInject(),
+                        viewModel = koinInject(),
                         onUnitClick = { unit ->
                             selectedUnitForEdit = unit
                             currentScreen = AppScreen.ADD_QUANTITY_UNIT
@@ -818,7 +978,7 @@ fun App() {
                 
                 AppScreen.ADD_QUANTITY_UNIT -> {
                     com.hisaabi.hisaabi_kmp.quantityunits.presentation.ui.AddQuantityUnitScreen(
-                        viewModel = org.koin.compose.koinInject(),
+                        viewModel = koinInject(),
                         unitToEdit = selectedUnitForEdit,
                         onNavigateBack = {
                             quantityUnitsRefreshTrigger++
@@ -829,26 +989,26 @@ fun App() {
                 
                 AppScreen.TRANSACTION_SETTINGS -> {
                     com.hisaabi.hisaabi_kmp.settings.presentation.ui.TransactionTypeSelectionScreen(
-                        viewModel = org.koin.compose.koinInject(),
+                        viewModel = koinInject(),
                         onNavigateBack = { navigateBack() }
                     )
                 }
                 
                 AppScreen.RECEIPT_SETTINGS -> {
                     com.hisaabi.hisaabi_kmp.settings.presentation.ui.ReceiptSettingsScreen(
-                        viewModel = org.koin.compose.koinInject(),
+                        viewModel = koinInject(),
                         onNavigateBack = { navigateBack() }
                     )
                 }
                 AppScreen.DASHBOARD_SETTINGS -> {
                     com.hisaabi.hisaabi_kmp.settings.presentation.ui.DashboardSettingsScreen(
-                        viewModel = org.koin.compose.koinInject(),
+                        viewModel = koinInject(),
                         onNavigateBack = { navigateBack() }
                     )
                 }
                 AppScreen.TEMPLATES -> {
                     com.hisaabi.hisaabi_kmp.templates.presentation.ui.TemplatesScreen(
-                        viewModel = org.koin.compose.koinInject(),
+                        viewModel = koinInject(),
                         onNavigateBack = { navigateBack() },
                         onAddTemplateClick = {
                             selectedTemplateIdForEdit = null
@@ -862,7 +1022,7 @@ fun App() {
                 }
                 AppScreen.ADD_TEMPLATE -> {
                     com.hisaabi.hisaabi_kmp.templates.presentation.ui.AddTemplateScreen(
-                        viewModel = org.koin.compose.koinInject(),
+                        viewModel = koinInject(),
                         templateId = selectedTemplateIdForEdit,
                         onNavigateBack = {
                             templatesRefreshTrigger++
@@ -872,12 +1032,13 @@ fun App() {
                 }
                 AppScreen.UPDATE_PROFILE -> {
                     com.hisaabi.hisaabi_kmp.profile.presentation.ui.UpdateProfileScreen(
-                        viewModel = org.koin.compose.koinInject(),
+                        viewModel = koinInject(),
                         onNavigateBack = { navigateBack() }
                     )
                 }
                 AppScreen.TRANSACTIONS_LIST -> {
-                    val transactionsListViewModel: com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionsListViewModel = org.koin.compose.koinInject()
+                    val transactionsListViewModel: com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionsListViewModel =
+                        koinInject()
                     
                     // Set party filter if coming from party actions
                     LaunchedEffect(selectedPartyForTransactionFilter) {
@@ -904,6 +1065,7 @@ fun App() {
                 }
                 
                 AppScreen.TRANSACTION_DETAIL -> {
+                    val transactionDetailViewModel: TransactionDetailViewModel = koinInject()
                     selectedTransactionSlug?.let { slug ->
                         com.hisaabi.hisaabi_kmp.transactions.presentation.ui.TransactionDetailScreen(
                             viewModel = transactionDetailViewModel,
@@ -922,7 +1084,8 @@ fun App() {
                 AppScreen.BALANCE_HISTORY -> {
                     selectedPartyForBalanceHistory?.let { party ->
                         // Fetch transactions for this party
-                        val transactionsListViewModel: com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionsListViewModel = org.koin.compose.koinInject()
+                        val transactionsListViewModel: com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionsListViewModel =
+                            koinInject()
                         val transactionsState by transactionsListViewModel.state.collectAsState()
                         
                         // Set party filter to get transactions for this party
@@ -945,46 +1108,71 @@ fun App() {
                 }
                 
                 AppScreen.ADD_RECORD -> {
+                    // Use ViewModel from app level flow tracking
                     // Handle party selection for record
                     LaunchedEffect(selectedPartyForTransaction) {
                         selectedPartyForTransaction?.let { party ->
-                            recordViewModel.selectParty(party)
-                            selectedPartyForTransaction = null
+                            if (selectingPartyForTransaction && returnToScreenAfterPartySelection == AppScreen.ADD_RECORD && recordViewModel != null) {
+                                recordViewModel.selectParty(party)
+                                selectedPartyForTransaction = null
+                                selectingPartyForTransaction = false
+                                returnToScreenAfterPartySelection = null
+                            }
                         }
                     }
                     
-                    com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddRecordScreen(
-                        viewModel = recordViewModel,
-                        onNavigateBack = { navigateBack() },
-                        onSelectParty = {
-                            selectingPartyForTransaction = true
-                            returnToScreenAfterPartySelection = AppScreen.ADD_RECORD
-                            selectedPartySegment = com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.CUSTOMER
-                            currentScreen = AppScreen.PARTIES
-                        }
-                    )
+                    recordViewModel?.let { viewModel ->
+                        com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddRecordScreen(
+                            viewModel = viewModel,
+                            onNavigateBack = { 
+                                isInAddRecordFlow = false
+                                partiesRefreshTrigger++ // Refresh parties to show updated balances
+                                navigateBack() 
+                            },
+                            onSelectParty = {
+                                selectingPartyForTransaction = true
+                                returnToScreenAfterPartySelection = AppScreen.ADD_RECORD
+                                selectedPartySegment = com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.CUSTOMER
+                                currentScreen = AppScreen.PARTIES
+                            }
+                        )
+                    }
                 }
                 
                 AppScreen.PAY_GET_CASH -> {
+                    // Use ViewModel from app level flow tracking
                     // Handle party selection for pay/get cash
                     LaunchedEffect(selectedPartyForTransaction) {
                         selectedPartyForTransaction?.let { party ->
-                            payGetCashViewModel.selectParty(party)
-                            selectedPartyForTransaction = null
+                            if (selectingPartyForTransaction && returnToScreenAfterPartySelection == AppScreen.PAY_GET_CASH && payGetCashViewModel != null) {
+                                payGetCashViewModel.selectParty(party)
+                                selectedPartyForTransaction = null
+                                selectingPartyForTransaction = false
+                                returnToScreenAfterPartySelection = null
+                            }
                         }
                     }
                     
                     // Handle payment method selection
                     LaunchedEffect(selectedPaymentMethodForTransaction) {
                         selectedPaymentMethodForTransaction?.let { paymentMethod ->
-                            payGetCashViewModel.selectPaymentMethod(paymentMethod)
-                            selectedPaymentMethodForTransaction = null
+                            if (selectingPaymentMethodForTransaction && returnToScreenAfterPartySelection == AppScreen.PAY_GET_CASH && payGetCashViewModel != null) {
+                                payGetCashViewModel.selectPaymentMethod(paymentMethod)
+                                selectedPaymentMethodForTransaction = null
+                                selectingPaymentMethodForTransaction = false
+                                returnToScreenAfterPartySelection = null
+                            }
                         }
                     }
                     
-                    com.hisaabi.hisaabi_kmp.transactions.presentation.ui.PayGetCashScreen(
-                        viewModel = payGetCashViewModel,
-                        onNavigateBack = { navigateBack() },
+                    payGetCashViewModel?.let { viewModel ->
+                        com.hisaabi.hisaabi_kmp.transactions.presentation.ui.PayGetCashScreen(
+                            viewModel = viewModel,
+                            onNavigateBack = { 
+                                isInPayGetCashFlow = false
+                                partiesRefreshTrigger++ // Refresh parties to show updated balances
+                                navigateBack() 
+                            },
                         onSelectParty = { partyType ->
                             selectingPartyForTransaction = true
                             returnToScreenAfterPartySelection = AppScreen.PAY_GET_CASH
@@ -1002,60 +1190,78 @@ fun App() {
                             }
                             currentScreen = AppScreen.PARTIES
                         },
-                        onSelectPaymentMethod = {
-                            selectingPaymentMethodForTransaction = true
-                            returnToScreenAfterPartySelection = AppScreen.PAY_GET_CASH
-                            currentScreen = AppScreen.PAYMENT_METHODS
-                        }
-                    )
+                            onSelectPaymentMethod = {
+                                selectingPaymentMethodForTransaction = true
+                                returnToScreenAfterPartySelection = AppScreen.PAY_GET_CASH
+                                currentScreen = AppScreen.PAYMENT_METHODS
+                            }
+                        )
+                    }
                 }
                 
                 AppScreen.ADD_EXPENSE_INCOME -> {
+                    // Use ViewModel from app level flow tracking
                     // Handle party selection for expense/income (these are expense/income types stored as parties with roleId 14 or 15)
                     LaunchedEffect(selectedPartyForTransaction) {
                         selectedPartyForTransaction?.let { party ->
-                            expenseIncomeViewModel.selectParty(party)
-                            selectedPartyForTransaction = null
+                            if (selectingPartyForTransaction && returnToScreenAfterPartySelection == AppScreen.ADD_EXPENSE_INCOME && expenseIncomeViewModel != null) {
+                                expenseIncomeViewModel.selectParty(party)
+                                selectedPartyForTransaction = null
+                                selectingPartyForTransaction = false
+                                returnToScreenAfterPartySelection = null
+                                isExpenseIncomePartySelection = false
+                            }
                         }
                     }
                     
                     // Handle payment method selection
                     LaunchedEffect(selectedPaymentMethodForTransaction) {
                         selectedPaymentMethodForTransaction?.let { paymentMethod ->
-                            expenseIncomeViewModel.selectPaymentMethod(paymentMethod)
-                            selectedPaymentMethodForTransaction = null
+                            if (selectingPaymentMethodForTransaction && returnToScreenAfterPartySelection == AppScreen.ADD_EXPENSE_INCOME && expenseIncomeViewModel != null) {
+                                expenseIncomeViewModel.selectPaymentMethod(paymentMethod)
+                                selectedPaymentMethodForTransaction = null
+                                selectingPaymentMethodForTransaction = false
+                                returnToScreenAfterPartySelection = null
+                            }
                         }
                     }
                     
-                    com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddExpenseIncomeScreen(
-                        viewModel = expenseIncomeViewModel,
-                        onNavigateBack = { navigateBack() },
-                        onSelectParty = {
-                            selectingPartyForTransaction = true
-                            returnToScreenAfterPartySelection = AppScreen.ADD_EXPENSE_INCOME
-                            isExpenseIncomePartySelection = true  // Set expense/income context
-                            // Set initial segment based on transaction type
-                            val state = expenseIncomeViewModel.state.value
-                            selectedPartySegment = if (state.transactionType == com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.EXPENSE) {
-                                com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.EXPENSE
-                            } else {
-                                com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.EXTRA_INCOME
+                    expenseIncomeViewModel?.let { viewModel ->
+                        com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddExpenseIncomeScreen(
+                            viewModel = viewModel,
+                            onNavigateBack = { 
+                                isInExpenseIncomeFlow = false
+                                partiesRefreshTrigger++ // Refresh parties to show updated balances
+                                navigateBack() 
+                            },
+                            onSelectParty = {
+                                selectingPartyForTransaction = true
+                                returnToScreenAfterPartySelection = AppScreen.ADD_EXPENSE_INCOME
+                                isExpenseIncomePartySelection = true  // Set expense/income context
+                                // Set initial segment based on transaction type
+                                val state = viewModel.state.value
+                                selectedPartySegment = if (state.transactionType == com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.EXPENSE) {
+                                    com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.EXPENSE
+                                } else {
+                                    com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.EXTRA_INCOME
+                                }
+                                currentScreen = AppScreen.PARTIES
+                            },
+                            onSelectPaymentMethod = {
+                                selectingPaymentMethodForTransaction = true
+                                returnToScreenAfterPartySelection = AppScreen.ADD_EXPENSE_INCOME
+                                currentScreen = AppScreen.PAYMENT_METHODS
                             }
-                            currentScreen = AppScreen.PARTIES
-                        },
-                        onSelectPaymentMethod = {
-                            selectingPaymentMethodForTransaction = true
-                            returnToScreenAfterPartySelection = AppScreen.ADD_EXPENSE_INCOME
-                            currentScreen = AppScreen.PAYMENT_METHODS
-                        }
-                    )
+                        )
+                    }
                 }
                 
                 AppScreen.PAYMENT_TRANSFER -> {
+                    // Use ViewModel from app level flow tracking
                     // Handle payment method selection (From or To)
                     LaunchedEffect(selectedPaymentMethodForTransaction) {
                         selectedPaymentMethodForTransaction?.let { paymentMethod ->
-                            if (selectingPaymentMethodForTransaction && returnToScreenAfterPartySelection == AppScreen.PAYMENT_TRANSFER) {
+                            if (selectingPaymentMethodForTransaction && returnToScreenAfterPartySelection == AppScreen.PAYMENT_TRANSFER && paymentTransferViewModel != null) {
                                 // Use the flag to determine which payment method to set
                                 if (isSelectingPaymentMethodFrom) {
                                     paymentTransferViewModel.selectPaymentMethodFrom(paymentMethod)
@@ -1071,29 +1277,36 @@ fun App() {
                         }
                     }
                     
-                    com.hisaabi.hisaabi_kmp.transactions.presentation.ui.PaymentTransferScreen(
-                        viewModel = paymentTransferViewModel,
-                        onNavigateBack = { navigateBack() },
+                    paymentTransferViewModel?.let { viewModel ->
+                        com.hisaabi.hisaabi_kmp.transactions.presentation.ui.PaymentTransferScreen(
+                            viewModel = viewModel,
+                            onNavigateBack = { 
+                                isInPaymentTransferFlow = false
+                                partiesRefreshTrigger++ // Refresh parties to show updated balances
+                                navigateBack() 
+                            },
                         onSelectPaymentMethodFrom = {
                             selectingPaymentMethodForTransaction = true
                             returnToScreenAfterPartySelection = AppScreen.PAYMENT_TRANSFER
                             isSelectingPaymentMethodFrom = true  // Set flag for "From"
                             currentScreen = AppScreen.PAYMENT_METHODS
                         },
-                        onSelectPaymentMethodTo = {
-                            selectingPaymentMethodForTransaction = true
-                            returnToScreenAfterPartySelection = AppScreen.PAYMENT_TRANSFER
-                            isSelectingPaymentMethodFrom = false  // Set flag for "To"
-                            currentScreen = AppScreen.PAYMENT_METHODS
-                        }
-                    )
+                            onSelectPaymentMethodTo = {
+                                selectingPaymentMethodForTransaction = true
+                                returnToScreenAfterPartySelection = AppScreen.PAYMENT_TRANSFER
+                                isSelectingPaymentMethodFrom = false  // Set flag for "To"
+                                currentScreen = AppScreen.PAYMENT_METHODS
+                            }
+                        )
+                    }
                 }
                 
                 AppScreen.JOURNAL_VOUCHER -> {
+                    // Use ViewModel from app level flow tracking
                     // Handle party selection for journal voucher
                     LaunchedEffect(selectedPartyForTransaction) {
                         selectedPartyForTransaction?.let { party ->
-                            if (selectingPartyForTransaction && returnToScreenAfterPartySelection == AppScreen.JOURNAL_VOUCHER) {
+                            if (selectingPartyForTransaction && returnToScreenAfterPartySelection == AppScreen.JOURNAL_VOUCHER && journalVoucherViewModel != null) {
                                 journalVoucherViewModel.addParty(party)
                                 selectedPartyForTransaction = null
                                 selectingPartyForTransaction = false
@@ -1106,7 +1319,7 @@ fun App() {
                     // Handle payment method selection for journal voucher
                     LaunchedEffect(selectedPaymentMethodForTransaction) {
                         selectedPaymentMethodForTransaction?.let { paymentMethod ->
-                            if (selectingPaymentMethodForTransaction && returnToScreenAfterPartySelection == AppScreen.JOURNAL_VOUCHER) {
+                            if (selectingPaymentMethodForTransaction && returnToScreenAfterPartySelection == AppScreen.JOURNAL_VOUCHER && journalVoucherViewModel != null) {
                                 // Check if it's for the voucher payment method or for adding as account
                                 if (isSelectingPaymentMethodFrom) {
                                     // Adding payment method as an account
@@ -1123,9 +1336,14 @@ fun App() {
                         }
                     }
 
-                    com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddJournalVoucherScreen(
-                        viewModel = journalVoucherViewModel,
-                        onNavigateBack = { navigateBack() },
+                    journalVoucherViewModel?.let { viewModel ->
+                        com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddJournalVoucherScreen(
+                            viewModel = viewModel,
+                            onNavigateBack = { 
+                                isInJournalVoucherFlow = false
+                                partiesRefreshTrigger++ // Refresh parties to show updated balances
+                                navigateBack() 
+                            },
                         onSelectAccountType = {
                             showJournalAccountTypeDialog = true
                         },
@@ -1190,13 +1408,15 @@ fun App() {
                             }
                         )
                     }
+                    }
                 }
                 
                 AppScreen.STOCK_ADJUSTMENT -> {
+                    // Use ViewModel from app level flow tracking
                     // Handle warehouse selection for stock adjustment
                     LaunchedEffect(selectedWarehouseForTransaction) {
                         selectedWarehouseForTransaction?.let { warehouse ->
-                            if (selectingWarehouseForTransaction && returnToScreenAfterPartySelection == AppScreen.STOCK_ADJUSTMENT) {
+                            if (selectingWarehouseForTransaction && returnToScreenAfterPartySelection == AppScreen.STOCK_ADJUSTMENT && stockAdjustmentViewModel != null) {
                                 if (isSelectingWarehouseFrom) {
                                     stockAdjustmentViewModel.setWarehouseFrom(warehouse)
                                 } else {
@@ -1212,7 +1432,7 @@ fun App() {
 
                     // Handle product selection for stock adjustment
                     LaunchedEffect(selectedProductsForTransaction) {
-                        if (selectingProductsForTransaction && returnToScreenAfterProductSelection == AppScreen.STOCK_ADJUSTMENT) {
+                        if (selectingProductsForTransaction && returnToScreenAfterProductSelection == AppScreen.STOCK_ADJUSTMENT && stockAdjustmentViewModel != null) {
                             selectedProductsForTransaction.forEach { product ->
                                 stockAdjustmentViewModel.addProduct(product)
                             }
@@ -1222,9 +1442,14 @@ fun App() {
                         }
                     }
 
-                    com.hisaabi.hisaabi_kmp.transactions.presentation.ui.StockAdjustmentScreen(
-                        viewModel = stockAdjustmentViewModel,
-                        onNavigateBack = { navigateBack() },
+                    stockAdjustmentViewModel?.let { viewModel ->
+                        com.hisaabi.hisaabi_kmp.transactions.presentation.ui.StockAdjustmentScreen(
+                            viewModel = viewModel,
+                            onNavigateBack = { 
+                                isInStockAdjustmentFlow = false
+                                partiesRefreshTrigger++ // Refresh parties to show updated balances (if any)
+                                navigateBack() 
+                            },
                         onSelectWarehouseFrom = {
                             selectingWarehouseForTransaction = true
                             returnToScreenAfterPartySelection = AppScreen.STOCK_ADJUSTMENT
@@ -1237,19 +1462,21 @@ fun App() {
                             isSelectingWarehouseFrom = false
                             currentScreen = AppScreen.WAREHOUSES
                         },
-                        onSelectProducts = {
-                            selectingProductsForTransaction = true
-                            returnToScreenAfterProductSelection = AppScreen.STOCK_ADJUSTMENT
-                            currentScreen = AppScreen.PRODUCTS
-                        }
-                    )
+                            onSelectProducts = {
+                                selectingProductsForTransaction = true
+                                returnToScreenAfterProductSelection = AppScreen.STOCK_ADJUSTMENT
+                                currentScreen = AppScreen.PRODUCTS
+                            }
+                        )
+                    }
                 }
                 
                 AppScreen.ADD_MANUFACTURE -> {
+                    // Use ViewModel from app level flow tracking
                     // Handle warehouse selection for manufacture
                     LaunchedEffect(selectedWarehouseForTransaction) {
                         selectedWarehouseForTransaction?.let { warehouse ->
-                            if (selectingWarehouseForTransaction && returnToScreenAfterPartySelection == AppScreen.ADD_MANUFACTURE) {
+                            if (selectingWarehouseForTransaction && returnToScreenAfterPartySelection == AppScreen.ADD_MANUFACTURE && manufactureViewModel != null) {
                                 manufactureViewModel.selectWarehouse(warehouse)
                                 selectedWarehouseForTransaction = null
                                 selectingWarehouseForTransaction = false
@@ -1258,110 +1485,142 @@ fun App() {
                         }
                     }
 
-                    com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddManufactureScreen(
-                        viewModel = manufactureViewModel,
-                        onNavigateBack = { 
-                            manufactureViewModel.resetState()
-                            currentScreen = AppScreen.HOME 
-                        },
-                        onSelectWarehouse = {
-                            selectingWarehouseForTransaction = true
-                            returnToScreenAfterPartySelection = AppScreen.ADD_MANUFACTURE
-                            currentScreen = AppScreen.WAREHOUSES
-                        }
-                    )
+                    manufactureViewModel?.let { viewModel ->
+                        com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddManufactureScreen(
+                            viewModel = viewModel,
+                            onNavigateBack = { 
+                                viewModel.resetState()
+                                isInManufactureFlow = false
+                                partiesRefreshTrigger++ // Refresh parties to show updated balances (if any)
+                                currentScreen = AppScreen.HOME 
+                            },
+                            onSelectWarehouse = {
+                                selectingWarehouseForTransaction = true
+                                returnToScreenAfterPartySelection = AppScreen.ADD_MANUFACTURE
+                                currentScreen = AppScreen.WAREHOUSES
+                            }
+                        )
+                    }
                 }
                 
                 AppScreen.ADD_TRANSACTION_STEP1 -> {
-                    // Set transaction type if provided
-                    LaunchedEffect(transactionType) {
-                        transactionType?.let { type ->
-                            transactionViewModel.setTransactionType(type)
-                        }
-                    }
-                    
-                    // Set selected party if returned from party selection
-                    LaunchedEffect(selectedPartyForTransaction) {
-                        selectedPartyForTransaction?.let { party ->
-                            transactionViewModel.selectParty(party)
-                            selectedPartyForTransaction = null // Clear after setting
-                        }
-                    }
-                    
-                    // Set selected warehouse if returned from warehouse selection
-                    LaunchedEffect(selectedWarehouseForTransaction) {
-                        selectedWarehouseForTransaction?.let { warehouse ->
-                            transactionViewModel.selectWarehouse(warehouse)
-                            selectedWarehouseForTransaction = null // Clear after setting
-                        }
-                    }
-                    
-                    // Add selected products if returned from product selection
-                    LaunchedEffect(selectedProductQuantitiesForTransaction.size, selectedBusinessSlug) {
-                        val businessSlug = selectedBusinessSlug
-                        if (selectedProductQuantitiesForTransaction.isNotEmpty() && businessSlug != null) {
-                            // Fetch products by their slugs
-                            val allProducts = productsRepository.getProducts(businessSlug)
-                            val selectedSlugs = selectedProductQuantitiesForTransaction.keys.toSet()
-                            val products = allProducts.filter { it.slug in selectedSlugs }
-                            
-                            products.forEach { product ->
-                                // Get the quantity for this product
-                                val quantity = selectedProductQuantitiesForTransaction[product.slug] ?: 1
-                                // Get default unit for the product
-                                val defaultUnit = null // TODO: Fetch from quantity units
-                                // Add product with the specified quantity
-                                transactionViewModel.addProduct(product, defaultUnit, quantity.toDouble())
+                    // Use shared ViewModel instance created at app level
+                    transactionViewModel?.let { viewModel ->
+                        // Set transaction type if provided
+                        LaunchedEffect(transactionType) {
+                            transactionType?.let { type ->
+                                viewModel.setTransactionType(type)
                             }
-                            selectedProductQuantitiesForTransaction = emptyMap() // Clear after adding
                         }
-                    }
                     
-                    com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddTransactionStep1Screen(
-                        viewModel = transactionViewModel,
-                        onNavigateBack = { navigateBack() },
-                        onSelectParty = { 
-                            // Determine party segment based on transaction type
-                            val state = transactionViewModel.state.value
-                            selectedPartySegment = if (com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.isDealingWithVendor(state.transactionType.value)) {
-                                com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.VENDOR
-                            } else {
-                                com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.CUSTOMER
+                        // Set selected party if returned from party selection
+                        LaunchedEffect(selectedPartyForTransaction) {
+                            selectedPartyForTransaction?.let { party ->
+                                if (selectingPartyForTransaction && returnToScreenAfterPartySelection == AppScreen.ADD_TRANSACTION_STEP1) {
+                                    viewModel.selectParty(party)
+                                    selectedPartyForTransaction = null // Clear after setting
+                                    selectingPartyForTransaction = false
+                                    returnToScreenAfterPartySelection = null
+                                }
                             }
-                            selectingPartyForTransaction = true
-                            returnToScreenAfterPartySelection = AppScreen.ADD_TRANSACTION_STEP1
-                            currentScreen = AppScreen.PARTIES
-                        },
-                        onSelectProducts = { 
-                            selectingProductsForTransaction = true
-                            returnToScreenAfterProductSelection = AppScreen.ADD_TRANSACTION_STEP1
-                            currentScreen = AppScreen.PRODUCTS
-                        },
-                        onSelectWarehouse = { 
-                            selectingWarehouseForTransaction = true
-                            currentScreen = AppScreen.WAREHOUSES
-                        },
-                        onProceedToStep2 = { navigateTo(AppScreen.ADD_TRANSACTION_STEP2) }
-                    )
+                        }
+                    
+                        // Set selected warehouse if returned from warehouse selection
+                        LaunchedEffect(selectedWarehouseForTransaction) {
+                            selectedWarehouseForTransaction?.let { warehouse ->
+                                if (selectingWarehouseForTransaction && returnToScreenAfterPartySelection == AppScreen.ADD_TRANSACTION_STEP1) {
+                                    viewModel.selectWarehouse(warehouse)
+                                    selectedWarehouseForTransaction = null // Clear after setting
+                                    selectingWarehouseForTransaction = false
+                                    returnToScreenAfterPartySelection = null
+                                }
+                            }
+                        }
+                    
+                        // Add selected products if returned from product selection
+                        LaunchedEffect(selectedProductQuantitiesForTransaction.size, selectedBusinessSlug) {
+                            val businessSlug = selectedBusinessSlug
+                            if (selectedProductQuantitiesForTransaction.isNotEmpty() && businessSlug != null && 
+                                selectingProductsForTransaction && returnToScreenAfterProductSelection == AppScreen.ADD_TRANSACTION_STEP1) {
+                                // Fetch products by their slugs
+                                val allProducts = productsRepository.getProducts(businessSlug)
+                                val selectedSlugs = selectedProductQuantitiesForTransaction.keys.toSet()
+                                val products = allProducts.filter { it.slug in selectedSlugs }
+                                
+                                products.forEach { product ->
+                                    // Get the quantity for this product
+                                    val quantity = selectedProductQuantitiesForTransaction[product.slug] ?: 1
+                                    // Get default unit for the product
+                                    val defaultUnit = null // TODO: Fetch from quantity units
+                                    // Add product with the specified quantity
+                                    viewModel.addProduct(product, defaultUnit, quantity.toDouble())
+                                }
+                                selectedProductQuantitiesForTransaction = emptyMap() // Clear after adding
+                                selectingProductsForTransaction = false
+                                returnToScreenAfterProductSelection = null
+                            }
+                        }
+                    
+                        com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddTransactionStep1Screen(
+                            viewModel = viewModel,
+                            onNavigateBack = { navigateBack() },
+                            onSelectParty = { 
+                                // Determine party segment based on transaction type
+                                val state = viewModel.state.value
+                                selectedPartySegment = if (com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.isDealingWithVendor(state.transactionType.value)) {
+                                    com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.VENDOR
+                                } else {
+                                    com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.CUSTOMER
+                                }
+                                selectingPartyForTransaction = true
+                                returnToScreenAfterPartySelection = AppScreen.ADD_TRANSACTION_STEP1
+                                currentScreen = AppScreen.PARTIES
+                            },
+                            onSelectProducts = { 
+                                selectingProductsForTransaction = true
+                                returnToScreenAfterProductSelection = AppScreen.ADD_TRANSACTION_STEP1
+                                currentScreen = AppScreen.PRODUCTS
+                            },
+                            onSelectWarehouse = { 
+                                selectingWarehouseForTransaction = true
+                                returnToScreenAfterPartySelection = AppScreen.ADD_TRANSACTION_STEP1
+                                currentScreen = AppScreen.WAREHOUSES
+                            },
+                            onProceedToStep2 = { navigateTo(AppScreen.ADD_TRANSACTION_STEP2) }
+                        )
+                    }
                 }
                 AppScreen.ADD_TRANSACTION_STEP2 -> {
-                    // Set selected payment method if returned from payment method selection
-                    LaunchedEffect(selectedPaymentMethodForTransaction) {
-                        selectedPaymentMethodForTransaction?.let { paymentMethod ->
-                            transactionViewModel.selectPaymentMethod(paymentMethod)
-                            selectedPaymentMethodForTransaction = null // Clear after setting
+                    // Use shared ViewModel instance created at app level
+                    transactionViewModel?.let { viewModel ->
+                        // Set selected payment method if returned from payment method selection
+                        LaunchedEffect(selectedPaymentMethodForTransaction) {
+                            selectedPaymentMethodForTransaction?.let { paymentMethod ->
+                                if (selectingPaymentMethodForTransaction && returnToScreenAfterPartySelection == AppScreen.ADD_TRANSACTION_STEP2) {
+                                    viewModel.selectPaymentMethod(paymentMethod)
+                                    selectedPaymentMethodForTransaction = null // Clear after setting
+                                    selectingPaymentMethodForTransaction = false
+                                    returnToScreenAfterPartySelection = null
+                                }
+                            }
                         }
-                    }
                     
-                    com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddTransactionStep2Screen(
-                        viewModel = transactionViewModel,
-                        onNavigateBack = { navigateBack() },
-                        onSelectPaymentMethod = { 
-                            selectingPaymentMethodForTransaction = true
-                            currentScreen = AppScreen.PAYMENT_METHODS
-                        },
-                        onTransactionSaved = { navigateTo(AppScreen.HOME) }
-                    )
+                        com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddTransactionStep2Screen(
+                            viewModel = viewModel,
+                            onNavigateBack = { navigateBack() },
+                            onSelectPaymentMethod = { 
+                                selectingPaymentMethodForTransaction = true
+                                returnToScreenAfterPartySelection = AppScreen.ADD_TRANSACTION_STEP2
+                                currentScreen = AppScreen.PAYMENT_METHODS
+                            },
+                            onTransactionSaved = {
+                                // Exit transaction flow and navigate to home
+                                isInTransactionFlow = false
+                                partiesRefreshTrigger++ // Refresh parties to show updated balances
+                                currentScreen = AppScreen.HOME
+                            }
+                        )
+                    }
                 }
                 }
             }
