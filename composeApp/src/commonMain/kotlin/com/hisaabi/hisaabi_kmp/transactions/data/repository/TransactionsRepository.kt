@@ -31,7 +31,13 @@ class TransactionsRepository(
     
     fun getAllTransactions(): Flow<List<Transaction>> {
         return localDataSource.getAllTransactions().map { entities ->
-            entities.map { it.toDomainModel() }
+            entities.map { entity ->
+                // Load party for each transaction to display in list
+                val party = entity.customer_slug?.let { 
+                    partiesRepository.getPartyBySlug(it) 
+                }
+                entity.toDomainModel(party = party)
+            }
         }
     }
     
@@ -45,13 +51,25 @@ class TransactionsRepository(
     
     fun getTransactionsByCustomer(customerSlug: String): Flow<List<Transaction>> {
         return localDataSource.getTransactionsByCustomer(customerSlug).map { entities ->
-            entities.map { it.toDomainModel() }
+            entities.map { entity ->
+                // Load party for each transaction to display in list
+                val party = entity.customer_slug?.let { 
+                    partiesRepository.getPartyBySlug(it) 
+                }
+                entity.toDomainModel(party = party)
+            }
         }
     }
     
     fun getTransactionsByType(transactionType: Int): Flow<List<Transaction>> {
         return localDataSource.getTransactionsByType(transactionType).map { entities ->
-            entities.map { it.toDomainModel() }
+            entities.map { entity ->
+                // Load party for each transaction to display in list
+                val party = entity.customer_slug?.let { 
+                    partiesRepository.getPartyBySlug(it) 
+                }
+                entity.toDomainModel(party = party)
+            }
         }
     }
     
