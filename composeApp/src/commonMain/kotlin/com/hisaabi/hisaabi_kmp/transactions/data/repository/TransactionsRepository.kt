@@ -177,6 +177,12 @@ class TransactionsRepository(
     
     suspend fun insertTransaction(transaction: Transaction): Result<String> {
         return try {
+            // Validate transaction before any database changes
+            val validationResult = transactionProcessor.validateTransaction(transaction, null)
+            if (validationResult.isFailure) {
+                return Result.failure(validationResult.exceptionOrNull()!!)
+            }
+            
             // Generate slugs using centralized slug generator
             val transactionSlug = transaction.slug ?: (slugGenerator.generateSlug(EntityTypeEnum.ENTITY_TYPE_TRANSACTION)
                 ?: throw IllegalStateException("Failed to generate transaction slug: Invalid session context"))
@@ -222,8 +228,15 @@ class TransactionsRepository(
         return try {
             val slug = transaction.slug ?: return Result.failure(Exception("Transaction slug is required"))
             
-            // Load old transaction first to reverse its effects
+            // Load old transaction first for validation and to reverse its effects
             val oldTransaction = getTransactionWithDetails(slug)
+            
+            // Validate transaction before any database changes
+            val validationResult = transactionProcessor.validateTransaction(transaction, oldTransaction)
+            if (validationResult.isFailure) {
+                return Result.failure(validationResult.exceptionOrNull()!!)
+            }
+            
             if (oldTransaction != null) {
                 // Reverse old transaction
                 transactionProcessor.reverseTransaction(oldTransaction)
@@ -299,6 +312,21 @@ class TransactionsRepository(
         userSlug: String
     ): Result<String> {
         return try {
+            // Validate that ingredients are available before any database changes
+            // Create a temporary sale transaction to validate ingredient stock
+            val tempSaleTransaction = Transaction(
+                id = 0,
+                transactionType = AllTransactionTypes.SALE.value,
+                wareHouseSlugFrom = warehouseSlug,
+                transactionDetails = ingredients,
+                businessSlug = businessSlug
+            )
+            
+            val validationResult = transactionProcessor.validateTransaction(tempSaleTransaction, null)
+            if (validationResult.isFailure) {
+                return Result.failure(validationResult.exceptionOrNull()!!)
+            }
+            
             val now = getCurrentTimestamp()
             
             // Generate slugs using centralized slug generator

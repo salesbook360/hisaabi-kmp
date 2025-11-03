@@ -24,6 +24,108 @@ class TransactionProcessor(
 ) {
     
     /**
+     * Validate a transaction before processing.
+     * Checks if stock would go negative for any product.
+     * 
+     * @param transaction The transaction to validate
+     * @param oldTransaction The old transaction (for updates), null for new transactions
+     * @return Result.success if valid, Result.failure with error message if invalid
+     */
+    suspend fun validateTransaction(
+        transaction: Transaction,
+        oldTransaction: Transaction? = null
+    ): Result<Unit> {
+        // Validate stock for products
+        val stockValidation = validateStock(transaction, oldTransaction)
+        if (stockValidation.isFailure) {
+            return stockValidation
+        }
+        
+        return Result.success(Unit)
+    }
+    
+    /**
+     * Validate that stock won't go negative after this transaction.
+     * 
+     * @param transaction The new transaction
+     * @param oldTransaction The old transaction (for updates), null for new transactions
+     * @return Result.success if valid, Result.failure with error message if invalid
+     */
+    private suspend fun validateStock(
+        transaction: Transaction,
+        oldTransaction: Transaction?
+    ): Result<Unit> {
+        val warehouseSlug = transaction.wareHouseSlugFrom ?: return Result.success(Unit)
+        
+        // Check each product in the transaction
+        for (detail in transaction.transactionDetails) {
+            // Skip service products and recipes (they don't have physical stock)
+            if (detail.product?.isService == true || detail.product?.isRecipe == true) {
+                continue
+            }
+            
+            val productSlug = detail.productSlug ?: continue
+            val productName = detail.product?.title ?: "Unknown Product"
+            
+            // Calculate new quantity adjustment for this transaction
+            val newQuantityAdjustment = calculateProductQuantityAdjustment(transaction, detail)
+            
+            // Calculate old quantity adjustment if this is an update
+            val oldQuantityAdjustment = if (oldTransaction != null) {
+                val oldDetail = oldTransaction.transactionDetails.find { 
+                    it.productSlug == productSlug 
+                }
+                if (oldDetail != null) {
+                    calculateProductQuantityAdjustment(oldTransaction, oldDetail)
+                } else {
+                    0.0
+                }
+            } else {
+                0.0
+            }
+            
+            // Net change in stock (reversing old and applying new)
+            val netStockChange = newQuantityAdjustment - oldQuantityAdjustment
+            
+            // Skip if no change
+            if (netStockChange == 0.0) {
+                continue
+            }
+            
+            // Get current quantity in warehouse
+            val currentQuantity = transactionProcessorDao.getAvailableQuantity(
+                productSlug,
+                warehouseSlug
+            ) ?: 0.0
+            
+            // Calculate final quantity after transaction
+            val finalQuantity = currentQuantity + netStockChange
+            
+            // Check if stock would go negative
+            if (finalQuantity < 0.0) {
+                val shortfall = -finalQuantity
+                return Result.failure(
+                    Exception(
+                        "Insufficient stock for '$productName'. " +
+                        "Available: ${currentQuantity}, " +
+                        "Required: ${-netStockChange}, " +
+                        "Short by: ${shortfall}"
+                    )
+                )
+            }
+            
+            // Also validate stock transfer destination if applicable
+            if (transaction.transactionType == AllTransactionTypes.STOCK_TRANSFER.value &&
+                transaction.wareHouseSlugTo != null) {
+                // For stock transfer, the destination warehouse receives stock (positive adjustment)
+                // No need to validate destination as it's receiving stock
+            }
+        }
+        
+        return Result.success(Unit)
+    }
+    
+    /**
      * Process a transaction and update all related balances.
      * 
      * @param transaction The transaction to process
