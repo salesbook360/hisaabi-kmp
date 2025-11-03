@@ -84,3 +84,4 @@ interface TransactionProcessorDao {
     suspend fun getCurrentPartyBalance(partySlug: String?): Double?
 }
 
+
