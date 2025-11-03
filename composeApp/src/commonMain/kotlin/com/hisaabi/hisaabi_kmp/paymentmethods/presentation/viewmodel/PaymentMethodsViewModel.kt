@@ -29,8 +29,13 @@ class PaymentMethodsViewModel(
         }
     }
     
+    private var loadJob: kotlinx.coroutines.Job? = null
+    
     fun loadPaymentMethods() {
-        viewModelScope.launch {
+        // Cancel previous load if any
+        loadJob?.cancel()
+        
+        loadJob = viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
             
             val slug = businessSlug

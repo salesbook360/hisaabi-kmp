@@ -2,13 +2,16 @@ package com.hisaabi.hisaabi_kmp.paymentmethods.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hisaabi.hisaabi_kmp.core.session.AppSessionManager
+import com.hisaabi.hisaabi_kmp.core.session.SessionContext
 import com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod
 import com.hisaabi.hisaabi_kmp.paymentmethods.domain.usecase.PaymentMethodUseCases
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class AddPaymentMethodViewModel(
-    private val useCases: PaymentMethodUseCases
+    private val useCases: PaymentMethodUseCases,
+    private val appSessionManager: AppSessionManager
 ) : ViewModel() {
     
     private val _state = MutableStateFlow(AddPaymentMethodState())
@@ -90,8 +93,8 @@ class AddPaymentMethodViewModel(
                     title = currentState.title,
                     description = currentState.description.ifBlank { null },
                     openingAmount = amount,
-                    businessSlug = null, // TODO: Get from business context
-                    createdBy = null // TODO: Get from auth context
+                    businessSlug =appSessionManager.getBusinessSlug().orEmpty() ,
+                    createdBy = appSessionManager.getUserSlug().orEmpty()
                 )
                 
                 result.fold(

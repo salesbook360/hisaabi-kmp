@@ -601,53 +601,54 @@ private fun PaymentMethodSection(
             containerColor = if (showError && selectedMethod == null)
                 MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
             else
-                MaterialTheme.colorScheme.surface
+                MaterialTheme.colorScheme.surfaceVariant
         )
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                Icons.Default.Payment,
-                contentDescription = null,
-                modifier = Modifier.size(32.dp),
-                tint = if (showError && selectedMethod == null)
-                    MaterialTheme.colorScheme.error
-                else
-                    MaterialTheme.colorScheme.primary
-            )
-            Spacer(Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    "Payment Method",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = if (showError && selectedMethod == null)
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.Payment,
+                    contentDescription = null,
+                    modifier = Modifier.size(32.dp),
+                    tint = if (showError && selectedMethod == null)
                         MaterialTheme.colorScheme.error
                     else
-                        MaterialTheme.colorScheme.onSurface
+                        MaterialTheme.colorScheme.primary
                 )
-                Text(
-                    selectedMethod?.title ?: "Select Payment Method",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = if (showError && selectedMethod == null)
-                        MaterialTheme.colorScheme.error
-                    else
-                        MaterialTheme.colorScheme.onSurface
-                )
-                if (showError && selectedMethod == null) {
+                Spacer(Modifier.width(16.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "Payment Method",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "Payment method is required",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error
+                        selectedMethod?.title ?: "Select Payment Method",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (showError && selectedMethod == null)
+                            MaterialTheme.colorScheme.error
+                        else
+                            MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    if (showError && selectedMethod == null) {
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "Payment method is required",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
                 }
+                Icon(
+                    Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
-            Icon(Icons.Default.ChevronRight, contentDescription = null)
         }
     }
 }

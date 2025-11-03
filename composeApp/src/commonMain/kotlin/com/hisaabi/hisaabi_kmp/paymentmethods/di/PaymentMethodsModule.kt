@@ -32,6 +32,6 @@ val paymentMethodsModule = module {
     
     // ViewModels
     viewModel { PaymentMethodsViewModel(get(), get()) }
-    viewModel { AddPaymentMethodViewModel(get()) }
+    viewModel { AddPaymentMethodViewModel(get(),get()) }
 }
 

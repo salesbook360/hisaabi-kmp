@@ -754,6 +754,42 @@ fun App() {
                         addProductType = null
                     }
                     
+                    // Preselect warehouse when opening Products screen from transaction screens
+                    LaunchedEffect(returnToScreenAfterProductSelection) {
+                        when (returnToScreenAfterProductSelection) {
+                            AppScreen.ADD_TRANSACTION_STEP1 -> {
+                                // Get warehouse from AddTransactionViewModel
+                                transactionViewModel?.let { viewModel ->
+                                    val warehouse = viewModel.state.value.selectedWarehouse
+                                    if (warehouse != null) {
+                                        productsViewModel.selectWarehouse(warehouse)
+                                    }
+                                }
+                            }
+                            AppScreen.STOCK_ADJUSTMENT -> {
+                                // Get warehouseFrom from StockAdjustmentViewModel
+                                stockAdjustmentViewModel?.let { viewModel ->
+                                    val warehouse = viewModel.state.value.warehouseFrom
+                                    if (warehouse != null) {
+                                        productsViewModel.selectWarehouse(warehouse)
+                                    }
+                                }
+                            }
+                            AppScreen.ADD_MANUFACTURE -> {
+                                // Get selectedWarehouse from AddManufactureViewModel
+                                manufactureViewModel?.let { viewModel ->
+                                    val warehouse = viewModel.state.value.selectedWarehouse
+                                    if (warehouse != null) {
+                                        productsViewModel.selectWarehouse(warehouse)
+                                    }
+                                }
+                            }
+                            else -> {
+                                // No warehouse preselection needed
+                            }
+                        }
+                    }
+                    
                     com.hisaabi.hisaabi_kmp.products.presentation.ui.ProductsScreen(
                         viewModel = productsViewModel,
                         onProductClick = { product ->
@@ -915,8 +951,11 @@ fun App() {
                         viewModel = koinInject(),
                         paymentMethodToEdit = selectedPaymentMethodForEdit,
                         onNavigateBack = {
-                            paymentMethodsRefreshTrigger++  // Trigger refresh
+                            // Trigger refresh and navigate
+                            paymentMethodsRefreshTrigger++
                             currentScreen = AppScreen.PAYMENT_METHODS
+                            // Clear edit state after navigation
+                            selectedPaymentMethodForEdit = null
                         }
                     )
                 }
