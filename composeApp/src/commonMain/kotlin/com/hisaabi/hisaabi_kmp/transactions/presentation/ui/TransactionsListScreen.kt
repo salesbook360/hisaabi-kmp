@@ -32,7 +32,8 @@ fun TransactionsListScreen(
     viewModel: TransactionsListViewModel,
     onNavigateBack: () -> Unit,
     onTransactionClick: (Transaction) -> Unit,
-    onAddTransactionClick: () -> Unit
+    onAddTransactionClick: () -> Unit,
+    onEditTransaction: (Transaction) -> Unit
 ) {
     val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -153,6 +154,7 @@ fun TransactionsListScreen(
                                 transaction = transaction,
                                 onClick = { onTransactionClick(transaction) },
                                 onDeleteClick = { viewModel.deleteTransaction(transaction) },
+                                onEditClick = { onEditTransaction(transaction) },
                                 transactionDetailsCounts = state.transactionDetailsCounts,
                                 receiptViewModel = receiptViewModel
                             )
@@ -374,6 +376,7 @@ private fun TransactionCard(
     transaction: Transaction,
     onClick: () -> Unit,
     onDeleteClick: () -> Unit,
+    onEditClick: () -> Unit,
     transactionDetailsCounts: Map<String, Int>,
     receiptViewModel: ReceiptViewModel
 ) {
@@ -1063,7 +1066,7 @@ private fun TransactionCard(
                     text = { Text("Edit") },
                     onClick = {
                         showOptions = false
-                        // TODO: Navigate to edit
+                        onEditClick()
                     },
                     leadingIcon = { Icon(Icons.Default.Edit, null) }
                 )

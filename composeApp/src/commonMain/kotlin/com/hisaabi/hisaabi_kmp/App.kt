@@ -257,6 +257,8 @@ fun App() {
             var selectingPaymentMethodForTransaction by remember { mutableStateOf(false) }
             var selectedPaymentMethodForTransaction by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod?>(null) }
             var selectedTransactionSlug by remember { mutableStateOf<String?>(null) }
+            var selectedTransactionForEdit by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction?>(null) }
+            var selectedTransactionSlugForEdit by remember { mutableStateOf<String?>(null) }
             
             // Track if we're in a transaction creation flow (including selection screens)
             var isInTransactionFlow by remember { mutableStateOf(false) }
@@ -1137,6 +1139,40 @@ fun App() {
                         onAddTransactionClick = {
                             transactionType = null
                             currentScreen = AppScreen.ADD_TRANSACTION_STEP1
+                        },
+                        onEditTransaction = { transaction ->
+                            // Store the slug for loading full transaction details
+                            selectedTransactionSlugForEdit = transaction.slug
+                            
+                            // Route to appropriate screen based on transaction type
+                            when {
+                                com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.isRecord(transaction.transactionType) -> {
+                                    currentScreen = AppScreen.ADD_RECORD
+                                }
+                                com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.isPayGetCash(transaction.transactionType) -> {
+                                    currentScreen = AppScreen.PAY_GET_CASH
+                                }
+                                com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.isExpenseIncome(transaction.transactionType) -> {
+                                    currentScreen = AppScreen.ADD_EXPENSE_INCOME
+                                }
+                                com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.isPaymentTransfer(transaction.transactionType) -> {
+                                    currentScreen = AppScreen.PAYMENT_TRANSFER
+                                }
+                                com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.isJournalVoucher(transaction.transactionType) -> {
+                                    currentScreen = AppScreen.JOURNAL_VOUCHER
+                                }
+                                com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.isStockAdjustment(transaction.transactionType) -> {
+                                    currentScreen = AppScreen.STOCK_ADJUSTMENT
+                                }
+                                transaction.transactionType == com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.MANUFACTURE.value -> {
+                                    currentScreen = AppScreen.ADD_MANUFACTURE
+                                }
+                                else -> {
+                                    // Regular transactions (Sale, Purchase, Returns, Orders)
+                                    transactionType = com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.fromValue(transaction.transactionType)
+                                    currentScreen = AppScreen.ADD_TRANSACTION_STEP1
+                                }
+                            }
                         }
                     )
                 }
@@ -1186,19 +1222,27 @@ fun App() {
                 
                 AppScreen.ADD_RECORD -> {
                     // Use ViewModel from app level flow tracking
-                    // Handle party selection for record
-                    LaunchedEffect(selectedPartyForTransaction) {
-                        selectedPartyForTransaction?.let { party ->
-                            if (selectingPartyForTransaction && returnToScreenAfterPartySelection == AppScreen.ADD_RECORD && recordViewModel != null) {
-                                recordViewModel.selectParty(party)
-                                selectedPartyForTransaction = null
-                                selectingPartyForTransaction = false
-                                returnToScreenAfterPartySelection = null
+                    recordViewModel?.let { viewModel ->
+                        // Load transaction for editing if provided
+                        LaunchedEffect(selectedTransactionSlugForEdit) {
+                            selectedTransactionSlugForEdit?.let { slug ->
+                                viewModel.loadTransactionForEdit(slug)
+                                selectedTransactionSlugForEdit = null // Clear after loading
                             }
                         }
-                    }
-                    
-                    recordViewModel?.let { viewModel ->
+                        
+                        // Handle party selection for record
+                        LaunchedEffect(selectedPartyForTransaction) {
+                            selectedPartyForTransaction?.let { party ->
+                                if (selectingPartyForTransaction && returnToScreenAfterPartySelection == AppScreen.ADD_RECORD) {
+                                    viewModel.selectParty(party)
+                                    selectedPartyForTransaction = null
+                                    selectingPartyForTransaction = false
+                                    returnToScreenAfterPartySelection = null
+                                }
+                            }
+                        }
+                        
                         com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddRecordScreen(
                             viewModel = viewModel,
                             onNavigateBack = { successMessage, transactionSlug ->
@@ -1667,6 +1711,14 @@ fun App() {
                             }
                         }
                     
+                        // Load transaction for editing if provided
+                        LaunchedEffect(selectedTransactionSlugForEdit) {
+                            selectedTransactionSlugForEdit?.let { slug ->
+                                viewModel.loadTransactionForEdit(slug)
+                                selectedTransactionSlugForEdit = null // Clear after loading
+                            }
+                        }
+                        
                         // Set selected party if returned from party selection
                         LaunchedEffect(selectedPartyForTransaction) {
                             selectedPartyForTransaction?.let { party ->

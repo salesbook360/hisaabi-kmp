@@ -22,11 +22,13 @@ data class AddRecordState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val successMessage: String? = null,
-    val savedTransactionSlug: String? = null
+    val savedTransactionSlug: String? = null,
+    val editingTransactionSlug: String? = null
 )
 
 class AddRecordViewModel(
-    private val transactionUseCases: TransactionUseCases
+    private val transactionUseCases: TransactionUseCases,
+    private val getTransactionWithDetailsUseCase: com.hisaabi.hisaabi_kmp.transactions.domain.usecase.GetTransactionWithDetailsUseCase
 ) : ViewModel() {
     
     private val _state = MutableStateFlow(AddRecordState())
@@ -60,6 +62,47 @@ class AddRecordViewModel(
         _state.update { it.copy(remindDateTime = dateTime) }
     }
     
+    fun loadTransactionForEdit(transactionSlug: String) {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true, error = null) }
+            
+            try {
+                // Load full transaction with all details
+                val transaction = getTransactionWithDetailsUseCase(transactionSlug)
+                    ?: throw IllegalStateException("Transaction not found")
+                
+                // Convert transaction type
+                val recordType = AllTransactionTypes.fromValue(transaction.transactionType)
+                    ?: throw IllegalStateException("Invalid transaction type")
+                
+                // Parse timestamp
+                val timestamp = transaction.timestamp?.toLongOrNull() ?: Clock.System.now().toEpochMilliseconds()
+                
+                // Set state with transaction data
+                _state.update { 
+                    it.copy(
+                        recordType = recordType,
+                        state = TransactionState.fromValue(transaction.stateId) ?: TransactionState.PENDING,
+                        selectedParty = transaction.party,
+                        description = transaction.description ?: "",
+                        amount = transaction.totalPaid.toString(),
+                        dateTime = timestamp,
+                        remindDateTime = if (transaction.remindAtMilliseconds > 0) transaction.remindAtMilliseconds else null,
+                        editingTransactionSlug = transaction.slug,
+                        isLoading = false
+                    )
+                }
+            } catch (e: Exception) {
+                _state.update { 
+                    it.copy(
+                        isLoading = false,
+                        error = e.message ?: "Failed to load record for editing"
+                    )
+                }
+            }
+        }
+    }
+    
     fun saveRecord() {
         val currentState = _state.value
         
@@ -84,6 +127,7 @@ class AddRecordViewModel(
             
             try {
                 val transaction = Transaction(
+                    slug = currentState.editingTransactionSlug, // Include slug if editing
                     customerSlug = currentState.selectedParty?.slug,
                     party = currentState.selectedParty,
                     transactionType = currentState.recordType.value,
@@ -98,24 +142,48 @@ class AddRecordViewModel(
                     additionalCharges = 0.0
                 )
                 
-                transactionUseCases.addTransaction(transaction)
-                    .onSuccess { transactionSlug ->
-                        _state.update { 
-                            it.copy(
-                                isLoading = false,
-                                successMessage = "Record saved successfully",
-                                savedTransactionSlug = transactionSlug
-                            )
+                // Check if we're editing or creating
+                if (currentState.editingTransactionSlug != null) {
+                    // Update existing transaction
+                    transactionUseCases.updateTransaction(transaction)
+                        .onSuccess {
+                            _state.update { 
+                                it.copy(
+                                    isLoading = false,
+                                    successMessage = "Record updated successfully",
+                                    savedTransactionSlug = currentState.editingTransactionSlug
+                                )
+                            }
                         }
-                    }
-                    .onFailure { e ->
-                        _state.update { 
-                            it.copy(
-                                isLoading = false,
-                                error = e.message ?: "Failed to save record"
-                            )
+                        .onFailure { e ->
+                            _state.update { 
+                                it.copy(
+                                    isLoading = false,
+                                    error = e.message ?: "Failed to update record"
+                                )
+                            }
                         }
-                    }
+                } else {
+                    // Create new transaction
+                    transactionUseCases.addTransaction(transaction)
+                        .onSuccess { transactionSlug ->
+                            _state.update { 
+                                it.copy(
+                                    isLoading = false,
+                                    successMessage = "Record saved successfully",
+                                    savedTransactionSlug = transactionSlug
+                                )
+                            }
+                        }
+                        .onFailure { e ->
+                            _state.update { 
+                                it.copy(
+                                    isLoading = false,
+                                    error = e.message ?: "Failed to save record"
+                                )
+                            }
+                        }
+                }
             } catch (e: Exception) {
                 _state.update { 
                     it.copy(

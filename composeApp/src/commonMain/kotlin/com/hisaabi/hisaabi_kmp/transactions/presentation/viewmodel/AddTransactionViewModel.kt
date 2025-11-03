@@ -46,7 +46,8 @@ data class AddTransactionState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val successMessage: String? = null,
-    val savedTransactionSlug: String? = null
+    val savedTransactionSlug: String? = null,
+    val editingTransactionSlug: String? = null
 )
 
 data class TransactionDetailItem(
@@ -88,7 +89,8 @@ data class TransactionDetailItem(
 
 class AddTransactionViewModel(
     private val useCases: TransactionUseCases,
-    private val sessionManager: AppSessionManager
+    private val sessionManager: AppSessionManager,
+    private val getTransactionWithDetailsUseCase: com.hisaabi.hisaabi_kmp.transactions.domain.usecase.GetTransactionWithDetailsUseCase
 ) : ViewModel() {
     
     private val _state = MutableStateFlow(AddTransactionState())
@@ -362,6 +364,76 @@ class AddTransactionViewModel(
         )
     }
     
+    // Load Transaction for Editing by Slug
+    fun loadTransactionForEdit(transactionSlug: String) {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true, error = null) }
+            
+            try {
+                // Load full transaction with all details
+                val transaction = getTransactionWithDetailsUseCase(transactionSlug)
+                    ?: throw IllegalStateException("Transaction not found")
+                
+                // Convert transaction type
+                val transactionType = AllTransactionTypes.fromValue(transaction.transactionType) 
+                    ?: AllTransactionTypes.SALE
+                
+                // Convert transaction details to items
+                val detailItems = transaction.transactionDetails.map { detail ->
+                    TransactionDetailItem(
+                        product = detail.product ?: throw IllegalStateException("Product not loaded"),
+                        quantity = detail.quantity,
+                        price = detail.price,
+                        flatDiscount = detail.flatDiscount,
+                        discountType = FlatOrPercent.fromValue(detail.discountType) ?: FlatOrPercent.FLAT,
+                        flatTax = detail.flatTax,
+                        taxType = FlatOrPercent.fromValue(detail.taxType) ?: FlatOrPercent.FLAT,
+                        description = detail.description ?: "",
+                        selectedUnit = detail.quantityUnit
+                    )
+                }
+                
+                // Parse timestamp
+                val timestamp = transaction.timestamp?.toLongOrNull() ?: System.currentTimeMillis()
+                
+                // Set state with transaction data
+                _state.update { 
+                    it.copy(
+                        transactionType = transactionType,
+                        selectedParty = transaction.party,
+                        selectedWarehouse = transaction.warehouseFrom,
+                        transactionDetails = detailItems,
+                        priceType = PriceType.fromValue(transaction.priceTypeId) ?: PriceType.RETAIL,
+                        transactionDateTime = timestamp,
+                        previousBalance = transaction.party?.balance ?: 0.0,
+                        additionalCharges = transaction.additionalCharges,
+                        additionalChargesDesc = transaction.additionalChargesDesc ?: "",
+                        flatDiscount = transaction.flatDiscount,
+                        discountType = FlatOrPercent.fromValue(transaction.discountTypeId) ?: FlatOrPercent.FLAT,
+                        flatTax = transaction.flatTax,
+                        taxType = FlatOrPercent.fromValue(transaction.taxTypeId) ?: FlatOrPercent.FLAT,
+                        paidNow = transaction.totalPaid,
+                        remarks = transaction.description ?: "",
+                        shippingAddress = transaction.shippingAddress ?: "",
+                        selectedPaymentMethod = transaction.paymentMethodTo,
+                        editingTransactionSlug = transaction.slug,
+                        isLoading = false
+                    )
+                }
+                
+                // Recalculate totals
+                updateTotalBillState()
+            } catch (e: Exception) {
+                _state.update { 
+                    it.copy(
+                        isLoading = false,
+                        error = e.message ?: "Failed to load transaction for editing"
+                    )
+                }
+            }
+        }
+    }
+    
     // Save Transaction
     fun saveTransaction() {
         val currentState = _state.value
@@ -388,23 +460,48 @@ class AddTransactionViewModel(
                 }
                 
                 val transaction = buildTransaction(businessSlug)
-                val result = useCases.addTransaction(transaction)
                 
-                result.onSuccess { slug ->
-                    _state.update { 
-                        it.copy(
-                            isLoading = false,
-                            successMessage = "Transaction saved successfully! (ID: $slug)",
-                            savedTransactionSlug = slug
-                        )
-                    }
-                }.onFailure { error ->
-                    _state.update { 
-                        it.copy(
-                            isLoading = false,
-                            error = error.message ?: "Failed to save transaction"
-                        )
-                    }
+                // Check if we're editing or creating
+                if (currentState.editingTransactionSlug != null) {
+                    // Update existing transaction
+                    useCases.updateTransaction(transaction)
+                        .onSuccess {
+                            _state.update { 
+                                it.copy(
+                                    isLoading = false,
+                                    successMessage = "Transaction updated successfully!",
+                                    savedTransactionSlug = currentState.editingTransactionSlug
+                                )
+                            }
+                        }
+                        .onFailure { error ->
+                            _state.update { 
+                                it.copy(
+                                    isLoading = false,
+                                    error = error.message ?: "Failed to update transaction"
+                                )
+                            }
+                        }
+                } else {
+                    // Create new transaction
+                    useCases.addTransaction(transaction)
+                        .onSuccess { slug ->
+                            _state.update { 
+                                it.copy(
+                                    isLoading = false,
+                                    successMessage = "Transaction saved successfully! (ID: $slug)",
+                                    savedTransactionSlug = slug
+                                )
+                            }
+                        }
+                        .onFailure { error ->
+                            _state.update { 
+                                it.copy(
+                                    isLoading = false,
+                                    error = error.message ?: "Failed to save transaction"
+                                )
+                            }
+                        }
                 }
             } catch (e: Exception) {
                 _state.update { 
@@ -491,6 +588,7 @@ class AddTransactionViewModel(
         }
         
         return Transaction(
+            slug = state.editingTransactionSlug, // Include slug if editing
             customerSlug = state.selectedParty?.slug,
             party = state.selectedParty,
             totalBill = calculateSubtotal(),
