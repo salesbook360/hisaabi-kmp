@@ -81,6 +81,7 @@ AppScreen.TRANSACTIONS_LIST -> {
 
 ## Testing Recommendations
 
+### Fix 1: Transactions List State Persistence
 1. **Flicker Test**: Navigate to Transactions List from home bottom nav - verify no flicker or immediate close
 2. **State Persistence**: 
    - Apply filters (transaction type, sort order)
@@ -91,6 +92,43 @@ AppScreen.TRANSACTIONS_LIST -> {
 3. **Navigation Flow**: Navigate between transaction list and transaction detail multiple times - verify no crashes
 4. **Flow Exit**: Navigate to home and back to transactions - verify state is properly reset when exiting the flow
 5. **Rapid Navigation**: Quickly tap the Transactions button multiple times - verify no crashes or duplicate screens
+
+### Fix 2: Transaction Detail Back Navigation
+6. **System Back Button from Detail**: 
+   - Navigate to Transactions List
+   - Tap on any transaction to view details
+   - Press Android system back button
+   - Verify: Should return to Transactions List (not HOME)
+   - Verify: Transactions List state (filters, scroll) is preserved
+
+### Fix 3: Add Transaction Step 2 Back Navigation
+7. **System Back Button from Step 2**:
+   - Start creating a new transaction
+   - Complete Step 1 and proceed to Step 2
+   - Press Android system back button
+   - Verify: Should return to Step 1 (not close the transaction form)
+   - Verify: Step 1 data (selected party, products) is preserved
+8. **Toolbar Back Button**: Verify toolbar back button still works correctly from Step 2
+
+## Additional Fixes Applied
+
+### Fix 2: Transaction Detail Back Navigation (System Back Button)
+**Problem**: When viewing transaction details and pressing the Android system back button, it would navigate to HOME instead of returning to the transactions list.
+
+**Root Cause**: Direct screen assignment (`currentScreen = AppScreen.TRANSACTION_DETAIL`) instead of using `navigateTo()`, which prevented the navigation stack from being updated properly.
+
+**Solution**: Updated all transaction navigation points in `App.kt` to use `navigateTo()` function:
+- Transaction click navigation (line ~1159)
+- Add transaction navigation (line ~1163)
+- Edit transaction navigation (lines ~1172-1195)
+- Transaction detail back navigation (line ~1214)
+
+### Fix 3: Add Transaction Step 2 Back Navigation
+**Problem**: When at Step 2 of adding a transaction and pressing the Android system back button, there would be a flicker and it wouldn't properly navigate to Step 1. The toolbar back button worked fine.
+
+**Root Cause**: The Android system back button was using the navigation stack to go back directly, bypassing the ViewModel's step management logic (`viewModel.goToStep1()`).
+
+**Solution**: Added `BackHandler` in `AddTransactionStep2Screen.kt` to intercept the system back button and call `viewModel.goToStep1()`, ensuring proper state management.
 
 ## Files Modified
 
@@ -106,6 +144,15 @@ AppScreen.TRANSACTIONS_LIST -> {
     - PRODUCTS screen else block (line ~380)
     - PAYMENT_METHODS screen else block (line ~400)
     - General else block - preserved flow state (line ~414)
+  - Changed transaction navigation to use `navigateTo()` instead of direct screen assignment:
+    - Transaction click (line ~1159)
+    - Add transaction click (line ~1163)
+    - Edit transaction navigation (lines ~1172-1195)
+    - Transaction detail back navigation (line ~1214)
+
+- `composeApp/src/commonMain/kotlin/com/hisaabi/hisaabi_kmp/transactions/presentation/ui/AddTransactionStep2Screen.kt`
+  - Added `BackHandler` import (line ~3)
+  - Added `BackHandler` to intercept system back button (lines ~58-61)
 
 ## Key Changes Summary
 
@@ -113,4 +160,6 @@ AppScreen.TRANSACTIONS_LIST -> {
 2. **Flow State Management**: Added `isInTransactionsListFlow` to track the flow lifecycle
 3. **Proper Cleanup**: All flow reset blocks now include transactions list flow state
 4. **No Timing Issues**: The computed `shouldShowTransactionsListFlow` eliminates the asynchronous timing problem
+5. **Navigation Stack Integrity**: Using `navigateTo()` ensures proper navigation stack management for Android back button
+6. **Step Management**: `BackHandler` in Step 2 ensures proper multi-step form navigation with system back button
 

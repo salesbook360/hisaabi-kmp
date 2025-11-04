@@ -1,5 +1,6 @@
 package com.hisaabi.hisaabi_kmp.transactions.presentation.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -52,6 +53,11 @@ fun AddTransactionStep2Screen(
         if (state.currentStep == 1) {
             onNavigateBack()
         }
+    }
+    
+    // Handle Android system back button - go back to step 1 instead of exiting
+    BackHandler {
+        viewModel.goToStep1()
     }
     
     Scaffold(
