@@ -380,352 +380,598 @@ private fun TransactionCard(
     transactionDetailsCounts: Map<String, Int>,
     receiptViewModel: ReceiptViewModel
 ) {
+    // Determine card type based on transaction type
+    when {
+        AllTransactionTypes.isRecord(transaction.transactionType) -> {
+            RecordTransactionCard(transaction, onClick, onDeleteClick, onEditClick, receiptViewModel)
+        }
+        AllTransactionTypes.isPayGetCash(transaction.transactionType) -> {
+            PayGetCashCard(transaction, onClick, onDeleteClick, onEditClick, receiptViewModel)
+        }
+        AllTransactionTypes.isExpenseIncome(transaction.transactionType) -> {
+            ExpenseIncomeCard(transaction, onClick, onDeleteClick, onEditClick, receiptViewModel)
+        }
+        transaction.transactionType == AllTransactionTypes.PAYMENT_TRANSFER.value -> {
+            PaymentTransferCard(transaction, onClick, onDeleteClick, onEditClick, receiptViewModel)
+        }
+        transaction.transactionType == AllTransactionTypes.JOURNAL_VOUCHER.value -> {
+            JournalVoucherCard(transaction, onClick, onDeleteClick, onEditClick, receiptViewModel)
+        }
+        AllTransactionTypes.isStockAdjustment(transaction.transactionType) -> {
+            StockAdjustmentCard(transaction, onClick, onDeleteClick, onEditClick, receiptViewModel, transactionDetailsCounts)
+        }
+        transaction.transactionType == AllTransactionTypes.MANUFACTURE.value -> {
+            ManufactureCard(transaction, onClick, onDeleteClick, onEditClick, receiptViewModel)
+        }
+        AllTransactionTypes.isOrder(transaction.transactionType) || transaction.transactionType == AllTransactionTypes.QUOTATION.value -> {
+            OrderQuotationCard(transaction, onClick, onDeleteClick, onEditClick, receiptViewModel, transactionDetailsCounts)
+        }
+        else -> {
+            // Basic transaction card (Sale, Purchase, Returns)
+            BasicTransactionCard(transaction, onClick, onDeleteClick, onEditClick, receiptViewModel, transactionDetailsCounts)
+        }
+    }
+}
+
+// ============= CARD HEADER COMPONENTS =============
+
+@Composable
+private fun getBadgeColor(transactionType: Int): androidx.compose.ui.graphics.Color {
+    return when (AllTransactionTypes.fromValue(transactionType)) {
+        AllTransactionTypes.SALE -> MaterialTheme.colorScheme.primaryContainer
+        AllTransactionTypes.PURCHASE -> MaterialTheme.colorScheme.secondaryContainer
+        AllTransactionTypes.CUSTOMER_RETURN -> MaterialTheme.colorScheme.errorContainer
+        AllTransactionTypes.VENDOR_RETURN -> MaterialTheme.colorScheme.tertiaryContainer
+        AllTransactionTypes.GET_FROM_CUSTOMER, AllTransactionTypes.GET_FROM_VENDOR, 
+        AllTransactionTypes.INVESTMENT_WITHDRAW -> MaterialTheme.colorScheme.primaryContainer
+        AllTransactionTypes.PAY_TO_CUSTOMER, AllTransactionTypes.PAY_TO_VENDOR, 
+        AllTransactionTypes.INVESTMENT_DEPOSIT -> MaterialTheme.colorScheme.secondaryContainer
+        AllTransactionTypes.EXPENSE -> MaterialTheme.colorScheme.errorContainer
+        AllTransactionTypes.EXTRA_INCOME -> MaterialTheme.colorScheme.primaryContainer
+        AllTransactionTypes.PAYMENT_TRANSFER -> MaterialTheme.colorScheme.tertiaryContainer
+        AllTransactionTypes.JOURNAL_VOUCHER -> MaterialTheme.colorScheme.secondaryContainer
+        AllTransactionTypes.STOCK_TRANSFER, AllTransactionTypes.STOCK_INCREASE, 
+        AllTransactionTypes.STOCK_REDUCE -> MaterialTheme.colorScheme.tertiaryContainer
+        AllTransactionTypes.MANUFACTURE -> MaterialTheme.colorScheme.tertiaryContainer
+        AllTransactionTypes.MEETING -> MaterialTheme.colorScheme.tertiaryContainer
+        AllTransactionTypes.TASK -> MaterialTheme.colorScheme.secondaryContainer
+        AllTransactionTypes.CLIENT_NOTE -> MaterialTheme.colorScheme.primaryContainer
+        AllTransactionTypes.SELF_NOTE -> MaterialTheme.colorScheme.surfaceVariant
+        AllTransactionTypes.CASH_REMINDER -> MaterialTheme.colorScheme.errorContainer
+        AllTransactionTypes.SALE_ORDER -> MaterialTheme.colorScheme.primaryContainer
+        AllTransactionTypes.PURCHASE_ORDER -> MaterialTheme.colorScheme.secondaryContainer
+        AllTransactionTypes.QUOTATION -> MaterialTheme.colorScheme.tertiaryContainer
+        else -> MaterialTheme.colorScheme.surfaceVariant
+    }
+}
+
+@Composable
+private fun CardHeader(
+    transaction: Transaction,
+    onOptionsClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.Top
+    ) {
+        // Transaction type badge
+        Surface(
+            color = getBadgeColor(transaction.transactionType),
+            shape = MaterialTheme.shapes.small
+        ) {
+            Text(
+                transaction.getTransactionTypeName(),
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold
+            )
+        }
+        
+        // Dates and options
+        Row(verticalAlignment = Alignment.Top) {
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                transaction.timestamp?.let { timestamp ->
+                    Text(
+                        formatTransactionDate(timestamp),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                transaction.slug?.let { slug ->
+                    Text(
+                        "#$slug",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+            IconButton(onClick = onOptionsClick) {
+                Icon(Icons.Default.MoreVert, "Options", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+}
+
+@Composable
+private fun PartyInfo(transaction: Transaction) {
+    transaction.party?.let { party ->
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    Icons.Default.Person,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    party.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            party.phone?.let { phone ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(start = 28.dp)
+                ) {
+                    Text(
+                        phone,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TransactionOptionsMenu(
+    expanded: Boolean,
+    onDismiss: () -> Unit,
+    onClick: () -> Unit,
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit,
+    onReceiptClick: () -> Unit
+) {
+    DropdownMenu(
+        expanded = expanded,
+        onDismissRequest = onDismiss
+    ) {
+        DropdownMenuItem(
+            text = { Text("View Details") },
+            onClick = {
+                onDismiss()
+                onClick()
+            },
+            leadingIcon = { Icon(Icons.Default.Visibility, null) }
+        )
+        DropdownMenuItem(
+            text = { Text("Edit") },
+            onClick = {
+                onDismiss()
+                onEditClick()
+            },
+            leadingIcon = { Icon(Icons.Default.Edit, null) }
+        )
+        DropdownMenuItem(
+            text = { Text("Delete") },
+            onClick = {
+                onDismiss()
+                onDeleteClick()
+            },
+            leadingIcon = { Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error) }
+        )
+        DropdownMenuItem(
+            text = { Text("Generate Receipt") },
+            onClick = {
+                onDismiss()
+                onReceiptClick()
+            },
+            leadingIcon = { Icon(Icons.Default.Receipt, null) }
+        )
+    }
+}
+
+// ============= BASIC TRANSACTION CARD (Sale, Purchase, Returns) =============
+
+@Composable
+private fun BasicTransactionCard(
+    transaction: Transaction,
+    onClick: () -> Unit,
+    onDeleteClick: () -> Unit,
+    onEditClick: () -> Unit,
+    receiptViewModel: ReceiptViewModel,
+    transactionDetailsCounts: Map<String, Int>
+) {
     var showOptions by remember { mutableStateOf(false) }
-    val isRecordType = AllTransactionTypes.isRecord(transaction.transactionType)
-    val isPayGetCashType = AllTransactionTypes.isPayGetCash(transaction.transactionType)
-    val isExpenseIncomeType = AllTransactionTypes.isExpenseIncome(transaction.transactionType)
-    val isPaymentTransferType = transaction.transactionType == AllTransactionTypes.PAYMENT_TRANSFER.value
-    val isJournalVoucherType = transaction.transactionType == AllTransactionTypes.JOURNAL_VOUCHER.value
-    val isStockAdjustmentType = AllTransactionTypes.isStockAdjustment(transaction.transactionType)
-    val isManufactureType = transaction.transactionType == AllTransactionTypes.MANUFACTURE.value
     
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
+        )
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            // Header row
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            CardHeader(transaction, { showOptions = !showOptions })
+            
+            PartyInfo(transaction)
+            
+            HorizontalDivider()
+            
+            // Financial info
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.Top
             ) {
-                // Transaction type badge
-                Surface(
-                    color = if (isRecordType) {
-                        // Different colors for record types
-                        when (AllTransactionTypes.fromValue(transaction.transactionType)) {
-                            AllTransactionTypes.MEETING -> MaterialTheme.colorScheme.tertiaryContainer
-                            AllTransactionTypes.TASK -> MaterialTheme.colorScheme.secondaryContainer
-                            AllTransactionTypes.CLIENT_NOTE -> MaterialTheme.colorScheme.primaryContainer
-                            AllTransactionTypes.SELF_NOTE -> MaterialTheme.colorScheme.surfaceVariant
-                            AllTransactionTypes.CASH_REMINDER -> MaterialTheme.colorScheme.errorContainer
-                            else -> MaterialTheme.colorScheme.surfaceVariant
-                        }
-                    } else if (isPayGetCashType) {
-                        // Colors for Pay/Get Cash transactions
-                        when (AllTransactionTypes.fromValue(transaction.transactionType)) {
-                            AllTransactionTypes.GET_FROM_CUSTOMER, AllTransactionTypes.GET_FROM_VENDOR, AllTransactionTypes.INVESTMENT_WITHDRAW -> MaterialTheme.colorScheme.primaryContainer // Get Cash (incoming)
-                            AllTransactionTypes.PAY_TO_CUSTOMER, AllTransactionTypes.PAY_TO_VENDOR, AllTransactionTypes.INVESTMENT_DEPOSIT -> MaterialTheme.colorScheme.secondaryContainer // Pay Cash (outgoing)
-                            else -> MaterialTheme.colorScheme.surfaceVariant
-                        }
-                    } else if (isExpenseIncomeType) {
-                        // Colors for Expense/Income transactions
-                        when (AllTransactionTypes.fromValue(transaction.transactionType)) {
-                            AllTransactionTypes.EXPENSE -> MaterialTheme.colorScheme.errorContainer
-                            AllTransactionTypes.EXTRA_INCOME -> MaterialTheme.colorScheme.primaryContainer
-                            else -> MaterialTheme.colorScheme.surfaceVariant
-                        }
-                    } else if (isManufactureType) {
-                        // Color for Manufacture transactions
-                        MaterialTheme.colorScheme.tertiaryContainer
-                    } else if (isPaymentTransferType) {
-                        // Color for Payment Transfer
-                        MaterialTheme.colorScheme.tertiaryContainer
-                    } else if (isJournalVoucherType) {
-                        // Color for Journal Voucher
-                        MaterialTheme.colorScheme.secondaryContainer
-                    } else if (isStockAdjustmentType) {
-                        // Color for Stock Adjustment
-                        MaterialTheme.colorScheme.tertiaryContainer
-                    } else {
-                        // Original colors for transaction types
-                        when (AllTransactionTypes.fromValue(transaction.transactionType)) {
-                            AllTransactionTypes.SALE -> MaterialTheme.colorScheme.primaryContainer
-                            AllTransactionTypes.PURCHASE -> MaterialTheme.colorScheme.secondaryContainer
-                            AllTransactionTypes.CUSTOMER_RETURN -> MaterialTheme.colorScheme.errorContainer
-                            AllTransactionTypes.VENDOR_RETURN -> MaterialTheme.colorScheme.tertiaryContainer
-                            else -> MaterialTheme.colorScheme.surfaceVariant
-                        }
-                    },
-                    shape = MaterialTheme.shapes.small
-                ) {
+                Column {
                     Text(
-                        transaction.getTransactionTypeName(),
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold
+                        "Total",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        "₨ ${String.format("%.2f", transaction.totalBill)}",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
                 
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                if (transaction.totalPaid > 0) {
                     Column(horizontalAlignment = Alignment.End) {
-                        // Transaction date
-                        transaction.timestamp?.let { timestamp ->
-                            Text(
-                                "Transaction Date: ${formatTransactionDate(timestamp)}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        // Entry date
-                        transaction.createdAt?.let { createdAt ->
-                            Text(
-                                "Entry: ${formatEntryDate(createdAt)}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        // Transaction ID
-                        transaction.slug?.let { slug ->
-                            Text(
-                                "ID: $slug",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                    IconButton(onClick = { showOptions = !showOptions }) {
-                        Icon(Icons.Default.MoreVert, "Options")
-                    }
-                }
-            }
-            
-            Spacer(Modifier.height(12.dp))
-            
-            // Party info
-            transaction.party?.let { party ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            party.name,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        party.phone?.let { phone ->
-                            Text(
-                                phone,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
-                
-                Spacer(Modifier.height(12.dp))
-                HorizontalDivider()
-                Spacer(Modifier.height(12.dp))
-            }
-            
-            // Transaction details - different for records vs pay/get cash vs expense/income vs payment transfer vs regular transactions
-            if (isRecordType) {
-                // For records, show description prominently
-                transaction.description?.let { desc ->
-                    if (desc.isNotBlank()) {
-                        Text(
-                            desc,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 3
-                        )
-                        Spacer(Modifier.height(8.dp))
-                    }
-                }
-                
-                // Show amount only for Cash Reminder
-                if (transaction.transactionType == AllTransactionTypes.CASH_REMINDER.value && transaction.totalPaid > 0) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "Promised Amount:",
+                            "Paid",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
                             "₨ ${String.format("%.2f", transaction.totalPaid)}",
-                            style = MaterialTheme.typography.titleMedium,
+                            style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.secondary
                         )
                     }
                 }
                 
-                // Show state
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        "Items",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        "${transactionDetailsCounts[transaction.slug] ?: transaction.transactionDetails.size}",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+            
+            // Additional charges if any
+            if (transaction.flatDiscount > 0 || transaction.flatTax > 0 || transaction.additionalCharges > 0) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (transaction.flatDiscount > 0) {
+                        DetailChip("−₨${String.format("%.0f", transaction.flatDiscount)}", MaterialTheme.colorScheme.errorContainer)
+                    }
+                    if (transaction.flatTax > 0) {
+                        DetailChip("+₨${String.format("%.0f", transaction.flatTax)}", MaterialTheme.colorScheme.tertiaryContainer)
+                    }
+                    if (transaction.additionalCharges > 0) {
+                        DetailChip("+₨${String.format("%.0f", transaction.additionalCharges)}", MaterialTheme.colorScheme.secondaryContainer)
+                    }
+                }
+            }
+            
+            // Description if available
+            transaction.description?.let { desc ->
+                if (desc.isNotBlank()) {
+                    Text(
+                        desc,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2
+                    )
+                }
+            }
+        }
+        
+        TransactionOptionsMenu(
+            expanded = showOptions,
+            onDismiss = { showOptions = false },
+            onClick = onClick,
+            onEditClick = onEditClick,
+            onDeleteClick = onDeleteClick,
+            onReceiptClick = { receiptViewModel.showPreview(transaction) }
+        )
+    }
+}
+
+// ============= PAY/GET CASH CARD =============
+
+@Composable
+private fun PayGetCashCard(
+    transaction: Transaction,
+    onClick: () -> Unit,
+    onDeleteClick: () -> Unit,
+    onEditClick: () -> Unit,
+    receiptViewModel: ReceiptViewModel
+) {
+    var showOptions by remember { mutableStateOf(false) }
+    
+    val isReceiving = transaction.transactionType in listOf(
+        AllTransactionTypes.GET_FROM_CUSTOMER.value,
+        AllTransactionTypes.GET_FROM_VENDOR.value,
+        AllTransactionTypes.INVESTMENT_WITHDRAW.value
+    )
+    
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            CardHeader(transaction, { showOptions = !showOptions })
+            
+            PartyInfo(transaction)
+            
+            HorizontalDivider()
+            
+            // Amount - centered and prominent
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        if (isReceiving) Icons.Default.ArrowDownward else Icons.Default.ArrowUpward,
+                        contentDescription = null,
+                        tint = if (isReceiving) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Text(
+                        if (isReceiving) "Received" else "Paid",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Text(
+                    "₨ ${"%.2f".format(transaction.totalPaid)}",
+                    style = MaterialTheme.typography.displaySmall,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isReceiving) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+                )
+            }
+            
+            // Payment method
+            transaction.paymentMethodTo?.let { paymentMethod ->
+                HorizontalDivider()
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        "Status:",
+                        "Method",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        transaction.getStateName(),
+                        paymentMethod.title,
                         style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = when (transaction.stateId) {
-                            TransactionState.COMPLETED.value -> MaterialTheme.colorScheme.primary
-                            TransactionState.PENDING.value -> MaterialTheme.colorScheme.tertiary
-                            TransactionState.CANCELLED.value -> MaterialTheme.colorScheme.error
-                            else -> MaterialTheme.colorScheme.onSurface
-                        }
+                        fontWeight = FontWeight.Bold
                     )
                 }
-            } else if (isPayGetCashType) {
-                // For Pay/Get Cash transactions, show amount prominently
+            }
+            
+            // Description
+            transaction.description?.let { desc ->
+                if (desc.isNotBlank()) {
+                    Text(
+                        desc,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2
+                    )
+                }
+            }
+        }
+        
+        TransactionOptionsMenu(
+            expanded = showOptions,
+            onDismiss = { showOptions = false },
+            onClick = onClick,
+            onEditClick = onEditClick,
+            onDeleteClick = onDeleteClick,
+            onReceiptClick = { receiptViewModel.showPreview(transaction) }
+        )
+    }
+}
+
+// ============= EXPENSE/INCOME CARD =============
+
+@Composable
+private fun ExpenseIncomeCard(
+    transaction: Transaction,
+    onClick: () -> Unit,
+    onDeleteClick: () -> Unit,
+    onEditClick: () -> Unit,
+    receiptViewModel: ReceiptViewModel
+) {
+    var showOptions by remember { mutableStateOf(false) }
+    
+    val isExpense = transaction.transactionType == AllTransactionTypes.EXPENSE.value
+    
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            CardHeader(transaction, { showOptions = !showOptions })
+            
+            // Amount - centered
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    if (isExpense) "Expense Amount" else "Income Amount",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    "₨ ${"%.2f".format(transaction.totalPaid)}",
+                    style = MaterialTheme.typography.displaySmall,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isExpense) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                )
+            }
+            
+            // Payment method
+            transaction.paymentMethodTo?.let { paymentMethod ->
+                HorizontalDivider()
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        if (transaction.transactionType in listOf(5, 7, 12)) "Received:" else "Paid:",
+                        "Payment Method",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        "₨ ${"%.2f".format(transaction.totalPaid)}",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = if (transaction.transactionType in listOf(5, 7, 12)) 
-                            MaterialTheme.colorScheme.primary 
-                        else 
-                            MaterialTheme.colorScheme.secondary
+                        paymentMethod.title,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold
                     )
                 }
-                
-                // Show payment method if available
-                transaction.paymentMethodTo?.let { paymentMethod ->
-                    Spacer(Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "Payment Method:",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            paymentMethod.title,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-                
-                // Show description if available
-                transaction.description?.let { desc ->
-                    if (desc.isNotBlank()) {
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            "Remarks: $desc",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 2
-                        )
-                    }
-                }
-            } else if (isExpenseIncomeType) {
-                // For Expense/Income transactions, show amount prominently
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+            }
+            
+            // Description
+            transaction.description?.let { desc ->
+                if (desc.isNotBlank()) {
                     Text(
-                        if (transaction.transactionType == AllTransactionTypes.EXPENSE.value) "Expense:" else "Income:",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        "₨ ${"%.2f".format(transaction.totalPaid)}",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = if (transaction.transactionType == AllTransactionTypes.EXPENSE.value) 
-                            MaterialTheme.colorScheme.error 
-                        else 
-                            MaterialTheme.colorScheme.primary
+                        desc,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2
                     )
                 }
-                
-                // Show payment method if available
-                transaction.paymentMethodTo?.let { paymentMethod ->
-                    Spacer(Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "Payment Method:",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            paymentMethod.title,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
-                
-                // Show description if available
-                transaction.description?.let { desc ->
-                    if (desc.isNotBlank()) {
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            "Description: $desc",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 2
-                        )
-                    }
-                }
-            } else if (isPaymentTransferType) {
-                // For Payment Transfer, show From and To payment methods with amount
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        "Transfer Amount:",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        "₨ ${"%.2f".format(transaction.totalPaid)}",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.tertiary
-                    )
-                }
-                
-                Spacer(Modifier.height(8.dp))
-                
-                // Show From payment method
+            }
+        }
+        
+        TransactionOptionsMenu(
+            expanded = showOptions,
+            onDismiss = { showOptions = false },
+            onClick = onClick,
+            onEditClick = onEditClick,
+            onDeleteClick = onDeleteClick,
+            onReceiptClick = { receiptViewModel.showPreview(transaction) }
+        )
+    }
+}
+
+// ============= PAYMENT TRANSFER CARD =============
+
+@Composable
+private fun PaymentTransferCard(
+    transaction: Transaction,
+    onClick: () -> Unit,
+    onDeleteClick: () -> Unit,
+    onEditClick: () -> Unit,
+    receiptViewModel: ReceiptViewModel
+) {
+    var showOptions by remember { mutableStateOf(false) }
+    
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            CardHeader(transaction, { showOptions = !showOptions })
+            
+            // Amount
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    "Transfer Amount",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    "₨ ${"%.2f".format(transaction.totalPaid)}",
+                    style = MaterialTheme.typography.displaySmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.tertiary
+                )
+            }
+            
+            HorizontalDivider()
+            
+            // From/To Section
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // From
                 transaction.paymentMethodFrom?.let { paymentMethodFrom ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            "From:",
-                            style = MaterialTheme.typography.labelMedium,
+                            "From",
+                            style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
@@ -736,18 +982,22 @@ private fun TransactionCard(
                     }
                 }
                 
-                Spacer(Modifier.height(4.dp))
+                Icon(
+                    Icons.Default.ArrowForward,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.tertiary,
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
                 
-                // Show To payment method
+                // To
                 transaction.paymentMethodTo?.let { paymentMethodTo ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        horizontalAlignment = Alignment.End
                     ) {
                         Text(
-                            "To:",
-                            style = MaterialTheme.typography.labelMedium,
+                            "To",
+                            style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
@@ -757,120 +1007,191 @@ private fun TransactionCard(
                         )
                     }
                 }
-                
-                // Show description if available
-                transaction.description?.let { desc ->
-                    if (desc.isNotBlank()) {
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            "Description: $desc",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 2
-                        )
-                    }
+            }
+            
+            // Description
+            transaction.description?.let { desc ->
+                if (desc.isNotBlank()) {
+                    Text(
+                        desc,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2
+                    )
                 }
-            } else if (isJournalVoucherType) {
-                // For Journal Voucher, show debit/credit totals
+            }
+        }
+        
+        TransactionOptionsMenu(
+            expanded = showOptions,
+            onDismiss = { showOptions = false },
+            onClick = onClick,
+            onEditClick = onEditClick,
+            onDeleteClick = onDeleteClick,
+            onReceiptClick = { receiptViewModel.showPreview(transaction) }
+        )
+    }
+}
+
+// ============= JOURNAL VOUCHER CARD =============
+
+@Composable
+private fun JournalVoucherCard(
+    transaction: Transaction,
+    onClick: () -> Unit,
+    onDeleteClick: () -> Unit,
+    onEditClick: () -> Unit,
+    receiptViewModel: ReceiptViewModel
+) {
+    var showOptions by remember { mutableStateOf(false) }
+    
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            CardHeader(transaction, { showOptions = !showOptions })
+            
+            HorizontalDivider()
+            
+            // Debit/Credit Section
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Debit
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        "Debit",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        "₨ ${"%.2f".format(transaction.totalPaid)}",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+                
+                VerticalDivider(modifier = Modifier.height(50.dp))
+                
+                // Credit
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        "Credit",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        "₨ ${"%.2f".format(transaction.totalPaid)}",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+            
+            // Description
+            transaction.description?.let { desc ->
+                if (desc.isNotBlank()) {
+                    HorizontalDivider()
+                    Text(
+                        desc,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2
+                    )
+                }
+            }
+        }
+        
+        TransactionOptionsMenu(
+            expanded = showOptions,
+            onDismiss = { showOptions = false },
+            onClick = onClick,
+            onEditClick = onEditClick,
+            onDeleteClick = onDeleteClick,
+            onReceiptClick = { receiptViewModel.showPreview(transaction) }
+        )
+    }
+}
+
+// ============= STOCK ADJUSTMENT CARD =============
+
+@Composable
+private fun StockAdjustmentCard(
+    transaction: Transaction,
+    onClick: () -> Unit,
+    onDeleteClick: () -> Unit,
+    onEditClick: () -> Unit,
+    receiptViewModel: ReceiptViewModel,
+    transactionDetailsCounts: Map<String, Int>
+) {
+    var showOptions by remember { mutableStateOf(false) }
+    
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            CardHeader(transaction, { showOptions = !showOptions })
+            
+            // Warehouse info
+            if (transaction.transactionType == AllTransactionTypes.STOCK_TRANSFER.value) {
+                // Transfer: From -> To
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
-                        Text(
-                            "Debit:",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            "₨ ${"%.2f".format(transaction.totalPaid)}",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.error
-                        )
+                    transaction.warehouseFrom?.let { warehouseFrom ->
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "From",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                warehouseFrom.title,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            "Credit:",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            "₨ ${"%.2f".format(transaction.totalPaid)}",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-                
-                // Show payment method if available
-                transaction.paymentMethodTo?.let { paymentMethod ->
-                    Spacer(Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "Payment Method:",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            paymentMethod.title,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-                
-                // Show description if available
-                transaction.description?.let { desc ->
-                    if (desc.isNotBlank()) {
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            "Description: $desc",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 2
-                        )
-                    }
-                }
-            } else if (isStockAdjustmentType) {
-                // For Stock Adjustment, show warehouses and product count
-                transaction.warehouseFrom?.let { warehouse ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            if (transaction.transactionType == 13) "From:" else "Warehouse:",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            warehouse.title,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-                
-                // Show To warehouse for transfer
-                if (transaction.transactionType == 13) {
+                    
+                    Icon(
+                        Icons.Default.ArrowForward,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.tertiary,
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
+                    
                     transaction.warehouseTo?.let { warehouseTo ->
-                        Spacer(Modifier.height(4.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            horizontalAlignment = Alignment.End
                         ) {
                             Text(
-                                "To:",
-                                style = MaterialTheme.typography.labelMedium,
+                                "To",
+                                style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
@@ -881,227 +1202,390 @@ private fun TransactionCard(
                         }
                     }
                 }
-                
-                Spacer(Modifier.height(8.dp))
-                
-                // Show product count
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        "Products:",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        "${transactionDetailsCounts[transaction.slug] ?: transaction.transactionDetails.size} items",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-                
-                // Show description if available
-                transaction.description?.let { desc ->
-                    if (desc.isNotBlank()) {
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            "Remarks: $desc",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 2
-                        )
-                    }
-                }
-                         } else if (isManufactureType) {
-                // For Manufacture transactions, show only: Recipe title, Manufactured quantity, Total manufacturing cost
-                val manufacturedProduct = transaction.transactionDetails.firstOrNull()
-                
-                // Show Recipe Title
-                manufacturedProduct?.product?.let { product ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "Recipe:",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            product.title,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-                
-                Spacer(Modifier.height(8.dp))
-                
-                // Show Manufactured Quantity
-                manufacturedProduct?.let { detail ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "Quantity:",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            detail.getDisplayQuantity(),
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-                
-                Spacer(Modifier.height(8.dp))
-                
-                // Show Total Manufacturing Cost
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        "Total Cost:",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        "₨ ${String.format("%.2f", calculateManufacturingCost(transaction))}",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.tertiary
-                    )
-                }
             } else {
-                // Original transaction display
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column {
+                // Increase/Decrease: Single warehouse
+                transaction.warehouseFrom?.let { warehouse ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Text(
-                            "Total Bill",
+                            "Warehouse",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            "₨ ${String.format("%.2f", transaction.totalBill)}",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    
-                    if (transaction.totalPaid > 0) {
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text(
-                                "Paid",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                "₨ ${String.format("%.2f", transaction.totalPaid)}",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                }
-                
-                // Additional details
-                if (transaction.flatDiscount > 0 || transaction.flatTax > 0 || transaction.additionalCharges > 0) {
-                    Spacer(Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        if (transaction.flatDiscount > 0) {
-                            DetailChip("Discount: ₨${String.format("%.2f", transaction.flatDiscount)}")
-                        }
-                        if (transaction.flatTax > 0) {
-                            DetailChip("Tax: ₨${String.format("%.2f", transaction.flatTax)}")
-                        }
-                        if (transaction.additionalCharges > 0) {
-                            DetailChip("Charges: ₨${String.format("%.2f", transaction.additionalCharges)}")
-                        }
-                    }
-                }
-                
-                // Description for transactions
-                transaction.description?.let { desc ->
-                    if (desc.isNotBlank()) {
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            desc,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 2
+                            warehouse.title,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
             }
             
-            // Options dropdown
-            DropdownMenu(
-                expanded = showOptions,
-                onDismissRequest = { showOptions = false }
+            HorizontalDivider()
+            
+            // Product count
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                DropdownMenuItem(
-                    text = { Text("View Details") },
-                    onClick = {
-                        showOptions = false
-                        onClick()
-                    },
-                    leadingIcon = { Icon(Icons.Default.Visibility, null) }
+                Text(
+                    "Products Adjusted",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                DropdownMenuItem(
-                    text = { Text("Edit") },
-                    onClick = {
-                        showOptions = false
-                        onEditClick()
-                    },
-                    leadingIcon = { Icon(Icons.Default.Edit, null) }
-                )
-                DropdownMenuItem(
-                    text = { Text("Delete") },
-                    onClick = {
-                        showOptions = false
-                        onDeleteClick()
-                    },
-                    leadingIcon = { Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error) }
-                )
-                DropdownMenuItem(
-                    text = { Text("Generate Receipt") },
-                    onClick = {
-                        showOptions = false
-                        receiptViewModel.showPreview(transaction)
-                    },
-                    leadingIcon = { Icon(Icons.Default.Receipt, null) }
+                Text(
+                    "${transactionDetailsCounts[transaction.slug] ?: transaction.transactionDetails.size} items",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.tertiary
                 )
             }
+            
+            // Description
+            transaction.description?.let { desc ->
+                if (desc.isNotBlank()) {
+                    Text(
+                        desc,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2
+                    )
+                }
+            }
         }
+        
+        TransactionOptionsMenu(
+            expanded = showOptions,
+            onDismiss = { showOptions = false },
+            onClick = onClick,
+            onEditClick = onEditClick,
+            onDeleteClick = onDeleteClick,
+            onReceiptClick = { receiptViewModel.showPreview(transaction) }
+        )
     }
 }
 
+// ============= MANUFACTURE CARD =============
+
 @Composable
-private fun DetailChip(text: String) {
+private fun ManufactureCard(
+    transaction: Transaction,
+    onClick: () -> Unit,
+    onDeleteClick: () -> Unit,
+    onEditClick: () -> Unit,
+    receiptViewModel: ReceiptViewModel
+) {
+    var showOptions by remember { mutableStateOf(false) }
+    val manufacturedProduct = transaction.transactionDetails.firstOrNull()
+    
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            CardHeader(transaction, { showOptions = !showOptions })
+            
+            // Recipe name
+            manufacturedProduct?.product?.let { product ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Build,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.tertiary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        product.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+            
+            HorizontalDivider()
+            
+            // Quantity and Cost
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                // Quantity
+                manufacturedProduct?.let { detail ->
+                    Column {
+                        Text(
+                            "Quantity",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            detail.getDisplayQuantity(),
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.tertiary
+                        )
+                    }
+                }
+                
+                // Manufacturing Cost
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        "Total Cost",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        "₨ ${String.format("%.2f", calculateManufacturingCost(transaction))}",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.tertiary
+                    )
+                }
+            }
+        }
+        
+        TransactionOptionsMenu(
+            expanded = showOptions,
+            onDismiss = { showOptions = false },
+            onClick = onClick,
+            onEditClick = onEditClick,
+            onDeleteClick = onDeleteClick,
+            onReceiptClick = { receiptViewModel.showPreview(transaction) }
+        )
+    }
+}
+
+// ============= ORDER/QUOTATION CARD =============
+
+@Composable
+private fun OrderQuotationCard(
+    transaction: Transaction,
+    onClick: () -> Unit,
+    onDeleteClick: () -> Unit,
+    onEditClick: () -> Unit,
+    receiptViewModel: ReceiptViewModel,
+    transactionDetailsCounts: Map<String, Int>
+) {
+    var showOptions by remember { mutableStateOf(false) }
+    
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            CardHeader(transaction, { showOptions = !showOptions })
+            
+            PartyInfo(transaction)
+            
+            HorizontalDivider()
+            
+            // Order/Quotation info
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column {
+                    Text(
+                        "Amount",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        "₨ ${String.format("%.2f", transaction.totalBill)}",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        "Items",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        "${transactionDetailsCounts[transaction.slug] ?: transaction.transactionDetails.size}",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+            
+            // Description
+            transaction.description?.let { desc ->
+                if (desc.isNotBlank()) {
+                    Text(
+                        desc,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2
+                    )
+                }
+            }
+        }
+        
+        TransactionOptionsMenu(
+            expanded = showOptions,
+            onDismiss = { showOptions = false },
+            onClick = onClick,
+            onEditClick = onEditClick,
+            onDeleteClick = onDeleteClick,
+            onReceiptClick = { receiptViewModel.showPreview(transaction) }
+        )
+    }
+}
+
+// ============= RECORD TRANSACTION CARD =============
+
+@Composable
+private fun RecordTransactionCard(
+    transaction: Transaction,
+    onClick: () -> Unit,
+    onDeleteClick: () -> Unit,
+    onEditClick: () -> Unit,
+    receiptViewModel: ReceiptViewModel
+) {
+    var showOptions by remember { mutableStateOf(false) }
+    
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            CardHeader(transaction, { showOptions = !showOptions })
+            
+            // Party info for client-related records
+            if (transaction.transactionType != AllTransactionTypes.SELF_NOTE.value) {
+                PartyInfo(transaction)
+                HorizontalDivider()
+            }
+            
+            // Description/Content
+            transaction.description?.let { desc ->
+                if (desc.isNotBlank()) {
+                    Text(
+                        desc,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 3
+                    )
+                }
+            }
+            
+            // For Cash Reminder, show promised amount
+            if (transaction.transactionType == AllTransactionTypes.CASH_REMINDER.value && transaction.totalPaid > 0) {
+                HorizontalDivider()
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Promised Amount",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        "₨ ${String.format("%.2f", transaction.totalPaid)}",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+            
+            // Status
+            HorizontalDivider()
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Status",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Surface(
+                    color = when (transaction.stateId) {
+                        TransactionState.COMPLETED.value -> MaterialTheme.colorScheme.primaryContainer
+                        TransactionState.PENDING.value -> MaterialTheme.colorScheme.tertiaryContainer
+                        TransactionState.CANCELLED.value -> MaterialTheme.colorScheme.errorContainer
+                        else -> MaterialTheme.colorScheme.surfaceVariant
+                    },
+                    shape = MaterialTheme.shapes.small
+                ) {
+                    Text(
+                        transaction.getStateName(),
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+        
+        TransactionOptionsMenu(
+            expanded = showOptions,
+            onDismiss = { showOptions = false },
+            onClick = onClick,
+            onEditClick = onEditClick,
+            onDeleteClick = onDeleteClick,
+            onReceiptClick = { receiptViewModel.showPreview(transaction) }
+        )
+    }
+}
+
+// ============= HELPER COMPONENTS =============
+
+@Composable
+private fun DetailChip(
+    text: String,
+    backgroundColor: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.surfaceVariant
+) {
     Surface(
-        color = MaterialTheme.colorScheme.surfaceVariant,
+        color = backgroundColor,
         shape = MaterialTheme.shapes.small
     ) {
         Text(
             text,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-            style = MaterialTheme.typography.labelSmall
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Medium
         )
     }
 }
-
