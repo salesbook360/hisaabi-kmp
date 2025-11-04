@@ -20,9 +20,9 @@ import com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionState
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionSortOption
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionsListViewModel
+import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.ManufactureInfo
 import com.hisaabi.hisaabi_kmp.utils.formatTransactionDate
 import com.hisaabi.hisaabi_kmp.utils.formatEntryDate
-import com.hisaabi.hisaabi_kmp.utils.calculateManufacturingCost
 import com.hisaabi.hisaabi_kmp.receipt.ReceiptViewModel
 import com.hisaabi.hisaabi_kmp.receipt.ReceiptPreviewDialog
 import com.hisaabi.hisaabi_kmp.core.ui.FilterChipWithColors
@@ -158,6 +158,7 @@ fun TransactionsListScreen(
                                 onDeleteClick = { viewModel.deleteTransaction(transaction) },
                                 onEditClick = { onEditTransaction(transaction) },
                                 transactionDetailsCounts = state.transactionDetailsCounts,
+                                manufactureInfo = state.manufactureInfo,
                                 receiptViewModel = receiptViewModel
                             )
                         }
@@ -380,6 +381,7 @@ private fun TransactionCard(
     onDeleteClick: () -> Unit,
     onEditClick: () -> Unit,
     transactionDetailsCounts: Map<String, Int>,
+    manufactureInfo: Map<String, ManufactureInfo>,
     receiptViewModel: ReceiptViewModel
 ) {
     // Determine card type based on transaction type
@@ -403,7 +405,8 @@ private fun TransactionCard(
             StockAdjustmentCard(transaction, onClick, onDeleteClick, onEditClick, receiptViewModel, transactionDetailsCounts)
         }
         transaction.transactionType == AllTransactionTypes.MANUFACTURE.value -> {
-            ManufactureCard(transaction, onClick, onDeleteClick, onEditClick, receiptViewModel)
+            val info = manufactureInfo[transaction.slug]
+            ManufactureCard(transaction, onClick, onDeleteClick, onEditClick, receiptViewModel, info)
         }
         AllTransactionTypes.isOrder(transaction.transactionType) || transaction.transactionType == AllTransactionTypes.QUOTATION.value -> {
             OrderQuotationCard(transaction, onClick, onDeleteClick, onEditClick, receiptViewModel, transactionDetailsCounts)
@@ -1405,10 +1408,10 @@ private fun ManufactureCard(
     onClick: () -> Unit,
     onDeleteClick: () -> Unit,
     onEditClick: () -> Unit,
-    receiptViewModel: ReceiptViewModel
+    receiptViewModel: ReceiptViewModel,
+    manufactureInfo: ManufactureInfo?
 ) {
     var showOptions by remember { mutableStateOf(false) }
-    val manufacturedProduct = transaction.transactionDetails.firstOrNull()
     
     Card(
         modifier = Modifier
@@ -1426,7 +1429,7 @@ private fun ManufactureCard(
             CardHeader(transaction, { showOptions = !showOptions })
             
             // Recipe name
-            manufacturedProduct?.product?.let { product ->
+            if (manufactureInfo != null) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -1439,7 +1442,7 @@ private fun ManufactureCard(
                         modifier = Modifier.size(20.dp)
                     )
                     Text(
-                        product.title,
+                        manufactureInfo.recipeName,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -1448,42 +1451,42 @@ private fun ManufactureCard(
             
             HorizontalDivider()
             
-            // Quantity and Cost
+            // Cost and Quantity
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Top
             ) {
-                // Quantity
-                manufacturedProduct?.let { detail ->
-                    Column {
-                        Text(
-                            "Quantity",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            detail.getDisplayQuantity(),
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.tertiary
-                        )
-                    }
-                }
-                
-                // Manufacturing Cost
-                Column(horizontalAlignment = Alignment.End) {
+                // Manufacturing Cost (from transaction.totalPaid which stores the total cost)
+                Column {
                     Text(
                         "Total Cost",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        "₨ ${String.format("%.2f", calculateManufacturingCost(transaction))}",
+                        "₨ ${String.format("%.2f", transaction.totalPaid)}",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.tertiary
                     )
+                }
+                
+                // Quantity
+                if (manufactureInfo != null) {
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            "Quantity",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            manufactureInfo.recipeQuantity,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.tertiary
+                        )
+                    }
                 }
             }
         }

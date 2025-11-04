@@ -10,9 +10,15 @@ import com.hisaabi.hisaabi_kmp.transactions.domain.usecase.TransactionUseCases
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
+data class ManufactureInfo(
+    val recipeName: String,
+    val recipeQuantity: String
+)
+
 data class TransactionsListState(
     val transactions: List<Transaction> = emptyList(),
     val transactionDetailsCounts: Map<String, Int> = emptyMap(),
+    val manufactureInfo: Map<String, ManufactureInfo> = emptyMap(),
     val isLoading: Boolean = false,
     val error: String? = null,
     val selectedTransactionType: AllTransactionTypes? = null,
@@ -78,10 +84,46 @@ class TransactionsListViewModel(
                             }
                         }
                         
+                        // Load manufacture info for manufacture transactions
+                        val manufactureTransactions = transactions.filter { 
+                            it.transactionType == AllTransactionTypes.MANUFACTURE.value 
+                        }
+                        
+                        val manufactureInfoMap = mutableMapOf<String, ManufactureInfo>()
+                        manufactureTransactions.forEach { transaction ->
+                            transaction.slug?.let { slug ->
+                                try {
+                                    // Get child transactions
+                                    val childTransactions = transactionUseCases.getChildTransactions(slug)
+                                    
+                                    // Find the purchase transaction (contains the manufactured product/recipe)
+                                    val purchaseTransaction = childTransactions.find { 
+                                        it.transactionType == AllTransactionTypes.PURCHASE.value 
+                                    }
+                                    
+                                    // Get recipe info from purchase transaction's details
+                                    purchaseTransaction?.let { purchase ->
+                                        val recipeDetail = transactionUseCases.getTransactions.withDetails(purchase.slug ?: "")
+                                            ?.transactionDetails?.firstOrNull()
+                                        
+                                        recipeDetail?.let { detail ->
+                                            manufactureInfoMap[slug] = ManufactureInfo(
+                                                recipeName = detail.product?.title ?: "Unknown Recipe",
+                                                recipeQuantity = detail.getDisplayQuantity()
+                                            )
+                                        }
+                                    }
+                                } catch (e: Exception) {
+                                    // Ignore errors loading manufacture info
+                                }
+                            }
+                        }
+                        
                         _state.update { 
                             it.copy(
                                 transactions = applyFilters(transactions),
                                 transactionDetailsCounts = counts,
+                                manufactureInfo = manufactureInfoMap,
                                 isLoading = false,
                                 error = null
                             )
