@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.shape.RoundedCornerShape
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionState
@@ -568,15 +569,20 @@ private fun CardHeader(
 ) {
     val badgeColors = getBadgeColors(transaction.transactionType)
     
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.Top
-    ) {
-        // Transaction type badge
+    Box(modifier = Modifier.fillMaxWidth()) {
+        // Transaction type badge - positioned at top-start with negative offset to align with parent
+        // Shape that only rounds the top-start corner to match parent Card (Material3 medium corner radius is 12.dp)
+        val badgeShape = RoundedCornerShape(
+            topStart = 12.dp,
+            topEnd = 0.dp,
+            bottomStart = 0.dp,
+            bottomEnd = 0.dp
+        )
         Surface(
             color = badgeColors.backgroundColor,
-            shape = MaterialTheme.shapes.small
+            shape = badgeShape,
+            modifier = Modifier
+                .offset(x = (-16).dp, y = (-16).dp) // Offset to align with Card edge (negating parent padding)
         ) {
             Text(
                 transaction.getTransactionTypeName(),
@@ -587,8 +593,11 @@ private fun CardHeader(
             )
         }
         
-        // Dates and options
-        Row(verticalAlignment = Alignment.Top) {
+        // Dates and options - positioned at top-end
+        Row(
+            modifier = Modifier.align(Alignment.TopEnd),
+            verticalAlignment = Alignment.Top
+        ) {
             Column(
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.spacedBy(2.dp)
