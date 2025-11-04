@@ -269,6 +269,7 @@ fun App() {
             var isInJournalVoucherFlow by remember { mutableStateOf(false) }
             var isInStockAdjustmentFlow by remember { mutableStateOf(false) }
             var isInManufactureFlow by remember { mutableStateOf(false) }
+            var isInTransactionsListFlow by remember { mutableStateOf(false) }
             
             // Update flow state based on current screen
             LaunchedEffect(currentScreen, returnToScreenAfterPartySelection, returnToScreenAfterProductSelection) {
@@ -281,6 +282,7 @@ fun App() {
                 val previousJournalVoucherFlow = isInJournalVoucherFlow
                 val previousStockAdjustmentFlow = isInStockAdjustmentFlow
                 val previousManufactureFlow = isInManufactureFlow
+                val previousTransactionsListFlow = isInTransactionsListFlow
                 
                 when (currentScreen) {
                     AppScreen.ADD_TRANSACTION_STEP1, AppScreen.ADD_TRANSACTION_STEP2 -> {
@@ -307,6 +309,9 @@ fun App() {
                     AppScreen.ADD_MANUFACTURE -> {
                         isInManufactureFlow = true
                     }
+                    AppScreen.TRANSACTIONS_LIST, AppScreen.TRANSACTION_DETAIL -> {
+                        isInTransactionsListFlow = true
+                    }
                     AppScreen.HOME -> {
                         // Explicitly exiting all flows
                         isInTransactionFlow = false
@@ -317,6 +322,7 @@ fun App() {
                         isInJournalVoucherFlow = false
                         isInStockAdjustmentFlow = false
                         isInManufactureFlow = false
+                        isInTransactionsListFlow = false
                     }
                     // Keep flows active when selecting resources
                     AppScreen.PARTIES -> {
@@ -336,6 +342,7 @@ fun App() {
                                 isInJournalVoucherFlow = false
                                 isInStockAdjustmentFlow = false
                                 isInManufactureFlow = false
+                                isInTransactionsListFlow = false
                             }
                         }
                     }
@@ -353,6 +360,7 @@ fun App() {
                                 isInJournalVoucherFlow = false
                                 isInStockAdjustmentFlow = false
                                 isInManufactureFlow = false
+                                isInTransactionsListFlow = false
                             }
                         }
                     }
@@ -369,6 +377,7 @@ fun App() {
                                 isInJournalVoucherFlow = false
                                 isInStockAdjustmentFlow = false
                                 isInManufactureFlow = false
+                                isInTransactionsListFlow = false
                             }
                         }
                     }
@@ -388,11 +397,12 @@ fun App() {
                                 isInJournalVoucherFlow = false
                                 isInStockAdjustmentFlow = false
                                 isInManufactureFlow = false
+                                isInTransactionsListFlow = false
                             }
                         }
                     }
                     else -> {
-                        // Any other screen exits all flows
+                        // Any other screen exits all flows except transactions list flow
                         isInTransactionFlow = false
                         isInPayGetCashFlow = false
                         isInAddRecordFlow = false
@@ -401,6 +411,7 @@ fun App() {
                         isInJournalVoucherFlow = false
                         isInStockAdjustmentFlow = false
                         isInManufactureFlow = false
+                        // Keep isInTransactionsListFlow as is - don't reset it here
                     }
                 }
             }
@@ -450,6 +461,18 @@ fun App() {
             }
             
             val manufactureViewModel: com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddManufactureViewModel? = if (isInManufactureFlow) {
+                koinInject()
+            } else {
+                null
+            }
+            
+            // Compute whether we're in transactions list flow based on current screen
+            // This ensures ViewModel is created immediately when navigating to transactions screens
+            val shouldShowTransactionsListFlow = currentScreen == AppScreen.TRANSACTIONS_LIST || 
+                                                   currentScreen == AppScreen.TRANSACTION_DETAIL || 
+                                                   isInTransactionsListFlow
+            
+            val transactionsListViewModel: com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionsListViewModel? = if (shouldShowTransactionsListFlow) {
                 koinInject()
             } else {
                 null
@@ -1116,65 +1139,68 @@ fun App() {
                     )
                 }
                 AppScreen.TRANSACTIONS_LIST -> {
-                    val transactionsListViewModel: com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionsListViewModel =
-                        koinInject()
-                    
-                    // Set party filter if coming from party actions
-                    LaunchedEffect(selectedPartyForTransactionFilter) {
-                        selectedPartyForTransactionFilter?.let { party ->
-                            transactionsListViewModel.setPartyFilter(party)
+                    // Use the ViewModel from app level to preserve state across navigation
+                    transactionsListViewModel?.let { viewModel ->
+                        // Set party filter if coming from party actions
+                        LaunchedEffect(selectedPartyForTransactionFilter) {
+                            selectedPartyForTransactionFilter?.let { party ->
+                                viewModel.setPartyFilter(party)
+                            }
                         }
-                    }
-                    
-                    com.hisaabi.hisaabi_kmp.transactions.presentation.ui.TransactionsListScreen(
-                        viewModel = transactionsListViewModel,
-                        onNavigateBack = { 
-                            selectedPartyForTransactionFilter = null
-                            navigateBack() 
-                        },
-                        onTransactionClick = { transaction ->
-                            selectedTransactionSlug = transaction.slug
-                            currentScreen = AppScreen.TRANSACTION_DETAIL
-                        },
-                        onAddTransactionClick = {
-                            transactionType = null
-                            currentScreen = AppScreen.ADD_TRANSACTION_STEP1
-                        },
-                        onEditTransaction = { transaction ->
-                            // Store the slug for loading full transaction details
-                            selectedTransactionSlugForEdit = transaction.slug
+                        
+                        com.hisaabi.hisaabi_kmp.transactions.presentation.ui.TransactionsListScreen(
+                            viewModel = viewModel,
+                            onNavigateBack = { 
+                                selectedPartyForTransactionFilter = null
+                                navigateBack() 
+                            },
+                            onTransactionClick = { transaction ->
+                                selectedTransactionSlug = transaction.slug
+                                navigateTo(AppScreen.TRANSACTION_DETAIL)
+                            },
+                            onAddTransactionClick = {
+                                transactionType = null
+                                navigateTo(AppScreen.ADD_TRANSACTION_STEP1)
+                            },
+                            onEditTransaction = { transaction ->
+                                // Store the slug for loading full transaction details
+                                selectedTransactionSlugForEdit = transaction.slug
                             
                             // Route to appropriate screen based on transaction type
                             when {
                                 com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.isRecord(transaction.transactionType) -> {
-                                    currentScreen = AppScreen.ADD_RECORD
+                                    navigateTo(AppScreen.ADD_RECORD)
                                 }
                                 com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.isPayGetCash(transaction.transactionType) -> {
-                                    currentScreen = AppScreen.PAY_GET_CASH
+                                    navigateTo(AppScreen.PAY_GET_CASH)
                                 }
                                 com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.isExpenseIncome(transaction.transactionType) -> {
-                                    currentScreen = AppScreen.ADD_EXPENSE_INCOME
+                                    navigateTo(AppScreen.ADD_EXPENSE_INCOME)
                                 }
                                 com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.isPaymentTransfer(transaction.transactionType) -> {
-                                    currentScreen = AppScreen.PAYMENT_TRANSFER
+                                    navigateTo(AppScreen.PAYMENT_TRANSFER)
                                 }
                                 com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.isJournalVoucher(transaction.transactionType) -> {
-                                    currentScreen = AppScreen.JOURNAL_VOUCHER
+                                    navigateTo(AppScreen.JOURNAL_VOUCHER)
                                 }
                                 com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.isStockAdjustment(transaction.transactionType) -> {
-                                    currentScreen = AppScreen.STOCK_ADJUSTMENT
+                                    navigateTo(AppScreen.STOCK_ADJUSTMENT)
                                 }
                                 transaction.transactionType == com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.MANUFACTURE.value -> {
-                                    currentScreen = AppScreen.ADD_MANUFACTURE
+                                    navigateTo(AppScreen.ADD_MANUFACTURE)
                                 }
                                 else -> {
                                     // Regular transactions (Sale, Purchase, Returns, Orders)
                                     transactionType = com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.fromValue(transaction.transactionType)
-                                    currentScreen = AppScreen.ADD_TRANSACTION_STEP1
+                                    navigateTo(AppScreen.ADD_TRANSACTION_STEP1)
                                 }
                             }
                         }
                     )
+                    } ?: run {
+                        // If ViewModel is not available, navigate back to home
+                        currentScreen = AppScreen.HOME
+                    }
                 }
                 
                 AppScreen.TRANSACTION_DETAIL -> {
@@ -1185,12 +1211,12 @@ fun App() {
                             transactionSlug = slug,
                             onNavigateBack = { 
                                 selectedTransactionSlug = null
-                                currentScreen = AppScreen.TRANSACTIONS_LIST
+                                navigateBack()
                             }
                         )
                     } ?: run {
                         // If no transaction slug, go back to list
-                        currentScreen = AppScreen.TRANSACTIONS_LIST
+                        navigateBack()
                     }
                 }
                 
