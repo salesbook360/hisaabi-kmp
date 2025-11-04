@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Color
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionState
@@ -415,33 +416,148 @@ private fun TransactionCard(
 
 // ============= CARD HEADER COMPONENTS =============
 
+// Custom attractive colors for transaction badges
+private data class BadgeColors(
+    val backgroundColor: Color,
+    val textColor: Color
+)
+
 @Composable
-private fun getBadgeColor(transactionType: Int): androidx.compose.ui.graphics.Color {
+private fun getBadgeColors(transactionType: Int): BadgeColors {
     return when (AllTransactionTypes.fromValue(transactionType)) {
-        AllTransactionTypes.SALE -> MaterialTheme.colorScheme.primaryContainer
-        AllTransactionTypes.PURCHASE -> MaterialTheme.colorScheme.secondaryContainer
-        AllTransactionTypes.CUSTOMER_RETURN -> MaterialTheme.colorScheme.errorContainer
-        AllTransactionTypes.VENDOR_RETURN -> MaterialTheme.colorScheme.tertiaryContainer
-        AllTransactionTypes.GET_FROM_CUSTOMER, AllTransactionTypes.GET_FROM_VENDOR, 
-        AllTransactionTypes.INVESTMENT_WITHDRAW -> MaterialTheme.colorScheme.primaryContainer
-        AllTransactionTypes.PAY_TO_CUSTOMER, AllTransactionTypes.PAY_TO_VENDOR, 
-        AllTransactionTypes.INVESTMENT_DEPOSIT -> MaterialTheme.colorScheme.secondaryContainer
-        AllTransactionTypes.EXPENSE -> MaterialTheme.colorScheme.errorContainer
-        AllTransactionTypes.EXTRA_INCOME -> MaterialTheme.colorScheme.primaryContainer
-        AllTransactionTypes.PAYMENT_TRANSFER -> MaterialTheme.colorScheme.tertiaryContainer
-        AllTransactionTypes.JOURNAL_VOUCHER -> MaterialTheme.colorScheme.secondaryContainer
-        AllTransactionTypes.STOCK_TRANSFER, AllTransactionTypes.STOCK_INCREASE, 
-        AllTransactionTypes.STOCK_REDUCE -> MaterialTheme.colorScheme.tertiaryContainer
-        AllTransactionTypes.MANUFACTURE -> MaterialTheme.colorScheme.tertiaryContainer
-        AllTransactionTypes.MEETING -> MaterialTheme.colorScheme.tertiaryContainer
-        AllTransactionTypes.TASK -> MaterialTheme.colorScheme.secondaryContainer
-        AllTransactionTypes.CLIENT_NOTE -> MaterialTheme.colorScheme.primaryContainer
-        AllTransactionTypes.SELF_NOTE -> MaterialTheme.colorScheme.surfaceVariant
-        AllTransactionTypes.CASH_REMINDER -> MaterialTheme.colorScheme.errorContainer
-        AllTransactionTypes.SALE_ORDER -> MaterialTheme.colorScheme.primaryContainer
-        AllTransactionTypes.PURCHASE_ORDER -> MaterialTheme.colorScheme.secondaryContainer
-        AllTransactionTypes.QUOTATION -> MaterialTheme.colorScheme.tertiaryContainer
-        else -> MaterialTheme.colorScheme.surfaceVariant
+        // Sales - Blue tones
+        AllTransactionTypes.SALE -> BadgeColors(
+            backgroundColor = Color(0xFF2196F3), // Bright Blue
+            textColor = Color.White
+        )
+        AllTransactionTypes.SALE_ORDER -> BadgeColors(
+            backgroundColor = Color(0xFF42A5F5), // Light Blue
+            textColor = Color.White
+        )
+        
+        // Purchases - Green tones
+        AllTransactionTypes.PURCHASE -> BadgeColors(
+            backgroundColor = Color(0xFF4CAF50), // Green
+            textColor = Color.White
+        )
+        AllTransactionTypes.PURCHASE_ORDER -> BadgeColors(
+            backgroundColor = Color(0xFF66BB6A), // Light Green
+            textColor = Color.White
+        )
+        
+        // Returns - Red/Orange tones
+        AllTransactionTypes.CUSTOMER_RETURN -> BadgeColors(
+            backgroundColor = Color(0xFFF44336), // Red
+            textColor = Color.White
+        )
+        AllTransactionTypes.VENDOR_RETURN -> BadgeColors(
+            backgroundColor = Color(0xFFFF5722), // Deep Orange
+            textColor = Color.White
+        )
+        
+        // Money Incoming - Teal/Cyan tones
+        AllTransactionTypes.GET_FROM_CUSTOMER -> BadgeColors(
+            backgroundColor = Color(0xFF00BCD4), // Cyan
+            textColor = Color.White
+        )
+        AllTransactionTypes.GET_FROM_VENDOR -> BadgeColors(
+            backgroundColor = Color(0xFF00ACC1), // Teal
+            textColor = Color.White
+        )
+        AllTransactionTypes.INVESTMENT_WITHDRAW -> BadgeColors(
+            backgroundColor = Color(0xFF0097A7), // Dark Cyan
+            textColor = Color.White
+        )
+        AllTransactionTypes.EXTRA_INCOME -> BadgeColors(
+            backgroundColor = Color(0xFF26A69A), // Teal Green
+            textColor = Color.White
+        )
+        
+        // Money Outgoing - Purple/Pink tones
+        AllTransactionTypes.PAY_TO_CUSTOMER -> BadgeColors(
+            backgroundColor = Color(0xFF9C27B0), // Purple
+            textColor = Color.White
+        )
+        AllTransactionTypes.PAY_TO_VENDOR -> BadgeColors(
+            backgroundColor = Color(0xFFAB47BC), // Light Purple
+            textColor = Color.White
+        )
+        AllTransactionTypes.INVESTMENT_DEPOSIT -> BadgeColors(
+            backgroundColor = Color(0xFF7B1FA2), // Dark Purple
+            textColor = Color.White
+        )
+        
+        // Expenses - Deep Red/Orange
+        AllTransactionTypes.EXPENSE -> BadgeColors(
+            backgroundColor = Color(0xFFE91E63), // Pink/Red
+            textColor = Color.White
+        )
+        
+        // Transfers - Indigo
+        AllTransactionTypes.PAYMENT_TRANSFER -> BadgeColors(
+            backgroundColor = Color(0xFF3F51B5), // Indigo
+            textColor = Color.White
+        )
+        
+        // Journal - Deep Blue
+        AllTransactionTypes.JOURNAL_VOUCHER -> BadgeColors(
+            backgroundColor = Color(0xFF1976D2), // Deep Blue
+            textColor = Color.White
+        )
+        
+        // Stock Operations - Teal/Green tones
+        AllTransactionTypes.STOCK_TRANSFER -> BadgeColors(
+            backgroundColor = Color(0xFF00897B), // Teal
+            textColor = Color.White
+        )
+        AllTransactionTypes.STOCK_INCREASE -> BadgeColors(
+            backgroundColor = Color(0xFF43A047), // Green
+            textColor = Color.White
+        )
+        AllTransactionTypes.STOCK_REDUCE -> BadgeColors(
+            backgroundColor = Color(0xFFE53935), // Red
+            textColor = Color.White
+        )
+        
+        // Manufacture - Orange/Amber
+        AllTransactionTypes.MANUFACTURE -> BadgeColors(
+            backgroundColor = Color(0xFFFF9800), // Orange
+            textColor = Color.White
+        )
+        
+        // Quotations - Amber/Yellow
+        AllTransactionTypes.QUOTATION -> BadgeColors(
+            backgroundColor = Color(0xFFFFC107), // Amber
+            textColor = Color(0xFF424242) // Dark text for contrast
+        )
+        
+        // Records/Notes - Various pastel colors
+        AllTransactionTypes.MEETING -> BadgeColors(
+            backgroundColor = Color(0xFF9575CD), // Light Purple
+            textColor = Color.White
+        )
+        AllTransactionTypes.TASK -> BadgeColors(
+            backgroundColor = Color(0xFF5C6BC0), // Indigo
+            textColor = Color.White
+        )
+        AllTransactionTypes.CLIENT_NOTE -> BadgeColors(
+            backgroundColor = Color(0xFF7986CB), // Light Indigo
+            textColor = Color.White
+        )
+        AllTransactionTypes.SELF_NOTE -> BadgeColors(
+            backgroundColor = Color(0xFFBDBDBD), // Grey
+            textColor = Color(0xFF212121) // Dark text
+        )
+        AllTransactionTypes.CASH_REMINDER -> BadgeColors(
+            backgroundColor = Color(0xFFFF6B6B), // Light Red
+            textColor = Color.White
+        )
+        
+        // Default
+        else -> BadgeColors(
+            backgroundColor = Color(0xFF757575), // Grey
+            textColor = Color.White
+        )
     }
 }
 
@@ -450,6 +566,8 @@ private fun CardHeader(
     transaction: Transaction,
     onOptionsClick: () -> Unit
 ) {
+    val badgeColors = getBadgeColors(transaction.transactionType)
+    
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -457,14 +575,15 @@ private fun CardHeader(
     ) {
         // Transaction type badge
         Surface(
-            color = getBadgeColor(transaction.transactionType),
+            color = badgeColors.backgroundColor,
             shape = MaterialTheme.shapes.small
         ) {
             Text(
                 transaction.getTransactionTypeName(),
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                 style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = badgeColors.textColor
             )
         }
         

@@ -49,13 +49,28 @@ class TransactionsListViewModel(
                         }
                     }
                     .collect { transactions ->
-                        // Load detail counts for stock adjustment transactions
-                        val stockAdjustmentSlugs = transactions
-                            .filter { it.transactionType in listOf(12, 13, 14) }  // Stock adjustment types
+                        // Load detail counts for all transaction types that have products/items
+                        // Includes: Sale, Purchase, Returns, Orders, Quotations, Manufacture, Stock Adjustments
+                        val transactionTypesWithItems = listOf(
+                            AllTransactionTypes.SALE.value,                    // 0
+                            AllTransactionTypes.CUSTOMER_RETURN.value,         // 1
+                            AllTransactionTypes.PURCHASE.value,                // 2
+                            AllTransactionTypes.VENDOR_RETURN.value,           // 3
+                            AllTransactionTypes.STOCK_TRANSFER.value,          // 13
+                            AllTransactionTypes.STOCK_INCREASE.value,          // 14
+                            AllTransactionTypes.STOCK_REDUCE.value,            // 15
+                            AllTransactionTypes.PURCHASE_ORDER.value,          // 16
+                            AllTransactionTypes.SALE_ORDER.value,              // 17
+                            AllTransactionTypes.QUOTATION.value,               // 18
+                            AllTransactionTypes.MANUFACTURE.value              // 20
+                        )
+                        
+                        val transactionSlugs = transactions
+                            .filter { it.transactionType in transactionTypesWithItems }
                             .mapNotNull { it.slug }
                         
                         val counts = mutableMapOf<String, Int>()
-                        stockAdjustmentSlugs.forEach { slug ->
+                        transactionSlugs.forEach { slug ->
                             try {
                                 counts[slug] = transactionUseCases.getTransactionDetailsCount(slug)
                             } catch (e: Exception) {
