@@ -5,9 +5,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Category
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.Title
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -52,6 +50,33 @@ fun AddCategoryScreen(
                     }
                 }
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                containerColor = MaterialTheme.colorScheme.primary,
+                onClick = {
+                    if (!uiState.isLoading && title.isNotBlank()) {
+                        viewModel.addCategory(
+                            title = title,
+                            description = description.takeIf { it.isNotBlank() },
+                            categoryType = categoryType
+                        )
+                    }
+                },
+                modifier = Modifier
+            ) {
+                if (uiState.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = "Save"
+                    )
+                }
+            }
         }
     ) { paddingValues ->
         Column(
@@ -106,28 +131,6 @@ fun AddCategoryScreen(
                     )
                 }
                 Spacer(modifier = Modifier.height(16.dp))
-            }
-            
-            // Save Button
-            Button(
-                onClick = {
-                    viewModel.addCategory(
-                        title = title,
-                        description = description.takeIf { it.isNotBlank() },
-                        categoryType = categoryType
-                    )
-                },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !uiState.isLoading && title.isNotBlank()
-            ) {
-                if (uiState.isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                }
-                Text("Add ${categoryType.displayName}")
             }
         }
     }

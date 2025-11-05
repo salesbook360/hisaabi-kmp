@@ -6,9 +6,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AttachMoney
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.Title
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -58,6 +56,29 @@ fun AddPaymentMethodScreen(
                     }
                 }
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                containerColor = MaterialTheme.colorScheme.primary,
+                onClick = {
+                    if (!state.isLoading) {
+                        viewModel.savePaymentMethod()
+                    }
+                },
+                modifier = Modifier
+            ) {
+                if (state.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                } else {
+                    Icon(
+                        imageVector = if (state.isEditMode) Icons.Default.Edit else Icons.Default.Check,
+                        contentDescription = if (state.isEditMode) "Update" else "Save"
+                    )
+                }
+            }
         }
     ) { paddingValues ->
         Column(
@@ -172,22 +193,6 @@ fun AddPaymentMethodScreen(
                 }
                 
                 Spacer(modifier = Modifier.height(16.dp))
-            }
-            
-            // Save Button
-            Button(
-                onClick = { viewModel.savePaymentMethod() },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !state.isLoading
-            ) {
-                if (state.isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                } else {
-                    Text(if (state.isEditMode) "Update Payment Method" else "Add Payment Method")
-                }
             }
         }
     }

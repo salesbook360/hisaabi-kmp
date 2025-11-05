@@ -106,6 +106,43 @@ fun AddProductScreen(
                     }
                 }
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                containerColor = MaterialTheme.colorScheme.primary,
+                onClick = {
+                    if (!uiState.isLoading && title.isNotBlank()) {
+                        viewModel.saveProduct(
+                            productToEdit = productToEdit,
+                            title = title,
+                            description = description.takeIf { it.isNotBlank() },
+                            productType = productType,
+                            retailPrice = retailPrice.toDoubleOrNull() ?: 0.0,
+                            wholesalePrice = wholesalePrice.toDoubleOrNull() ?: 0.0,
+                            purchasePrice = purchasePrice.toDoubleOrNull() ?: 0.0,
+                            taxPercentage = taxPercentage.toDoubleOrNull() ?: 0.0,
+                            discountPercentage = discountPercentage.toDoubleOrNull() ?: 0.0,
+                            manufacturer = manufacturer.takeIf { it.isNotBlank() },
+                            warehouseSlug = uiState.selectedWarehouse?.slug,
+                            openingQuantity = uiState.openingQuantity.toDoubleOrNull() ?: 0.0,
+                            minimumQuantity = uiState.minimumQuantity.toDoubleOrNull() ?: 0.0
+                        )
+                    }
+                },
+                modifier = Modifier
+            ) {
+                if (uiState.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                } else {
+                    Icon(
+                        imageVector = if (isEditMode) Icons.Default.Edit else Icons.Default.Check,
+                        contentDescription = if (isEditMode) "Update" else "Save"
+                    )
+                }
+            }
         }
     ) { paddingValues ->
         Column(
@@ -398,54 +435,6 @@ fun AddProductScreen(
                 }
                 Spacer(modifier = Modifier.height(16.dp))
             }
-            
-            // Save Button
-            Button(
-                onClick = {
-                    viewModel.saveProduct(
-                        productToEdit = productToEdit,
-                        title = title,
-                        description = description.takeIf { it.isNotBlank() },
-                        productType = productType,
-                        retailPrice = retailPrice.toDoubleOrNull() ?: 0.0,
-                        wholesalePrice = wholesalePrice.toDoubleOrNull() ?: 0.0,
-                        purchasePrice = purchasePrice.toDoubleOrNull() ?: 0.0,
-                        taxPercentage = taxPercentage.toDoubleOrNull() ?: 0.0,
-                        discountPercentage = discountPercentage.toDoubleOrNull() ?: 0.0,
-                        manufacturer = manufacturer.takeIf { it.isNotBlank() },
-                        warehouseSlug = uiState.selectedWarehouse?.slug,
-                        openingQuantity = uiState.openingQuantity.toDoubleOrNull() ?: 0.0,
-                        minimumQuantity = uiState.minimumQuantity.toDoubleOrNull() ?: 0.0
-                    )
-                },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !uiState.isLoading && title.isNotBlank()
-            ) {
-                if (uiState.isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                }
-                Text(
-                    text = if (isEditMode) {
-                        when (productType) {
-                            ProductType.SIMPLE_PRODUCT -> "Update Product"
-                            ProductType.SERVICE -> "Update Service"
-                            ProductType.RECIPE -> "Update Recipe"
-                        }
-                    } else {
-                        when (productType) {
-                            ProductType.SIMPLE_PRODUCT -> "Add Product"
-                            ProductType.SERVICE -> "Add Service"
-                            ProductType.RECIPE -> "Add Recipe"
-                        }
-                    }
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }

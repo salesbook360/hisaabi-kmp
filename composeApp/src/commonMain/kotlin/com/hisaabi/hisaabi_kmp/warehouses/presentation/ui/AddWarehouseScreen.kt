@@ -5,10 +5,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Title
-import androidx.compose.material.icons.filled.Warehouse
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -58,6 +55,29 @@ fun AddWarehouseScreen(
                     }
                 }
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                containerColor = MaterialTheme.colorScheme.primary,
+                onClick = {
+                    if (!state.isLoading) {
+                        viewModel.saveWarehouse()
+                    }
+                },
+                modifier = Modifier
+            ) {
+                if (state.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                } else {
+                    Icon(
+                        imageVector = if (state.isEditMode) Icons.Default.Edit else Icons.Default.Check,
+                        contentDescription = if (state.isEditMode) "Update" else "Save"
+                    )
+                }
+            }
         }
     ) { paddingValues ->
         Column(
@@ -166,22 +186,6 @@ fun AddWarehouseScreen(
                 }
                 
                 Spacer(modifier = Modifier.height(16.dp))
-            }
-            
-            // Save Button
-            Button(
-                onClick = { viewModel.saveWarehouse() },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !state.isLoading
-            ) {
-                if (state.isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                } else {
-                    Text(if (state.isEditMode) "Update Warehouse" else "Add Warehouse")
-                }
             }
         }
     }

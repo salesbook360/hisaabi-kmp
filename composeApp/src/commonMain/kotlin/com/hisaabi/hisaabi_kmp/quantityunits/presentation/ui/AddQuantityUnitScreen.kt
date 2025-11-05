@@ -43,6 +43,29 @@ fun AddQuantityUnitScreen(
                     }
                 }
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                containerColor = MaterialTheme.colorScheme.primary,
+                onClick = {
+                    if (!state.isLoading) {
+                        viewModel.saveUnit()
+                    }
+                },
+                modifier = Modifier
+            ) {
+                if (state.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                } else {
+                    Icon(
+                        imageVector = if (state.isEditMode) Icons.Default.Edit else Icons.Default.Check,
+                        contentDescription = if (state.isEditMode) "Update" else "Save"
+                    )
+                }
+            }
         }
     ) { paddingValues ->
         Column(Modifier.fillMaxSize().padding(paddingValues).padding(16.dp).verticalScroll(rememberScrollState())) {
@@ -90,18 +113,6 @@ fun AddQuantityUnitScreen(
                     Text(error, Modifier.padding(16.dp), color = MaterialTheme.colorScheme.onErrorContainer)
                 }
                 Spacer(Modifier.height(16.dp))
-            }
-            
-            Button(
-                onClick = { viewModel.saveUnit() },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !state.isLoading
-            ) {
-                if (state.isLoading) {
-                    CircularProgressIndicator(Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
-                } else {
-                    Text(if (state.isEditMode) "Update Unit" else "Add Unit")
-                }
             }
         }
     }

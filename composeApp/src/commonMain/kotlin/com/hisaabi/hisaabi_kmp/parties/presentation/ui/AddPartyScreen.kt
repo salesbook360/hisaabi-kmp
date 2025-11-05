@@ -142,6 +142,59 @@ fun AddPartyScreen(
                     }
                 }
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                containerColor = MaterialTheme.colorScheme.primary,
+                onClick = {
+                    if (!uiState.isLoading && name.isNotBlank()) {
+                        if (isEditing && partyToEdit != null) {
+                            viewModel.updateParty(
+                                party = partyToEdit,
+                                name = name,
+                                phone = phone.takeIf { it.isNotBlank() },
+                                address = address.takeIf { it.isNotBlank() },
+                                email = email.takeIf { it.isNotBlank() },
+                                description = description.takeIf { it.isNotBlank() },
+                                openingBalance = openingBalance.toDoubleOrNull() ?: 0.0,
+                                isBalancePayable = isBalancePayable,
+                                categorySlug = selectedCategory?.slug,
+                                areaSlug = selectedArea?.slug,
+                                latitude = latitude,
+                                longitude = longitude
+                            )
+                        } else {
+                            viewModel.addParty(
+                                name = name,
+                                phone = phone.takeIf { it.isNotBlank() },
+                                address = address.takeIf { it.isNotBlank() },
+                                email = email.takeIf { it.isNotBlank() },
+                                description = description.takeIf { it.isNotBlank() },
+                                openingBalance = openingBalance.toDoubleOrNull() ?: 0.0,
+                                isBalancePayable = isBalancePayable,
+                                partyType = partyType,
+                                categorySlug = selectedCategory?.slug,
+                                areaSlug = selectedArea?.slug,
+                                latitude = latitude,
+                                longitude = longitude
+                            )
+                        }
+                    }
+                },
+                modifier = Modifier
+            ) {
+                if (uiState.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                } else {
+                    Icon(
+                        imageVector = if (isEditing) Icons.Default.Edit else Icons.Default.Check,
+                        contentDescription = if (isEditing) "Update" else "Save"
+                    )
+                }
+            }
         }
     ) { paddingValues ->
         Column(
@@ -414,63 +467,6 @@ fun AddPartyScreen(
                 }
                 Spacer(modifier = Modifier.height(16.dp))
             }
-            
-            // Save Button
-            Button(
-                onClick = {
-                    if (isEditing && partyToEdit != null) {
-                        viewModel.updateParty(
-                            party = partyToEdit,
-                            name = name,
-                            phone = phone.takeIf { it.isNotBlank() },
-                            address = address.takeIf { it.isNotBlank() },
-                            email = email.takeIf { it.isNotBlank() },
-                            description = description.takeIf { it.isNotBlank() },
-                            openingBalance = openingBalance.toDoubleOrNull() ?: 0.0,
-                            isBalancePayable = isBalancePayable,
-                            categorySlug = selectedCategory?.slug,
-                            areaSlug = selectedArea?.slug,
-                            latitude = latitude,
-                            longitude = longitude
-                        )
-                    } else {
-                        viewModel.addParty(
-                            name = name,
-                            phone = phone.takeIf { it.isNotBlank() },
-                            address = address.takeIf { it.isNotBlank() },
-                            email = email.takeIf { it.isNotBlank() },
-                            description = description.takeIf { it.isNotBlank() },
-                            openingBalance = openingBalance.toDoubleOrNull() ?: 0.0,
-                            isBalancePayable = isBalancePayable,
-                            partyType = partyType,
-                            categorySlug = selectedCategory?.slug,
-                            areaSlug = selectedArea?.slug,
-                            latitude = latitude,
-                            longitude = longitude
-                        )
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !uiState.isLoading && name.isNotBlank()
-            ) {
-                if (uiState.isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                }
-                Text(
-                    text = when (partyType) {
-                        PartyType.CUSTOMER -> if (isEditing) "Update Customer" else "Add Customer"
-                        PartyType.VENDOR -> if (isEditing) "Update Vendor" else "Add Vendor"
-                        PartyType.INVESTOR -> if (isEditing) "Update Investor" else "Add Investor"
-                        else -> if (isEditing) "Update Party" else "Add Party"
-                    }
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
     
