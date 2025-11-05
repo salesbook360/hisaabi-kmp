@@ -19,6 +19,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod
 import com.hisaabi.hisaabi_kmp.paymentmethods.presentation.viewmodel.PaymentMethodsViewModel
+import com.hisaabi.hisaabi_kmp.utils.format
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -212,7 +213,7 @@ private fun PaymentMethodItem(
                 Spacer(modifier = Modifier.height(4.dp))
                 
                 Text(
-                    text = "Balance: ${String.format("%.2f", paymentMethod.amount)}",
+                    text = "Balance: ${"%.2f".format(paymentMethod.amount)}",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium,
                     color = if (paymentMethod.amount >= 0) 

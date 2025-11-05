@@ -3,6 +3,7 @@ package com.hisaabi.hisaabi_kmp.database.entity
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.hisaabi.hisaabi_kmp.utils.currentTimeMillis
 
 /**
  * Entity to store authenticated user profile and tokens persistently.
@@ -52,6 +53,6 @@ data class UserAuthEntity(
     
     // Metadata
     @ColumnInfo(name = "last_updated")
-    val lastUpdated: Long = System.currentTimeMillis()
+    val lastUpdated: Long = currentTimeMillis()
 )
 

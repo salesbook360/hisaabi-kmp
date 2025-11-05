@@ -3,6 +3,7 @@ package com.hisaabi.hisaabi_kmp.transactions.domain.util
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.FlatOrPercent
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionDetail
 import kotlin.math.round
+import com.hisaabi.hisaabi_kmp.utils.format
 
 object TransactionCalculator {
     
@@ -165,7 +166,7 @@ object TransactionCalculator {
      */
     fun formatCurrency(value: Double, currencySymbol: String = "₨"): String {
         val absValue = kotlin.math.abs(value)
-        val formatted = String.format("%.2f", absValue)
+        val formatted = "%.2f".format(absValue)
         return "$currencySymbol $formatted"
     }
     
@@ -173,7 +174,7 @@ object TransactionCalculator {
      * Format quantity with unit
      */
     fun formatQuantity(quantity: Double, unitName: String): String {
-        return "${String.format("%.2f", quantity)} $unitName"
+        return "${"%.2f".format(quantity)} $unitName"
     }
 }
 

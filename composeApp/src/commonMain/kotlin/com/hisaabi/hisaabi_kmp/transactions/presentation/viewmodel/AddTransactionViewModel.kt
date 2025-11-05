@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.hisaabi.hisaabi_kmp.utils.currentTimeMillis
 
 data class AddTransactionState(
     // Step 1: Products and Party
@@ -24,7 +25,7 @@ data class AddTransactionState(
     val selectedWarehouse: Warehouse? = null,
     val transactionDetails: List<TransactionDetailItem> = emptyList(),
     val priceType: PriceType = PriceType.RETAIL,
-    val transactionDateTime: Long = System.currentTimeMillis(),
+    val transactionDateTime: Long = currentTimeMillis(),
     
     // Step 2: Payment Details
     val previousBalance: Double = 0.0,
@@ -394,7 +395,7 @@ class AddTransactionViewModel(
                 }
                 
                 // Parse timestamp
-                val timestamp = transaction.timestamp?.toLongOrNull() ?: System.currentTimeMillis()
+                val timestamp = transaction.timestamp?.toLongOrNull() ?: currentTimeMillis()
                 
                 // Set state with transaction data
                 _state.update { 

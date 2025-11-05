@@ -4,6 +4,7 @@ import com.hisaabi.hisaabi_kmp.auth.data.model.UserDto
 import com.hisaabi.hisaabi_kmp.database.dao.UserAuthDao
 import com.hisaabi.hisaabi_kmp.database.entity.UserAuthEntity
 import kotlinx.coroutines.flow.map
+import com.hisaabi.hisaabi_kmp.utils.currentTimeMillis
 
 interface AuthLocalDataSource {
     suspend fun saveAccessToken(token: String)
@@ -72,7 +73,7 @@ class AuthLocalDataSourceImpl(
             accessToken = user.authInfo.accessToken,
             refreshToken = user.authInfo.refreshToken,
             selectedBusinessSlug = selectedBusinessSlug, // Preserve selected business
-            lastUpdated = System.currentTimeMillis()
+            lastUpdated = currentTimeMillis()
         )
         userAuthDao.insertUserAuth(userAuthEntity)
     }

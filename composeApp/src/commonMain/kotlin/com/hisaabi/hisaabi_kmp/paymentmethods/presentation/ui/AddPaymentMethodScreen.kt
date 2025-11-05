@@ -16,6 +16,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod
 import com.hisaabi.hisaabi_kmp.paymentmethods.presentation.viewmodel.AddPaymentMethodViewModel
+import com.hisaabi.hisaabi_kmp.utils.format
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -139,7 +140,7 @@ fun AddPaymentMethodScreen(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = String.format("%.2f", state.paymentMethodToEdit?.amount ?: 0.0),
+                            text = "%.2f".format(state.paymentMethodToEdit?.amount ?: 0.0),
                             style = MaterialTheme.typography.headlineSmall,
                             color = MaterialTheme.colorScheme.primary
                         )

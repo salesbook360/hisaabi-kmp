@@ -20,6 +20,7 @@ import com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.FlatOrPercent
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddTransactionViewModel
 import com.hisaabi.hisaabi_kmp.core.ui.FilterChipWithColors
+import com.hisaabi.hisaabi_kmp.utils.format
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -242,7 +243,7 @@ private fun PreviousBalanceCard(
                     style = MaterialTheme.typography.labelSmall
                 )
                 Text(
-                    "₨ ${String.format("%.2f", kotlin.math.abs(balance))}",
+                    "₨ ${"%.2f".format(kotlin.math.abs(balance))}",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
@@ -301,7 +302,7 @@ private fun BillSummaryCard(
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    "₨ ${String.format("%.2f", grandTotal)}",
+                    "₨ ${"%.2f".format(grandTotal)}",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
@@ -328,7 +329,7 @@ private fun SummaryRow(
             style = MaterialTheme.typography.bodyMedium
         )
         Text(
-            "₨ ${String.format("%.2f", kotlin.math.abs(amount))}",
+            "₨ ${"%.2f".format(kotlin.math.abs(amount))}",
             style = MaterialTheme.typography.bodyMedium,
             color = if (isNegative) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
         )
@@ -585,7 +586,7 @@ private fun PayableAmountCard(
                 fontWeight = FontWeight.Bold
             )
             Text(
-                "₨ ${String.format("%.2f", kotlin.math.abs(payable))}",
+                "₨ ${"%.2f".format(kotlin.math.abs(payable))}",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold
             )

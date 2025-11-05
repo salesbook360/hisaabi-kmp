@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import com.hisaabi.hisaabi_kmp.utils.currentTimeMillis
 
 class AddManufactureViewModel(
     private val transactionsRepository: TransactionsRepository,
@@ -397,7 +398,7 @@ data class ManufactureState(
     val additionalCharges: Double = 0.0,
     val additionalChargesDescription: String = "",
     val selectedWarehouse: Warehouse? = null,
-    val transactionTimestamp: Long = System.currentTimeMillis(),
+    val transactionTimestamp: Long = currentTimeMillis(),
     val totalCost: Double = 0.0,
     val isLoading: Boolean = true,
     val isSaving: Boolean = false,

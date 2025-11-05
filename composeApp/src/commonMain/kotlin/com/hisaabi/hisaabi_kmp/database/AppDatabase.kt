@@ -1,7 +1,9 @@
 package com.hisaabi.hisaabi_kmp.database
 
+import androidx.room.ConstructedBy
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import androidx.room.RoomDatabaseConstructor
 import com.hisaabi.hisaabi_kmp.database.dao.*
 import com.hisaabi.hisaabi_kmp.database.entity.*
 
@@ -25,6 +27,7 @@ import com.hisaabi.hisaabi_kmp.database.entity.*
     version = 3,
     exportSchema = true
 )
+@ConstructedBy(AppDatabaseConstructor::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun partyDao(): PartyDao
     abstract fun productDao(): ProductDao
@@ -45,5 +48,11 @@ abstract class AppDatabase : RoomDatabase() {
     companion object {
         const val DATABASE_NAME = "hisaabi_database.db"
     }
+}
+
+// RoomDatabase constructor for multiplatform support
+@Suppress("NO_ACTUAL_FOR_EXPECT")
+expect object AppDatabaseConstructor : RoomDatabaseConstructor<AppDatabase> {
+    override fun initialize(): AppDatabase
 }
 

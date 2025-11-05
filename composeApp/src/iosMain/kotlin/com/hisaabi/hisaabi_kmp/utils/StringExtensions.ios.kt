@@ -2,6 +2,9 @@ package com.hisaabi.hisaabi_kmp.utils
 
 import platform.Foundation.NSString
 import platform.Foundation.stringWithFormat
+import platform.Foundation.NSDate
+import platform.Foundation.timeIntervalSince1970
+
 
 /**
  * iOS implementation of String.format extension.
@@ -53,3 +56,10 @@ private fun String.format(value: Double): String {
     return NSString.stringWithFormat(this, value)
 }
 
+/**
+ * iOS implementation of currentTimeMillis
+ */
+actual fun currentTimeMillis(): Long {
+    val now = NSDate()
+    return (now.timeIntervalSince1970 * 1000).toLong()
+}

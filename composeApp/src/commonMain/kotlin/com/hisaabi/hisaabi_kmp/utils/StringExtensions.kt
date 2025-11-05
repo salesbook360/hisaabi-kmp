@@ -11,3 +11,8 @@ package com.hisaabi.hisaabi_kmp.utils
  */
 expect fun String.format(vararg args: Any?): String
 
+/**
+ * Get current time in milliseconds - multiplatform
+ */
+expect fun currentTimeMillis(): Long
+

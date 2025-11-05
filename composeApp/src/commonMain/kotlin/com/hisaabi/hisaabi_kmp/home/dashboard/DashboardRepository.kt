@@ -6,6 +6,7 @@ import com.hisaabi.hisaabi_kmp.database.dao.*
 import com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import kotlin.math.abs
+import com.hisaabi.hisaabi_kmp.utils.currentTimeMillis
 
 /**
  * Dashboard repository to fetch dashboard metrics from the database
@@ -332,7 +333,7 @@ class DashboardRepository(
         val purchaseOrderSlugs = inventoryTransactionDao.getTransactionSlugs(
             businessSlug,
             0,
-            System.currentTimeMillis(),
+            currentTimeMillis(),
             listOf(AllTransactionTypes.PURCHASE_ORDER.value)
         )
         val willBeReceived = if (purchaseOrderSlugs.isNotEmpty()) {

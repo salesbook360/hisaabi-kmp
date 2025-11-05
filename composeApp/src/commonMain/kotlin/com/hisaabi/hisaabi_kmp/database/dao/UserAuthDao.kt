@@ -7,6 +7,7 @@ import androidx.room.Query
 import androidx.room.Update
 import com.hisaabi.hisaabi_kmp.database.entity.UserAuthEntity
 import kotlinx.coroutines.flow.Flow
+import com.hisaabi.hisaabi_kmp.utils.currentTimeMillis
 
 /**
  * DAO for accessing user authentication data from the database.
@@ -59,14 +60,14 @@ interface UserAuthDao {
      * This is useful for token refresh operations.
      */
     @Query("UPDATE user_auth SET access_token = :token, last_updated = :timestamp WHERE id = 1")
-    suspend fun updateAccessToken(token: String, timestamp: Long = System.currentTimeMillis())
+    suspend fun updateAccessToken(token: String, timestamp: Long = currentTimeMillis())
     
     /**
      * Update both access and refresh tokens.
      * This is useful for token refresh operations.
      */
     @Query("UPDATE user_auth SET access_token = :accessToken, refresh_token = :refreshToken, last_updated = :timestamp WHERE id = 1")
-    suspend fun updateTokens(accessToken: String, refreshToken: String, timestamp: Long = System.currentTimeMillis())
+    suspend fun updateTokens(accessToken: String, refreshToken: String, timestamp: Long = currentTimeMillis())
     
     /**
      * Check if a user is logged in.

@@ -31,7 +31,11 @@ object DateRangeHelper {
                 val lastMonth = today.minus(1, DateTimeUnit.MONTH)
                 val startOfLastMonth = LocalDate(lastMonth.year, lastMonth.month, 1)
                     .atStartOfDayIn(TimeZone.currentSystemDefault())
-                val endOfLastMonth = LocalDate(lastMonth.year, lastMonth.month, lastMonth.month.length(isLeapYear(lastMonth.year)))
+                // Get last day of the month by going to next month and subtracting 1 day
+                val lastDayOfMonth = LocalDate(lastMonth.year, lastMonth.month, 1)
+                    .plus(1, DateTimeUnit.MONTH)
+                    .minus(1, DateTimeUnit.DAY)
+                val endOfLastMonth = lastDayOfMonth
                     .atTime(23, 59, 59)
                     .toInstant(TimeZone.currentSystemDefault())
                 DateRange(startOfLastMonth.toEpochMilliseconds(), endOfLastMonth.toEpochMilliseconds())

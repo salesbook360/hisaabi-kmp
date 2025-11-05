@@ -335,10 +335,10 @@ private fun calculateGridHeight(itemCount: Int, columns: Int): androidx.compose.
  */
 private fun formatCurrency(value: Double, symbol: String): String {
     return when {
-        value >= 10000000 -> String.format("%s%.2fCr", symbol, value / 10000000)
-        value >= 100000 -> String.format("%s%.2fL", symbol, value / 100000)
-        value >= 1000 -> String.format("%s%.2fK", symbol, value / 1000)
-        else -> String.format("%s%.2f", symbol, value)
+        value >= 10000000 -> "%s%.2fCr".format(symbol, value / 10000000)
+        value >= 100000 -> "%s%.2fL".format(symbol, value / 100000)
+        value >= 1000 -> "%s%.2fK".format(symbol, value / 1000)
+        else -> "%s%.2f".format(symbol, value)
     }
 }
 

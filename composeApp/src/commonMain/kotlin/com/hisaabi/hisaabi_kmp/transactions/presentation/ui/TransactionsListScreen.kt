@@ -27,6 +27,7 @@ import com.hisaabi.hisaabi_kmp.receipt.ReceiptViewModel
 import com.hisaabi.hisaabi_kmp.receipt.ReceiptPreviewDialog
 import com.hisaabi.hisaabi_kmp.core.ui.FilterChipWithColors
 import org.koin.compose.koinInject
+import com.hisaabi.hisaabi_kmp.utils.format
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -758,7 +759,7 @@ private fun BasicTransactionCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        "₨ ${String.format("%.2f", transaction.totalBill)}",
+                        "₨ ${"%.2f".format(transaction.totalBill)}",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
@@ -773,7 +774,7 @@ private fun BasicTransactionCard(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            "₨ ${String.format("%.2f", transaction.totalPaid)}",
+                            "₨ ${"%.2f".format(transaction.totalPaid)}",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.secondary
@@ -803,13 +804,13 @@ private fun BasicTransactionCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     if (transaction.flatDiscount > 0) {
-                        DetailChip("−₨${String.format("%.0f", transaction.flatDiscount)}", MaterialTheme.colorScheme.errorContainer)
+                        DetailChip("−₨${"%.0f".format(transaction.flatDiscount)}", MaterialTheme.colorScheme.errorContainer)
                     }
                     if (transaction.flatTax > 0) {
-                        DetailChip("+₨${String.format("%.0f", transaction.flatTax)}", MaterialTheme.colorScheme.tertiaryContainer)
+                        DetailChip("+₨${"%.0f".format(transaction.flatTax)}", MaterialTheme.colorScheme.tertiaryContainer)
                     }
                     if (transaction.additionalCharges > 0) {
-                        DetailChip("+₨${String.format("%.0f", transaction.additionalCharges)}", MaterialTheme.colorScheme.secondaryContainer)
+                        DetailChip("+₨${"%.0f".format(transaction.additionalCharges)}", MaterialTheme.colorScheme.secondaryContainer)
                     }
                 }
             }
@@ -1465,7 +1466,7 @@ private fun ManufactureCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        "₨ ${String.format("%.2f", transaction.totalPaid)}",
+                        "₨ ${"%.2f".format(transaction.totalPaid)}",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.tertiary
@@ -1547,7 +1548,7 @@ private fun OrderQuotationCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        "₨ ${String.format("%.2f", transaction.totalBill)}",
+                        "₨ ${"%.2f".format(transaction.totalBill)}",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
@@ -1651,7 +1652,7 @@ private fun RecordTransactionCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        "₨ ${String.format("%.2f", transaction.totalPaid)}",
+                        "₨ ${"%.2f".format(transaction.totalPaid)}",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary

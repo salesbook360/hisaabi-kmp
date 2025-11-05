@@ -17,6 +17,7 @@ import com.hisaabi.hisaabi_kmp.settings.domain.model.ReceiptConfig
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction
 import com.hisaabi.hisaabi_kmp.utils.formatTransactionDate
 import kotlin.math.abs
+import com.hisaabi.hisaabi_kmp.utils.format
 
 /**
  * Composable receipt that can be rendered as an image/PDF
@@ -409,21 +410,21 @@ fun ReceiptContent(
                         modifier = Modifier.weight(2f)
                     )
                     Text(
-                        text = String.format("%.1f", detail.quantity),
+                        text = "%.1f".format(detail.quantity),
                         fontSize = 11.sp,
                         color = Color(0xFF616161),
                         textAlign = TextAlign.Center,
                         modifier = Modifier.weight(0.6f)
                     )
                     Text(
-                        text = "₨${String.format("%.2f", detail.price)}",
+                        text = "₨${"%.2f".format(detail.price)}",
                         fontSize = 11.sp,
                         color = Color(0xFF616161),
                         textAlign = TextAlign.End,
                         modifier = Modifier.weight(1f)
                     )
                     Text(
-                        text = "₨${String.format("%.2f", detail.calculateSubtotal())}",
+                        text = "₨${"%.2f".format(detail.calculateSubtotal())}",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color(0xFF212121),
@@ -443,7 +444,7 @@ fun ReceiptContent(
                     ) {
                         if (detail.flatDiscount > 0) {
                             Text(
-                                text = "Discount: -₨${String.format("%.2f", detail.flatDiscount)}",
+                                text = "Discount: -₨${"%.2f".format(detail.flatDiscount)}",
                                 fontSize = 9.sp,
                                 color = Color(0xFFE53935),
                                 modifier = Modifier.padding(end = 8.dp)
@@ -451,7 +452,7 @@ fun ReceiptContent(
                         }
                         if (detail.flatTax > 0) {
                             Text(
-                                text = "Tax: +₨${String.format("%.2f", detail.flatTax)}",
+                                text = "Tax: +₨${"%.2f".format(detail.flatTax)}",
                                 fontSize = 9.sp,
                                 color = Color(0xFF43A047)
                             )
@@ -524,7 +525,7 @@ fun ReceiptContent(
                         color = Color(0xFF616161)
                     )
                     Text(
-                        text = "${transaction.transactionDetails.size} items (${String.format("%.1f", transaction.calculateTotalQuantity())} qty)",
+                        text = "${transaction.transactionDetails.size} items (${"%.1f".format(transaction.calculateTotalQuantity())} qty)",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color(0xFF212121)
@@ -547,7 +548,7 @@ fun ReceiptContent(
                     letterSpacing = 0.5.sp
                 )
                 Text(
-                    text = "₨${String.format("%.2f", transaction.calculateGrandTotal())}",
+                    text = "₨${"%.2f".format(transaction.calculateGrandTotal())}",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFFB71C1C)
@@ -569,7 +570,7 @@ fun ReceiptContent(
                         color = Color(0xFF616161)
                     )
                     Text(
-                        text = "₨${String.format("%.2f", abs(transaction.party.balance))}",
+                        text = "₨${"%.2f".format(abs(transaction.party.balance))}",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = if (transaction.party.balance > 0) Color(0xFF43A047) else Color(0xFFE53935)
@@ -590,7 +591,7 @@ fun ReceiptContent(
                     color = Color(0xFF616161)
                 )
                 Text(
-                    text = "₨${String.format("%.2f", transaction.totalPaid)}",
+                    text = "₨${"%.2f".format(transaction.totalPaid)}",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color(0xFF43A047)
@@ -617,7 +618,7 @@ fun ReceiptContent(
                             color = Color(0xFF616161)
                         )
                         Text(
-                            text = "₨${String.format("%.2f", abs(balance))}",
+                            text = "₨${"%.2f".format(abs(balance))}",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = if (balance > 0) Color(0xFFE53935) else Color(0xFF43A047)
@@ -722,7 +723,7 @@ private fun SummaryRow(label: String, amount: Double, isNegative: Boolean = fals
             color = Color(0xFF616161)
         )
         Text(
-            text = "${if (isNegative) "-" else ""}₨${String.format("%.2f", amount)}",
+            text = "${if (isNegative) "-" else ""}₨${"%.2f".format(amount)}",
             fontSize = 11.sp,
             fontWeight = FontWeight.Medium,
             color = if (isNegative) Color(0xFFE53935) else Color(0xFF212121)

@@ -17,6 +17,7 @@ import com.hisaabi.hisaabi_kmp.utils.getCurrentTimestamp
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import com.hisaabi.hisaabi_kmp.utils.currentTimeMillis
 
 class TransactionsRepository(
     private val localDataSource: TransactionLocalDataSource,
@@ -578,7 +579,7 @@ class TransactionsRepository(
             parent_slug = parentSlug,
             total_bill = totalBill,
             total_paid = totalPaid,
-            timestamp = timestamp ?: System.currentTimeMillis().toString(),
+            timestamp = timestamp ?: currentTimeMillis().toString(),
             discount = flatDiscount,
             payment_method_to_slug = paymentMethodToSlug,
             payment_method_from_slug = paymentMethodFromSlug,

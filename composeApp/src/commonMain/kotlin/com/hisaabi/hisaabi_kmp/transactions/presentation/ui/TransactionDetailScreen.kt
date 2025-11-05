@@ -840,7 +840,7 @@ private fun ManufactureDetailsCard(transaction: Transaction) {
             // Total Manufacturing Cost
             DetailRow(
                 label = "Total Manufacturing Cost",
-                value = "₨ ${String.format("%.2f", calculateManufacturingCost(transaction))}",
+                value = "₨ ${"%.2f".format(calculateManufacturingCost(transaction))}",
                 valueColor = MaterialTheme.colorScheme.tertiary,
                 fontWeight = FontWeight.Bold
             )

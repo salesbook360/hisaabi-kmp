@@ -18,7 +18,7 @@ class IOSKeyValueStorage : KeyValueStorage {
     }
     
     override fun getLong(key: String, defaultValue: Long): Long {
-        if (!userDefaults.objectForKey(key)) {
+        if (userDefaults.objectForKey(key) == null) {
             return defaultValue
         }
         return userDefaults.integerForKey(key)
@@ -30,7 +30,7 @@ class IOSKeyValueStorage : KeyValueStorage {
     }
     
     override fun getBoolean(key: String, defaultValue: Boolean): Boolean {
-        if (!userDefaults.objectForKey(key)) {
+        if (userDefaults.objectForKey(key) == null) {
             return defaultValue
         }
         return userDefaults.boolForKey(key)
@@ -42,7 +42,7 @@ class IOSKeyValueStorage : KeyValueStorage {
     }
     
     override fun getInt(key: String, defaultValue: Int): Int {
-        if (!userDefaults.objectForKey(key)) {
+        if (userDefaults.objectForKey(key) == null) {
             return defaultValue
         }
         return userDefaults.integerForKey(key).toInt()

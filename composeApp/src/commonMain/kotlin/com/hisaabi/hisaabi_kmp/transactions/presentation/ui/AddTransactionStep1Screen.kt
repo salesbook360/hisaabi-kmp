@@ -22,6 +22,7 @@ import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionCategory
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddTransactionViewModel
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionDetailItem
 import com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse
+import com.hisaabi.hisaabi_kmp.utils.format
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -275,7 +276,7 @@ private fun PartySelectionCard(
                 )
                 selectedParty?.let {
                     Text(
-                        "Balance: ₨ ${String.format("%.2f", kotlin.math.abs(it.balance))}",
+                        "Balance: ₨ ${"%.2f".format(kotlin.math.abs(it.balance))}",
                         style = MaterialTheme.typography.bodySmall,
                         color = if (selectedParty == null)
                             MaterialTheme.colorScheme.onErrorContainer
@@ -395,7 +396,7 @@ private fun ProductItemCard(
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        "₨ ${String.format("%.2f", item.calculateTotal())}",
+                        "₨ ${"%.2f".format(item.calculateTotal())}",
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
@@ -585,7 +586,7 @@ private fun SummaryCard(
                     color = MaterialTheme.colorScheme.onSecondaryContainer
                 )
                 Text(
-                    "₨ ${String.format("%.2f", subtotal)}",
+                    "₨ ${"%.2f".format(subtotal)}",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSecondaryContainer
