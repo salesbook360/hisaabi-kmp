@@ -125,7 +125,7 @@ fun StockAdjustmentScreen(
                                 label = labelText,
                                 modifier = Modifier.weight(1f),
                                 leadingIcon = if (state.adjustmentType == type) {
-                                    { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                                    { Icon(tint = MaterialTheme.colorScheme.onPrimary, imageVector = Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
                                 } else null
                             )
                         }

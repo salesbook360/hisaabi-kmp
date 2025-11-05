@@ -1,21 +1,63 @@
 package com.hisaabi.hisaabi_kmp.transactions.presentation.ui
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.CallMade
+import androidx.compose.material.icons.filled.CallReceived
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Money
+import androidx.compose.material.icons.filled.Payment
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Save
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.hisaabi.hisaabi_kmp.core.ui.FilterChipWithColors
 import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
 import com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType
 import com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod
@@ -24,7 +66,6 @@ import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.PayGetCashVie
 import com.hisaabi.hisaabi_kmp.utils.SimpleDateTimePickerDialog
 import com.hisaabi.hisaabi_kmp.utils.format
 import com.hisaabi.hisaabi_kmp.utils.formatDateTime
-import com.hisaabi.hisaabi_kmp.core.ui.FilterChipWithColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,14 +78,14 @@ fun PayGetCashScreen(
     val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var showDateTimePicker by remember { mutableStateOf(false) }
-    
+
     LaunchedEffect(state.error) {
         state.error?.let { error ->
             snackbarHostState.showSnackbar(error)
             viewModel.clearError()
         }
     }
-    
+
     LaunchedEffect(state.successMessage) {
         state.successMessage?.let { message ->
             val transactionSlug = state.savedTransactionSlug
@@ -52,7 +93,7 @@ fun PayGetCashScreen(
             onNavigateBack(message, transactionSlug)
         }
     }
-    
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
@@ -100,7 +141,7 @@ fun PayGetCashScreen(
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(bottom = 12.dp)
                     )
-                    
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -113,9 +154,10 @@ fun PayGetCashScreen(
                                 modifier = Modifier.weight(1f),
                                 leadingIcon = {
                                     Icon(
-                                        if (type == PayGetCashType.GET_CASH)
-                                            Icons.Default.CallReceived 
-                                        else 
+                                        tint = if (state.payGetCashType == type) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        imageVector = if (type == PayGetCashType.GET_CASH)
+                                            Icons.Default.CallReceived
+                                        else
                                             Icons.Default.CallMade,
                                         contentDescription = null
                                     )
@@ -125,7 +167,7 @@ fun PayGetCashScreen(
                     }
                 }
             }
-            
+
             // Party Type Selection
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -145,7 +187,7 @@ fun PayGetCashScreen(
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(bottom = 12.dp)
                     )
-                    
+
                     PartyType.values().forEach { type ->
                         Row(
                             modifier = Modifier
@@ -171,7 +213,7 @@ fun PayGetCashScreen(
                     }
                 }
             }
-            
+
             // Party Selection
             PartySelectionCard(
                 selectedParty = state.selectedParty,
@@ -179,9 +221,10 @@ fun PayGetCashScreen(
                 onSelectParty = { onSelectParty(state.partyType) },
                 onRemoveParty = { viewModel.selectParty(null) }
             )
-            
+
             // Amount
             OutlinedTextField(
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 value = state.amount,
                 onValueChange = { viewModel.setAmount(it) },
                 label = { Text("Amount *") },
@@ -191,14 +234,14 @@ fun PayGetCashScreen(
                 singleLine = true,
                 placeholder = { Text("0.00") }
             )
-            
+
             // Payment Method
             PaymentMethodCard(
                 selectedPaymentMethod = state.selectedPaymentMethod,
                 onSelectPaymentMethod = onSelectPaymentMethod,
                 onRemovePaymentMethod = { viewModel.selectPaymentMethod(null) }
             )
-            
+
             // Date & Time
             Box(
                 modifier = Modifier
@@ -221,7 +264,7 @@ fun PayGetCashScreen(
                     )
                 )
             }
-            
+
             // Description/Remarks
             OutlinedTextField(
                 value = state.description,
@@ -231,11 +274,11 @@ fun PayGetCashScreen(
                 minLines = 3,
                 maxLines = 6
             )
-            
+
             // Bottom padding for FAB
             Spacer(Modifier.height(80.dp))
         }
-        
+
         // Loading overlay
         if (state.isLoading) {
             Box(
@@ -246,7 +289,7 @@ fun PayGetCashScreen(
             }
         }
     }
-    
+
     // Date Time Picker Dialog
     if (showDateTimePicker) {
         SimpleDateTimePickerDialog(
@@ -270,9 +313,9 @@ private fun PartySelectionCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = if (selectedParty == null) 
-                MaterialTheme.colorScheme.errorContainer 
-            else 
+            containerColor = if (selectedParty == null)
+                MaterialTheme.colorScheme.errorContainer
+            else
                 MaterialTheme.colorScheme.surfaceVariant
         )
     ) {
@@ -343,9 +386,9 @@ private fun PartySelectionCard(
                             "Balance: ₨ ${"%.2f".format(selectedParty.balance)}",
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold,
-                            color = if (selectedParty.balance >= 0) 
-                                MaterialTheme.colorScheme.primary 
-                            else 
+                            color = if (selectedParty.balance >= 0)
+                                MaterialTheme.colorScheme.primary
+                            else
                                 MaterialTheme.colorScheme.error
                         )
                     }
@@ -367,9 +410,9 @@ private fun PaymentMethodCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = if (selectedPaymentMethod == null) 
-                MaterialTheme.colorScheme.errorContainer 
-            else 
+            containerColor = if (selectedPaymentMethod == null)
+                MaterialTheme.colorScheme.errorContainer
+            else
                 MaterialTheme.colorScheme.surfaceVariant
         )
     ) {

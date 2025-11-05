@@ -1,25 +1,68 @@
 package com.hisaabi.hisaabi_kmp.transactions.presentation.ui
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Money
+import androidx.compose.material.icons.filled.Payment
+import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.TrendingDown
+import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.hisaabi.hisaabi_kmp.core.ui.FilterChipWithColors
 import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
 import com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddExpenseIncomeViewModel
 import com.hisaabi.hisaabi_kmp.utils.SimpleDateTimePickerDialog
 import com.hisaabi.hisaabi_kmp.utils.formatDateTime
-import com.hisaabi.hisaabi_kmp.core.ui.FilterChipWithColors
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -57,13 +100,13 @@ fun AddExpenseIncomeScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { 
+                title = {
                     Text(
-                        if (state.transactionType == AllTransactionTypes.EXPENSE) 
-                            "Add Expense" 
-                        else 
+                        if (state.transactionType == AllTransactionTypes.EXPENSE)
+                            "Add Expense"
+                        else
                             "Add Extra Income"
-                    ) 
+                    )
                 },
                 navigationIcon = {
                     IconButton(onClick = { onNavigateBack(false, null) }) {
@@ -111,6 +154,7 @@ fun AddExpenseIncomeScreen(
 
             // Amount
             OutlinedTextField(
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 value = state.amount,
                 onValueChange = { viewModel.setAmount(it) },
                 label = { Text("Amount *") },
@@ -193,7 +237,10 @@ private fun TransactionTypeSelector(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                listOf(AllTransactionTypes.EXPENSE, AllTransactionTypes.EXTRA_INCOME).forEach { type ->
+                listOf(
+                    AllTransactionTypes.EXPENSE,
+                    AllTransactionTypes.EXTRA_INCOME
+                ).forEach { type ->
                     FilterChipWithColors(
                         selected = selectedType == type,
                         onClick = { onTypeSelected(type) },
@@ -201,7 +248,8 @@ private fun TransactionTypeSelector(
                         modifier = Modifier.weight(1f),
                         leadingIcon = {
                             Icon(
-                                if (type == AllTransactionTypes.EXPENSE)
+                                tint = if (selectedType == type) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                imageVector = if (type == AllTransactionTypes.EXPENSE)
                                     Icons.Default.TrendingDown
                                 else
                                     Icons.Default.TrendingUp,
@@ -268,14 +316,14 @@ private fun PartyTypeSelectionCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    if (transactionType == AllTransactionTypes.EXPENSE) 
-                        "Expense Type *" 
-                    else 
+                    if (transactionType == AllTransactionTypes.EXPENSE)
+                        "Expense Type *"
+                    else
                         "Income Type *",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
-                
+
                 if (selectedParty != null) {
                     IconButton(onClick = onRemoveParty) {
                         Icon(Icons.Default.Clear, "Remove")
@@ -384,7 +432,11 @@ private fun PaymentMethodCard(
                                 fontWeight = FontWeight.Medium
                             )
                         }
-                        Icon(Icons.Default.Edit, "Change", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Icon(
+                            Icons.Default.Edit,
+                            "Change",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             } else {
@@ -401,13 +453,3 @@ private fun PaymentMethodCard(
     }
 }
 
-private fun formatDateTime(timestamp: Long): String {
-    val instant = Instant.fromEpochMilliseconds(timestamp)
-    val localDateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
-    
-    return "${localDateTime.dayOfMonth.toString().padStart(2, '0')}/" +
-           "${localDateTime.monthNumber.toString().padStart(2, '0')}/" +
-           "${localDateTime.year} " +
-           "${localDateTime.hour.toString().padStart(2, '0')}:" +
-           "${localDateTime.minute.toString().padStart(2, '0')}"
-}
