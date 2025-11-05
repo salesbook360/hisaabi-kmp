@@ -111,31 +111,36 @@ fun ProductsScreen(
                             )
                         }
                     }
-                    
-                    if (selectionMode) {
-                        // Done button with count
-                        val totalItems = selectedProductQuantities.values.sum()
-                        TextButton(
-                            onClick = {
-                                onSelectionChanged(selectedProductQuantities.toMap())
-                                onSelectionDone()
-                            },
-                            enabled = selectedProductQuantities.isNotEmpty()
-                        ) {
-                            Text(
-                                "Done ($totalItems)",
-                                color = if (selectedProductQuantities.isNotEmpty()) 
-                                    MaterialTheme.colorScheme.primary 
-                                else 
-                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                            )
-                        }
-                    }
                 }
             )
         },
         floatingActionButton = {
-            if (!selectionMode) {
+            if (selectionMode) {
+                // Done button with count in selection mode
+                val totalItems = selectedProductQuantities.values.sum()
+                ExtendedFloatingActionButton(
+                    onClick = {
+                        if (selectedProductQuantities.isNotEmpty()) {
+                            onSelectionChanged(selectedProductQuantities.toMap())
+                            onSelectionDone()
+                        }
+                    },
+                    containerColor = if (selectedProductQuantities.isNotEmpty()) 
+                        MaterialTheme.colorScheme.primary 
+                    else 
+                        MaterialTheme.colorScheme.surfaceVariant,
+                    icon = {
+                        Icon(
+                            Icons.Default.Check,
+                            contentDescription = "Done"
+                        )
+                    },
+                    text = {
+                        Text("Done ($totalItems)")
+                    }
+                )
+            } else {
+                // Add Product button in normal mode
                 FloatingActionButton(
                     onClick = { onAddProductClick(uiState.selectedProductType) },
                     containerColor = MaterialTheme.colorScheme.primary
