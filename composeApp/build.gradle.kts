@@ -79,6 +79,7 @@ kotlin {
             // Dependency Injection
             implementation(libs.koin.core)
             implementation(libs.koin.compose)
+            implementation(libs.koin.compose.viewmodel)
 
             // Coroutines
             implementation(libs.kotlinx.coroutines.core)
@@ -95,6 +96,7 @@ kotlin {
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
+            implementation(libs.ktor.client.cio)
             
             // Room Database (JVM-specific)
             implementation(libs.room.runtime)

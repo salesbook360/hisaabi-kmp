@@ -10,7 +10,7 @@ import com.hisaabi.hisaabi_kmp.business.presentation.viewmodel.AddBusinessViewMo
 import com.hisaabi.hisaabi_kmp.business.presentation.viewmodel.MyBusinessViewModel
 import com.hisaabi.hisaabi_kmp.database.datasource.BusinessLocalDataSource
 import com.hisaabi.hisaabi_kmp.database.datasource.BusinessLocalDataSourceImpl
-import org.koin.core.module.dsl.viewModel
+import org.koin.compose.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
 val businessModule = module {

@@ -15,7 +15,7 @@ import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.StockAdjustme
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionDetailViewModel
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddManufactureViewModel
 import org.koin.core.module.dsl.singleOf
-import org.koin.core.module.dsl.viewModel
+import org.koin.compose.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
 val transactionsModule = module {

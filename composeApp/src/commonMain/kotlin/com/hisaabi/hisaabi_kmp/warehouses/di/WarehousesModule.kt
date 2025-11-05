@@ -5,7 +5,7 @@ import com.hisaabi.hisaabi_kmp.warehouses.data.repository.WarehousesRepository
 import com.hisaabi.hisaabi_kmp.warehouses.domain.usecase.*
 import com.hisaabi.hisaabi_kmp.warehouses.presentation.viewmodel.AddWarehouseViewModel
 import com.hisaabi.hisaabi_kmp.warehouses.presentation.viewmodel.WarehousesViewModel
-import org.koin.core.module.dsl.viewModel
+import org.koin.compose.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
 val warehousesModule = module {

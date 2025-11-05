@@ -5,7 +5,7 @@ import com.hisaabi.hisaabi_kmp.quantityunits.data.repository.QuantityUnitsReposi
 import com.hisaabi.hisaabi_kmp.quantityunits.domain.usecase.*
 import com.hisaabi.hisaabi_kmp.quantityunits.presentation.viewmodel.AddQuantityUnitViewModel
 import com.hisaabi.hisaabi_kmp.quantityunits.presentation.viewmodel.QuantityUnitsViewModel
-import org.koin.core.module.dsl.viewModel
+import org.koin.compose.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
 val quantityUnitsModule = module {

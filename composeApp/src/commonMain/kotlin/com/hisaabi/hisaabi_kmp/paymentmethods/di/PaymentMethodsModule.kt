@@ -5,7 +5,7 @@ import com.hisaabi.hisaabi_kmp.paymentmethods.data.repository.PaymentMethodsRepo
 import com.hisaabi.hisaabi_kmp.paymentmethods.domain.usecase.*
 import com.hisaabi.hisaabi_kmp.paymentmethods.presentation.viewmodel.AddPaymentMethodViewModel
 import com.hisaabi.hisaabi_kmp.paymentmethods.presentation.viewmodel.PaymentMethodsViewModel
-import org.koin.core.module.dsl.viewModel
+import org.koin.compose.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
 val paymentMethodsModule = module {

@@ -1,6 +1,6 @@
 package com.hisaabi.hisaabi_kmp.transactions.presentation.ui
 
-import androidx.activity.compose.BackHandler
+import com.hisaabi.hisaabi_kmp.core.ui.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn

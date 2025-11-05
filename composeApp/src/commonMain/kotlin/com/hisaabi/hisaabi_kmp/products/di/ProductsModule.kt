@@ -12,7 +12,7 @@ import com.hisaabi.hisaabi_kmp.products.presentation.viewmodel.AddProductViewMod
 import com.hisaabi.hisaabi_kmp.products.presentation.viewmodel.ManageRecipeIngredientsViewModel
 import com.hisaabi.hisaabi_kmp.products.presentation.viewmodel.ProductsViewModel
 import org.koin.core.module.dsl.singleOf
-import org.koin.core.module.dsl.viewModel
+import org.koin.compose.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
 val productsModule = module {
