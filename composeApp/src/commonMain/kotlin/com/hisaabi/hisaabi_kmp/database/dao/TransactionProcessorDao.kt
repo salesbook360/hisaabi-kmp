@@ -82,6 +82,30 @@ interface TransactionProcessorDao {
         WHERE slug = :partySlug
     """)
     suspend fun getCurrentPartyBalance(partySlug: String?): Double?
+    
+    // ==================== Product Average Purchase Price Operations ====================
+    
+    @Query("""
+        SELECT SUM(current_quantity) FROM ProductQuantities 
+        WHERE product_slug = :productSlug
+    """)
+    suspend fun getSumOfProductAvailableQuantity(productSlug: String?): Double?
+    
+    @Query("""
+        SELECT avg_purchase_price FROM Product 
+        WHERE slug = :productSlug
+    """)
+    suspend fun getAvgPurchasePriceOfProduct(productSlug: String?): Double?
+    
+    @Query("""
+        UPDATE Product 
+        SET avg_purchase_price = :newAvgPrice 
+        WHERE slug = :productSlug
+    """)
+    suspend fun updateAvgPurchasePrice(
+        productSlug: String?,
+        newAvgPrice: Double
+    )
 }
 
 

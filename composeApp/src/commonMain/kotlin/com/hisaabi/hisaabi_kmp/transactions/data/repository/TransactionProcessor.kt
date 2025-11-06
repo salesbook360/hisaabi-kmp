@@ -138,6 +138,9 @@ class TransactionProcessor(
         // Update payment method balance
         updatePaymentMethodBalance(transaction, isReverse)
         
+        // Update product average purchase price (BEFORE quantity update)
+        updateProductAvgPurchasePrice(transaction, isReverse)
+        
         // Update product stock quantities
         updateProductQuantities(transaction, isReverse)
     }
@@ -155,6 +158,123 @@ class TransactionProcessor(
      */
     suspend fun reverseTransaction(transaction: Transaction) {
         processTransaction(transaction, isReverse = true)
+    }
+    
+    /**
+     * Update product average purchase price based on transaction type.
+     * This implements the POS average cost calculation for profit/loss tracking.
+     * 
+     * The average purchase price is recalculated for Purchase and Return to Vendor transactions.
+     * Formula: New Avg = (Current Total Value + Transaction Value) / (Current Qty + Transaction Qty)
+     */
+    private suspend fun updateProductAvgPurchasePrice(transaction: Transaction, isReverse: Boolean) {
+        transaction.transactionDetails.forEach { detail ->
+            // Skip service products and recipes (they don't have average purchase price)
+            if (detail.product?.isService == true || detail.product?.isRecipe == true) {
+                return@forEach
+            }
+            
+            val productSlug = detail.productSlug ?: return@forEach
+            
+            // Get current sum of quantities across all warehouses
+            val sumOfCurrentQty = transactionProcessorDao.getSumOfProductAvailableQuantity(productSlug) ?: 0.0
+            
+            // Get current average purchase price
+            val currentAvgPrice = transactionProcessorDao.getAvgPurchasePriceOfProduct(productSlug) ?: 0.0
+            
+            // Calculate new average price
+            val newAvgPrice = calculateAvgPurchasePrice(
+                currentQuantity = sumOfCurrentQty,
+                currentAvgPrice = currentAvgPrice,
+                transactionQuantity = detail.quantity,
+                transactionPrice = detail.price,
+                transactionType = transaction.transactionType,
+                isReverse = isReverse
+            )
+            
+            // Update the product's average purchase price
+            if (newAvgPrice.isFinite() && !newAvgPrice.isNaN()) {
+                transactionProcessorDao.updateAvgPurchasePrice(productSlug, newAvgPrice)
+            }
+        }
+    }
+    
+    /**
+     * Calculate average purchase price using weighted average formula.
+     * Based on legacy MathUtils.calculateAvgPurchasePrice implementation.
+     * 
+     * @param currentQuantity Current total quantity in stock across all warehouses
+     * @param currentAvgPrice Current average purchase price
+     * @param transactionQuantity Quantity in this transaction
+     * @param transactionPrice Price per unit in this transaction
+     * @param transactionType Type of transaction
+     * @param isReverse Whether this is a reversal (for updates/deletes)
+     * @return New average purchase price
+     */
+    private fun calculateAvgPurchasePrice(
+        currentQuantity: Double,
+        currentAvgPrice: Double,
+        transactionQuantity: Double,
+        transactionPrice: Double,
+        transactionType: Int,
+        isReverse: Boolean
+    ): Double {
+        // Ensure valid numbers
+        val quantityA = currentQuantity.takeIf { it.isFinite() } ?: 0.0
+        val priceA = currentAvgPrice.takeIf { it.isFinite() } ?: 0.0
+        val quantityB = kotlin.math.abs(transactionQuantity.takeIf { it.isFinite() } ?: 0.0)
+        val priceB = transactionPrice.takeIf { it.isFinite() } ?: 0.0
+        
+        // Determine effective transaction type (reverse if needed)
+        val effectiveTransactionType = if (isReverse) {
+            reverseTransactionType(transactionType)
+        } else {
+            transactionType
+        }
+        
+        // Calculate new average based on transaction type
+        return when (effectiveTransactionType) {
+            // Purchase or Stock Increase: Add to existing stock
+            AllTransactionTypes.PURCHASE.value,
+            AllTransactionTypes.STOCK_INCREASE.value -> {
+                val totalQuantity = quantityA + quantityB
+                if (totalQuantity == 0.0) {
+                    priceA
+                } else {
+                    val totalAmount = (quantityA * priceA) + (quantityB * priceB)
+                    totalAmount / totalQuantity
+                }
+            }
+            
+            // Return to Vendor or Stock Reduce: Remove from existing stock
+            AllTransactionTypes.VENDOR_RETURN.value,
+            AllTransactionTypes.STOCK_REDUCE.value -> {
+                val totalQuantity = quantityA - quantityB
+                if (totalQuantity == 0.0) {
+                    priceA
+                } else {
+                    val totalAmount = (quantityA * priceA) - (quantityB * priceB)
+                    totalAmount / totalQuantity
+                }
+            }
+            
+            // Other transaction types don't affect average purchase price
+            else -> priceA
+        }
+    }
+    
+    /**
+     * Reverse transaction type for average purchase price calculation.
+     * When deleting/updating, we need to reverse the effect on average price.
+     */
+    private fun reverseTransactionType(transactionType: Int): Int {
+        return when (transactionType) {
+            AllTransactionTypes.PURCHASE.value -> AllTransactionTypes.VENDOR_RETURN.value
+            AllTransactionTypes.STOCK_INCREASE.value -> AllTransactionTypes.STOCK_REDUCE.value
+            AllTransactionTypes.VENDOR_RETURN.value -> AllTransactionTypes.PURCHASE.value
+            AllTransactionTypes.STOCK_REDUCE.value -> AllTransactionTypes.STOCK_INCREASE.value
+            else -> -1
+        }
     }
     
     /**
