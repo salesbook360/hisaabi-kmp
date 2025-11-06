@@ -196,6 +196,10 @@ fun App() {
             var selectedPartyForTransactionFilter by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.parties.domain.model.Party?>(null) }
             var selectedPartyForEdit by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.parties.domain.model.Party?>(null) }
             
+            // Reports navigation state
+            var selectedReportType by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.reports.domain.model.ReportType?>(null) }
+            var selectedReportFilters by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.reports.domain.model.ReportFilters?>(null) }
+            
             // Category navigation state
             var categoryType by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.categories.domain.model.CategoryType?>(null) }
             var categoriesRefreshTrigger by remember { mutableStateOf(0) }
@@ -536,6 +540,11 @@ fun App() {
                         onNavigateToAddTransaction = { type ->
                             transactionType = type
                             navigateTo(AppScreen.ADD_TRANSACTION_STEP1)
+                        },
+                        onNavigateToReports = { navigateTo(AppScreen.REPORTS) },
+                        onReportTypeSelected = { reportType ->
+                            selectedReportType = reportType
+                            navigateTo(AppScreen.REPORT_FILTERS)
                         }
                     )
                 }
@@ -1246,6 +1255,40 @@ fun App() {
                     }
                 }
                 
+                AppScreen.REPORTS -> {
+                    com.hisaabi.hisaabi_kmp.reports.presentation.ReportsScreen(
+                        onBackClick = { 
+                            // Clear selected report type when going back
+                            selectedReportType = null
+                            navigateBack() 
+                        },
+                        onReportSelected = { reportType ->
+                            selectedReportType = reportType
+                            navigateTo(AppScreen.REPORT_FILTERS)
+                        }
+                    )
+                }
+                
+                AppScreen.REPORT_FILTERS -> {
+                    selectedReportType?.let { reportType ->
+                        com.hisaabi.hisaabi_kmp.reports.presentation.ReportFiltersScreen(
+                            reportType = reportType,
+                            onBackClick = { navigateBack() },
+                            onFiltersChanged = { filters ->
+                                selectedReportFilters = filters
+                            },
+                            onGenerateReport = { filters ->
+                                // TODO: In future, implement actual report generation
+                                // For now, just show a toast message
+                                toastMessage = "Report generation will be implemented soon!"
+                            }
+                        )
+                    } ?: run {
+                        // If no report type selected, go back to reports
+                        currentScreen = AppScreen.REPORTS
+                    }
+                }
+                
                 AppScreen.ADD_RECORD -> {
                     // Use ViewModel from app level flow tracking
                     recordViewModel?.let { viewModel ->
@@ -1934,5 +1977,7 @@ enum class AppScreen {
     ADD_TRANSACTION_STEP1,
     ADD_TRANSACTION_STEP2,
     TRANSACTION_DETAIL,
-    BALANCE_HISTORY
+    BALANCE_HISTORY,
+    REPORTS,
+    REPORT_FILTERS
 }

@@ -37,7 +37,8 @@ fun HomeMenuScreen(
     onNavigateToJournalVoucher: () -> Unit = {},
     onNavigateToStockAdjustment: () -> Unit = {},
     onNavigateToManufacture: () -> Unit = {},
-    onNavigateToAddTransaction: (AllTransactionTypes) -> Unit = {}
+    onNavigateToAddTransaction: (AllTransactionTypes) -> Unit = {},
+    onNavigateToReports: () -> Unit = {}
 ) {
     Scaffold(
         topBar = {
@@ -130,6 +131,7 @@ fun HomeMenuScreen(
                             "Recipes" -> onNavigateToProducts(com.hisaabi.hisaabi_kmp.products.domain.model.ProductType.RECIPE)
                             "Payment Methods" -> onNavigateToPaymentMethods()
                             "Warehouse" -> onNavigateToWarehouses()
+                            "Reports" -> onNavigateToReports()
                             "My Business" -> onNavigateToMyBusiness()
                             else -> { /* Handle other clicks */ }
                         }

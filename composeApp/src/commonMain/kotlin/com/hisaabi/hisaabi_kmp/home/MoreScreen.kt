@@ -33,6 +33,7 @@ fun MoreScreen(
     onNavigateToTemplates: () -> Unit = {},
     onNavigateToUpdateProfile: () -> Unit = {},
     onNavigateToBusinessSelection: () -> Unit = {},
+    onNavigateToReports: () -> Unit = {},
     preferencesManager: com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager = org.koin.compose.koinInject(),
     authViewModel: com.hisaabi.hisaabi_kmp.auth.presentation.viewmodel.AuthViewModel = org.koin.compose.koinInject(),
     getSelectedBusinessUseCase: com.hisaabi.hisaabi_kmp.business.domain.usecase.GetSelectedBusinessUseCase = org.koin.compose.koinInject()
@@ -181,6 +182,12 @@ fun MoreScreen(
                 Spacer(modifier = Modifier.height(1.dp))
                 SettingsCard {
                     Column {
+                        SettingsItem(
+                            title = "Reports",
+                            icon = Icons.Default.BarChart,
+                            onClick = onNavigateToReports
+                        )
+                        SettingsDivider()
                         SettingsItem(
                             title = "Transaction Type Selection",
                             icon = Icons.Default.SwapHoriz,

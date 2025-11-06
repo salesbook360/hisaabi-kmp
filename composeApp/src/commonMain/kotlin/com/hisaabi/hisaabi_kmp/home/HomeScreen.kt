@@ -8,6 +8,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
+import com.hisaabi.hisaabi_kmp.reports.presentation.ReportsScreen
 
 @Composable
 fun HomeScreen(
@@ -36,7 +37,9 @@ fun HomeScreen(
     onNavigateToJournalVoucher: () -> Unit = {},
     onNavigateToStockAdjustment: () -> Unit = {},
     onNavigateToManufacture: () -> Unit = {},
-    onNavigateToAddTransaction: (AllTransactionTypes) -> Unit = {}
+    onNavigateToAddTransaction: (AllTransactionTypes) -> Unit = {},
+    onNavigateToReports: () -> Unit = {},
+    onReportTypeSelected: (com.hisaabi.hisaabi_kmp.reports.domain.model.ReportType) -> Unit = {}
 ) {
     
     Scaffold(
@@ -72,7 +75,8 @@ fun HomeScreen(
                     onNavigateToJournalVoucher = onNavigateToJournalVoucher,
                     onNavigateToStockAdjustment = onNavigateToStockAdjustment,
                     onNavigateToManufacture = onNavigateToManufacture,
-                    onNavigateToAddTransaction = onNavigateToAddTransaction
+                    onNavigateToAddTransaction = onNavigateToAddTransaction,
+                    onNavigateToReports = onNavigateToReports
                 )
                 2 -> MoreScreen(
                     onNavigateToAuth = onNavigateToAuth,
@@ -82,7 +86,8 @@ fun HomeScreen(
                     onNavigateToDashboardSettings = onNavigateToDashboardSettings,
                     onNavigateToTemplates = onNavigateToTemplates,
                     onNavigateToUpdateProfile = onNavigateToUpdateProfile,
-                    onNavigateToBusinessSelection = onNavigateToBusinessSelection
+                    onNavigateToBusinessSelection = onNavigateToBusinessSelection,
+                    onNavigateToReports = onNavigateToReports
                 )
             }
         }
