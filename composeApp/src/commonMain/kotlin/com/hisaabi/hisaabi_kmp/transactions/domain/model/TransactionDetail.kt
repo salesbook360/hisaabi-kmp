@@ -2,6 +2,7 @@ package com.hisaabi.hisaabi_kmp.transactions.domain.model
 
 import com.hisaabi.hisaabi_kmp.products.domain.model.Product
 import com.hisaabi.hisaabi_kmp.quantityunits.domain.model.QuantityUnit
+import com.hisaabi.hisaabi_kmp.transactions.domain.util.TransactionCalculator
 
 data class TransactionDetail(
     val id: Int = 0,
@@ -41,6 +42,28 @@ data class TransactionDetail(
         } else {
             quantity.toString()
         }
+    }
+    
+    /**
+     * Calculate and return a copy with updated profit based on transaction type.
+     * 
+     * Profit is calculated as:
+     * - Sale: (price - avgPurchasePrice) * quantity
+     * - Customer Return: -1 * (price - avgPurchasePrice) * quantity
+     * - Other transactions: 0.0
+     * 
+     * @param transactionType The type of transaction
+     * @return A copy of this TransactionDetail with calculated profit
+     */
+    fun withCalculatedProfit(transactionType: Int): TransactionDetail {
+        val avgPurchasePrice = product?.avgPurchasePrice ?: 0.0
+        val calculatedProfit = TransactionCalculator.calculateProfit(
+            salePrice = price,
+            avgPurchasePrice = avgPurchasePrice,
+            quantity = quantity,
+            transactionType = transactionType
+        )
+        return copy(profit = calculatedProfit)
     }
 }
 

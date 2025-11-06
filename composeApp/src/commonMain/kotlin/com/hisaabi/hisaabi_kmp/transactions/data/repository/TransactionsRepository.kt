@@ -199,8 +199,14 @@ class TransactionsRepository(
             // Insert transaction
             localDataSource.insertTransaction(entity)
             
+            // Calculate profit for each detail BEFORE inserting
+            // (Uses current avg purchase price before this transaction updates it)
+            val detailsWithProfit = transaction.transactionDetails.map { detail ->
+                detail.withCalculatedProfit(transaction.transactionType)
+            }
+            
             // Insert transaction details with timestamps and generated slugs
-            val detailEntities = transaction.transactionDetails.map { detail ->
+            val detailEntities = detailsWithProfit.map { detail ->
                 val detailSlug = slugGenerator.generateSlug(EntityTypeEnum.ENTITY_TYPE_TRANSACTION_DETAIL)
                     ?: throw IllegalStateException("Failed to generate detail slug: Invalid session context")
                 
@@ -251,9 +257,15 @@ class TransactionsRepository(
             )
             localDataSource.updateTransaction(entity)
             
+            // Calculate profit for each detail BEFORE inserting
+            // (Uses current avg purchase price before this transaction updates it)
+            val detailsWithProfit = transaction.transactionDetails.map { detail ->
+                detail.withCalculatedProfit(transaction.transactionType)
+            }
+            
             // Delete old details and insert new ones with timestamps and generated slugs
             localDataSource.deleteDetailsByTransaction(slug)
-            val detailEntities = transaction.transactionDetails.map { detail ->
+            val detailEntities = detailsWithProfit.map { detail ->
                 val detailSlug = slugGenerator.generateSlug(EntityTypeEnum.ENTITY_TYPE_TRANSACTION_DETAIL)
                     ?: throw IllegalStateException("Failed to generate detail slug: Invalid session context")
                 
@@ -381,7 +393,7 @@ class TransactionsRepository(
                 customerSlug = null,
                 party = null,
                 priceTypeId = 1,
-                transactionType = 1, // SALE type
+                transactionType = AllTransactionTypes.SALE.value,
                 timestamp = (timestamp + 1).toString(), // +1ms to maintain order
                 totalPaid = ingredients.sumOf { it.calculateBill() } + additionalCharges,
                 statusId = 0, // Active
@@ -412,8 +424,13 @@ class TransactionsRepository(
                 )
             )
             
+            // Calculate profit for sale ingredients (using SALE transaction type)
+            val ingredientsWithProfit = ingredients.map { ingredient ->
+                ingredient.withCalculatedProfit(AllTransactionTypes.SALE.value)
+            }
+            
             // Insert ingredients as sale transaction details with timestamps and generated slugs
-            val saleDetailEntities = ingredients.map { ingredient ->
+            val saleDetailEntities = ingredientsWithProfit.map { ingredient ->
                 val detailSlug = slugGenerator.generateSlug(EntityTypeEnum.ENTITY_TYPE_TRANSACTION_DETAIL)
                     ?: throw IllegalStateException("Failed to generate sale detail slug: Invalid session context")
                 
@@ -431,7 +448,7 @@ class TransactionsRepository(
                 customerSlug = null,
                 party = null,
                 priceTypeId = 1,
-                transactionType = 2, // PURCHASE type
+                transactionType = AllTransactionTypes.PURCHASE.value,
                 timestamp = (timestamp + 2).toString(), // +2ms to maintain order
                 totalPaid = recipeDetail.calculateBill(),
                 statusId = 0, // Active
@@ -462,11 +479,14 @@ class TransactionsRepository(
                 )
             )
             
+            // Calculate profit for recipe detail (using PURCHASE transaction type)
+            val recipeWithProfit = recipeDetail.withCalculatedProfit(AllTransactionTypes.PURCHASE.value)
+            
             // Insert recipe as purchase transaction detail with timestamps and generated slug
             val purchaseDetailSlug = slugGenerator.generateSlug(EntityTypeEnum.ENTITY_TYPE_TRANSACTION_DETAIL)
                 ?: throw IllegalStateException("Failed to generate purchase detail slug: Invalid session context")
             
-            val purchaseDetailEntity = recipeDetail.toEntity(purchaseSlug).copy(
+            val purchaseDetailEntity = recipeWithProfit.toEntity(purchaseSlug).copy(
                 slug = purchaseDetailSlug,
                 created_at = now,
                 updated_at = now

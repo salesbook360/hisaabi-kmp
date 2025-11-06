@@ -1,5 +1,6 @@
 package com.hisaabi.hisaabi_kmp.transactions.domain.util
 
+import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.FlatOrPercent
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionDetail
 import kotlin.math.round
@@ -175,6 +176,42 @@ object TransactionCalculator {
      */
     fun formatQuantity(quantity: Double, unitName: String): String {
         return "${"%.2f".format(quantity)} $unitName"
+    }
+    
+    /**
+     * Calculate profit for a transaction detail based on transaction type.
+     * 
+     * Formula:
+     * - For Sales: profit = (salePrice - avgPurchasePrice) * quantity
+     * - For Customer Returns: profit = -1 * (salePrice - avgPurchasePrice) * quantity
+     * - For all other transactions: profit = 0.0
+     * 
+     * @param salePrice The price at which the product is sold
+     * @param avgPurchasePrice The average purchase price of the product
+     * @param quantity The quantity of the product
+     * @param transactionType The type of transaction
+     * @return The calculated profit (rounded to 2 decimal places)
+     */
+    fun calculateProfit(
+        salePrice: Double,
+        avgPurchasePrice: Double,
+        quantity: Double,
+        transactionType: Int
+    ): Double {
+        val profitPerUnit = salePrice - avgPurchasePrice
+        
+        return when (transactionType) {
+            // Sale transaction: positive profit
+            AllTransactionTypes.SALE.value -> {
+                roundTo2Decimal(profitPerUnit * quantity)
+            }
+            // Customer return: negative profit (we're giving money back)
+            AllTransactionTypes.CUSTOMER_RETURN.value -> {
+                roundTo2Decimal(-1.0 * profitPerUnit * quantity)
+            }
+            // All other transaction types: no profit
+            else -> 0.0
+        }
     }
 }
 
