@@ -9,9 +9,11 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.hisaabi.hisaabi_kmp.core.ui.FilterChipWithColors
 import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
@@ -422,31 +424,63 @@ private fun ProductItemCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Quantity
+                // Quantity - Simple string input
+                var quantityText by remember(item.quantity) { 
+                    mutableStateOf(
+                        if (item.quantity == 0.0) "" 
+                        else item.quantity.toString().trimEnd('0').trimEnd('.')
+                    )
+                }
+                
                 OutlinedTextField(
-                    value = item.quantity.toString(),
-                    onValueChange = {
-                        it.toDoubleOrNull()?.let { qty ->
-                            viewModel.updateProductQuantity(index, qty)
+                    value = quantityText,
+                    onValueChange = { newText ->
+                        // Allow any text input that matches number pattern
+                        if (newText.isEmpty() || newText.matches(Regex("^-?\\d*\\.?\\d*$"))) {
+                            quantityText = newText
+                            // Only update viewModel when there's a valid complete number
+                            // Don't update for empty, incomplete decimals, or invalid input
+                            if (newText.isNotEmpty() && !newText.endsWith(".") && newText != "-" && newText != "-.") {
+                                newText.toDoubleOrNull()?.let { qty ->
+                                    viewModel.updateProductQuantity(index, qty)
+                                }
+                            }
                         }
                     },
                     label = { Text("Quantity") },
                     modifier = Modifier.weight(1f),
-                    singleLine = true
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                 )
 
-                // Price
+                // Price - Simple string input
+                var priceText by remember(item.price) { 
+                    mutableStateOf(
+                        if (item.price == 0.0) "" 
+                        else item.price.toString().trimEnd('0').trimEnd('.')
+                    )
+                }
+                
                 OutlinedTextField(
-                    value = item.price.toString(),
-                    onValueChange = {
-                        it.toDoubleOrNull()?.let { price ->
-                            viewModel.updateProductPrice(index, price)
+                    value = priceText,
+                    onValueChange = { newText ->
+                        // Allow any text input that matches number pattern
+                        if (newText.isEmpty() || newText.matches(Regex("^-?\\d*\\.?\\d*$"))) {
+                            priceText = newText
+                            // Only update viewModel when there's a valid complete number
+                            // Don't update for empty, incomplete decimals, or invalid input
+                            if (newText.isNotEmpty() && !newText.endsWith(".") && newText != "-" && newText != "-.") {
+                                newText.toDoubleOrNull()?.let { price ->
+                                    viewModel.updateProductPrice(index, price)
+                                }
+                            }
                         }
                     },
                     label = { Text("Price") },
                     modifier = Modifier.weight(1f),
                     singleLine = true,
-                    prefix = { Text("₨ ") }
+                    prefix = { Text("₨ ") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                 )
             }
 
