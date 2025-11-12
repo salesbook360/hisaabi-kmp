@@ -10,6 +10,7 @@ import com.hisaabi.hisaabi_kmp.paymentmethods.di.paymentMethodsModule
 import com.hisaabi.hisaabi_kmp.products.di.productsModule
 import com.hisaabi.hisaabi_kmp.profile.di.profileModule
 import com.hisaabi.hisaabi_kmp.quantityunits.di.quantityUnitsModule
+import com.hisaabi.hisaabi_kmp.reports.di.reportsModule
 import com.hisaabi.hisaabi_kmp.settings.di.settingsModule
 import com.hisaabi.hisaabi_kmp.sync.di.syncModule
 import com.hisaabi.hisaabi_kmp.templates.di.templatesModule
@@ -37,6 +38,7 @@ fun initKoin(config: KoinAppDeclaration? = null) {
             templatesModule,
             profileModule,
             transactionsModule,
+            reportsModule,
             platformModule()
         )
     }

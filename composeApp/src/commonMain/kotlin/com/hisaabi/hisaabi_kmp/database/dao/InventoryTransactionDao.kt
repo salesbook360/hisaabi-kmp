@@ -127,5 +127,21 @@ interface InventoryTransactionDao {
     
     @Query("SELECT MAX(id) FROM InventoryTransaction")
     suspend fun getMaxId(): Int?
+    
+    // Report Queries
+    @Query("""
+        SELECT * FROM InventoryTransaction 
+        WHERE business_slug = :businessSlug 
+        AND transaction_type IN (:transactionTypes)
+        AND status_id != 2
+        AND timestamp BETWEEN :fromDate AND :toDate
+        ORDER BY timestamp DESC
+    """)
+    suspend fun getTransactionsForReport(
+        businessSlug: String,
+        transactionTypes: List<Int>,
+        fromDate: String,
+        toDate: String
+    ): List<InventoryTransactionEntity>
 }
 

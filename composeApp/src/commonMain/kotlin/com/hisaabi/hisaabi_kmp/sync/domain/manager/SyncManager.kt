@@ -108,15 +108,15 @@ class SyncManagerImpl(
         _syncState.value = SyncState.InProgress
         
         try {
-            // Sync Up - Local to Cloud
-//            if (syncUp) {
-//                syncUpData()
-//            }
+           //  Sync Up - Local to Cloud
+            if (syncUp) {
+                syncUpData()
+            }
             
-            // Sync Down - Cloud to Local
-//            if (syncDown) {
-//                syncDownData()
-//            }
+          //   Sync Down - Cloud to Local
+            if (syncDown) {
+                syncDownData()
+            }
 //
             // Update last sync time
             val now = Clock.System.now()
@@ -136,23 +136,23 @@ class SyncManagerImpl(
             // 1. Media
             syncRepository.syncMediaUp()
                 .onFailure { throw it }
-            
+
             // 2. Categories
             syncRepository.syncCategoriesUp()
                 .onFailure { throw it }
-            
+
             // 3. Payment Methods
             syncRepository.syncPaymentMethodsUp()
                 .onFailure { throw it }
-            
+
             // 4. Quantity Units
             syncRepository.syncQuantityUnitsUp()
                 .onFailure { throw it }
-            
+
             // 5. Warehouses
             syncRepository.syncWarehousesUp()
                 .onFailure { throw it }
-            
+
             // 6. Products (depends on categories, quantity units)
             syncRepository.syncProductsUp()
                 .onFailure { throw it }
@@ -164,15 +164,15 @@ class SyncManagerImpl(
             // 8. Transactions (depends on parties, payment methods, warehouses)
             syncRepository.syncTransactionsUp()
                 .onFailure { throw it }
-            
+
             // 9. Transaction Details (depends on transactions, products)
             syncRepository.syncTransactionDetailsUp()
                 .onFailure { throw it }
-            
+
             // 10. Product Quantities (depends on products, warehouses)
             syncRepository.syncProductQuantitiesUp()
                 .onFailure { throw it }
-            
+
             // 11. Deleted Records
             syncRepository.syncDeletedRecordsUp()
                 .onFailure { throw it }
@@ -189,7 +189,7 @@ class SyncManagerImpl(
     private suspend fun syncDownData() {
         try {
             val session = sessionManager.getSessionContext().requireValid()
-            val lastSyncTime = "1970-01-01T00:00:00Z" // TODO: getLastSyncTimeFormatted(session.businessSlug!!, session.userSlug!!)
+            val lastSyncTime =  getLastSyncTimeFormatted(session.businessSlug!!, session.userSlug!!)
             
             // Order matters - dependencies should be synced first
             

@@ -66,6 +66,7 @@ val authModule = module {
                         if (token != null) {
                             request.headers.append("Authorization", token)
                             println("Added Authorization header to request: ${request.url}")
+                            println("Token: "+token)
                         } else {
                             println("Warning: No access token available for request: ${request.url}")
                         }
@@ -77,6 +78,7 @@ val authModule = module {
                         if (businessSlug != null) {
                             request.headers.append("business_key", businessSlug)
                             println("Added business_key header to request: ${request.url}")
+                            println("Business slug: "+businessSlug)
                         } else {
                             println("Warning: No business selected for request: ${request.url}")
                         }

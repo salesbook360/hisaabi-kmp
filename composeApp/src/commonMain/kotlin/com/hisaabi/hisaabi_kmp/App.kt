@@ -9,9 +9,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.hisaabi.hisaabi_kmp.core.ui.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.key
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.hisaabi.hisaabi_kmp.auth.AuthNavigation
 import com.hisaabi.hisaabi_kmp.auth.presentation.viewmodel.AuthViewModel
@@ -199,6 +203,7 @@ fun App() {
             // Reports navigation state
             var selectedReportType by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.reports.domain.model.ReportType?>(null) }
             var selectedReportFilters by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.reports.domain.model.ReportFilters?>(null) }
+            val reportViewModel: com.hisaabi.hisaabi_kmp.reports.presentation.viewmodel.ReportViewModel = koinInject()
             
             // Category navigation state
             var categoryType by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.categories.domain.model.CategoryType?>(null) }
@@ -1278,14 +1283,77 @@ fun App() {
                                 selectedReportFilters = filters
                             },
                             onGenerateReport = { filters ->
-                                // TODO: In future, implement actual report generation
-                                // For now, just show a toast message
-                                toastMessage = "Report generation will be implemented soon!"
+                                // Generate report and navigate to result screen
+                                reportViewModel.generateReport(filters)
+                                navigateTo(AppScreen.REPORT_RESULT)
                             }
                         )
                     } ?: run {
                         // If no report type selected, go back to reports
                         currentScreen = AppScreen.REPORTS
+                    }
+                }
+                
+                AppScreen.REPORT_RESULT -> {
+                    val reportState by reportViewModel.uiState.collectAsState()
+                    
+                    // Show error toast if any
+                    LaunchedEffect(reportState.error) {
+                        reportState.error?.let { error ->
+                            toastMessage = error
+                            reportViewModel.clearError()
+                        }
+                    }
+                    
+                    when {
+                        reportState.isLoading -> {
+                            // Loading screen
+                            androidx.compose.foundation.layout.Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = androidx.compose.ui.Alignment.Center
+                            ) {
+                                androidx.compose.material3.CircularProgressIndicator()
+                            }
+                        }
+                        reportState.reportResult != null -> {
+                            com.hisaabi.hisaabi_kmp.reports.presentation.ReportResultScreen(
+                                reportResult = reportState.reportResult!!,
+                                onBackClick = { 
+                                    reportViewModel.clearReport()
+                                    navigateBack() 
+                                },
+                                onShareClick = {
+                                    reportViewModel.shareReportAsPdf()
+                                }
+                            )
+                            
+                            // Show loading indicator during PDF generation
+                            if (reportState.isGeneratingPdf) {
+                                androidx.compose.foundation.layout.Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(Color.Black.copy(alpha = 0.5f)),
+                                    contentAlignment = androidx.compose.ui.Alignment.Center
+                                ) {
+                                    androidx.compose.material3.Card {
+                                        androidx.compose.foundation.layout.Column(
+                                            modifier = Modifier.padding(24.dp),
+                                            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+                                        ) {
+                                            androidx.compose.material3.CircularProgressIndicator()
+                                            androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(16.dp))
+                                            androidx.compose.material3.Text("Generating PDF...")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        else -> {
+                            // No report result, go back
+                            LaunchedEffect(Unit) {
+                                navigateBack()
+                            }
+                        }
                     }
                 }
                 
@@ -1979,5 +2047,6 @@ enum class AppScreen {
     TRANSACTION_DETAIL,
     BALANCE_HISTORY,
     REPORTS,
-    REPORT_FILTERS
+    REPORT_FILTERS,
+    REPORT_RESULT
 }
