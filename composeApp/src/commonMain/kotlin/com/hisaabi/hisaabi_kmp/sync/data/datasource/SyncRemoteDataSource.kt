@@ -43,12 +43,10 @@ interface SyncRemoteDataSource {
     suspend fun syncTransactionsDown(lastSyncTime: String): SyncResponse<TransactionDto>
     suspend fun addTransactions(transactions: List<TransactionDto>): SyncResponse<TransactionDto>
     
-    // Transaction Details
-    suspend fun syncTransactionDetailsUp(details: List<TransactionDetailDto>): SyncResponse<TransactionDetailDto>
+    // Transaction Details (Sync Down Only - Details included in transaction for Sync Up)
     suspend fun syncTransactionDetailsDown(lastSyncTime: String): SyncResponse<TransactionDetailDto>
     
-    // Product Quantities
-    suspend fun syncProductQuantitiesUp(quantities: List<ProductQuantitiesDto>): SyncResponse<ProductQuantitiesDto>
+    // Product Quantities (Sync Down Only - Backend calculates for Sync Up)
     suspend fun syncProductQuantitiesDown(lastSyncTime: String): SyncResponse<ProductQuantitiesDto>
     
     // Media
@@ -56,6 +54,7 @@ interface SyncRemoteDataSource {
     suspend fun syncMediaDown(lastSyncTime: String): SyncResponse<EntityMediaDto>
     
     // Recipe Ingredients
+    suspend fun syncRecipeIngredientsUp(ingredients: List<RecipeIngredientsDto>): SyncResponse<RecipeIngredientsDto>
     suspend fun syncRecipeIngredientsDown(lastSyncTime: String): SyncResponse<RecipeIngredientsDto>
     suspend fun addRecipeIngredients(ingredients: List<RecipeIngredientsDto>): SyncResponse<RecipeIngredientsDto>
     
@@ -88,7 +87,7 @@ class SyncRemoteDataSourceImpl(
     
     // Products
     override suspend fun syncProductsUp(products: List<ProductDto>): SyncResponse<ProductDto> {
-        return httpClient.post("$BASE_URL/sync-product") {
+        return httpClient.post("$BASE_URL/products") {
             contentType(ContentType.Application.Json)
             setBody(SyncRequest(products))
         }.body()
@@ -109,7 +108,7 @@ class SyncRemoteDataSourceImpl(
     
     // Parties
     override suspend fun syncPartiesUp(parties: List<PartyDto>): SyncResponse<PartyDto> {
-        return httpClient.post("$BASE_URL/sync-person") {
+        return httpClient.post("$BASE_URL/person") {
             contentType(ContentType.Application.Json)
             setBody(SyncRequest(parties))
         }.body()
@@ -130,7 +129,7 @@ class SyncRemoteDataSourceImpl(
     
     // Payment Methods
     override suspend fun syncPaymentMethodsUp(paymentMethods: List<PaymentMethodDto>): SyncResponse<PaymentMethodDto> {
-        return httpClient.post("$BASE_URL/sync-payment-method") {
+        return httpClient.post("$BASE_URL/payment-method") {
             contentType(ContentType.Application.Json)
             setBody(SyncRequest(paymentMethods))
         }.body()
@@ -179,7 +178,7 @@ class SyncRemoteDataSourceImpl(
     
     // Transactions
     override suspend fun syncTransactionsUp(transactions: List<TransactionDto>): SyncResponse<TransactionDto> {
-        return httpClient.post("$BASE_URL/sync-transaction") {
+        return httpClient.post("$BASE_URL/transaction") {
             contentType(ContentType.Application.Json)
             setBody(SyncRequest(transactions))
         }.body()
@@ -198,28 +197,14 @@ class SyncRemoteDataSourceImpl(
         }.body()
     }
     
-    // Transaction Details
-    override suspend fun syncTransactionDetailsUp(details: List<TransactionDetailDto>): SyncResponse<TransactionDetailDto> {
-        return httpClient.post("$BASE_URL/sync-transaction-detail") {
-            contentType(ContentType.Application.Json)
-            setBody(SyncRequest(details))
-        }.body()
-    }
-    
+    // Transaction Details (Sync Down Only)
     override suspend fun syncTransactionDetailsDown(lastSyncTime: String): SyncResponse<TransactionDetailDto> {
         return httpClient.get("$BASE_URL/sync-transaction-detail") {
             parameter("last-sync-time", lastSyncTime)
         }.body()
     }
     
-    // Product Quantities
-    override suspend fun syncProductQuantitiesUp(quantities: List<ProductQuantitiesDto>): SyncResponse<ProductQuantitiesDto> {
-        return httpClient.post("$BASE_URL/sync-product-quantities") {
-            contentType(ContentType.Application.Json)
-            setBody(SyncRequest(quantities))
-        }.body()
-    }
-    
+    // Product Quantities (Sync Down Only)
     override suspend fun syncProductQuantitiesDown(lastSyncTime: String): SyncResponse<ProductQuantitiesDto> {
         return httpClient.get("$BASE_URL/sync-product-quantities") {
             parameter("last-sync-time", lastSyncTime)
@@ -241,6 +226,13 @@ class SyncRemoteDataSourceImpl(
     }
     
     // Recipe Ingredients
+    override suspend fun syncRecipeIngredientsUp(ingredients: List<RecipeIngredientsDto>): SyncResponse<RecipeIngredientsDto> {
+        return httpClient.post("$BASE_URL/recipe-ingredients") {
+            contentType(ContentType.Application.Json)
+            setBody(SyncRequest(ingredients))
+        }.body()
+    }
+    
     override suspend fun syncRecipeIngredientsDown(lastSyncTime: String): SyncResponse<RecipeIngredientsDto> {
         return httpClient.get("$BASE_URL/sync-recipe-ingredients") {
             parameter("last-sync-time", lastSyncTime)

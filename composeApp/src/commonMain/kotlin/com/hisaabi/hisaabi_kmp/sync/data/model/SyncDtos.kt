@@ -192,7 +192,8 @@ data class TransactionDto(
     val wareHouseSlugFrom: String? = null,
     val wareHouseSlugTo: String? = null,
     val shippingAddress: String? = null,
-    val parentSlug: String? = null
+    val parentSlug: String? = null,
+    val transactionDetails: List<TransactionDetailDto>? = null
 )
 
 @Serializable

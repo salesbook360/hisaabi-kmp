@@ -157,23 +157,20 @@ class SyncManagerImpl(
             syncRepository.syncProductsUp()
                 .onFailure { throw it }
             
-            // 7. Parties (Customers/Suppliers)
+            // 7. Recipe Ingredients (depends on products)
+            syncRepository.syncRecipeIngredientsUp()
+                .onFailure { throw it }
+            
+            // 8. Parties (Customers/Suppliers)
             syncRepository.syncPartiesUp()
                 .onFailure { throw it }
             
-            // 8. Transactions (depends on parties, payment methods, warehouses)
+            // 9. Transactions (depends on parties, payment methods, warehouses)
+            // Note: Transaction details are included in the transaction payload
             syncRepository.syncTransactionsUp()
                 .onFailure { throw it }
 
-            // 9. Transaction Details (depends on transactions, products)
-            syncRepository.syncTransactionDetailsUp()
-                .onFailure { throw it }
-
-            // 10. Product Quantities (depends on products, warehouses)
-            syncRepository.syncProductQuantitiesUp()
-                .onFailure { throw it }
-
-            // 11. Deleted Records
+            // 10. Deleted Records
             syncRepository.syncDeletedRecordsUp()
                 .onFailure { throw it }
                 
@@ -229,11 +226,11 @@ class SyncManagerImpl(
             syncRepository.syncTransactionsDown(lastSyncTime)
                 .onFailure { throw it }
 //
-//            // 10. Transaction Details (depends on transactions, products)
+//            // 10. Transaction Details (synced separately from backend)
             syncRepository.syncTransactionDetailsDown(lastSyncTime)
                 .onFailure { throw it }
 //
-//            // 11. Product Quantities (depends on products, warehouses)
+//            // 11. Product Quantities (synced separately from backend)
             syncRepository.syncProductQuantitiesDown(lastSyncTime)
                 .onFailure { throw it }
 //

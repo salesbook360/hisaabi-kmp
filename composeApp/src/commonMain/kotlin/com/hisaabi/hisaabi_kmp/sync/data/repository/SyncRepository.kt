@@ -39,15 +39,13 @@ interface SyncRepository {
     suspend fun syncTransactionsUp(): Result<Unit>
     suspend fun syncTransactionsDown(lastSyncTime: String): Result<Unit>
     
-    suspend fun syncTransactionDetailsUp(): Result<Unit>
     suspend fun syncTransactionDetailsDown(lastSyncTime: String): Result<Unit>
-    
-    suspend fun syncProductQuantitiesUp(): Result<Unit>
     suspend fun syncProductQuantitiesDown(lastSyncTime: String): Result<Unit>
     
     suspend fun syncMediaUp(): Result<Unit>
     suspend fun syncMediaDown(lastSyncTime: String): Result<Unit>
     
+    suspend fun syncRecipeIngredientsUp(): Result<Unit>
     suspend fun syncRecipeIngredientsDown(lastSyncTime: String): Result<Unit>
     
     suspend fun syncDeletedRecordsUp(): Result<Unit>
@@ -92,13 +90,17 @@ class SyncRepositoryImpl(
         updateProgress("Categories", 0, unsynced.size, SyncType.SYNC_UP)
         
         val dtos = unsynced.map { it.toDto() }
+        
+        // Double-check before API call
+        if (dtos.isEmpty()) return@runCatching
+        
         val response = remoteDataSource.syncCategoriesUp(dtos)
         
         if (response.isSuccess()) {
-            // Update sync status for synced categories
-            response.data?.list?.forEach { dto ->
-                val entity = dto.toEntity().copy(sync_status = SyncStatus.SYNCED.value)
-                categoryDao.updateCategory(entity)
+            // Mark original entities as synced
+            unsynced.forEach { entity ->
+                val updated = entity.copy(sync_status = SyncStatus.SYNCED.value)
+                categoryDao.updateCategory(updated)
             }
         }
         
@@ -130,12 +132,17 @@ class SyncRepositoryImpl(
         updateProgress("Products", 0, unsynced.size, SyncType.SYNC_UP)
         
         val dtos = unsynced.map { it.toDto() }
+        
+        // Double-check before API call
+        if (dtos.isEmpty()) return@runCatching
+        
         val response = remoteDataSource.syncProductsUp(dtos)
         
         if (response.isSuccess()) {
-            response.data?.list?.forEach { dto ->
-                val entity = dto.toEntity().copy(sync_status = SyncStatus.SYNCED.value)
-                productDao.updateProduct(entity)
+            // Mark original entities as synced
+            unsynced.forEach { entity ->
+                val updated = entity.copy(sync_status = SyncStatus.SYNCED.value)
+                productDao.updateProduct(updated)
             }
         }
         
@@ -167,12 +174,17 @@ class SyncRepositoryImpl(
         updateProgress("Parties", 0, unsynced.size, SyncType.SYNC_UP)
         
         val dtos = unsynced.map { it.toDto() }
+        
+        // Double-check before API call
+        if (dtos.isEmpty()) return@runCatching
+        
         val response = remoteDataSource.syncPartiesUp(dtos)
         
         if (response.isSuccess()) {
-            response.data?.list?.forEach { dto ->
-                val entity = dto.toEntity().copy(sync_status = SyncStatus.SYNCED.value)
-                partyDao.updateParty(entity)
+            // Mark original entities as synced
+            unsynced.forEach { entity ->
+                val updated = entity.copy(sync_status = SyncStatus.SYNCED.value)
+                partyDao.updateParty(updated)
             }
         }
         
@@ -204,12 +216,17 @@ class SyncRepositoryImpl(
         updateProgress("Payment Methods", 0, unsynced.size, SyncType.SYNC_UP)
         
         val dtos = unsynced.map { it.toDto() }
+        
+        // Double-check before API call
+        if (dtos.isEmpty()) return@runCatching
+        
         val response = remoteDataSource.syncPaymentMethodsUp(dtos)
         
         if (response.isSuccess()) {
-            response.data?.list?.forEach { dto ->
-                val entity = dto.toEntity().copy(sync_status = SyncStatus.SYNCED.value)
-                paymentMethodDao.updatePaymentMethod(entity)
+            // Mark original entities as synced
+            unsynced.forEach { entity ->
+                val updated = entity.copy(sync_status = SyncStatus.SYNCED.value)
+                paymentMethodDao.updatePaymentMethod(updated)
             }
         }
         
@@ -241,12 +258,14 @@ class SyncRepositoryImpl(
         updateProgress("Quantity Units", 0, unsynced.size, SyncType.SYNC_UP)
         
         val dtos = unsynced.map { it.toDto() }
+
         val response = remoteDataSource.syncQuantityUnitsUp(dtos)
         
         if (response.isSuccess()) {
-            response.data?.list?.forEach { dto ->
-                val entity = dto.toEntity().copy(sync_status = SyncStatus.SYNCED.value)
-                quantityUnitDao.updateUnit(entity)
+            // Mark original entities as synced
+            unsynced.forEach { entity ->
+                val updated = entity.copy(sync_status = SyncStatus.SYNCED.value)
+                quantityUnitDao.updateUnit(updated)
             }
         }
         
@@ -278,12 +297,14 @@ class SyncRepositoryImpl(
         updateProgress("Warehouses", 0, unsynced.size, SyncType.SYNC_UP)
         
         val dtos = unsynced.map { it.toDto() }
+        
         val response = remoteDataSource.syncWarehousesUp(dtos)
         
         if (response.isSuccess()) {
-            response.data?.list?.forEach { dto ->
-                val entity = dto.toEntity().copy(sync_status = SyncStatus.SYNCED.value)
-                warehouseDao.updateWareHouse(entity)
+            // Mark original entities as synced
+            unsynced.forEach { entity ->
+                val updated = entity.copy(sync_status = SyncStatus.SYNCED.value)
+                warehouseDao.updateWareHouse(updated)
             }
         }
         
@@ -314,13 +335,38 @@ class SyncRepositoryImpl(
         
         updateProgress("Transactions", 0, unsynced.size, SyncType.SYNC_UP)
         
-        val dtos = unsynced.map { it.toDto() }
+        // Fetch transaction details for all transactions
+        val transactionSlugs = unsynced.mapNotNull { it.slug }
+        val allDetails = if (transactionSlugs.isNotEmpty()) {
+            transactionDetailDao.getDetailsByTransactionSlugs(transactionSlugs)
+        } else {
+            emptyList()
+        }
+        
+        // Group details by transaction slug
+        val detailsByTransaction = allDetails.groupBy { it.transaction_slug }
+        
+        // Map transactions to DTOs with their details
+        val dtos = unsynced.map { transaction ->
+            val details = detailsByTransaction[transaction.slug]?.map { it.toDto() } ?: emptyList()
+            transaction.toDto().copy(transactionDetails = details)
+        }
+        
+        // Double-check before API call
+        if (dtos.isEmpty()) return@runCatching
+        
         val response = remoteDataSource.syncTransactionsUp(dtos)
         
         if (response.isSuccess()) {
-            response.data?.list?.forEach { dto ->
-                val entity = dto.toEntity().copy(sync_status = SyncStatus.SYNCED.value)
-                transactionDao.updateTransaction(entity)
+            // Mark original transactions as synced
+            unsynced.forEach { entity ->
+                val updated = entity.copy(sync_status = SyncStatus.SYNCED.value)
+                transactionDao.updateTransaction(updated)
+            }
+            // Also mark transaction details as synced
+            allDetails.forEach { detail ->
+                val updated = detail.copy(sync_status = SyncStatus.SYNCED.value)
+                transactionDetailDao.updateTransactionDetail(updated)
             }
         }
         
@@ -334,6 +380,7 @@ class SyncRepositoryImpl(
         
         if (response.isSuccess()) {
             response.data?.list?.forEach { dto ->
+                // Save transaction (details synced separately)
                 val entity = dto.toEntity().copy(sync_status = SyncStatus.SYNCED.value)
                 transactionDao.insertTransaction(entity)
             }
@@ -342,28 +389,7 @@ class SyncRepositoryImpl(
         updateProgress("Transactions", 1, 1, SyncType.SYNC_DOWN)
     }
     
-    // Transaction Details
-    override suspend fun syncTransactionDetailsUp(): Result<Unit> = runCatching {
-        val businessSlug = sessionManager.getBusinessSlug() ?: return@runCatching
-        val unsynced = transactionDetailDao.getUnsyncedDetails(businessSlug)
-        
-        if (unsynced.isEmpty()) return@runCatching
-        
-        updateProgress("Transaction Details", 0, unsynced.size, SyncType.SYNC_UP)
-        
-        val dtos = unsynced.map { it.toDto() }
-        val response = remoteDataSource.syncTransactionDetailsUp(dtos)
-        
-        if (response.isSuccess()) {
-            response.data?.list?.forEach { dto ->
-                val entity = dto.toEntity().copy(sync_status = SyncStatus.SYNCED.value)
-                transactionDetailDao.updateTransactionDetail(entity)
-            }
-        }
-        
-        updateProgress("Transaction Details", unsynced.size, unsynced.size, SyncType.SYNC_UP)
-    }
-    
+    // Transaction Details (Sync Down Only)
     override suspend fun syncTransactionDetailsDown(lastSyncTime: String): Result<Unit> = runCatching {
         updateProgress("Transaction Details", 0, 1, SyncType.SYNC_DOWN)
         
@@ -379,28 +405,7 @@ class SyncRepositoryImpl(
         updateProgress("Transaction Details", 1, 1, SyncType.SYNC_DOWN)
     }
     
-    // Product Quantities
-    override suspend fun syncProductQuantitiesUp(): Result<Unit> = runCatching {
-        val businessSlug = sessionManager.getBusinessSlug() ?: return@runCatching
-        val unsynced = productQuantitiesDao.getUnsyncedQuantities(businessSlug)
-        
-        if (unsynced.isEmpty()) return@runCatching
-        
-        updateProgress("Product Quantities", 0, unsynced.size, SyncType.SYNC_UP)
-        
-        val dtos = unsynced.map { it.toDto() }
-        val response = remoteDataSource.syncProductQuantitiesUp(dtos)
-        
-        if (response.isSuccess()) {
-            response.data?.list?.forEach { dto ->
-                val entity = dto.toEntity().copy(sync_status = SyncStatus.SYNCED.value)
-                productQuantitiesDao.updateProductQuantity(entity)
-            }
-        }
-        
-        updateProgress("Product Quantities", unsynced.size, unsynced.size, SyncType.SYNC_UP)
-    }
-    
+    // Product Quantities (Sync Down Only)
     override suspend fun syncProductQuantitiesDown(lastSyncTime: String): Result<Unit> = runCatching {
         updateProgress("Product Quantities", 0, 1, SyncType.SYNC_DOWN)
         
@@ -426,12 +431,17 @@ class SyncRepositoryImpl(
         updateProgress("Media", 0, unsynced.size, SyncType.SYNC_UP)
         
         val dtos = unsynced.map { it.toDto() }
+        
+        // Double-check before API call
+        if (dtos.isEmpty()) return@runCatching
+        
         val response = remoteDataSource.syncMediaUp(dtos)
         
         if (response.isSuccess()) {
-            response.data?.list?.forEach { dto ->
-                val entity = dto.toEntity().copy(sync_status = SyncStatus.SYNCED.value)
-                entityMediaDao.updateEntityMedia(entity)
+            // Mark original entities as synced
+            unsynced.forEach { entity ->
+                val updated = entity.copy(sync_status = SyncStatus.SYNCED.value)
+                entityMediaDao.updateEntityMedia(updated)
             }
         }
         
@@ -454,6 +464,27 @@ class SyncRepositoryImpl(
     }
     
     // Recipe Ingredients
+    override suspend fun syncRecipeIngredientsUp(): Result<Unit> = runCatching {
+//        val businessSlug = sessionManager.getBusinessSlug() ?: return@runCatching
+//        val unsynced = recipeIngredientsDao.getUnsyncedRecipeIngredients(businessSlug)
+//
+//        if (unsynced.isEmpty()) return@runCatching
+//
+//        updateProgress("Recipe Ingredients", 0, unsynced.size, SyncType.SYNC_UP)
+//
+//        val dtos = unsynced.map { it.toDto() }
+//        val response = remoteDataSource.syncRecipeIngredientsUp(dtos)
+//
+//        if (response.isSuccess()) {
+//            response.data?.list?.forEach { dto ->
+//                val entity = dto.toEntity().copy(sync_status = SyncStatus.SYNCED.value)
+//                recipeIngredientsDao.updateRecipeIngredient(entity)
+//            }
+//        }
+        
+       // updateProgress("Recipe Ingredients", unsynced.size, unsynced.size, SyncType.SYNC_UP)
+    }
+    
     override suspend fun syncRecipeIngredientsDown(lastSyncTime: String): Result<Unit> = runCatching {
         updateProgress("Recipe Ingredients", 0, 1, SyncType.SYNC_DOWN)
         
@@ -479,10 +510,14 @@ class SyncRepositoryImpl(
         updateProgress("Deleted Records", 0, unsynced.size, SyncType.SYNC_UP)
         
         val dtos = unsynced.map { it.toDto() }
+        
+        // Double-check before API call
+        if (dtos.isEmpty()) return@runCatching
+        
         val response = remoteDataSource.deleteRecords(dtos)
         
         if (response.isSuccess()) {
-            // Mark as synced
+            // Mark original records as synced
             unsynced.forEach { record ->
                 val updated = record.copy(sync_status = SyncStatus.SYNCED.value)
                 deletedRecordsDao.updateDeletedRecord(updated)
