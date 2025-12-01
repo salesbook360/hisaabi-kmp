@@ -8,6 +8,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import com.hisaabi.hisaabi_kmp.core.ui.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
@@ -196,6 +197,7 @@ fun App() {
             var addPartyType by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType?>(null) }
             var partiesRefreshTrigger by remember { mutableStateOf(0) }
             var addPartyScreenKey by remember { mutableStateOf(0) }  // Key to force reset AddPartyScreen
+            val addPartySaveableStateHolder = rememberSaveableStateHolder()
             var selectedPartyForBalanceHistory by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.parties.domain.model.Party?>(null) }
             var selectedPartyForTransactionFilter by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.parties.domain.model.Party?>(null) }
             var selectedPartyForEdit by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.parties.domain.model.Party?>(null) }
@@ -684,34 +686,37 @@ fun App() {
                 }
                 AppScreen.ADD_PARTY -> {
                     addPartyType?.let { type ->
-                        // Use key to force recomposition when navigating to edit
-                        key(addPartyScreenKey) {
-                            com.hisaabi.hisaabi_kmp.parties.presentation.ui.AddPartyScreen(
-                                viewModel = koinInject(),
-                                partyType = type,
-                                partyToEdit = selectedPartyForEdit,
-                                onNavigateBack = { 
-                                // Trigger refresh and navigate first
-                                partiesRefreshTrigger++
-                                currentScreen = AppScreen.PARTIES
-                                // Then clear state after navigation
-                                selectedPartyForEdit = null
-                                addPartyType = null
-                                returnToAddParty = false
-                            },
-                            onNavigateToCategories = {
-                                categoryType = com.hisaabi.hisaabi_kmp.categories.domain.model.CategoryType.CUSTOMER_CATEGORY
-                                returnToAddParty = true
-                                currentScreen = AppScreen.CATEGORIES
-                            },
-                            onNavigateToAreas = {
-                                categoryType = com.hisaabi.hisaabi_kmp.categories.domain.model.CategoryType.AREA
-                                returnToAddParty = true
-                                currentScreen = AppScreen.CATEGORIES
-                            },
-                            selectedCategoryFromNav = selectedCategoryForParty,
-                            selectedAreaFromNav = selectedAreaForParty
-                        )
+                        val addPartyProviderKey = "AddPartyScreen-$addPartyScreenKey"
+                        addPartySaveableStateHolder.SaveableStateProvider(addPartyProviderKey) {
+                            // Use key to force recomposition when navigating to edit
+                            key(addPartyScreenKey) {
+                                com.hisaabi.hisaabi_kmp.parties.presentation.ui.AddPartyScreen(
+                                    viewModel = koinInject(),
+                                    partyType = type,
+                                    partyToEdit = selectedPartyForEdit,
+                                    onNavigateBack = {
+                                        // Trigger refresh and navigate first
+                                        partiesRefreshTrigger++
+                                        currentScreen = AppScreen.PARTIES
+                                        // Then clear state after navigation
+                                        selectedPartyForEdit = null
+                                        addPartyType = null
+                                        returnToAddParty = false
+                                    },
+                                    onNavigateToCategories = {
+                                        categoryType = com.hisaabi.hisaabi_kmp.categories.domain.model.CategoryType.CUSTOMER_CATEGORY
+                                        returnToAddParty = true
+                                        currentScreen = AppScreen.CATEGORIES
+                                    },
+                                    onNavigateToAreas = {
+                                        categoryType = com.hisaabi.hisaabi_kmp.categories.domain.model.CategoryType.AREA
+                                        returnToAddParty = true
+                                        currentScreen = AppScreen.CATEGORIES
+                                    },
+                                    selectedCategoryFromNav = selectedCategoryForParty,
+                                    selectedAreaFromNav = selectedAreaForParty
+                                )
+                            }
                         }
                     }
                 }

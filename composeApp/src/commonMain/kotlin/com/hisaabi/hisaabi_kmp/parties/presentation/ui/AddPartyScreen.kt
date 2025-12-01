@@ -10,6 +10,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -33,21 +35,32 @@ fun AddPartyScreen(
     selectedCategoryFromNav: CategoryEntity? = null,
     selectedAreaFromNav: CategoryEntity? = null
 ) {
-    var name by remember { mutableStateOf(partyToEdit?.name ?: "") }
-    var phone by remember { mutableStateOf(partyToEdit?.phone ?: "") }
-    var address by remember { mutableStateOf(partyToEdit?.address ?: "") }
-    var email by remember { mutableStateOf(partyToEdit?.email ?: "") }
-    var description by remember { mutableStateOf(partyToEdit?.description ?: "") }
-    var openingBalance by remember { mutableStateOf(partyToEdit?.openingBalance?.toString() ?: "") }
-    var isBalancePayable by remember { mutableStateOf(partyToEdit?.openingBalance?.let { it >= 0 } ?: true) }
+    val formStateKey = partyToEdit?.id.takeIf { it != 0 } ?: "new_${partyType.name}"
+    val latLongParts = partyToEdit?.latLong?.split(",")
+    val initialLatitude = latLongParts?.getOrNull(0)?.toDoubleOrNull()
+    val initialLongitude = latLongParts?.getOrNull(1)?.toDoubleOrNull()
+    
+    var name by rememberSaveable(formStateKey) { mutableStateOf(partyToEdit?.name ?: "") }
+    var phone by rememberSaveable(formStateKey) { mutableStateOf(partyToEdit?.phone ?: "") }
+    var address by rememberSaveable(formStateKey) { mutableStateOf(partyToEdit?.address ?: "") }
+    var email by rememberSaveable(formStateKey) { mutableStateOf(partyToEdit?.email ?: "") }
+    var description by rememberSaveable(formStateKey) { mutableStateOf(partyToEdit?.description ?: "") }
+    var openingBalance by rememberSaveable(formStateKey) { mutableStateOf(partyToEdit?.openingBalance?.toString() ?: "") }
+    var isBalancePayable by rememberSaveable(formStateKey) { mutableStateOf(partyToEdit?.openingBalance?.let { it >= 0 } ?: true) }
     
     // Category and Area
-    var selectedCategory by remember { mutableStateOf<CategoryEntity?>(null) }
-    var selectedArea by remember { mutableStateOf<CategoryEntity?>(null) }
+    var selectedCategory by rememberSaveable(
+        formStateKey,
+        stateSaver = CategorySelectionSaver
+    ) { mutableStateOf<CategorySelection?>(null) }
+    var selectedArea by rememberSaveable(
+        formStateKey,
+        stateSaver = CategorySelectionSaver
+    ) { mutableStateOf<CategorySelection?>(null) }
     
     // Location
-    var latitude by remember { mutableStateOf<Double?>(partyToEdit?.latLong?.split(",")?.getOrNull(0)?.toDoubleOrNull()) }
-    var longitude by remember { mutableStateOf<Double?>(partyToEdit?.latLong?.split(",")?.getOrNull(1)?.toDoubleOrNull()) }
+    var latitude by rememberSaveable(formStateKey) { mutableStateOf(initialLatitude) }
+    var longitude by rememberSaveable(formStateKey) { mutableStateOf(initialLongitude) }
     var showLocationPicker by remember { mutableStateOf(false) }
     
     val uiState by viewModel.uiState.collectAsState()
@@ -66,34 +79,24 @@ fun AddPartyScreen(
     
     // Set initial category and area from partyToEdit when categories/areas are loaded
     LaunchedEffect(categories, partyToEdit) {
-        if (partyToEdit != null) {
+        if (partyToEdit != null && selectedCategory == null) {
             // Find and set category if it exists
             partyToEdit.categorySlug?.let { slug ->
                 categories.find { it.slug == slug }?.let { category ->
-                    if (selectedCategory == null) {  // Only set if not already set
-                        selectedCategory = category
-                    }
+                    selectedCategory = category.toSelection()
                 }
             }
-        } else {
-            // Clear category when adding a new party
-            selectedCategory = null
         }
     }
     
     LaunchedEffect(areas, partyToEdit) {
-        if (partyToEdit != null) {
+        if (partyToEdit != null && selectedArea == null) {
             // Find and set area if it exists
             partyToEdit.areaSlug?.let { slug ->
                 areas.find { it.slug == slug }?.let { area ->
-                    if (selectedArea == null) {  // Only set if not already set
-                        selectedArea = area
-                    }
+                    selectedArea = area.toSelection()
                 }
             }
-        } else {
-            // Clear area when adding a new party
-            selectedArea = null
         }
     }
     
@@ -106,12 +109,12 @@ fun AddPartyScreen(
     
     // Update selected category from navigation
     LaunchedEffect(selectedCategoryFromNav) {
-        selectedCategoryFromNav?.let { selectedCategory = it }
+        selectedCategoryFromNav?.let { selectedCategory = it.toSelection() }
     }
     
     // Update selected area from navigation
     LaunchedEffect(selectedAreaFromNav) {
-        selectedAreaFromNav?.let { selectedArea = it }
+        selectedAreaFromNav?.let { selectedArea = it.toSelection() }
     }
     
     // Check if this is an expense/income type
@@ -550,4 +553,30 @@ private fun LocationPickerDialog(
         }
     )
 }
+
+private data class CategorySelection(
+    val slug: String?,
+    val title: String?
+)
+
+private val CategorySelectionSaver = Saver<CategorySelection?, List<String?>>(
+    save = { selection ->
+        selection?.let { listOf(it.slug, it.title) }
+    },
+    restore = { saved ->
+        saved?.let {
+            val slug = it.getOrNull(0)
+            val title = it.getOrNull(1)
+
+            if (slug == null && title == null) {
+                null
+            } else {
+                CategorySelection(slug, title)
+            }
+        }
+    }
+)
+
+private fun CategoryEntity.toSelection(): CategorySelection =
+    CategorySelection(slug = slug, title = title)
 
