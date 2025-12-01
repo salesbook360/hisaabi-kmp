@@ -27,8 +27,17 @@ class CategoriesViewModel(
         viewModelScope.launch {
             sessionManager.observeBusinessSlug().collect { newBusinessSlug ->
                 businessSlug = newBusinessSlug
+                // Reload categories when business changes
+                if (_uiState.value.selectedCategoryType != null) {
+                    loadCategories(_uiState.value.selectedCategoryType!!)
+                }
             }
         }
+    }
+    
+    fun onCategoryTypeChanged(categoryType: CategoryType) {
+        _uiState.value = _uiState.value.copy(selectedCategoryType = categoryType)
+        loadCategories(categoryType)
     }
     
     fun loadCategories(categoryType: CategoryType) {
@@ -69,7 +78,8 @@ class CategoriesViewModel(
 data class CategoriesUiState(
     val categories: List<Category> = emptyList(),
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val selectedCategoryType: CategoryType? = null
 )
 
 

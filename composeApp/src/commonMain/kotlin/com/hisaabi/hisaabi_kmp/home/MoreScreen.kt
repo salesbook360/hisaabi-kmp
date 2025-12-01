@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 fun MoreScreen(
     onNavigateToAuth: () -> Unit = {},
     onNavigateToQuantityUnits: () -> Unit = {},
+    onNavigateToCategories: () -> Unit = {},
     onNavigateToTransactionSettings: () -> Unit = {},
     onNavigateToReceiptSettings: () -> Unit = {},
     onNavigateToDashboardSettings: () -> Unit = {},
@@ -210,6 +211,12 @@ fun MoreScreen(
                             title = "Quantity Units",
                             icon = Icons.Default.Scale,
                             onClick = onNavigateToQuantityUnits
+                        )
+                        SettingsDivider()
+                        SettingsItem(
+                            title = "Categories",
+                            icon = Icons.Default.Category,
+                            onClick = onNavigateToCategories
                         )
                         SettingsDivider()
                         SettingsItem(

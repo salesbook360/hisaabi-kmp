@@ -186,7 +186,7 @@ class SyncManagerImpl(
     private suspend fun syncDownData() {
         try {
             val session = sessionManager.getSessionContext().requireValid()
-            val lastSyncTime =  getLastSyncTimeFormatted(session.businessSlug!!, session.userSlug!!)
+            val lastSyncTime =  getLastSyncTimeFormatted("","") //session.businessSlug!!, session.userSlug!!
             
             // Order matters - dependencies should be synced first
             
@@ -270,7 +270,7 @@ class SyncManagerImpl(
     
     private suspend fun getLastSyncTimeFormatted(businessSlug: String, userSlug: String): String {
         val lastSync = preferencesDataSource.getLastSyncTime(businessSlug, userSlug)
-        return lastSync?.toString() ?: "1970-01-01T00:00:00Z" // Unix epoch if never synced
+        return lastSync?.toString() ?: "2020-01-01T00:00:00Z" // Unix epoch if never synced
     }
     
     override fun startBackgroundSync() {

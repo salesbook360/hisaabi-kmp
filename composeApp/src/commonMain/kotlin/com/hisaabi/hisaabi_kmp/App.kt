@@ -507,6 +507,7 @@ fun App() {
                         onTabSelected = { selectedBottomNavTab = it },
                         onNavigateToAuth = { navigateTo(AppScreen.AUTH) },
                         onNavigateToQuantityUnits = { navigateTo(AppScreen.QUANTITY_UNITS) },
+                        onNavigateToCategories = { navigateTo(AppScreen.CATEGORIES) },
                         onNavigateToTransactionSettings = { navigateTo(AppScreen.TRANSACTION_SETTINGS) },
                         onNavigateToReceiptSettings = { navigateTo(AppScreen.RECEIPT_SETTINGS) },
                         onNavigateToDashboardSettings = { navigateTo(AppScreen.DASHBOARD_SETTINGS) },
@@ -716,11 +717,14 @@ fun App() {
                 }
                 
                 AppScreen.CATEGORIES -> {
-                    categoryType?.let { type ->
-                        com.hisaabi.hisaabi_kmp.categories.presentation.ui.CategoriesScreen(
-                            viewModel = koinInject(),
-                            categoryType = type,
-                            onCategorySelected = { category ->
+                    val categoriesViewModel: com.hisaabi.hisaabi_kmp.categories.presentation.viewmodel.CategoriesViewModel = koinInject()
+                    com.hisaabi.hisaabi_kmp.categories.presentation.ui.CategoriesScreen(
+                        viewModel = categoriesViewModel,
+                        categoryType = categoryType, // Optional - will default to CUSTOMER_CATEGORY if null
+                        onCategorySelected = { category ->
+                            // Only handle category selection if we came from AddParty flow
+                            if (returnToAddParty && categoryType != null) {
+                                val type = categoryType
                                 // Store selected category based on type
                                 if (type == com.hisaabi.hisaabi_kmp.categories.domain.model.CategoryType.CUSTOMER_CATEGORY) {
                                     category?.let {
@@ -756,20 +760,26 @@ fun App() {
                                     }
                                 }
                                 currentScreen = AppScreen.ADD_PARTY
-                            },
-                            onAddCategoryClick = {
-                                currentScreen = AppScreen.ADD_CATEGORY
-                            },
-                            onNavigateBack = {
-                                if (returnToAddParty) {
-                                    currentScreen = AppScreen.ADD_PARTY
-                                } else {
-                                    currentScreen = AppScreen.PARTIES
-                                }
-                            },
-                            refreshTrigger = categoriesRefreshTrigger
-                        )
-                    }
+                            }
+                            // If not from AddParty flow, category selection is just for viewing
+                        },
+                        onAddCategoryClick = {
+                            // Get current selected category type from viewModel state
+                            val currentType = categoriesViewModel.uiState.value.selectedCategoryType
+                                ?: categoryType
+                                ?: com.hisaabi.hisaabi_kmp.categories.domain.model.CategoryType.CUSTOMER_CATEGORY
+                            categoryType = currentType
+                            currentScreen = AppScreen.ADD_CATEGORY
+                        },
+                        onNavigateBack = {
+                            if (returnToAddParty) {
+                                currentScreen = AppScreen.ADD_PARTY
+                            } else {
+                                navigateBack()
+                            }
+                        },
+                        refreshTrigger = categoriesRefreshTrigger
+                    )
                 }
                 
                 AppScreen.ADD_CATEGORY -> {

@@ -107,12 +107,13 @@ class LoggingInterceptor {
                 }
             }
         }
-        
+
+        val charToPrintInLogs = 10000
         // Log response body (first 1000 characters to avoid huge logs)
         try {
             val responseText = response.bodyAsText()
-            val truncatedBody = if (responseText.length > 1000) {
-                "${responseText.take(1000)}... [truncated ${responseText.length - 1000} more characters]"
+            val truncatedBody = if (responseText.length > charToPrintInLogs) {
+                "${responseText.take(charToPrintInLogs)}... [truncated ${responseText.length - charToPrintInLogs} more characters]"
             } else {
                 responseText
             }

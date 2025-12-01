@@ -16,6 +16,7 @@ fun HomeScreen(
     onTabSelected: (Int) -> Unit = {},
     onNavigateToAuth: () -> Unit = {},
     onNavigateToQuantityUnits: () -> Unit = {},
+    onNavigateToCategories: () -> Unit = {},
     onNavigateToTransactionSettings: () -> Unit = {},
     onNavigateToReceiptSettings: () -> Unit = {},
     onNavigateToDashboardSettings: () -> Unit = {},
@@ -81,6 +82,7 @@ fun HomeScreen(
                 2 -> MoreScreen(
                     onNavigateToAuth = onNavigateToAuth,
                     onNavigateToQuantityUnits = onNavigateToQuantityUnits,
+                    onNavigateToCategories = onNavigateToCategories,
                     onNavigateToTransactionSettings = onNavigateToTransactionSettings,
                     onNavigateToReceiptSettings = onNavigateToReceiptSettings,
                     onNavigateToDashboardSettings = onNavigateToDashboardSettings,

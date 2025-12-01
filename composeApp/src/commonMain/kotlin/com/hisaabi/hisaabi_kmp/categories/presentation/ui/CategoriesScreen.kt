@@ -18,12 +18,13 @@ import androidx.compose.ui.unit.dp
 import com.hisaabi.hisaabi_kmp.categories.domain.model.Category
 import com.hisaabi.hisaabi_kmp.categories.domain.model.CategoryType
 import com.hisaabi.hisaabi_kmp.categories.presentation.viewmodel.CategoriesViewModel
+import com.hisaabi.hisaabi_kmp.core.ui.SegmentedControl
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CategoriesScreen(
     viewModel: CategoriesViewModel,
-    categoryType: CategoryType,
+    categoryType: CategoryType? = null, // Optional for backward compatibility
     onCategorySelected: (Category?) -> Unit = {},
     onAddCategoryClick: () -> Unit = {},
     onNavigateBack: () -> Unit = {},
@@ -31,15 +32,45 @@ fun CategoriesScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     
-    // Load categories when screen appears or refreshes
-    LaunchedEffect(categoryType, refreshTrigger) {
-        viewModel.loadCategories(categoryType)
+    // Initialize with provided categoryType or default to CUSTOMER_CATEGORY
+    val initialCategoryType = categoryType ?: CategoryType.CUSTOMER_CATEGORY
+    var selectedCategoryType by remember { mutableStateOf(initialCategoryType) }
+    
+    // Initialize category type on first load
+    LaunchedEffect(Unit) {
+        if (uiState.selectedCategoryType == null) {
+            viewModel.onCategoryTypeChanged(initialCategoryType)
+        } else {
+            selectedCategoryType = uiState.selectedCategoryType!!
+        }
+    }
+    
+    // Update selectedCategoryType when uiState changes
+    LaunchedEffect(uiState.selectedCategoryType) {
+        uiState.selectedCategoryType?.let {
+            selectedCategoryType = it
+        }
+    }
+    
+    // Load categories when category type changes or refresh trigger changes
+    LaunchedEffect(selectedCategoryType, refreshTrigger) {
+        viewModel.onCategoryTypeChanged(selectedCategoryType)
+    }
+    
+    // Handle external categoryType parameter changes
+    LaunchedEffect(categoryType) {
+        categoryType?.let {
+            if (it != selectedCategoryType) {
+                selectedCategoryType = it
+                viewModel.onCategoryTypeChanged(it)
+            }
+        }
     }
     
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(categoryType.displayName) },
+                title = { Text("Categories") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
@@ -52,10 +83,13 @@ fun CategoriesScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = onAddCategoryClick,
+                onClick = {
+                    // Pass the current category type to the callback
+                    onAddCategoryClick()
+                },
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add ${categoryType.displayName}")
+                Icon(Icons.Default.Add, contentDescription = "Add ${selectedCategoryType.displayName}")
             }
         }
     ) { paddingValues ->
@@ -64,6 +98,17 @@ fun CategoriesScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            // Category Type Filter - Segmented Control
+            CategoryTypeFilter(
+                selected = selectedCategoryType,
+                onTypeSelected = { type ->
+                    selectedCategoryType = type
+                    viewModel.onCategoryTypeChanged(type)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            )
             when {
                 uiState.isLoading -> {
                     Box(
@@ -86,7 +131,7 @@ fun CategoriesScreen(
                                 textAlign = TextAlign.Center
                             )
                             Spacer(modifier = Modifier.height(8.dp))
-                            Button(onClick = { viewModel.loadCategories(categoryType) }) {
+                            Button(onClick = { viewModel.onCategoryTypeChanged(selectedCategoryType) }) {
                                 Text("Retry")
                             }
                         }
@@ -107,7 +152,7 @@ fun CategoriesScreen(
                             )
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(
-                                text = "No ${categoryType.displayName.lowercase()}s found",
+                                text = "No ${selectedCategoryType.displayName.lowercase()}s found",
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -115,7 +160,7 @@ fun CategoriesScreen(
                             Button(onClick = onAddCategoryClick) {
                                 Icon(Icons.Default.Add, contentDescription = null)
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Add ${categoryType.displayName}")
+                                Text("Add ${selectedCategoryType.displayName}")
                             }
                         }
                     }
@@ -183,6 +228,34 @@ private fun CategoryItem(
             }
         }
     }
+}
+
+@Composable
+private fun CategoryTypeFilter(
+    selected: CategoryType,
+    onTypeSelected: (CategoryType) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    // Create list of category types: Customer Category, Customer Area, Product Category
+    val categoryTypes = listOf(
+        CategoryType.CUSTOMER_CATEGORY,
+        CategoryType.AREA,
+        CategoryType.PRODUCTS
+    )
+    
+    SegmentedControl(
+        items = categoryTypes,
+        selectedItem = selected,
+        onItemSelected = onTypeSelected,
+        modifier = modifier,
+        itemDisplayName = { type ->
+            when (type) {
+                CategoryType.CUSTOMER_CATEGORY -> "Customer Category"
+                CategoryType.AREA -> "Customer Area"
+                CategoryType.PRODUCTS -> "Product Category"
+            }
+        }
+    )
 }
 
 
