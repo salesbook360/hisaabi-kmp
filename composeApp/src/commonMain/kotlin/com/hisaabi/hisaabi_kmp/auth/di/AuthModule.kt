@@ -36,6 +36,7 @@ val authModule = module {
                     isLenient = true
                     ignoreUnknownKeys = true
                     coerceInputValues = true
+                    encodeDefaults = true // Ensure required fields like personStatus are always sent
                 })
             }
             

@@ -22,6 +22,7 @@ import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
 import com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType
 import com.hisaabi.hisaabi_kmp.parties.presentation.viewmodel.AddPartyViewModel
 import com.hisaabi.hisaabi_kmp.utils.format
+import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -167,13 +168,17 @@ fun AddPartyScreen(
                                 longitude = longitude
                             )
                         } else {
+                            val adjustedOpeningBalance = adjustOpeningBalanceSign(
+                                openingBalance,
+                                shouldBePositive = isBalancePayable
+                            ).toDoubleOrNull() ?: 0.0
                             viewModel.addParty(
                                 name = name,
                                 phone = phone.takeIf { it.isNotBlank() },
                                 address = address.takeIf { it.isNotBlank() },
                                 email = email.takeIf { it.isNotBlank() },
                                 description = description.takeIf { it.isNotBlank() },
-                                openingBalance = openingBalance.toDoubleOrNull() ?: 0.0,
+                                openingBalance = adjustedOpeningBalance,
                                 isBalancePayable = isBalancePayable,
                                 partyType = partyType,
                                 categorySlug = selectedCategory?.slug,
@@ -579,4 +584,24 @@ private val CategorySelectionSaver = Saver<CategorySelection?, List<String?>>(
 
 private fun CategoryEntity.toSelection(): CategorySelection =
     CategorySelection(slug = slug, title = title)
+
+private fun adjustOpeningBalanceSign(
+    value: String,
+    shouldBePositive: Boolean
+): String {
+    val numericValue = value.trim().toDoubleOrNull() ?: return value
+    val normalized = abs(numericValue)
+    val adjusted = if (shouldBePositive) normalized else -normalized
+    return adjusted.toBalanceString()
+}
+
+private fun Double.toBalanceString(): String {
+    val sanitized = if (this == -0.0) 0.0 else this
+    val longValue = sanitized.toLong()
+    return if (sanitized == longValue.toDouble()) {
+        longValue.toString()
+    } else {
+        sanitized.toString()
+    }
+}
 
