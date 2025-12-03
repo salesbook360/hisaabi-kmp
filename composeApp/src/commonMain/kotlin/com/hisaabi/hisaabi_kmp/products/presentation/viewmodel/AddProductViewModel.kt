@@ -37,8 +37,23 @@ class AddProductViewModel(
         }
     }
     
-    fun resetState() {
-        _uiState.value = AddProductUiState()
+    fun resetState(sessionKey: Int = -1) {
+        _uiState.value = AddProductUiState(sessionKey = sessionKey)
+    }
+
+    fun initializeForm(sessionKey: Int, productToEdit: com.hisaabi.hisaabi_kmp.products.domain.model.Product?) {
+        val currentState = _uiState.value
+        if (currentState.sessionKey == sessionKey) {
+            if (productToEdit != null && currentState.productToEdit?.slug != productToEdit.slug) {
+                applyProductToState(productToEdit)
+            } else if (productToEdit == null && currentState.productToEdit != null) {
+                _uiState.value = currentState.copy(productToEdit = null)
+            }
+            return
+        }
+
+        resetState(sessionKey)
+        productToEdit?.let { applyProductToState(it) }
     }
     
     fun setSelectedWarehouse(warehouse: Warehouse?) {
@@ -62,10 +77,60 @@ class AddProductViewModel(
     }
     
     fun setProductToEdit(product: com.hisaabi.hisaabi_kmp.products.domain.model.Product?) {
-        _uiState.value = _uiState.value.copy(productToEdit = product)
-        if (product != null && _uiState.value.selectedWarehouse != null) {
+        if (product == null) {
+            _uiState.value = _uiState.value.copy(productToEdit = null)
+            return
+        }
+        applyProductToState(product)
+    }
+
+    private fun applyProductToState(product: com.hisaabi.hisaabi_kmp.products.domain.model.Product) {
+        _uiState.value = _uiState.value.copy(
+            productToEdit = product,
+            title = product.title,
+            description = product.description ?: "",
+            retailPrice = "%.2f".format(product.retailPrice),
+            wholesalePrice = "%.2f".format(product.wholesalePrice),
+            purchasePrice = "%.2f".format(product.purchasePrice),
+            taxPercentage = "%.2f".format(product.taxPercentage),
+            discountPercentage = "%.2f".format(product.discountPercentage),
+            manufacturer = product.manufacturer ?: ""
+        )
+        if (_uiState.value.selectedWarehouse != null) {
             loadProductQuantities(product.slug, _uiState.value.selectedWarehouse!!.slug ?: "")
         }
+    }
+
+    fun updateTitle(value: String) {
+        _uiState.value = _uiState.value.copy(title = value)
+    }
+
+    fun updateDescription(value: String) {
+        _uiState.value = _uiState.value.copy(description = value)
+    }
+
+    fun updateRetailPrice(value: String) {
+        _uiState.value = _uiState.value.copy(retailPrice = value)
+    }
+
+    fun updateWholesalePrice(value: String) {
+        _uiState.value = _uiState.value.copy(wholesalePrice = value)
+    }
+
+    fun updatePurchasePrice(value: String) {
+        _uiState.value = _uiState.value.copy(purchasePrice = value)
+    }
+
+    fun updateTaxPercentage(value: String) {
+        _uiState.value = _uiState.value.copy(taxPercentage = value)
+    }
+
+    fun updateDiscountPercentage(value: String) {
+        _uiState.value = _uiState.value.copy(discountPercentage = value)
+    }
+
+    fun updateManufacturer(value: String) {
+        _uiState.value = _uiState.value.copy(manufacturer = value)
     }
     
     private fun loadProductQuantities(productSlug: String, warehouseSlug: String) {
@@ -327,7 +392,16 @@ data class AddProductUiState(
     val selectedWarehouse: Warehouse? = null,
     val openingQuantity: String = "",
     val minimumQuantity: String = "",
-    val productToEdit: com.hisaabi.hisaabi_kmp.products.domain.model.Product? = null
+    val productToEdit: com.hisaabi.hisaabi_kmp.products.domain.model.Product? = null,
+    val sessionKey: Int = -1,
+    val title: String = "",
+    val description: String = "",
+    val retailPrice: String = "",
+    val wholesalePrice: String = "",
+    val purchasePrice: String = "",
+    val taxPercentage: String = "",
+    val discountPercentage: String = "",
+    val manufacturer: String = ""
 )
 
 

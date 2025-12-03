@@ -18,7 +18,6 @@ import androidx.compose.ui.Alignment
 import com.hisaabi.hisaabi_kmp.products.domain.model.Product
 import com.hisaabi.hisaabi_kmp.products.domain.model.ProductType
 import com.hisaabi.hisaabi_kmp.products.presentation.viewmodel.AddProductViewModel
-import com.hisaabi.hisaabi_kmp.utils.format
 import com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -27,43 +26,15 @@ fun AddProductScreen(
     viewModel: AddProductViewModel,
     productType: ProductType,
     productToEdit: Product? = null,
+    formSessionKey: Int,
     onNavigateBack: () -> Unit,
     onNavigateToIngredients: ((String) -> Unit)? = null,  // Recipe slug
     onNavigateToWarehouses: () -> Unit = {}
 ) {
-    var title by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    var retailPrice by remember { mutableStateOf("") }
-    var wholesalePrice by remember { mutableStateOf("") }
-    var purchasePrice by remember { mutableStateOf("") }
-    var taxPercentage by remember { mutableStateOf("") }
-    var discountPercentage by remember { mutableStateOf("") }
-    var manufacturer by remember { mutableStateOf("") }
-    
     val uiState by viewModel.uiState.collectAsState()
-    
-    // Update fields when productToEdit changes
-    LaunchedEffect(productToEdit) {
-        if (productToEdit != null) {
-            viewModel.setProductToEdit(productToEdit)
-            title = productToEdit.title
-            description = productToEdit.description ?: ""
-            retailPrice = "%.2f".format(productToEdit.retailPrice)
-            wholesalePrice = "%.2f".format(productToEdit.wholesalePrice)
-            purchasePrice = "%.2f".format(productToEdit.purchasePrice)
-            taxPercentage = "%.2f".format(productToEdit.taxPercentage)
-            discountPercentage = "%.2f".format(productToEdit.discountPercentage)
-            manufacturer = productToEdit.manufacturer ?: ""
-        } else {
-            viewModel.resetState()
-        }
-    }
-    
-    // Reset state when screen is first opened
-    LaunchedEffect(Unit) {
-        if (productToEdit == null) {
-            viewModel.resetState()
-        }
+
+    LaunchedEffect(formSessionKey, productToEdit?.slug) {
+        viewModel.initializeForm(formSessionKey, productToEdit)
     }
     
     // Navigate back on success (or to ingredients for recipes)
@@ -111,18 +82,18 @@ fun AddProductScreen(
             FloatingActionButton(
                 containerColor = MaterialTheme.colorScheme.primary,
                 onClick = {
-                    if (!uiState.isLoading && title.isNotBlank()) {
+                    if (!uiState.isLoading && uiState.title.isNotBlank()) {
                         viewModel.saveProduct(
                             productToEdit = productToEdit,
-                            title = title,
-                            description = description.takeIf { it.isNotBlank() },
+                            title = uiState.title,
+                            description = uiState.description.takeIf { it.isNotBlank() },
                             productType = productType,
-                            retailPrice = retailPrice.toDoubleOrNull() ?: 0.0,
-                            wholesalePrice = wholesalePrice.toDoubleOrNull() ?: 0.0,
-                            purchasePrice = purchasePrice.toDoubleOrNull() ?: 0.0,
-                            taxPercentage = taxPercentage.toDoubleOrNull() ?: 0.0,
-                            discountPercentage = discountPercentage.toDoubleOrNull() ?: 0.0,
-                            manufacturer = manufacturer.takeIf { it.isNotBlank() },
+                            retailPrice = uiState.retailPrice.toDoubleOrNull() ?: 0.0,
+                            wholesalePrice = uiState.wholesalePrice.toDoubleOrNull() ?: 0.0,
+                            purchasePrice = uiState.purchasePrice.toDoubleOrNull() ?: 0.0,
+                            taxPercentage = uiState.taxPercentage.toDoubleOrNull() ?: 0.0,
+                            discountPercentage = uiState.discountPercentage.toDoubleOrNull() ?: 0.0,
+                            manufacturer = uiState.manufacturer.takeIf { it.isNotBlank() },
                             warehouseSlug = uiState.selectedWarehouse?.slug,
                             openingQuantity = uiState.openingQuantity.toDoubleOrNull() ?: 0.0,
                             minimumQuantity = uiState.minimumQuantity.toDoubleOrNull() ?: 0.0
@@ -185,23 +156,23 @@ fun AddProductScreen(
             
             // Title Field (Required)
             OutlinedTextField(
-                value = title,
-                onValueChange = { title = it },
+                value = uiState.title,
+                onValueChange = { viewModel.updateTitle(it) },
                 label = { Text("Product Title *") },
                 leadingIcon = {
                     Icon(Icons.Default.Title, contentDescription = "Title")
                 },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                isError = title.isBlank() && uiState.error != null
+                isError = uiState.title.isBlank() && uiState.error != null
             )
             
             Spacer(modifier = Modifier.height(16.dp))
             
             // Description Field
             OutlinedTextField(
-                value = description,
-                onValueChange = { description = it },
+                value = uiState.description,
+                onValueChange = { viewModel.updateDescription(it) },
                 label = { Text("Description") },
                 leadingIcon = {
                     Icon(Icons.Default.Description, contentDescription = "Description")
@@ -224,8 +195,8 @@ fun AddProductScreen(
             
             // Retail Price
             OutlinedTextField(
-                value = retailPrice,
-                onValueChange = { retailPrice = it },
+                value = uiState.retailPrice,
+                onValueChange = { viewModel.updateRetailPrice(it) },
                 label = { Text("Retail Price") },
                 leadingIcon = {
                     Icon(Icons.Default.AttachMoney, contentDescription = "Retail Price")
@@ -239,8 +210,8 @@ fun AddProductScreen(
             
             // Wholesale Price
             OutlinedTextField(
-                value = wholesalePrice,
-                onValueChange = { wholesalePrice = it },
+                value = uiState.wholesalePrice,
+                onValueChange = { viewModel.updateWholesalePrice(it) },
                 label = { Text("Wholesale Price") },
                 leadingIcon = {
                     Icon(Icons.Default.Money, contentDescription = "Wholesale Price")
@@ -255,8 +226,8 @@ fun AddProductScreen(
             // Purchase Price (Hidden for Services)
             if (productType != ProductType.SERVICE) {
                 OutlinedTextField(
-                    value = purchasePrice,
-                    onValueChange = { purchasePrice = it },
+                    value = uiState.purchasePrice,
+                    onValueChange = { viewModel.updatePurchasePrice(it) },
                     label = { Text("Purchase Price") },
                     leadingIcon = {
                         Icon(Icons.Default.ShoppingCart, contentDescription = "Purchase Price")
@@ -271,8 +242,8 @@ fun AddProductScreen(
             
             // Tax Percentage
             OutlinedTextField(
-                value = taxPercentage,
-                onValueChange = { taxPercentage = it },
+                value = uiState.taxPercentage,
+                onValueChange = { viewModel.updateTaxPercentage(it) },
                 label = { Text("Tax %") },
                 leadingIcon = {
                     Icon(Icons.Default.Percent, contentDescription = "Tax")
@@ -286,8 +257,8 @@ fun AddProductScreen(
             
             // Discount Percentage
             OutlinedTextField(
-                value = discountPercentage,
-                onValueChange = { discountPercentage = it },
+                value = uiState.discountPercentage,
+                onValueChange = { viewModel.updateDiscountPercentage(it) },
                 label = { Text("Discount %") },
                 leadingIcon = {
                     Icon(Icons.Default.Discount, contentDescription = "Discount")
@@ -311,8 +282,8 @@ fun AddProductScreen(
             // Manufacturer (for Simple Products and Recipes)
             if (productType != ProductType.SERVICE) {
                 OutlinedTextField(
-                    value = manufacturer,
-                    onValueChange = { manufacturer = it },
+                    value = uiState.manufacturer,
+                    onValueChange = { viewModel.updateManufacturer(it) },
                     label = { Text("Manufacturer") },
                     leadingIcon = {
                         Icon(Icons.Default.Factory, contentDescription = "Manufacturer")

@@ -216,9 +216,21 @@ fun App() {
             
             // Products navigation state
             var addProductType by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.products.domain.model.ProductType?>(null) }
+            var addProductScreenKey by remember { mutableStateOf(0) }
+            var addProductViewModelHolder by remember { mutableStateOf<AddProductViewModel?>(null) }
             var productsRefreshTrigger by remember { mutableStateOf(0) }
             var selectedRecipeProduct by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.products.domain.model.Product?>(null) }
             var selectedProductForEdit by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.products.domain.model.Product?>(null) }
+            
+            // Reset Add Product ViewModel when session changes or ends
+            LaunchedEffect(addProductScreenKey) {
+                addProductViewModelHolder = null
+            }
+            LaunchedEffect(addProductType) {
+                if (addProductType == null) {
+                    addProductViewModelHolder = null
+                }
+            }
             
             // Payment Methods navigation state
             var paymentMethodsRefreshTrigger by remember { mutableStateOf(0) }
@@ -527,6 +539,7 @@ fun App() {
                         },
                         onNavigateToAddProduct = { type ->
                             addProductType = type
+                            addProductScreenKey++
                             navigateTo(AppScreen.ADD_PRODUCT)
                         },
                         onNavigateToPaymentMethods = { navigateTo(AppScreen.PAYMENT_METHODS) },
@@ -852,6 +865,7 @@ fun App() {
                                 // Navigate to edit product screen (reuse ADD_PRODUCT with edit mode)
                                 selectedProductForEdit = product
                                 addProductType = product.productType
+                                addProductScreenKey++
                                 currentScreen = AppScreen.ADD_PRODUCT
                             }
                         },
@@ -859,12 +873,14 @@ fun App() {
                             // Navigate to edit product screen (reuse ADD_PRODUCT with edit mode)
                             selectedProductForEdit = product
                             addProductType = product.productType
+                            addProductScreenKey++
                             currentScreen = AppScreen.ADD_PRODUCT
                         },
                         onAddProductClick = { selectedType ->
                             // Use the selected product type, or default to simple product if none selected
                             addProductType = selectedType ?: com.hisaabi.hisaabi_kmp.products.domain.model.ProductType.SIMPLE_PRODUCT
                             selectedProductForEdit = null // Clear any selected product for editing
+                            addProductScreenKey++
                             currentScreen = AppScreen.ADD_PRODUCT
                         },
                         onNavigateToIngredients = { product ->
@@ -916,13 +932,16 @@ fun App() {
                 }
                 
                 AppScreen.ADD_PRODUCT -> {
-                    val addProductViewModel : AddProductViewModel = koinInject()
+                    val addProductViewModel = addProductViewModelHolder ?: koinInject<AddProductViewModel>().also {
+                        addProductViewModelHolder = it
+                    }
                     addProductType?.let { type ->
                         val productToEdit = selectedProductForEdit
                         com.hisaabi.hisaabi_kmp.products.presentation.ui.AddProductScreen(
                             viewModel = addProductViewModel,
                             productType = type,
                             productToEdit = productToEdit,
+                            formSessionKey = addProductScreenKey,
                             onNavigateBack = {
                                 productsRefreshTrigger++  // Trigger refresh
                                 currentScreen = AppScreen.PRODUCTS
