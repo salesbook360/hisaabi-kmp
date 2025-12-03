@@ -11,6 +11,7 @@ import com.hisaabi.hisaabi_kmp.database.entity.RecipeIngredientsEntity
 import com.hisaabi.hisaabi_kmp.products.domain.model.Product
 import com.hisaabi.hisaabi_kmp.products.domain.model.ProductType
 import com.hisaabi.hisaabi_kmp.products.domain.model.RecipeIngredient
+import com.hisaabi.hisaabi_kmp.sync.domain.model.SyncStatus
 import com.hisaabi.hisaabi_kmp.utils.getCurrentTimestamp
 import kotlinx.coroutines.flow.first
 
@@ -124,9 +125,21 @@ class ProductsRepositoryImpl(
     }
     
     override suspend fun updateProduct(product: Product): String {
-        // Update only the updated_at timestamp, preserve created_at
+        // Get existing product to preserve sync_status logic
+        val existingEntity = productDataSource.getProductBySlug(product.slug)
+        
+        // Determine new sync_status: if it was SYNCED, mark as UPDATED
+        val newSyncStatus = if (existingEntity?.sync_status == SyncStatus.SYNCED.value) {
+            SyncStatus.UPDATED.value
+        } else {
+            // Preserve existing sync_status, or use the one from product if entity doesn't exist
+            existingEntity?.sync_status ?: product.syncStatus
+        }
+        
+        // Update only the updated_at timestamp, preserve created_at, and update sync_status
         val entity = product.toEntity().copy(
-            updated_at = getCurrentTimestamp()
+            updated_at = getCurrentTimestamp(),
+            sync_status = newSyncStatus
         )
         productDataSource.updateProduct(entity)
         return product.slug

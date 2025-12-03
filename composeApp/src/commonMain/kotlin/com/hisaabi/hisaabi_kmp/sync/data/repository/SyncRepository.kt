@@ -170,12 +170,6 @@ class SyncRepositoryImpl(
             response.data?.list?.forEach { dto ->
                 val entity = dto.toEntity().copy(sync_status = SyncStatus.SYNCED.value)
                 productDao.insertProduct(entity)
-                
-                // Save product quantities if they are included in the response
-                dto.allQuantities?.forEach { quantityDto ->
-                    val quantityEntity = quantityDto.toEntity().copy(sync_status = SyncStatus.SYNCED.value)
-                    productQuantitiesDao.insertProductQuantity(quantityEntity)
-                }
             }
         }
         
