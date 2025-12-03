@@ -11,6 +11,7 @@ import com.hisaabi.hisaabi_kmp.sync.domain.model.SyncStatus
 import com.hisaabi.hisaabi_kmp.sync.domain.model.SyncType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Clock
 
 /**
@@ -131,7 +132,18 @@ class SyncRepositoryImpl(
         
         updateProgress("Products", 0, unsynced.size, SyncType.SYNC_UP)
         
-        val dtos = unsynced.map { it.toDto() }
+        // Map products to DTOs and fetch quantities for each product
+        val dtos = unsynced.map { product ->
+            val productDto = product.toDto()
+            // Fetch quantities for this product
+            val quantities = if (product.slug != null) {
+                productQuantitiesDao.getQuantitiesByProduct(product.slug).first()
+                    .map { it.toDto() }
+            } else {
+                emptyList()
+            }
+            productDto.copy(allQuantities = quantities)
+        }
         
         // Double-check before API call
         if (dtos.isEmpty()) return@runCatching
@@ -158,6 +170,12 @@ class SyncRepositoryImpl(
             response.data?.list?.forEach { dto ->
                 val entity = dto.toEntity().copy(sync_status = SyncStatus.SYNCED.value)
                 productDao.insertProduct(entity)
+                
+                // Save product quantities if they are included in the response
+                dto.allQuantities?.forEach { quantityDto ->
+                    val quantityEntity = quantityDto.toEntity().copy(sync_status = SyncStatus.SYNCED.value)
+                    productQuantitiesDao.insertProductQuantity(quantityEntity)
+                }
             }
         }
         

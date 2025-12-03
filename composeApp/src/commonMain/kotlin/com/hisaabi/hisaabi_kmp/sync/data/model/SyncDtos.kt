@@ -68,7 +68,9 @@ data class ProductDto(
     val businessSlug: String? = null,
     val createdBy: String? = null,
     val createdAt: String? = null,
-    val updatedAt: String? = null
+    val updatedAt: String? = null,
+    @SerialName("allQuantities")
+    val allQuantities: List<ProductQuantitiesDto>? = null
 )
 
 @Serializable
@@ -234,6 +236,8 @@ data class ProductQuantitiesDto(
     @SerialName("maxQuantity")
     val maxQuantity: Double = 0.0,
     val businessSlug: String? = null,
+    @SerialName("syncStatus")
+    val syncStatus: Int = 0,
     val updatedAt: String? = null,
     val slug: String? = null,
     val createdBy: String? = null,

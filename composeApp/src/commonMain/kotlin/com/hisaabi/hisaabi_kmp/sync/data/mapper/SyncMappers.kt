@@ -366,6 +366,7 @@ fun ProductQuantitiesEntity.toDto() = ProductQuantitiesDto(
     minimumQuantity = minimum_quantity,
     maxQuantity = maximum_quantity,
     businessSlug = business_slug,
+    syncStatus = sync_status,
     updatedAt = null, // Not in entity
     slug = null, // Not in entity
     createdBy = null, // Not in entity
