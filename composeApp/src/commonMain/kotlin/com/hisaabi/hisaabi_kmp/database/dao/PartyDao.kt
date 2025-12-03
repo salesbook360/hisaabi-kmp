@@ -2,10 +2,14 @@ package com.hisaabi.hisaabi_kmp.database.dao
 
 import androidx.room.*
 import com.hisaabi.hisaabi_kmp.database.entity.PartyEntity
+import com.hisaabi.hisaabi_kmp.sync.domain.model.SyncStatus
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface PartyDao {
+    companion object {
+        private const val SYNCED_STATUS = SyncStatus.SYNCED_VALUE
+    }
     @Query("SELECT * FROM Party")
     fun getAllParties(): Flow<List<PartyEntity>>
     
@@ -21,7 +25,7 @@ interface PartyDao {
     @Query("SELECT * FROM Party WHERE business_slug = :businessSlug")
     fun getPartiesByBusiness(businessSlug: String): Flow<List<PartyEntity>>
     
-    @Query("SELECT * FROM Party WHERE sync_status != 2 AND business_slug = :businessSlug")
+    @Query("SELECT * FROM Party WHERE sync_status != $SYNCED_STATUS AND business_slug = :businessSlug")
     suspend fun getUnsyncedParties(businessSlug: String): List<PartyEntity>
     
     @Insert(onConflict = OnConflictStrategy.REPLACE)

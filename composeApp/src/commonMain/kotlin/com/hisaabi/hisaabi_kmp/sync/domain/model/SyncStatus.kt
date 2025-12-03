@@ -9,6 +9,9 @@ enum class SyncStatus(val value: Int) {
     UPDATED(3);     // Updated locally, needs to be synced again
     
     companion object {
+        // Compile-time constant for use in Room queries
+        const val SYNCED_VALUE = 2
+        
         fun fromValue(value: Int): SyncStatus {
             return values().find { it.value == value } ?: NONE
         }

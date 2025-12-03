@@ -2,10 +2,14 @@ package com.hisaabi.hisaabi_kmp.database.dao
 
 import androidx.room.*
 import com.hisaabi.hisaabi_kmp.database.entity.QuantityUnitEntity
+import com.hisaabi.hisaabi_kmp.sync.domain.model.SyncStatus
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface QuantityUnitDao {
+    companion object {
+        private const val SYNCED_STATUS = SyncStatus.SYNCED_VALUE
+    }
     @Query("SELECT * FROM QuantityUnit ORDER BY sort_order ASC")
     fun getAllUnits(): Flow<List<QuantityUnitEntity>>
     
@@ -21,7 +25,7 @@ interface QuantityUnitDao {
     @Query("SELECT * FROM QuantityUnit WHERE business_slug = :businessSlug")
     fun getUnitsByBusiness(businessSlug: String): Flow<List<QuantityUnitEntity>>
     
-    @Query("SELECT * FROM QuantityUnit WHERE business_slug = :businessSlug and sync_status != 0")
+    @Query("SELECT * FROM QuantityUnit WHERE business_slug = :businessSlug AND sync_status != $SYNCED_STATUS")
     suspend fun getUnsyncedUnits(businessSlug: String): List<QuantityUnitEntity>
     
     @Insert(onConflict = OnConflictStrategy.REPLACE)

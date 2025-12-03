@@ -2,10 +2,14 @@ package com.hisaabi.hisaabi_kmp.database.dao
 
 import androidx.room.*
 import com.hisaabi.hisaabi_kmp.database.entity.WareHouseEntity
+import com.hisaabi.hisaabi_kmp.sync.domain.model.SyncStatus
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface WareHouseDao {
+    companion object {
+        private const val SYNCED_STATUS = SyncStatus.SYNCED_VALUE
+    }
     @Query("SELECT * FROM WareHouse")
     fun getAllWareHouses(): Flow<List<WareHouseEntity>>
     
@@ -21,7 +25,7 @@ interface WareHouseDao {
     @Query("SELECT * FROM WareHouse WHERE business_slug = :businessSlug")
     fun getWareHousesByBusiness(businessSlug: String): Flow<List<WareHouseEntity>>
     
-    @Query("SELECT * FROM WareHouse WHERE business_slug = :businessSlug and sync_status != 0")
+    @Query("SELECT * FROM WareHouse WHERE business_slug = :businessSlug AND sync_status != $SYNCED_STATUS")
     suspend fun getUnsyncedWareHouses(businessSlug: String): List<WareHouseEntity>
     
     @Insert(onConflict = OnConflictStrategy.REPLACE)

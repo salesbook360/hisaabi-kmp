@@ -2,10 +2,14 @@ package com.hisaabi.hisaabi_kmp.database.dao
 
 import androidx.room.*
 import com.hisaabi.hisaabi_kmp.database.entity.ProductQuantitiesEntity
+import com.hisaabi.hisaabi_kmp.sync.domain.model.SyncStatus
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ProductQuantitiesDao {
+    companion object {
+        private const val SYNCED_STATUS = SyncStatus.SYNCED_VALUE
+    }
     @Query("SELECT * FROM ProductQuantities")
     fun getAllProductQuantities(): Flow<List<ProductQuantitiesEntity>>
     
@@ -24,7 +28,7 @@ interface ProductQuantitiesDao {
         warehouseSlug: String
     ): ProductQuantitiesEntity?
     
-    @Query("SELECT * FROM ProductQuantities WHERE sync_status != 2 AND business_slug = :businessSlug")
+    @Query("SELECT * FROM ProductQuantities WHERE sync_status != $SYNCED_STATUS AND business_slug = :businessSlug")
     suspend fun getUnsyncedQuantities(businessSlug: String): List<ProductQuantitiesEntity>
     
     @Query("SELECT * FROM ProductQuantities WHERE current_quantity <= minimum_quantity")

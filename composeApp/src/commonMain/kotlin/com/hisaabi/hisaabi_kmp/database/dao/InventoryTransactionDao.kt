@@ -2,10 +2,14 @@ package com.hisaabi.hisaabi_kmp.database.dao
 
 import androidx.room.*
 import com.hisaabi.hisaabi_kmp.database.entity.InventoryTransactionEntity
+import com.hisaabi.hisaabi_kmp.sync.domain.model.SyncStatus
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface InventoryTransactionDao {
+    companion object {
+        private const val SYNCED_STATUS = SyncStatus.SYNCED_VALUE
+    }
     @Query("SELECT * FROM InventoryTransaction WHERE parent_slug IS NULL OR parent_slug = '' ORDER BY timestamp DESC")
     fun getAllTransactions(): Flow<List<InventoryTransactionEntity>>
     
@@ -30,7 +34,7 @@ interface InventoryTransactionDao {
     @Query("SELECT * FROM InventoryTransaction WHERE business_slug = :businessSlug AND (parent_slug IS NULL OR parent_slug = '') ORDER BY timestamp DESC")
     fun getTransactionsByBusiness(businessSlug: String): Flow<List<InventoryTransactionEntity>>
     
-    @Query("SELECT * FROM InventoryTransaction WHERE business_slug = :businessSlug and sync_status != 0")
+    @Query("SELECT * FROM InventoryTransaction WHERE business_slug = :businessSlug AND sync_status != $SYNCED_STATUS")
     suspend fun getUnsyncedTransactions(businessSlug:String): List<InventoryTransactionEntity>
     
     @Insert(onConflict = OnConflictStrategy.REPLACE)

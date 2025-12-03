@@ -2,10 +2,14 @@ package com.hisaabi.hisaabi_kmp.database.dao
 
 import androidx.room.*
 import com.hisaabi.hisaabi_kmp.database.entity.PaymentMethodEntity
+import com.hisaabi.hisaabi_kmp.sync.domain.model.SyncStatus
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface PaymentMethodDao {
+    companion object {
+        private const val SYNCED_STATUS = SyncStatus.SYNCED_VALUE
+    }
     @Query("SELECT * FROM PaymentMethod")
     fun getAllPaymentMethods(): Flow<List<PaymentMethodEntity>>
     
@@ -21,7 +25,7 @@ interface PaymentMethodDao {
     @Query("SELECT * FROM PaymentMethod WHERE business_slug = :businessSlug")
     fun getPaymentMethodsByBusiness(businessSlug: String): Flow<List<PaymentMethodEntity>>
     
-    @Query("SELECT * FROM PaymentMethod WHERE sync_status != 2 AND business_slug = :businessSlug")
+    @Query("SELECT * FROM PaymentMethod WHERE sync_status != $SYNCED_STATUS AND business_slug = :businessSlug")
     suspend fun getUnsyncedPaymentMethods(businessSlug: String): List<PaymentMethodEntity>
     
     @Insert(onConflict = OnConflictStrategy.REPLACE)

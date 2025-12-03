@@ -2,10 +2,14 @@ package com.hisaabi.hisaabi_kmp.database.dao
 
 import androidx.room.*
 import com.hisaabi.hisaabi_kmp.database.entity.RecipeIngredientsEntity
+import com.hisaabi.hisaabi_kmp.sync.domain.model.SyncStatus
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface RecipeIngredientsDao {
+    companion object {
+        private const val SYNCED_STATUS = SyncStatus.SYNCED_VALUE
+    }
     @Query("SELECT * FROM RecipeIngredients")
     fun getAllRecipeIngredients(): Flow<List<RecipeIngredientsEntity>>
     
@@ -21,7 +25,7 @@ interface RecipeIngredientsDao {
     @Query("SELECT * FROM RecipeIngredients WHERE slug = :slug")
     suspend fun getRecipeIngredientBySlug(slug: String): RecipeIngredientsEntity?
     
-    @Query("SELECT * FROM RecipeIngredients WHERE sync_status != 2 AND business_slug = :businessSlug")
+    @Query("SELECT * FROM RecipeIngredients WHERE sync_status != $SYNCED_STATUS AND business_slug = :businessSlug")
     suspend fun getUnsyncedIngredients(businessSlug: String): List<RecipeIngredientsEntity>
     
     @Insert(onConflict = OnConflictStrategy.REPLACE)

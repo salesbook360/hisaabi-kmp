@@ -2,10 +2,14 @@ package com.hisaabi.hisaabi_kmp.database.dao
 
 import androidx.room.*
 import com.hisaabi.hisaabi_kmp.database.entity.CategoryEntity
+import com.hisaabi.hisaabi_kmp.sync.domain.model.SyncStatus
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface CategoryDao {
+    companion object {
+        private const val SYNCED_STATUS = SyncStatus.SYNCED_VALUE
+    }
     @Query("SELECT * FROM Category")
     fun getAllCategories(): Flow<List<CategoryEntity>>
     
@@ -21,7 +25,7 @@ interface CategoryDao {
     @Query("SELECT * FROM Category WHERE business_slug = :businessSlug")
     fun getCategoriesByBusiness(businessSlug: String): Flow<List<CategoryEntity>>
     
-    @Query("SELECT * FROM Category WHERE sync_status != 2 AND business_slug = :businessSlug")
+    @Query("SELECT * FROM Category WHERE sync_status != $SYNCED_STATUS AND business_slug = :businessSlug")
     suspend fun getUnsyncedCategories(businessSlug: String): List<CategoryEntity>
     
     @Insert(onConflict = OnConflictStrategy.REPLACE)

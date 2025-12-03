@@ -2,10 +2,14 @@ package com.hisaabi.hisaabi_kmp.database.dao
 
 import androidx.room.*
 import com.hisaabi.hisaabi_kmp.database.entity.TransactionDetailEntity
+import com.hisaabi.hisaabi_kmp.sync.domain.model.SyncStatus
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TransactionDetailDao {
+    companion object {
+        private const val SYNCED_STATUS = SyncStatus.SYNCED_VALUE
+    }
     @Query("SELECT * FROM TransactionDetail")
     fun getAllTransactionDetails(): Flow<List<TransactionDetailEntity>>
     
@@ -24,7 +28,7 @@ interface TransactionDetailDao {
     @Query("SELECT * FROM TransactionDetail WHERE product_slug = :productSlug")
     fun getDetailsByProduct(productSlug: String): Flow<List<TransactionDetailEntity>>
     
-    @Query("SELECT * FROM TransactionDetail WHERE sync_status != 2 AND business_slug = :businessSlug")
+    @Query("SELECT * FROM TransactionDetail WHERE sync_status != $SYNCED_STATUS AND business_slug = :businessSlug")
     suspend fun getUnsyncedDetails(businessSlug: String): List<TransactionDetailEntity>
     
     @Insert(onConflict = OnConflictStrategy.REPLACE)

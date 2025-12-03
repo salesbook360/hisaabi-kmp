@@ -2,10 +2,14 @@ package com.hisaabi.hisaabi_kmp.database.dao
 
 import androidx.room.*
 import com.hisaabi.hisaabi_kmp.database.entity.DeletedRecordsEntity
+import com.hisaabi.hisaabi_kmp.sync.domain.model.SyncStatus
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface DeletedRecordsDao {
+    companion object {
+        private const val SYNCED_STATUS = SyncStatus.SYNCED_VALUE
+    }
     @Query("SELECT * FROM DeletedRecords")
     fun getAllDeletedRecords(): Flow<List<DeletedRecordsEntity>>
     
@@ -15,7 +19,7 @@ interface DeletedRecordsDao {
     @Query("SELECT * FROM DeletedRecords WHERE record_type = :recordType")
     fun getDeletedRecordsByType(recordType: String): Flow<List<DeletedRecordsEntity>>
     
-    @Query("SELECT * FROM DeletedRecords WHERE sync_status != 2 AND business_slug = :businessSlug")
+    @Query("SELECT * FROM DeletedRecords WHERE sync_status != $SYNCED_STATUS AND business_slug = :businessSlug")
     suspend fun getUnsyncedDeletedRecords(businessSlug: String): List<DeletedRecordsEntity>
     
     @Insert(onConflict = OnConflictStrategy.REPLACE)
