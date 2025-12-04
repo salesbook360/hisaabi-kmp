@@ -213,6 +213,8 @@ fun App() {
             var selectedCategoryForParty by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.database.entity.CategoryEntity?>(null) }
             var selectedAreaForParty by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.database.entity.CategoryEntity?>(null) }
             var returnToAddParty by remember { mutableStateOf(false) }
+            var selectedCategoryForProduct by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.categories.domain.model.Category?>(null) }
+            var returnToAddProduct by remember { mutableStateOf(false) }
             
             // Products navigation state
             var addProductType by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.products.domain.model.ProductType?>(null) }
@@ -740,8 +742,13 @@ fun App() {
                         viewModel = categoriesViewModel,
                         categoryType = categoryType, // Optional - will default to CUSTOMER_CATEGORY if null
                         onCategorySelected = { category ->
-                            // Only handle category selection if we came from AddParty flow
-                            if (returnToAddParty && categoryType != null) {
+                            // Handle category selection for AddProduct flow
+                            if (returnToAddProduct && categoryType == com.hisaabi.hisaabi_kmp.categories.domain.model.CategoryType.PRODUCTS) {
+                                selectedCategoryForProduct = category
+                                currentScreen = AppScreen.ADD_PRODUCT
+                            }
+                            // Handle category selection for AddParty flow
+                            else if (returnToAddParty && categoryType != null) {
                                 val type = categoryType
                                 // Store selected category based on type
                                 if (type == com.hisaabi.hisaabi_kmp.categories.domain.model.CategoryType.CUSTOMER_CATEGORY) {
@@ -779,7 +786,7 @@ fun App() {
                                 }
                                 currentScreen = AppScreen.ADD_PARTY
                             }
-                            // If not from AddParty flow, category selection is just for viewing
+                            // If not from AddParty or AddProduct flow, category selection is just for viewing
                         },
                         onAddCategoryClick = {
                             // Get current selected category type from viewModel state
@@ -790,7 +797,9 @@ fun App() {
                             currentScreen = AppScreen.ADD_CATEGORY
                         },
                         onNavigateBack = {
-                            if (returnToAddParty) {
+                            if (returnToAddProduct) {
+                                currentScreen = AppScreen.ADD_PRODUCT
+                            } else if (returnToAddParty) {
                                 currentScreen = AppScreen.ADD_PARTY
                             } else {
                                 navigateBack()
@@ -955,6 +964,11 @@ fun App() {
                                 selectingWarehouseForTransaction = true
                                 returnToScreenAfterPartySelection = AppScreen.ADD_PRODUCT
                                 currentScreen = AppScreen.WAREHOUSES
+                            },
+                            onNavigateToCategories = {
+                                categoryType = com.hisaabi.hisaabi_kmp.categories.domain.model.CategoryType.PRODUCTS
+                                returnToAddProduct = true
+                                currentScreen = AppScreen.CATEGORIES
                             }
                         )
                         
@@ -967,6 +981,18 @@ fun App() {
                                     selectingWarehouseForTransaction = false
                                     returnToScreenAfterPartySelection = null
                                     currentScreen = AppScreen.ADD_PRODUCT
+                                }
+                            }
+                        }
+                        
+                        // Handle category selection for Add Product screen
+                        LaunchedEffect(selectedCategoryForProduct) {
+                            selectedCategoryForProduct?.let { category ->
+                                if (returnToAddProduct) {
+                                    addProductViewModel.setSelectedCategory(category)
+                                    selectedCategoryForProduct = null
+                                    returnToAddProduct = false
+                                    categoryType = null
                                 }
                             }
                         }

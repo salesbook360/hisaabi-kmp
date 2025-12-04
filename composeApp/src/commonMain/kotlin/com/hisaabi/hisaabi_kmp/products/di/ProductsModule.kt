@@ -38,7 +38,7 @@ val productsModule = module {
 
     // ViewModels
     viewModel { ProductsViewModel(get(), get(), get(), get(), get(), get()) }
-    viewModel { AddProductViewModel(get(), get(), get(), get()) }
+    viewModel { AddProductViewModel(get(), get(), get(), get(), get()) }
     singleOf(::ManageRecipeIngredientsViewModel)
 }
 

@@ -14,6 +14,8 @@ interface CategoriesRepository {
         businessSlug: String
     ): List<Category>
     
+    suspend fun getCategoryBySlug(slug: String): Category?
+    
     suspend fun addCategory(
         category: Category,
         businessSlug: String,
@@ -36,6 +38,11 @@ class CategoriesRepositoryImpl(
     ): List<Category> {
         val entities = categoryDao.getCategoriesByTypeAndBusiness(categoryType.type, businessSlug)
         return entities.map { it.toDomainModel() }
+    }
+    
+    override suspend fun getCategoryBySlug(slug: String): Category? {
+        val entity = categoryDao.getCategoryBySlug(slug)
+        return entity?.toDomainModel()
     }
     
     override suspend fun addCategory(

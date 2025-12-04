@@ -15,6 +15,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.Alignment
+import com.hisaabi.hisaabi_kmp.categories.domain.model.Category
 import com.hisaabi.hisaabi_kmp.products.domain.model.Product
 import com.hisaabi.hisaabi_kmp.products.domain.model.ProductType
 import com.hisaabi.hisaabi_kmp.products.presentation.viewmodel.AddProductViewModel
@@ -29,7 +30,8 @@ fun AddProductScreen(
     formSessionKey: Int,
     onNavigateBack: () -> Unit,
     onNavigateToIngredients: ((String) -> Unit)? = null,  // Recipe slug
-    onNavigateToWarehouses: () -> Unit = {}
+    onNavigateToWarehouses: () -> Unit = {},
+    onNavigateToCategories: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -93,6 +95,7 @@ fun AddProductScreen(
                             purchasePrice = uiState.purchasePrice.toDoubleOrNull() ?: 0.0,
                             taxPercentage = uiState.taxPercentage.toDoubleOrNull() ?: 0.0,
                             discountPercentage = uiState.discountPercentage.toDoubleOrNull() ?: 0.0,
+                            categorySlug = uiState.selectedCategory?.slug,
                             manufacturer = uiState.manufacturer.takeIf { it.isNotBlank() },
                             warehouseSlug = uiState.selectedWarehouse?.slug,
                             openingQuantity = uiState.openingQuantity.toDoubleOrNull() ?: 0.0,
@@ -295,6 +298,12 @@ fun AddProductScreen(
                 Spacer(modifier = Modifier.height(16.dp))
             }
             
+            // Category Selection
+            CategorySelectionCard(
+                selectedCategory = uiState.selectedCategory,
+                onSelectCategory = onNavigateToCategories
+            )
+            
             Spacer(modifier = Modifier.height(24.dp))
             
             // Quantity Information Section
@@ -452,6 +461,54 @@ private fun WarehouseSelectionCard(
             Icon(
                 Icons.Default.ChevronRight,
                 contentDescription = "Change Warehouse",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun CategorySelectionCard(
+    selectedCategory: Category?,
+    onSelectCategory: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onSelectCategory),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Default.Category,
+                contentDescription = null,
+                modifier = Modifier.size(32.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "Category",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    selectedCategory?.title ?: "Select Category",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+            Icon(
+                Icons.Default.ChevronRight,
+                contentDescription = "Change Category",
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }

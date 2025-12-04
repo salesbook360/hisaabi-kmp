@@ -2,6 +2,9 @@ package com.hisaabi.hisaabi_kmp.products.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hisaabi.hisaabi_kmp.categories.data.repository.CategoriesRepository
+import com.hisaabi.hisaabi_kmp.categories.domain.model.Category
+import com.hisaabi.hisaabi_kmp.categories.domain.model.CategoryType
 import com.hisaabi.hisaabi_kmp.core.session.AppSessionManager
 import com.hisaabi.hisaabi_kmp.products.data.repository.ProductsRepository
 import com.hisaabi.hisaabi_kmp.products.domain.model.ProductType
@@ -19,7 +22,8 @@ class AddProductViewModel(
     private val addProductUseCase: AddProductUseCase,
     private val updateProductUseCase: UpdateProductUseCase,
     private val sessionManager: AppSessionManager,
-    private val productsRepository: ProductsRepository
+    private val productsRepository: ProductsRepository,
+    private val categoriesRepository: CategoriesRepository
 ) : ViewModel() {
     
     private var businessSlug: String? = null
@@ -76,6 +80,10 @@ class AddProductViewModel(
         _uiState.value = _uiState.value.copy(minimumQuantity = quantity)
     }
     
+    fun setSelectedCategory(category: Category?) {
+        _uiState.value = _uiState.value.copy(selectedCategory = category)
+    }
+    
     fun setProductToEdit(product: com.hisaabi.hisaabi_kmp.products.domain.model.Product?) {
         if (product == null) {
             _uiState.value = _uiState.value.copy(productToEdit = null)
@@ -96,8 +104,26 @@ class AddProductViewModel(
             discountPercentage = "%.2f".format(product.discountPercentage),
             manufacturer = product.manufacturer ?: ""
         )
+        // Load category if product has one
+        if (product.categorySlug != null) {
+            loadCategory(product.categorySlug)
+        } else {
+            _uiState.value = _uiState.value.copy(selectedCategory = null)
+        }
         if (_uiState.value.selectedWarehouse != null) {
             loadProductQuantities(product.slug, _uiState.value.selectedWarehouse!!.slug ?: "")
+        }
+    }
+    
+    private fun loadCategory(categorySlug: String) {
+        viewModelScope.launch {
+            try {
+                val category = categoriesRepository.getCategoryBySlug(categorySlug)
+                _uiState.value = _uiState.value.copy(selectedCategory = category)
+            } catch (e: Exception) {
+                // Silently handle errors - category might not exist
+                _uiState.value = _uiState.value.copy(selectedCategory = null)
+            }
         }
     }
 
@@ -285,6 +311,7 @@ class AddProductViewModel(
                 purchasePrice = purchasePrice,
                 taxPercentage = taxPercentage,
                 discountPercentage = discountPercentage,
+                categorySlug = categorySlug,
                 manufacturer = manufacturer,
                 warehouseSlug = warehouseSlug,
                 openingQuantity = openingQuantity,
@@ -317,6 +344,7 @@ class AddProductViewModel(
         purchasePrice: Double = 0.0,
         taxPercentage: Double = 0.0,
         discountPercentage: Double = 0.0,
+        categorySlug: String? = null,
         manufacturer: String? = null,
         warehouseSlug: String? = null,
         openingQuantity: Double = 0.0,
@@ -343,6 +371,7 @@ class AddProductViewModel(
                 purchasePrice = purchasePrice,
                 taxPercentage = taxPercentage,
                 discountPercentage = discountPercentage,
+                categorySlug = categorySlug,
                 manufacturer = manufacturer,
                 updatedAt = getCurrentTimestamp()
             )
@@ -390,6 +419,7 @@ data class AddProductUiState(
     val isSuccess: Boolean = false,
     val error: String? = null,
     val selectedWarehouse: Warehouse? = null,
+    val selectedCategory: Category? = null,
     val openingQuantity: String = "",
     val minimumQuantity: String = "",
     val productToEdit: com.hisaabi.hisaabi_kmp.products.domain.model.Product? = null,
