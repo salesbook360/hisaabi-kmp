@@ -477,24 +477,29 @@ class SyncRepositoryImpl(
     
     // Recipe Ingredients
     override suspend fun syncRecipeIngredientsUp(): Result<Unit> = runCatching {
-//        val businessSlug = sessionManager.getBusinessSlug() ?: return@runCatching
-//        val unsynced = recipeIngredientsDao.getUnsyncedRecipeIngredients(businessSlug)
-//
-//        if (unsynced.isEmpty()) return@runCatching
-//
-//        updateProgress("Recipe Ingredients", 0, unsynced.size, SyncType.SYNC_UP)
-//
-//        val dtos = unsynced.map { it.toDto() }
-//        val response = remoteDataSource.syncRecipeIngredientsUp(dtos)
-//
-//        if (response.isSuccess()) {
-//            response.data?.list?.forEach { dto ->
-//                val entity = dto.toEntity().copy(sync_status = SyncStatus.SYNCED.value)
-//                recipeIngredientsDao.updateRecipeIngredient(entity)
-//            }
-//        }
+        val businessSlug = sessionManager.getBusinessSlug() ?: return@runCatching
+        val unsynced = recipeIngredientsDao.getUnsyncedIngredients(businessSlug)
         
-       // updateProgress("Recipe Ingredients", unsynced.size, unsynced.size, SyncType.SYNC_UP)
+        if (unsynced.isEmpty()) return@runCatching
+        
+        updateProgress("Recipe Ingredients", 0, unsynced.size, SyncType.SYNC_UP)
+        
+        val dtos = unsynced.map { it.toDto() }
+        
+        // Double-check before API call
+        if (dtos.isEmpty()) return@runCatching
+        
+        val response = remoteDataSource.syncRecipeIngredientsUp(dtos)
+        
+        if (response.isSuccess()) {
+            // Mark original entities as synced
+            unsynced.forEach { entity ->
+                val updated = entity.copy(sync_status = SyncStatus.SYNCED.value)
+                recipeIngredientsDao.updateRecipeIngredient(updated)
+            }
+        }
+        
+        updateProgress("Recipe Ingredients", unsynced.size, unsynced.size, SyncType.SYNC_UP)
     }
     
     override suspend fun syncRecipeIngredientsDown(lastSyncTime: String): Result<Unit> = runCatching {

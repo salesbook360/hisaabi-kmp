@@ -269,12 +269,14 @@ data class RecipeIngredientsDto(
     val recipeSlug: String? = null,
     @SerialName("ingredientSlug")
     val ingredientSlug: String? = null,
-    val quantity: String? = null,
+    val quantity: Double? = null,
     @SerialName("quantityUnitSlug")
     val quantityUnitSlug: String? = null,
     val slug: String? = null,
     val businessSlug: String? = null,
     val createdBy: String? = null,
+    @SerialName("syncStatus")
+    val syncStatus: Int = 0,
     val createdAt: String? = null,
     val updatedAt: String? = null
 )
