@@ -306,25 +306,26 @@ fun AddProductScreen(
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            // Quantity Information Section
-            Text(
-                text = "Quantity Information",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            // Warehouse Selection
-            WarehouseSelectionCard(
-                selectedWarehouse = uiState.selectedWarehouse,
-                onSelectWarehouse = onNavigateToWarehouses
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Opening Quantity (only shown when warehouse is selected)
-            if (uiState.selectedWarehouse != null) {
+            // Quantity Information Section (Hidden for Services)
+            if (productType != ProductType.SERVICE) {
+                Text(
+                    text = "Quantity Information",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // Warehouse Selection
+                WarehouseSelectionCard(
+                    selectedWarehouse = uiState.selectedWarehouse,
+                    onSelectWarehouse = onNavigateToWarehouses
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Opening Quantity (only shown when warehouse is selected)
+                if (uiState.selectedWarehouse != null) {
                 OutlinedTextField(
                     value = uiState.openingQuantity,
                     onValueChange = { viewModel.setOpeningQuantity(it) },
@@ -353,6 +354,7 @@ fun AddProductScreen(
                 )
                 
                 Spacer(modifier = Modifier.height(16.dp))
+                }
             }
             
             // Recipe Note and Ingredients Button
