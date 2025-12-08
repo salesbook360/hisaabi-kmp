@@ -37,6 +37,7 @@ val authModule = module {
                     ignoreUnknownKeys = true
                     coerceInputValues = true
                     encodeDefaults = true // Ensure required fields like personStatus are always sent
+                    explicitNulls = false // Exclude null values from the payload
                 })
             }
             
