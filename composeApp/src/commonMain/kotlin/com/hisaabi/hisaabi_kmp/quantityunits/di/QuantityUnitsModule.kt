@@ -30,8 +30,8 @@ val quantityUnitsModule = module {
         )
     }
     
-    // ViewModels
-    viewModel { QuantityUnitsViewModel(get()) }
-    viewModel { AddQuantityUnitViewModel(get()) }
+    // ViewModels - using AppSessionManager for getting active business and user context
+    viewModel { QuantityUnitsViewModel(useCases = get(), sessionManager = get()) }
+    viewModel { AddQuantityUnitViewModel(useCases = get(), sessionManager = get()) }
 }
 

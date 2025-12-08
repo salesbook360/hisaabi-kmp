@@ -22,11 +22,14 @@ fun QuantityUnitsScreen(
     viewModel: QuantityUnitsViewModel,
     onUnitClick: (QuantityUnit) -> Unit = {},
     onAddUnitClick: () -> Unit = {},
+    onAddUnitTypeClick: () -> Unit = {},
+    onAddChildUnitClick: (QuantityUnit) -> Unit = {}, // Pass selected parent unit
     onNavigateBack: () -> Unit = {},
     refreshTrigger: Int = 0
 ) {
     val state by viewModel.state.collectAsState()
     var showDeleteDialog by remember { mutableStateOf<QuantityUnit?>(null) }
+    var unitTypeDropdownExpanded by remember { mutableStateOf(false) }
     
     LaunchedEffect(refreshTrigger) {
         viewModel.loadUnits()
@@ -52,11 +55,14 @@ fun QuantityUnitsScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = onAddUnitClick,
-                containerColor = MaterialTheme.colorScheme.primary
-            ) {
-                Icon(Icons.Default.Add, "Add Unit")
+            // Only show FAB to add child unit if a parent unit type is selected
+            if (state.selectedParentUnit != null) {
+                FloatingActionButton(
+                    onClick = { state.selectedParentUnit?.let { onAddChildUnitClick(it) } },
+                    containerColor = MaterialTheme.colorScheme.primary
+                ) {
+                    Icon(Icons.Default.Add, "Add Unit")
+                }
             }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -66,21 +72,92 @@ fun QuantityUnitsScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            // Unit Type Selector (Dropdown)
+            UnitTypeSelector(
+                parentUnitTypes = state.parentUnitTypes,
+                selectedParentUnit = state.selectedParentUnit,
+                expanded = unitTypeDropdownExpanded,
+                onExpandedChange = { unitTypeDropdownExpanded = it },
+                onParentUnitSelected = { 
+                    viewModel.selectParentUnit(it)
+                    unitTypeDropdownExpanded = false
+                },
+                onAddNewUnitType = {
+                    unitTypeDropdownExpanded = false
+                    onAddUnitTypeClick()
+                },
+                isLoading = state.isLoading
+            )
+            
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            
+            // Content based on state
             when {
-                state.isLoading && state.units.isEmpty() -> {
+                state.isLoading && state.parentUnitTypes.isEmpty() -> {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator()
                     }
                 }
                 
-                state.units.isEmpty() -> {
+                state.parentUnitTypes.isEmpty() -> {
+                    // No unit types yet - prompt to create one
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(Icons.Default.Category, null, Modifier.size(64.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Spacer(Modifier.height(16.dp))
+                            Text("No unit types found", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                "Create unit types like Weight, Quantity, Liquid, etc.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(Modifier.height(16.dp))
+                            Button(onClick = onAddUnitTypeClick) {
+                                Icon(Icons.Default.Add, null)
+                                Spacer(Modifier.width(8.dp))
+                                Text("Add Unit Type")
+                            }
+                        }
+                    }
+                }
+                
+                state.selectedParentUnit == null -> {
+                    // Parent types exist but none selected - prompt to select
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(
+                            "Please select a unit type from above",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                
+                state.isLoadingChildUnits -> {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                }
+                
+                state.childUnits.isEmpty() -> {
+                    // Unit type selected but no child units
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(Icons.Default.Scale, null, Modifier.size(64.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             Spacer(Modifier.height(16.dp))
-                            Text("No quantity units found", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(
+                                "No units in ${state.selectedParentUnit?.title ?: "this category"}",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                             Spacer(Modifier.height(8.dp))
-                            Button(onClick = onAddUnitClick) {
+                            Text(
+                                "Add units like KG, MG, Ton for Weight",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(Modifier.height(16.dp))
+                            Button(onClick = { state.selectedParentUnit?.let { onAddChildUnitClick(it) } }) {
                                 Icon(Icons.Default.Add, null)
                                 Spacer(Modifier.width(8.dp))
                                 Text("Add Unit")
@@ -90,9 +167,25 @@ fun QuantityUnitsScreen(
                 }
                 
                 else -> {
+                    // Show child units header
+                    Text(
+                        "${state.selectedParentUnit?.title ?: ""} Units",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                    )
+                    
+                    // Get base unit for conversion display
+                    val baseUnit = viewModel.getBaseUnitForSelectedParent()
+                    
                     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp)) {
-                        items(state.units, key = { it.id }) { unit ->
-                            UnitItem(unit, { onUnitClick(unit) }, { showDeleteDialog = unit })
+                        items(state.childUnits, key = { it.id }) { unit ->
+                            UnitItem(
+                                unit = unit,
+                                baseUnit = baseUnit,
+                                onClick = { onUnitClick(unit) },
+                                onDeleteClick = { showDeleteDialog = unit }
+                            )
                             Spacer(Modifier.height(8.dp))
                         }
                     }
@@ -102,10 +195,16 @@ fun QuantityUnitsScreen(
     }
     
     showDeleteDialog?.let { unit ->
+        val deleteMessage = if (unit.isParentUnitType) {
+            "Are you sure you want to delete '${unit.title}' unit type? This will also affect all units under this type."
+        } else {
+            "Are you sure you want to delete '${unit.title}'?"
+        }
+        
         AlertDialog(
             onDismissRequest = { showDeleteDialog = null },
-            title = { Text("Delete Unit") },
-            text = { Text("Are you sure you want to delete '${unit.title}'?") },
+            title = { Text(if (unit.isParentUnitType) "Delete Unit Type" else "Delete Unit") },
+            text = { Text(deleteMessage) },
             confirmButton = {
                 TextButton(onClick = { viewModel.deleteUnit(unit); showDeleteDialog = null }) {
                     Text("Delete", color = MaterialTheme.colorScheme.error)
@@ -118,21 +217,154 @@ fun QuantityUnitsScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun UnitItem(unit: QuantityUnit, onClick: () -> Unit, onDeleteClick: () -> Unit) {
+private fun UnitTypeSelector(
+    parentUnitTypes: List<QuantityUnit>,
+    selectedParentUnit: QuantityUnit?,
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
+    onParentUnitSelected: (QuantityUnit) -> Unit,
+    onAddNewUnitType: () -> Unit,
+    isLoading: Boolean
+) {
+    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+        Text(
+            "Unit Type",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 4.dp)
+        )
+        
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { if (!isLoading) onExpandedChange(it) }
+        ) {
+            OutlinedTextField(
+                value = selectedParentUnit?.title ?: "Select Unit Type",
+                onValueChange = {},
+                readOnly = true,
+                trailingIcon = {
+                    if (isLoading) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                    } else {
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                    }
+                },
+                leadingIcon = {
+                    Icon(Icons.Default.Category, "Unit Type")
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor(),
+                colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
+            )
+            
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { onExpandedChange(false) }
+            ) {
+                // Existing parent unit types
+                parentUnitTypes.forEach { unitType ->
+                    DropdownMenuItem(
+                        text = { 
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    Icons.Default.Category, 
+                                    null,
+                                    modifier = Modifier.size(20.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text(unitType.title)
+                            }
+                        },
+                        onClick = { onParentUnitSelected(unitType) }
+                    )
+                }
+                
+                // Divider before "Add New"
+                if (parentUnitTypes.isNotEmpty()) {
+                    HorizontalDivider()
+                }
+                
+                // Add new unit type option
+                DropdownMenuItem(
+                    text = { 
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.Add, 
+                                null,
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                "Add New Unit Type",
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    },
+                    onClick = onAddNewUnitType
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun UnitItem(
+    unit: QuantityUnit,
+    baseUnit: QuantityUnit?,
+    onClick: () -> Unit,
+    onDeleteClick: () -> Unit
+) {
     Card(Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(2.dp)) {
-        Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.Scale, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(40.dp))
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Default.Scale,
+                null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(40.dp)
+            )
             Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f)) {
-                Text(unit.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text(
+                    unit.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
                 Spacer(Modifier.height(4.dp))
-                Text("Conversion Factor: ${unit.conversionFactor}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                if (unit.sortOrder > 0) {
-                    Text("Sort Order: ${unit.sortOrder}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                
+                // Show conversion factor with base unit
+                val conversionText = if (baseUnit != null && unit.slug != baseUnit.slug && unit.conversionFactor != 1.0) {
+                    "1 ${unit.title} = ${unit.conversionFactor} ${baseUnit.title}"
+                } else if (baseUnit?.slug == unit.slug) {
+                    "Base Unit"
+                } else {
+                    "Conversion Factor: ${unit.conversionFactor}"
                 }
+                
+                Text(
+                    conversionText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                
                 if (!unit.isActive) {
-                    Text("Inactive", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        "Inactive",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
                 }
             }
             IconButton(onClick = onDeleteClick) {

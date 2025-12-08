@@ -249,6 +249,8 @@ fun App() {
             // Quantity Units navigation state
             var quantityUnitsRefreshTrigger by remember { mutableStateOf(0) }
             var selectedUnitForEdit by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.quantityunits.domain.model.QuantityUnit?>(null) }
+            var isAddingParentUnitType by remember { mutableStateOf(false) }
+            var selectedParentUnitForChildUnit by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.quantityunits.domain.model.QuantityUnit?>(null) }
             
             // Transaction Settings navigation state
             // No specific state needed as it's a preference screen
@@ -1141,10 +1143,29 @@ fun App() {
                         viewModel = koinInject(),
                         onUnitClick = { unit ->
                             selectedUnitForEdit = unit
+                            isAddingParentUnitType = unit.isParentUnitType
+                            selectedParentUnitForChildUnit = null
                             currentScreen = AppScreen.ADD_QUANTITY_UNIT
                         },
                         onAddUnitClick = {
+                            // Legacy - keep for backward compatibility
                             selectedUnitForEdit = null
+                            isAddingParentUnitType = false
+                            selectedParentUnitForChildUnit = null
+                            currentScreen = AppScreen.ADD_QUANTITY_UNIT
+                        },
+                        onAddUnitTypeClick = {
+                            // Add new parent unit type (e.g., Weight, Quantity, Liquid)
+                            selectedUnitForEdit = null
+                            isAddingParentUnitType = true
+                            selectedParentUnitForChildUnit = null
+                            currentScreen = AppScreen.ADD_QUANTITY_UNIT
+                        },
+                        onAddChildUnitClick = { parentUnit ->
+                            // Add new child unit under selected parent type
+                            selectedUnitForEdit = null
+                            isAddingParentUnitType = false
+                            selectedParentUnitForChildUnit = parentUnit
                             currentScreen = AppScreen.ADD_QUANTITY_UNIT
                         },
                         onNavigateBack = { navigateBack() },
@@ -1156,6 +1177,8 @@ fun App() {
                     com.hisaabi.hisaabi_kmp.quantityunits.presentation.ui.AddQuantityUnitScreen(
                         viewModel = koinInject(),
                         unitToEdit = selectedUnitForEdit,
+                        isAddingParentUnitType = isAddingParentUnitType,
+                        parentUnit = selectedParentUnitForChildUnit,
                         onNavigateBack = {
                             quantityUnitsRefreshTrigger++
                             currentScreen = AppScreen.QUANTITY_UNITS

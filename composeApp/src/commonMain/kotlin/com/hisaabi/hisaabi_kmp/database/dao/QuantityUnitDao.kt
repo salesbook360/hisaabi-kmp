@@ -9,7 +9,9 @@ import kotlinx.coroutines.flow.Flow
 interface QuantityUnitDao {
     companion object {
         private const val SYNCED_STATUS = SyncStatus.SYNCED_VALUE
+        const val PARENT_UNIT_SLUG = "0" // Parent unit types have parent_slug = "0"
     }
+    
     @Query("SELECT * FROM QuantityUnit ORDER BY sort_order ASC")
     fun getAllUnits(): Flow<List<QuantityUnitEntity>>
     
@@ -19,8 +21,27 @@ interface QuantityUnitDao {
     @Query("SELECT * FROM QuantityUnit WHERE slug = :slug")
     suspend fun getUnitBySlug(slug: String): QuantityUnitEntity?
     
-    @Query("SELECT * FROM QuantityUnit WHERE parent_slug = :parentSlug")
+    @Query("SELECT * FROM QuantityUnit WHERE parent_slug = :parentSlug AND status_id = 0 ORDER BY sort_order ASC")
     fun getUnitsByParent(parentSlug: String): Flow<List<QuantityUnitEntity>>
+    
+    @Query("SELECT * FROM QuantityUnit WHERE parent_slug = :parentSlug AND status_id = 0 ORDER BY sort_order ASC")
+    suspend fun getUnitsByParentSuspend(parentSlug: String): List<QuantityUnitEntity>
+    
+    // Get all parent unit types (Unit Types like Weight, Quantity, Liquid, Length)
+    // Parent units have parent_slug = "0"
+    @Query("SELECT * FROM QuantityUnit WHERE parent_slug is NULL AND business_slug = :businessSlug AND status_id = 0 ORDER BY sort_order ASC")
+    fun getParentUnitTypes(businessSlug: String): Flow<List<QuantityUnitEntity>>
+    
+    @Query("SELECT * FROM QuantityUnit WHERE parent_slug iS NULL AND business_slug = :businessSlug AND status_id = 0 ORDER BY sort_order ASC")
+    suspend fun getParentUnitTypesSuspend(businessSlug: String): List<QuantityUnitEntity>
+    
+    // Get all child units (units that belong to a parent unit type)
+    // Child units have parent_slug pointing to a parent unit's slug (not null)
+    @Query("SELECT * FROM QuantityUnit WHERE parent_slug IS NOT NULL AND business_slug = :businessSlug AND status_id = 0 ORDER BY sort_order ASC")
+    fun getChildUnits(businessSlug: String): Flow<List<QuantityUnitEntity>>
+    
+    @Query("SELECT * FROM QuantityUnit WHERE parent_slug IS NOT NULL AND business_slug = :businessSlug AND status_id = 0 ORDER BY sort_order ASC")
+    suspend fun getChildUnitsSuspend(businessSlug: String): List<QuantityUnitEntity>
     
     @Query("SELECT * FROM QuantityUnit WHERE business_slug = :businessSlug")
     fun getUnitsByBusiness(businessSlug: String): Flow<List<QuantityUnitEntity>>
@@ -48,5 +69,9 @@ interface QuantityUnitDao {
     
     @Query("SELECT MAX(id) FROM QuantityUnit")
     suspend fun getMaxId(): Int?
+    
+    // Update base conversion unit for a parent unit type
+    @Query("UPDATE QuantityUnit SET base_conversion_unit_slug = :baseUnitSlug WHERE slug = :parentSlug")
+    suspend fun updateBaseConversionUnit(parentSlug: String, baseUnitSlug: String)
 }
 

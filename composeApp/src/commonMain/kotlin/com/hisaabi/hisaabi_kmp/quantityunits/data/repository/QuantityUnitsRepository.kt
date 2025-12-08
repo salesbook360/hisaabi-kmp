@@ -28,6 +28,32 @@ class QuantityUnitsRepository(
         }
     }
     
+    suspend fun getUnitsByParentSuspend(parentSlug: String): List<QuantityUnit> {
+        return localDataSource.getUnitsByParentSuspend(parentSlug).map { it.toDomainModel() }
+    }
+    
+    // Get all parent unit types (Unit Types like Weight, Quantity, Liquid, Length)
+    fun getParentUnitTypes(businessSlug: String): Flow<List<QuantityUnit>> {
+        return localDataSource.getParentUnitTypes(businessSlug).map { entities ->
+            entities.map { it.toDomainModel() }
+        }
+    }
+    
+    suspend fun getParentUnitTypesSuspend(businessSlug: String): List<QuantityUnit> {
+        return localDataSource.getParentUnitTypesSuspend(businessSlug).map { it.toDomainModel() }
+    }
+    
+    // Get all child units (units that belong to a parent unit type)
+    fun getChildUnits(businessSlug: String): Flow<List<QuantityUnit>> {
+        return localDataSource.getChildUnits(businessSlug).map { entities ->
+            entities.map { it.toDomainModel() }
+        }
+    }
+    
+    suspend fun getChildUnitsSuspend(businessSlug: String): List<QuantityUnit> {
+        return localDataSource.getChildUnitsSuspend(businessSlug).map { it.toDomainModel() }
+    }
+    
     suspend fun getUnitById(id: Int): QuantityUnit? {
         return localDataSource.getUnitById(id)?.toDomainModel()
     }
@@ -69,6 +95,15 @@ class QuantityUnitsRepository(
     suspend fun deleteUnitById(id: Int): Result<Unit> {
         return try {
             localDataSource.deleteUnitById(id)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun updateBaseConversionUnit(parentSlug: String, baseUnitSlug: String): Result<Unit> {
+        return try {
+            localDataSource.updateBaseConversionUnit(parentSlug, baseUnitSlug)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

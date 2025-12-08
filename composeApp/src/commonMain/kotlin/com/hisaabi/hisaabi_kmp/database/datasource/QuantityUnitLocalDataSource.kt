@@ -23,6 +23,28 @@ class QuantityUnitLocalDataSource(
         return quantityUnitDao.getUnitsByParent(parentSlug)
     }
     
+    suspend fun getUnitsByParentSuspend(parentSlug: String): List<QuantityUnitEntity> {
+        return quantityUnitDao.getUnitsByParentSuspend(parentSlug)
+    }
+    
+    // Get all parent unit types (Unit Types like Weight, Quantity, Liquid, Length)
+    fun getParentUnitTypes(businessSlug: String): Flow<List<QuantityUnitEntity>> {
+        return quantityUnitDao.getParentUnitTypes(businessSlug)
+    }
+    
+    suspend fun getParentUnitTypesSuspend(businessSlug: String): List<QuantityUnitEntity> {
+        return quantityUnitDao.getParentUnitTypesSuspend(businessSlug)
+    }
+    
+    // Get all child units (units that belong to a parent unit type)
+    fun getChildUnits(businessSlug: String): Flow<List<QuantityUnitEntity>> {
+        return quantityUnitDao.getChildUnits(businessSlug)
+    }
+    
+    suspend fun getChildUnitsSuspend(businessSlug: String): List<QuantityUnitEntity> {
+        return quantityUnitDao.getChildUnitsSuspend(businessSlug)
+    }
+    
     fun getUnitsByBusiness(businessSlug: String): Flow<List<QuantityUnitEntity>> {
         return quantityUnitDao.getUnitsByBusiness(businessSlug)
     }
@@ -53,6 +75,10 @@ class QuantityUnitLocalDataSource(
     
     suspend fun deleteAllUnits() {
         quantityUnitDao.deleteAllUnits()
+    }
+    
+    suspend fun updateBaseConversionUnit(parentSlug: String, baseUnitSlug: String) {
+        quantityUnitDao.updateBaseConversionUnit(parentSlug, baseUnitSlug)
     }
 }
 

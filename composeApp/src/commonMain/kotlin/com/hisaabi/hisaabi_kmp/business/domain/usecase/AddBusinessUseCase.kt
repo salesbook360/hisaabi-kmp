@@ -24,32 +24,17 @@ class AddBusinessUseCase(
             return Result.failure(IllegalArgumentException("Invalid email format"))
         }
         
-        // Generate slug from title
-        val slug = generateSlug(title)
-        
-        // Check if business with same slug exists
-        val existing = repository.getBusinessBySlug(slug)
-        if (existing != null) {
-            return Result.failure(IllegalArgumentException("Business with this name already exists"))
-        }
-        
         val business = Business(
             title = title,
             email = email,
             address = address,
             phone = phone,
-            logo = logo,
-            slug = slug
+            logo = logo
         )
         
         return repository.insertBusiness(business)
     }
-    
-    private fun generateSlug(title: String): String {
-        val timestamp = Clock.System.now().toEpochMilliseconds()
-        return "${title.lowercase().replace(Regex("[^a-z0-9]+"), "-")}-$timestamp"
-    }
-    
+
     private fun isValidEmail(email: String): Boolean {
         return email.matches(Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"))
     }

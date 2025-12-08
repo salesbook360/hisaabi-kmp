@@ -15,11 +15,39 @@ data class QuantityUnit(
     val createdAt: String?,
     val updatedAt: String?
 ) {
+    companion object {
+        const val PARENT_UNIT_SLUG = "0" // Parent unit types have parent_slug = "0"
+    }
+    
     val displayName: String
         get() = title.ifEmpty { "Unknown" }
     
     val isActive: Boolean
         get() = statusId == 0
-
+    
+    /**
+     * Returns true if this is a parent unit type (e.g., Weight, Quantity, Liquid, Length)
+     * Parent unit types have parent_slug = "0"
+     */
+    val isParentUnitType: Boolean
+        get() = parentSlug == PARENT_UNIT_SLUG
+    
+    /**
+     * Returns true if this is a child unit (e.g., KG, MG, Ton under Weight)
+     * Child units have a parent_slug pointing to a parent unit type
+     */
+    val isChildUnit: Boolean
+        get() = !parentSlug.isNullOrBlank() && parentSlug != PARENT_UNIT_SLUG
+    
+    /**
+     * Returns the conversion factor string (e.g., "1 KG = 1000 g")
+     */
+    fun conversionFactorStr(baseUnitTitle: String?): String {
+        return if (baseUnitTitle != null && conversionFactor != 1.0) {
+            "1 $title = $conversionFactor $baseUnitTitle"
+        } else {
+            ""
+        }
+    }
 }
 

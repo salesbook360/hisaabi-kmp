@@ -7,7 +7,7 @@ data class Business(
     val address: String?,
     val phone: String?,
     val logo: String?,
-    val slug: String?
+    val slug: String? = null
 ) {
     val displayName: String
         get() = title.ifEmpty { "Unknown" }
