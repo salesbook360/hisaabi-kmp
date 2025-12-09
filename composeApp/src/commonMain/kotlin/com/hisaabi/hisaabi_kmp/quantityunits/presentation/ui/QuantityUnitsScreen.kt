@@ -22,14 +22,22 @@ fun QuantityUnitsScreen(
     viewModel: QuantityUnitsViewModel,
     onUnitClick: (QuantityUnit) -> Unit = {},
     onAddUnitClick: () -> Unit = {},
-    onAddUnitTypeClick: () -> Unit = {},
+    onAddUnitTypeClick: (currentSelectedParentSlug: String?) -> Unit = {},
     onAddChildUnitClick: (QuantityUnit) -> Unit = {}, // Pass selected parent unit
     onNavigateBack: () -> Unit = {},
-    refreshTrigger: Int = 0
+    refreshTrigger: Int = 0,
+    initialSelectedParentSlug: String? = null
 ) {
     val state by viewModel.state.collectAsState()
     var showDeleteDialog by remember { mutableStateOf<QuantityUnit?>(null) }
     var unitTypeDropdownExpanded by remember { mutableStateOf(false) }
+    
+    // Restore selected parent unit when navigating back
+    LaunchedEffect(initialSelectedParentSlug) {
+        if (initialSelectedParentSlug != null) {
+            viewModel.setInitialSelectedParentSlug(initialSelectedParentSlug)
+        }
+    }
     
     LaunchedEffect(refreshTrigger) {
         viewModel.loadUnits()
@@ -84,7 +92,7 @@ fun QuantityUnitsScreen(
                 },
                 onAddNewUnitType = {
                     unitTypeDropdownExpanded = false
-                    onAddUnitTypeClick()
+                    onAddUnitTypeClick(state.selectedParentUnit?.slug)
                 },
                 isLoading = state.isLoading
             )
@@ -113,7 +121,7 @@ fun QuantityUnitsScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Spacer(Modifier.height(16.dp))
-                            Button(onClick = onAddUnitTypeClick) {
+                            Button(onClick = { onAddUnitTypeClick(state.selectedParentUnit?.slug) }) {
                                 Icon(Icons.Default.Add, null)
                                 Spacer(Modifier.width(8.dp))
                                 Text("Add Unit Type")

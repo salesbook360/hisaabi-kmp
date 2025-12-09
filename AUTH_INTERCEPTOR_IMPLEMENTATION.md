@@ -87,7 +87,7 @@ onResponse { response ->
 - Updated refresh endpoint from `/refresh` to `/refresh-auth-token`
 - Changed request format to match API requirements:
   - Refresh token sent in `refreshToken` header
-  - Body is `{""}` (empty object string)
+  - Body is `{}` (empty JSON object)
 
 **API Contract**:
 ```bash
@@ -95,7 +95,7 @@ POST http://52.20.167.4:5000/refresh-auth-token
 Headers:
   refreshToken: <refresh_token_value>
   Content-Type: application/json
-Body: {""}
+Body: {}
 ```
 
 ### 4. Implemented Real-time Auth State Observation

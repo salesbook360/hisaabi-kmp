@@ -127,7 +127,6 @@ data class QuantityUnitDto(
     val id: Int = 0,
     val title: String? = null,
     val description: String? = null,
-    @SerialName("parent_slug")
     val parentSlug: String? = null,
     @SerialName("conversion_rate")
     val conversionRate: Double = 0.0,

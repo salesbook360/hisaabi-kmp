@@ -10,18 +10,7 @@ import kotlinx.datetime.Clock
 class QuantityUnitsRepository(
     private val localDataSource: QuantityUnitLocalDataSource
 ) {
-    fun getAllUnits(): Flow<List<QuantityUnit>> {
-        return localDataSource.getAllUnits().map { entities ->
-            entities.map { it.toDomainModel() }
-        }
-    }
-    
-    fun getActiveUnits(): Flow<List<QuantityUnit>> {
-        return localDataSource.getAllUnits().map { entities ->
-            entities.filter { it.status_id == 0 }.map { it.toDomainModel() }
-        }
-    }
-    
+
     fun getUnitsByParent(parentSlug: String): Flow<List<QuantityUnit>> {
         return localDataSource.getUnitsByParent(parentSlug).map { entities ->
             entities.map { it.toDomainModel() }
@@ -37,25 +26,6 @@ class QuantityUnitsRepository(
         return localDataSource.getParentUnitTypes(businessSlug).map { entities ->
             entities.map { it.toDomainModel() }
         }
-    }
-    
-    suspend fun getParentUnitTypesSuspend(businessSlug: String): List<QuantityUnit> {
-        return localDataSource.getParentUnitTypesSuspend(businessSlug).map { it.toDomainModel() }
-    }
-    
-    // Get all child units (units that belong to a parent unit type)
-    fun getChildUnits(businessSlug: String): Flow<List<QuantityUnit>> {
-        return localDataSource.getChildUnits(businessSlug).map { entities ->
-            entities.map { it.toDomainModel() }
-        }
-    }
-    
-    suspend fun getChildUnitsSuspend(businessSlug: String): List<QuantityUnit> {
-        return localDataSource.getChildUnitsSuspend(businessSlug).map { it.toDomainModel() }
-    }
-    
-    suspend fun getUnitById(id: Int): QuantityUnit? {
-        return localDataSource.getUnitById(id)?.toDomainModel()
     }
     
     suspend fun getUnitBySlug(slug: String): QuantityUnit? {

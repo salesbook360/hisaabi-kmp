@@ -17,18 +17,16 @@ class QuantityUnitsViewModel(
     val state: StateFlow<QuantityUnitsState> = _state.asStateFlow()
     
     private var businessSlug: String? = null
+    private var pendingParentSlugToSelect: String? = null
     
     init {
         // Observe business slug changes to reload data when business changes
         viewModelScope.launch {
-            println("DEBUG QuantityUnitsViewModel: Starting to observe businessSlug")
             sessionManager.observeBusinessSlug().collect { newBusinessSlug ->
-                println("DEBUG QuantityUnitsViewModel: Received businessSlug = $newBusinessSlug")
                 businessSlug = newBusinessSlug
                 if (newBusinessSlug != null) {
                     loadParentUnitTypes()
                 } else {
-                    println("DEBUG QuantityUnitsViewModel: No business found, setting empty state")
                     _state.update { 
                         it.copy(
                             isLoading = false,
@@ -69,16 +67,10 @@ class QuantityUnitsViewModel(
     
     private fun loadParentUnitTypes() {
         viewModelScope.launch {
-            val bSlug = businessSlug ?: run {
-                println("DEBUG QuantityUnitsViewModel: loadParentUnitTypes - businessSlug is null, returning")
-                return@launch
-            }
-            
-            println("DEBUG QuantityUnitsViewModel: loadParentUnitTypes - Loading for businessSlug = $bSlug")
+            val bSlug = businessSlug ?: return@launch
             
             useCases.getUnits.getParentUnitTypes(bSlug)
                 .catch { error ->
-                    println("DEBUG QuantityUnitsViewModel: loadParentUnitTypes - Error: ${error.message}")
                     _state.update { 
                         it.copy(
                             isLoading = false, 
@@ -87,11 +79,6 @@ class QuantityUnitsViewModel(
                     }
                 }
                 .collect { parentTypes ->
-                    println("DEBUG QuantityUnitsViewModel: loadParentUnitTypes - Received ${parentTypes.size} parent types")
-                    parentTypes.forEach { 
-                        println("DEBUG QuantityUnitsViewModel:   - Parent: ${it.title}, slug=${it.slug}, businessSlug=${it.businessSlug}, parentSlug=${it.parentSlug}")
-                    }
-                    
                     _state.update { 
                         it.copy(
                             parentUnitTypes = parentTypes,
@@ -100,8 +87,20 @@ class QuantityUnitsViewModel(
                         )
                     }
                     
-                    // If no parent type is selected and we have parent types, select the first one
-                    if (_state.value.selectedParentUnit == null && parentTypes.isNotEmpty()) {
+                    // Check if we have a pending parent slug to select (from navigation restore)
+                    val slugToSelect = pendingParentSlugToSelect
+                    pendingParentSlugToSelect = null // Clear after use
+                    
+                    if (slugToSelect != null) {
+                        // Find and select the parent with the given slug
+                        val parentToSelect = parentTypes.find { it.slug == slugToSelect }
+                        if (parentToSelect != null) {
+                            selectParentUnit(parentToSelect)
+                        } else if (parentTypes.isNotEmpty()) {
+                            selectParentUnit(parentTypes.first())
+                        }
+                    } else if (_state.value.selectedParentUnit == null && parentTypes.isNotEmpty()) {
+                        // If no parent type is selected and we have parent types, select the first one
                         selectParentUnit(parentTypes.first())
                     } else if (_state.value.selectedParentUnit != null) {
                         // Reload child units for the selected parent
@@ -177,6 +176,23 @@ class QuantityUnitsViewModel(
     
     fun clearError() {
         _state.update { it.copy(error = null) }
+    }
+    
+    /**
+     * Set a parent unit slug to be selected after loading.
+     * This is used to restore selection when navigating back from add/edit screen.
+     */
+    fun setInitialSelectedParentSlug(slug: String?) {
+        if (slug != null) {
+            // If parent types are already loaded, select immediately
+            val existingParent = _state.value.parentUnitTypes.find { it.slug == slug }
+            if (existingParent != null) {
+                selectParentUnit(existingParent)
+            } else {
+                // Otherwise, set as pending to select after loading
+                pendingParentSlugToSelect = slug
+            }
+        }
     }
 }
 

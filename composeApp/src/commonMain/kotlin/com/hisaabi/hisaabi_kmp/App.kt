@@ -251,6 +251,7 @@ fun App() {
             var selectedUnitForEdit by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.quantityunits.domain.model.QuantityUnit?>(null) }
             var isAddingParentUnitType by remember { mutableStateOf(false) }
             var selectedParentUnitForChildUnit by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.quantityunits.domain.model.QuantityUnit?>(null) }
+            var selectedParentUnitSlugToRestore by remember { mutableStateOf<String?>(null) }
             
             // Transaction Settings navigation state
             // No specific state needed as it's a preference screen
@@ -1142,6 +1143,8 @@ fun App() {
                     com.hisaabi.hisaabi_kmp.quantityunits.presentation.ui.QuantityUnitsScreen(
                         viewModel = koinInject(),
                         onUnitClick = { unit ->
+                            // Save the current selected parent slug for restoration when returning
+                            selectedParentUnitSlugToRestore = if (unit.isParentUnitType) unit.slug else unit.parentSlug
                             selectedUnitForEdit = unit
                             isAddingParentUnitType = unit.isParentUnitType
                             selectedParentUnitForChildUnit = null
@@ -1154,8 +1157,10 @@ fun App() {
                             selectedParentUnitForChildUnit = null
                             currentScreen = AppScreen.ADD_QUANTITY_UNIT
                         },
-                        onAddUnitTypeClick = {
+                        onAddUnitTypeClick = { currentSelectedParentSlug ->
                             // Add new parent unit type (e.g., Weight, Quantity, Liquid)
+                            // Save the current selection for when we return
+                            selectedParentUnitSlugToRestore = currentSelectedParentSlug
                             selectedUnitForEdit = null
                             isAddingParentUnitType = true
                             selectedParentUnitForChildUnit = null
@@ -1163,13 +1168,16 @@ fun App() {
                         },
                         onAddChildUnitClick = { parentUnit ->
                             // Add new child unit under selected parent type
+                            // Save the parent slug for restoration when returning
+                            selectedParentUnitSlugToRestore = parentUnit.slug
                             selectedUnitForEdit = null
                             isAddingParentUnitType = false
                             selectedParentUnitForChildUnit = parentUnit
                             currentScreen = AppScreen.ADD_QUANTITY_UNIT
                         },
                         onNavigateBack = { navigateBack() },
-                        refreshTrigger = quantityUnitsRefreshTrigger
+                        refreshTrigger = quantityUnitsRefreshTrigger,
+                        initialSelectedParentSlug = selectedParentUnitSlugToRestore
                     )
                 }
                 

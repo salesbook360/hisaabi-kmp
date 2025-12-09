@@ -2,10 +2,12 @@ package com.hisaabi.hisaabi_kmp.auth.data.datasource
 
 import com.hisaabi.hisaabi_kmp.auth.data.model.*
 import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.plugins.*
+import io.ktor.client.call.body
 import io.ktor.client.request.*
 import io.ktor.http.*
+import io.ktor.http.content.*
+import io.ktor.utils.io.InternalAPI
+import kotlinx.serialization.json.Json
 
 interface AuthRemoteDataSource {
     suspend fun login(request: LoginRequest): RegisterResponse
@@ -32,16 +34,25 @@ class AuthRemoteDataSourceImpl(
         private const val LOGOUT_ENDPOINT = "$BASE_URL/logout"
     }
     
+    @OptIn(InternalAPI::class)
     override suspend fun login(request: LoginRequest): RegisterResponse {
         println("=== LOGIN API CALL ===")
         println("Endpoint: $LOGIN_ENDPOINT")
         println("Request Body: $request")
         
         return try {
-            val response = httpClient.post(LOGIN_ENDPOINT) {
-                contentType(ContentType.Application.Json)
-                setBody(request)
+            // Manually serialize and use TextContent to avoid LiveEdit continuation issues
+            val json = Json { ignoreUnknownKeys = true }
+            val requestBody = json.encodeToString(LoginRequest.serializer(), request)
+            
+            val requestBuilder = HttpRequestBuilder().apply {
+                url.takeFrom(LOGIN_ENDPOINT)
+                method = HttpMethod.Post
+                headers.append(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                this.body = TextContent(requestBody, ContentType.Application.Json)
             }
+            
+            val response = httpClient.request(requestBuilder)
             println("Login Response Status: ${response.status}")
             response.body<RegisterResponse>()
         } catch (e: Exception) {
@@ -96,12 +107,22 @@ class AuthRemoteDataSourceImpl(
         val response = httpClient.post(REFRESH_ENDPOINT) {
             contentType(ContentType.Application.Json)
             header("refreshToken", request.refreshToken)
-            setBody("{\"\"}")
+            setBody("{}")  // Empty JSON object
         }
         
         println("Refresh Response Status: ${response.status}")
-        val refreshResponse = response.body<RegisterResponse>()
-        println("Response Body: $refreshResponse")
+        
+        // Log raw response for debugging
+        val rawBody = response.body<String>()
+        println("Raw Response Body: $rawBody")
+        
+        // Parse the response with lenient settings
+        val json = Json { 
+            ignoreUnknownKeys = true 
+            isLenient = true
+        }
+        val refreshResponse = json.decodeFromString<RegisterResponse>(rawBody)
+        println("Parsed Response: $refreshResponse")
         
         return refreshResponse
     }

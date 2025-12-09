@@ -23,7 +23,6 @@ class AddQuantityUnitViewModel(
         // Observe session context changes to keep business and user info updated
         viewModelScope.launch {
             sessionManager.observeSessionContext().collect { context ->
-                println("DEBUG AddQuantityUnitViewModel: Received session context - businessSlug=${context.businessSlug}, userSlug=${context.userSlug}")
                 businessSlug = context.businessSlug
                 userSlug = context.userSlug
             }
@@ -172,7 +171,6 @@ class AddQuantityUnitViewModel(
             } else {
                 if (currentState.isAddingParentUnitType) {
                     // Add new parent unit type
-                    println("DEBUG AddQuantityUnitViewModel: Adding parent unit type - title=${currentState.title}, businessSlug=$businessSlug, userSlug=$userSlug")
                     val result = useCases.addUnit.addParentUnitType(
                         title = currentState.title,
                         sortOrder = order,
@@ -201,7 +199,6 @@ class AddQuantityUnitViewModel(
                     )
                 } else {
                     // Add new child unit
-                    println("DEBUG AddQuantityUnitViewModel: Adding child unit - title=${currentState.title}, parentSlug=${currentState.selectedParentUnit?.slug}, businessSlug=$businessSlug, userSlug=$userSlug")
                     val result = useCases.addUnit(
                         title = currentState.title,
                         sortOrder = order,

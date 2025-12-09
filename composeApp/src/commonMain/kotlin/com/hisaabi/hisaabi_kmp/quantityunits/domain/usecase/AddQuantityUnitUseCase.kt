@@ -10,9 +10,6 @@ class AddQuantityUnitUseCase(
     private val repository: QuantityUnitsRepository,
     private val slugGenerator: SlugGenerator
 ) {
-    companion object {
-        const val PARENT_UNIT_SLUG = "0" // Parent unit types have parent_slug = "0"
-    }
     
     /**
      * Add a child unit under a parent unit type
@@ -84,7 +81,7 @@ class AddQuantityUnitUseCase(
         val unit = QuantityUnit(
             title = title,
             sortOrder = sortOrder,
-            parentSlug = PARENT_UNIT_SLUG, // Parent units have parent_slug = "0"
+            parentSlug = "0", // Parent units have parent_slug = "0"
             conversionFactor = 1.0,
             baseConversionUnitSlug = null,
             statusId = 0, // Active
