@@ -18,6 +18,9 @@ class AddProductUseCase(
         discountPercentage: Double = 0.0,
         categorySlug: String? = null,
         manufacturer: String? = null,
+        defaultUnitSlug: String? = null,
+        openingQuantityUnitSlug: String? = null,
+        minimumQuantityUnitSlug: String? = null,
         businessSlug: String,
         userSlug: String
     ): Result<String> {
@@ -45,9 +48,9 @@ class AddProductUseCase(
                 statusId = 0, // Active
                 digitalId = null,
                 baseUnitSlug = null,
-                defaultUnitSlug = null,
-                minimumQuantityUnitSlug = null,
-                openingQuantityUnitSlug = null,
+                defaultUnitSlug = defaultUnitSlug,
+                minimumQuantityUnitSlug = minimumQuantityUnitSlug,
+                openingQuantityUnitSlug = openingQuantityUnitSlug,
                 categorySlug = categorySlug,
                 avgPurchasePrice = finalPurchasePrice,
                 openingQuantityPurchasePrice = 0.0,

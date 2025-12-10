@@ -1,6 +1,9 @@
 package com.hisaabi.hisaabi_kmp.products.presentation.ui
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -19,6 +22,7 @@ import com.hisaabi.hisaabi_kmp.categories.domain.model.Category
 import com.hisaabi.hisaabi_kmp.products.domain.model.Product
 import com.hisaabi.hisaabi_kmp.products.domain.model.ProductType
 import com.hisaabi.hisaabi_kmp.products.presentation.viewmodel.AddProductViewModel
+import com.hisaabi.hisaabi_kmp.quantityunits.domain.model.QuantityUnit
 import com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -81,10 +85,15 @@ fun AddProductScreen(
             )
         },
         floatingActionButton = {
+            // Check if unit is required but not selected (for products and recipes only)
+            val unitRequired = productType != ProductType.SERVICE
+            val unitMissing = unitRequired && uiState.selectedBaseUnit == null
+            val canSave = !uiState.isLoading && uiState.title.isNotBlank() && !unitMissing
+            
             FloatingActionButton(
-                containerColor = MaterialTheme.colorScheme.primary,
+                containerColor = if (canSave) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                 onClick = {
-                    if (!uiState.isLoading && uiState.title.isNotBlank()) {
+                    if (canSave) {
                         viewModel.saveProduct(
                             productToEdit = productToEdit,
                             title = uiState.title,
@@ -99,7 +108,12 @@ fun AddProductScreen(
                             manufacturer = uiState.manufacturer.takeIf { it.isNotBlank() },
                             warehouseSlug = uiState.selectedWarehouse?.slug,
                             openingQuantity = uiState.openingQuantity.toDoubleOrNull() ?: 0.0,
-                            minimumQuantity = uiState.minimumQuantity.toDoubleOrNull() ?: 0.0
+                            minimumQuantity = uiState.minimumQuantity.toDoubleOrNull() ?: 0.0,
+                            defaultUnitSlug = uiState.selectedBaseUnit?.slug,
+                            openingQuantityUnitSlug = uiState.selectedOpeningQuantityUnit?.slug,
+                            minimumQuantityUnitSlug = uiState.selectedMinimumQuantityUnit?.slug,
+                            openingQuantityConversionFactor = uiState.selectedOpeningQuantityUnit?.conversionFactor ?: 1.0,
+                            minimumQuantityConversionFactor = uiState.selectedMinimumQuantityUnit?.conversionFactor ?: 1.0
                         )
                     }
                 },
@@ -169,6 +183,17 @@ fun AddProductScreen(
                 singleLine = true,
                 isError = uiState.title.isBlank() && uiState.error != null
             )
+            
+            // Base Unit Selection (only for Products and Recipes)
+            if (productType != ProductType.SERVICE) {
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                BaseUnitSelectionCard(
+                    selectedUnit = uiState.selectedBaseUnit,
+                    isRequired = true,
+                    onSelectUnit = { viewModel.showBaseUnitSheet() }
+                )
+            }
             
             Spacer(modifier = Modifier.height(16.dp))
             
@@ -326,34 +351,67 @@ fun AddProductScreen(
                 
                 // Opening Quantity (only shown when warehouse is selected)
                 if (uiState.selectedWarehouse != null) {
-                OutlinedTextField(
-                    value = uiState.openingQuantity,
-                    onValueChange = { viewModel.setOpeningQuantity(it) },
-                    label = { Text("Opening Quantity") },
-                    leadingIcon = {
-                        Icon(Icons.Default.Inventory, contentDescription = "Opening Quantity")
-                    },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // Minimum Quantity
-                OutlinedTextField(
-                    value = uiState.minimumQuantity,
-                    onValueChange = { viewModel.setMinimumQuantity(it) },
-                    label = { Text("Minimum Quantity") },
-                    leadingIcon = {
-                        Icon(Icons.Default.Warning, contentDescription = "Minimum Quantity")
-                    },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-                
-                Spacer(modifier = Modifier.height(16.dp))
+                    // Opening Quantity with Unit
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = uiState.openingQuantity,
+                            onValueChange = { viewModel.setOpeningQuantity(it) },
+                            label = { Text("Opening Quantity") },
+                            leadingIcon = {
+                                Icon(Icons.Default.Inventory, contentDescription = "Opening Quantity")
+                            },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            modifier = Modifier.weight(1f),
+                            singleLine = true
+                        )
+                        
+                        // Opening Quantity Unit Selection
+                        QuantityUnitChip(
+                            selectedUnit = uiState.selectedOpeningQuantityUnit,
+                            onClick = { 
+                                if (uiState.selectedBaseUnit != null) {
+                                    viewModel.showOpeningQuantityUnitSheet()
+                                }
+                            },
+                            enabled = uiState.selectedBaseUnit != null
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Minimum Quantity with Unit
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = uiState.minimumQuantity,
+                            onValueChange = { viewModel.setMinimumQuantity(it) },
+                            label = { Text("Minimum Quantity") },
+                            leadingIcon = {
+                                Icon(Icons.Default.Warning, contentDescription = "Minimum Quantity")
+                            },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            modifier = Modifier.weight(1f),
+                            singleLine = true
+                        )
+                        
+                        // Minimum Quantity Unit Selection
+                        QuantityUnitChip(
+                            selectedUnit = uiState.selectedMinimumQuantityUnit,
+                            onClick = { 
+                                if (uiState.selectedBaseUnit != null) {
+                                    viewModel.showMinimumQuantityUnitSheet()
+                                }
+                            },
+                            enabled = uiState.selectedBaseUnit != null
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
             }
             
@@ -418,6 +476,52 @@ fun AddProductScreen(
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
+    }
+    
+    // Base Unit Selection Bottom Sheet
+    if (uiState.showBaseUnitSheet) {
+        BaseUnitSelectionBottomSheet(
+            parentUnitTypes = uiState.parentUnitTypes,
+            childUnitsForParent = uiState.childUnitsForBaseParent,
+            selectedUnit = uiState.selectedBaseUnit,
+            onUnitSelected = { unit ->
+                viewModel.setSelectedBaseUnit(unit)
+                viewModel.hideBaseUnitSheet()
+            },
+            onParentTypeSelected = { parentTypeSlug ->
+                // When parent type is selected, load its child units using the parent's slug
+                viewModel.loadChildUnitsForParentType(parentTypeSlug)
+            },
+            onDismiss = { viewModel.hideBaseUnitSheet() }
+        )
+    }
+    
+    // Opening Quantity Unit Selection Bottom Sheet
+    if (uiState.showOpeningQuantityUnitSheet) {
+        ChildUnitSelectionBottomSheet(
+            title = "Select Opening Quantity Unit",
+            childUnits = uiState.childUnitsForBaseParent,
+            selectedUnit = uiState.selectedOpeningQuantityUnit,
+            onUnitSelected = { unit ->
+                viewModel.setSelectedOpeningQuantityUnit(unit)
+                viewModel.hideOpeningQuantityUnitSheet()
+            },
+            onDismiss = { viewModel.hideOpeningQuantityUnitSheet() }
+        )
+    }
+    
+    // Minimum Quantity Unit Selection Bottom Sheet
+    if (uiState.showMinimumQuantityUnitSheet) {
+        ChildUnitSelectionBottomSheet(
+            title = "Select Minimum Quantity Unit",
+            childUnits = uiState.childUnitsForBaseParent,
+            selectedUnit = uiState.selectedMinimumQuantityUnit,
+            onUnitSelected = { unit ->
+                viewModel.setSelectedMinimumQuantityUnit(unit)
+                viewModel.hideMinimumQuantityUnitSheet()
+            },
+            onDismiss = { viewModel.hideMinimumQuantityUnitSheet() }
+        )
     }
 }
 
@@ -513,6 +617,323 @@ private fun CategorySelectionCard(
                 contentDescription = "Change Category",
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
+        }
+    }
+}
+
+@Composable
+private fun BaseUnitSelectionCard(
+    selectedUnit: QuantityUnit?,
+    isRequired: Boolean,
+    onSelectUnit: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onSelectUnit),
+        colors = CardDefaults.cardColors(
+            containerColor = if (selectedUnit == null && isRequired) 
+                MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+            else 
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Default.Scale,
+                contentDescription = null,
+                modifier = Modifier.size(32.dp),
+                tint = if (selectedUnit == null && isRequired) 
+                    MaterialTheme.colorScheme.error 
+                else 
+                    MaterialTheme.colorScheme.primary
+            )
+            Spacer(Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    if (isRequired) "Base Unit *" else "Base Unit",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    selectedUnit?.title ?: "Select Base Unit",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = if (selectedUnit == null && isRequired)
+                        MaterialTheme.colorScheme.error
+                    else
+                        MaterialTheme.colorScheme.onSurface
+                )
+            }
+            Icon(
+                Icons.Default.ChevronRight,
+                contentDescription = "Change Base Unit",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun QuantityUnitChip(
+    selectedUnit: QuantityUnit?,
+    onClick: () -> Unit,
+    enabled: Boolean
+) {
+    FilterChip(
+        selected = selectedUnit != null,
+        onClick = onClick,
+        enabled = enabled,
+        label = { 
+            Text(
+                selectedUnit?.title ?: "Unit",
+                style = MaterialTheme.typography.bodySmall
+            ) 
+        },
+        leadingIcon = {
+            Icon(
+                Icons.Default.Scale,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp)
+            )
+        },
+        modifier = Modifier.height(56.dp)
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun BaseUnitSelectionBottomSheet(
+    parentUnitTypes: List<QuantityUnit>,
+    childUnitsForParent: List<QuantityUnit>,
+    selectedUnit: QuantityUnit?,
+    onUnitSelected: (QuantityUnit) -> Unit,
+    onParentTypeSelected: (String) -> Unit,  // Pass parent type's slug to load its children
+    onDismiss: () -> Unit
+) {
+    // Track selected parent unit type locally within the bottom sheet
+    var selectedParentTypeSlug by remember { mutableStateOf<String?>(null) }
+    
+    // Initialize with parent of currently selected unit (for edit mode)
+    LaunchedEffect(Unit) {
+        if (selectedUnit != null && selectedParentTypeSlug == null) {
+            // The selected unit's parentSlug points to its parent unit type
+            selectedParentTypeSlug = selectedUnit.parentSlug
+            // Load child units for this parent
+            selectedUnit.parentSlug?.let { onParentTypeSelected(it) }
+        }
+    }
+    
+    ModalBottomSheet(
+        onDismissRequest = onDismiss
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Text(
+                text = "Select Base Unit",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+            
+            // Step 1: Select Unit Type (Parent)
+            Text(
+                text = "Step 1: Select Unit Type",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            
+            if (parentUnitTypes.isEmpty()) {
+                Text(
+                    text = "No unit types available. Please add unit types first.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 16.dp)
+                )
+            } else {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    parentUnitTypes.forEach { parentUnit ->
+                        FilterChip(
+                            selected = selectedParentTypeSlug == parentUnit.slug,
+                            onClick = { 
+                                // Update local state first
+                                selectedParentTypeSlug = parentUnit.slug
+                                // Then load child units using the parent type's own slug
+                                parentUnit.slug?.let { onParentTypeSelected(it) }
+                            },
+                            label = { Text(parentUnit.title) }
+                        )
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Step 2: Select Child Unit (only show if parent type is selected)
+            if (selectedParentTypeSlug != null) {
+                val selectedParentTitle = parentUnitTypes.find { it.slug == selectedParentTypeSlug }?.title ?: ""
+                
+                Text(
+                    text = "Step 2: Select Unit",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                
+                if (childUnitsForParent.isEmpty()) {
+                    Text(
+                        text = "No units available for $selectedParentTitle. Please add units first.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(vertical = 16.dp)
+                    )
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 300.dp)
+                    ) {
+                        items(childUnitsForParent) { unit ->
+                            UnitSelectionItem(
+                                unit = unit,
+                                isSelected = selectedUnit?.slug == unit.slug,
+                                onClick = { onUnitSelected(unit) }
+                            )
+                        }
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ChildUnitSelectionBottomSheet(
+    title: String,
+    childUnits: List<QuantityUnit>,
+    selectedUnit: QuantityUnit?,
+    onUnitSelected: (QuantityUnit) -> Unit,
+    onDismiss: () -> Unit
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+            
+            if (childUnits.isEmpty()) {
+                Text(
+                    text = "No units available. Please select a base unit first.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 16.dp)
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 400.dp)
+                ) {
+                    items(childUnits) { unit ->
+                        UnitSelectionItem(
+                            unit = unit,
+                            isSelected = selectedUnit?.slug == unit.slug,
+                            onClick = { onUnitSelected(unit) }
+                        )
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
+}
+
+@Composable
+private fun UnitSelectionItem(
+    unit: QuantityUnit,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) 
+                MaterialTheme.colorScheme.primaryContainer 
+            else 
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Default.Scale,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp),
+                tint = if (isSelected) 
+                    MaterialTheme.colorScheme.primary 
+                else 
+                    MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    unit.title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (isSelected) 
+                        MaterialTheme.colorScheme.onPrimaryContainer 
+                    else 
+                        MaterialTheme.colorScheme.onSurface
+                )
+                if (unit.conversionFactor != 1.0) {
+                    Text(
+                        "Conversion: ${unit.conversionFactor}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            if (isSelected) {
+                Icon(
+                    Icons.Default.CheckCircle,
+                    contentDescription = "Selected",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
         }
     }
 }

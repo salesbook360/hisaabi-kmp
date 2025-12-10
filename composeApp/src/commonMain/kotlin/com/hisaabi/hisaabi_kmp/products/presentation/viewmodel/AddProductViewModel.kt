@@ -10,6 +10,8 @@ import com.hisaabi.hisaabi_kmp.products.data.repository.ProductsRepository
 import com.hisaabi.hisaabi_kmp.products.domain.model.ProductType
 import com.hisaabi.hisaabi_kmp.products.domain.usecase.AddProductUseCase
 import com.hisaabi.hisaabi_kmp.products.domain.usecase.UpdateProductUseCase
+import com.hisaabi.hisaabi_kmp.quantityunits.data.repository.QuantityUnitsRepository
+import com.hisaabi.hisaabi_kmp.quantityunits.domain.model.QuantityUnit
 import com.hisaabi.hisaabi_kmp.utils.getCurrentTimestamp
 import com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,7 +25,8 @@ class AddProductViewModel(
     private val updateProductUseCase: UpdateProductUseCase,
     private val sessionManager: AppSessionManager,
     private val productsRepository: ProductsRepository,
-    private val categoriesRepository: CategoriesRepository
+    private val categoriesRepository: CategoriesRepository,
+    private val quantityUnitsRepository: QuantityUnitsRepository
 ) : ViewModel() {
     
     private var businessSlug: String? = null
@@ -37,12 +40,100 @@ class AddProductViewModel(
             sessionManager.observeSessionContext().collect { context ->
                 businessSlug = context.businessSlug
                 userSlug = context.userSlug
+                // Load parent unit types when business context is available
+                if (context.businessSlug != null) {
+                    loadParentUnitTypes(context.businessSlug)
+                }
             }
         }
     }
     
+    private fun loadParentUnitTypes(businessSlug: String) {
+        viewModelScope.launch {
+            quantityUnitsRepository.getParentUnitTypes(businessSlug).collect { parentUnits ->
+                _uiState.value = _uiState.value.copy(parentUnitTypes = parentUnits)
+            }
+        }
+    }
+    
+    fun setSelectedBaseUnit(unit: QuantityUnit?) {
+        val currentState = _uiState.value
+        val previousBaseUnit = currentState.selectedBaseUnit
+        
+        // Check if the new unit belongs to a different parent
+        val parentChanged = previousBaseUnit != null && unit != null && 
+            previousBaseUnit.parentSlug != unit.parentSlug
+        
+        // Reset opening and minimum quantity units if parent changed
+        val updatedOpeningUnit = if (parentChanged) unit else currentState.selectedOpeningQuantityUnit ?: unit
+        val updatedMinimumUnit = if (parentChanged) unit else currentState.selectedMinimumQuantityUnit ?: unit
+        
+        _uiState.value = currentState.copy(
+            selectedBaseUnit = unit,
+            selectedOpeningQuantityUnit = updatedOpeningUnit,
+            selectedMinimumQuantityUnit = updatedMinimumUnit
+        )
+        
+        // Load child units for the selected base unit's parent
+        unit?.parentSlug?.let { parentSlug ->
+            loadChildUnitsForParent(parentSlug)
+        }
+    }
+    
+    /**
+     * Load child units for a given parent unit type slug.
+     * This is used when selecting a parent unit type in the bottom sheet
+     * to show available child units without changing the selected base unit.
+     */
+    fun loadChildUnitsForParentType(parentTypeSlug: String) {
+        viewModelScope.launch {
+            val childUnits = quantityUnitsRepository.getUnitsByParentSuspend(parentTypeSlug)
+            _uiState.value = _uiState.value.copy(childUnitsForBaseParent = childUnits)
+        }
+    }
+    
+    private fun loadChildUnitsForParent(parentSlug: String) {
+        viewModelScope.launch {
+            val childUnits = quantityUnitsRepository.getUnitsByParentSuspend(parentSlug)
+            _uiState.value = _uiState.value.copy(childUnitsForBaseParent = childUnits)
+        }
+    }
+    
+    fun setSelectedOpeningQuantityUnit(unit: QuantityUnit?) {
+        _uiState.value = _uiState.value.copy(selectedOpeningQuantityUnit = unit)
+    }
+    
+    fun setSelectedMinimumQuantityUnit(unit: QuantityUnit?) {
+        _uiState.value = _uiState.value.copy(selectedMinimumQuantityUnit = unit)
+    }
+    
+    fun showBaseUnitSheet() {
+        _uiState.value = _uiState.value.copy(showBaseUnitSheet = true)
+    }
+    
+    fun hideBaseUnitSheet() {
+        _uiState.value = _uiState.value.copy(showBaseUnitSheet = false)
+    }
+    
+    fun showOpeningQuantityUnitSheet() {
+        _uiState.value = _uiState.value.copy(showOpeningQuantityUnitSheet = true)
+    }
+    
+    fun hideOpeningQuantityUnitSheet() {
+        _uiState.value = _uiState.value.copy(showOpeningQuantityUnitSheet = false)
+    }
+    
+    fun showMinimumQuantityUnitSheet() {
+        _uiState.value = _uiState.value.copy(showMinimumQuantityUnitSheet = true)
+    }
+    
+    fun hideMinimumQuantityUnitSheet() {
+        _uiState.value = _uiState.value.copy(showMinimumQuantityUnitSheet = false)
+    }
+    
     fun resetState(sessionKey: Int = -1) {
-        _uiState.value = AddProductUiState(sessionKey = sessionKey)
+        val parentUnitTypes = _uiState.value.parentUnitTypes
+        _uiState.value = AddProductUiState(sessionKey = sessionKey, parentUnitTypes = parentUnitTypes)
     }
 
     fun initializeForm(sessionKey: Int, productToEdit: com.hisaabi.hisaabi_kmp.products.domain.model.Product?) {
@@ -62,8 +153,14 @@ class AddProductViewModel(
     
     fun setSelectedWarehouse(warehouse: Warehouse?) {
         _uiState.value = _uiState.value.copy(selectedWarehouse = warehouse)
-        if (warehouse != null && _uiState.value.productToEdit != null) {
-            loadProductQuantities(_uiState.value.productToEdit!!.slug, warehouse.slug ?: "")
+        val productToEdit = _uiState.value.productToEdit
+        if (warehouse != null && productToEdit != null) {
+            loadProductQuantities(
+                productSlug = productToEdit.slug,
+                warehouseSlug = warehouse.slug ?: "",
+                openingQuantityUnitSlug = productToEdit.openingQuantityUnitSlug,
+                minimumQuantityUnitSlug = productToEdit.minimumQuantityUnitSlug
+            )
         } else {
             _uiState.value = _uiState.value.copy(
                 openingQuantity = "",
@@ -110,8 +207,49 @@ class AddProductViewModel(
         } else {
             _uiState.value = _uiState.value.copy(selectedCategory = null)
         }
-        if (_uiState.value.selectedWarehouse != null) {
-            loadProductQuantities(product.slug, _uiState.value.selectedWarehouse!!.slug ?: "")
+        
+        // Load unit information for edit mode (this also loads quantities with proper conversion)
+        loadProductUnits(product)
+    }
+    
+    private fun loadProductUnits(product: com.hisaabi.hisaabi_kmp.products.domain.model.Product) {
+        viewModelScope.launch {
+            // Load default unit (base unit) if set
+            val defaultUnit = product.defaultUnitSlug?.let { 
+                quantityUnitsRepository.getUnitBySlug(it) 
+            }
+            
+            // Load opening quantity unit if set
+            val openingUnit = product.openingQuantityUnitSlug?.let { 
+                quantityUnitsRepository.getUnitBySlug(it) 
+            }
+            
+            // Load minimum quantity unit if set
+            val minimumUnit = product.minimumQuantityUnitSlug?.let { 
+                quantityUnitsRepository.getUnitBySlug(it) 
+            }
+            
+            _uiState.value = _uiState.value.copy(
+                selectedBaseUnit = defaultUnit,
+                selectedOpeningQuantityUnit = openingUnit ?: defaultUnit,
+                selectedMinimumQuantityUnit = minimumUnit ?: defaultUnit
+            )
+            
+            // Load child units for the base unit's parent
+            defaultUnit?.parentSlug?.let { parentSlug ->
+                loadChildUnitsForParent(parentSlug)
+            }
+            
+            // Load quantities after units are loaded (with proper conversion factor division)
+            val currentState = _uiState.value
+            if (currentState.selectedWarehouse != null) {
+                loadProductQuantities(
+                    productSlug = product.slug,
+                    warehouseSlug = currentState.selectedWarehouse!!.slug ?: "",
+                    openingQuantityUnitSlug = product.openingQuantityUnitSlug,
+                    minimumQuantityUnitSlug = product.minimumQuantityUnitSlug
+                )
+            }
         }
     }
     
@@ -159,12 +297,33 @@ class AddProductViewModel(
         _uiState.value = _uiState.value.copy(manufacturer = value)
     }
     
-    private fun loadProductQuantities(productSlug: String, warehouseSlug: String) {
+    private fun loadProductQuantities(
+        productSlug: String, 
+        warehouseSlug: String,
+        openingQuantityUnitSlug: String? = null,
+        minimumQuantityUnitSlug: String? = null
+    ) {
         viewModelScope.launch {
             try {
                 val quantities = productsRepository.getProductQuantityForWarehouse(productSlug, warehouseSlug)
                 if (quantities != null) {
-                    val (opening, minimum) = quantities
+                    var (opening, minimum) = quantities
+                    
+                    // Divide by conversion factor to show original values for editing
+                    if (openingQuantityUnitSlug != null && opening > 0) {
+                        val openingUnit = quantityUnitsRepository.getUnitBySlug(openingQuantityUnitSlug)
+                        if (openingUnit != null && openingUnit.conversionFactor > 0) {
+                            opening = opening / openingUnit.conversionFactor
+                        }
+                    }
+                    
+                    if (minimumQuantityUnitSlug != null && minimum > 0) {
+                        val minimumUnit = quantityUnitsRepository.getUnitBySlug(minimumQuantityUnitSlug)
+                        if (minimumUnit != null && minimumUnit.conversionFactor > 0) {
+                            minimum = minimum / minimumUnit.conversionFactor
+                        }
+                    }
+                    
                     _uiState.value = _uiState.value.copy(
                         openingQuantity = if (opening > 0) "%.2f".format(opening) else "",
                         minimumQuantity = if (minimum > 0) "%.2f".format(minimum) else ""
@@ -195,7 +354,12 @@ class AddProductViewModel(
         taxPercentage: Double = 0.0,
         discountPercentage: Double = 0.0,
         categorySlug: String? = null,
-        manufacturer: String? = null
+        manufacturer: String? = null,
+        defaultUnitSlug: String? = null,
+        openingQuantityUnitSlug: String? = null,
+        minimumQuantityUnitSlug: String? = null,
+        openingQuantityConversionFactor: Double = 1.0,
+        minimumQuantityConversionFactor: Double = 1.0
     ) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
@@ -221,6 +385,9 @@ class AddProductViewModel(
                 discountPercentage = discountPercentage,
                 categorySlug = categorySlug,
                 manufacturer = manufacturer,
+                defaultUnitSlug = defaultUnitSlug,
+                openingQuantityUnitSlug = openingQuantityUnitSlug,
+                minimumQuantityUnitSlug = minimumQuantityUnitSlug,
                 businessSlug = bSlug,
                 userSlug = uSlug
             )
@@ -231,11 +398,15 @@ class AddProductViewModel(
                     // Save product quantities if warehouse is selected
                     val state = _uiState.value
                     if (state.selectedWarehouse != null && bSlug != null) {
+                        // Apply conversion factor to quantities
+                        val openingQty = (state.openingQuantity.toDoubleOrNull() ?: 0.0) * openingQuantityConversionFactor
+                        val minimumQty = (state.minimumQuantity.toDoubleOrNull() ?: 0.0) * minimumQuantityConversionFactor
+                        
                         saveProductQuantities(
                             productSlug = slug,
                             warehouseSlug = state.selectedWarehouse!!.slug ?: "",
-                            openingQuantity = state.openingQuantity.toDoubleOrNull() ?: 0.0,
-                            minimumQuantity = state.minimumQuantity.toDoubleOrNull() ?: 0.0,
+                            openingQuantity = openingQty,
+                            minimumQuantity = minimumQty,
                             businessSlug = bSlug
                         )
                     }
@@ -297,7 +468,12 @@ class AddProductViewModel(
         manufacturer: String? = null,
         warehouseSlug: String? = null,
         openingQuantity: Double = 0.0,
-        minimumQuantity: Double = 0.0
+        minimumQuantity: Double = 0.0,
+        defaultUnitSlug: String? = null,
+        openingQuantityUnitSlug: String? = null,
+        minimumQuantityUnitSlug: String? = null,
+        openingQuantityConversionFactor: Double = 1.0,
+        minimumQuantityConversionFactor: Double = 1.0
     ) {
         if (productToEdit != null) {
             // Update existing product
@@ -315,7 +491,12 @@ class AddProductViewModel(
                 manufacturer = manufacturer,
                 warehouseSlug = warehouseSlug,
                 openingQuantity = openingQuantity,
-                minimumQuantity = minimumQuantity
+                minimumQuantity = minimumQuantity,
+                defaultUnitSlug = defaultUnitSlug,
+                openingQuantityUnitSlug = openingQuantityUnitSlug,
+                minimumQuantityUnitSlug = minimumQuantityUnitSlug,
+                openingQuantityConversionFactor = openingQuantityConversionFactor,
+                minimumQuantityConversionFactor = minimumQuantityConversionFactor
             )
         } else {
             // Add new product
@@ -329,7 +510,12 @@ class AddProductViewModel(
                 taxPercentage = taxPercentage,
                 discountPercentage = discountPercentage,
                 categorySlug = categorySlug,
-                manufacturer = manufacturer
+                manufacturer = manufacturer,
+                defaultUnitSlug = defaultUnitSlug,
+                openingQuantityUnitSlug = openingQuantityUnitSlug,
+                minimumQuantityUnitSlug = minimumQuantityUnitSlug,
+                openingQuantityConversionFactor = openingQuantityConversionFactor,
+                minimumQuantityConversionFactor = minimumQuantityConversionFactor
             )
         }
     }
@@ -348,7 +534,12 @@ class AddProductViewModel(
         manufacturer: String? = null,
         warehouseSlug: String? = null,
         openingQuantity: Double = 0.0,
-        minimumQuantity: Double = 0.0
+        minimumQuantity: Double = 0.0,
+        defaultUnitSlug: String? = null,
+        openingQuantityUnitSlug: String? = null,
+        minimumQuantityUnitSlug: String? = null,
+        openingQuantityConversionFactor: Double = 1.0,
+        minimumQuantityConversionFactor: Double = 1.0
     ) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
@@ -373,6 +564,9 @@ class AddProductViewModel(
                 discountPercentage = discountPercentage,
                 categorySlug = categorySlug,
                 manufacturer = manufacturer,
+                defaultUnitSlug = defaultUnitSlug,
+                openingQuantityUnitSlug = openingQuantityUnitSlug,
+                minimumQuantityUnitSlug = minimumQuantityUnitSlug,
                 updatedAt = getCurrentTimestamp()
             )
             
@@ -383,11 +577,15 @@ class AddProductViewModel(
                     println("Product updated successfully with slug: $slug")
                     // Save product quantities if warehouse is selected
                     if (warehouseSlug != null && bSlug != null) {
+                        // Apply conversion factor to quantities
+                        val convertedOpeningQty = openingQuantity * openingQuantityConversionFactor
+                        val convertedMinimumQty = minimumQuantity * minimumQuantityConversionFactor
+                        
                         saveProductQuantities(
                             productSlug = slug,
                             warehouseSlug = warehouseSlug,
-                            openingQuantity = openingQuantity,
-                            minimumQuantity = minimumQuantity,
+                            openingQuantity = convertedOpeningQty,
+                            minimumQuantity = convertedMinimumQty,
                             businessSlug = bSlug
                         )
                     }
@@ -431,7 +629,17 @@ data class AddProductUiState(
     val purchasePrice: String = "",
     val taxPercentage: String = "",
     val discountPercentage: String = "",
-    val manufacturer: String = ""
+    val manufacturer: String = "",
+    // Unit-related fields
+    val parentUnitTypes: List<QuantityUnit> = emptyList(),
+    val childUnitsForBaseParent: List<QuantityUnit> = emptyList(),
+    val selectedBaseUnit: QuantityUnit? = null,
+    val selectedOpeningQuantityUnit: QuantityUnit? = null,
+    val selectedMinimumQuantityUnit: QuantityUnit? = null,
+    // Bottom sheet visibility states
+    val showBaseUnitSheet: Boolean = false,
+    val showOpeningQuantityUnitSheet: Boolean = false,
+    val showMinimumQuantityUnitSheet: Boolean = false
 )
 
 
