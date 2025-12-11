@@ -564,6 +564,7 @@ class AddProductViewModel(
                 discountPercentage = discountPercentage,
                 categorySlug = categorySlug,
                 manufacturer = manufacturer,
+                baseUnitSlug = defaultUnitSlug,  // Set base unit slug same as default unit slug
                 defaultUnitSlug = defaultUnitSlug,
                 openingQuantityUnitSlug = openingQuantityUnitSlug,
                 minimumQuantityUnitSlug = minimumQuantityUnitSlug,

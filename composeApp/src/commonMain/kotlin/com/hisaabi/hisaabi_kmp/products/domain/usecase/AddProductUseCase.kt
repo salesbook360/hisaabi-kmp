@@ -47,7 +47,7 @@ class AddProductUseCase(
                 thumbnail = null,
                 statusId = 0, // Active
                 digitalId = null,
-                baseUnitSlug = null,
+                baseUnitSlug = defaultUnitSlug,  // Set base unit slug same as default unit slug
                 defaultUnitSlug = defaultUnitSlug,
                 minimumQuantityUnitSlug = minimumQuantityUnitSlug,
                 openingQuantityUnitSlug = openingQuantityUnitSlug,
