@@ -17,6 +17,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.hisaabi.hisaabi_kmp.core.ui.FilterChipWithColors
 import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
+import com.hisaabi.hisaabi_kmp.quantityunits.domain.model.QuantityUnit
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.FlatOrPercent
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.PriceType
@@ -25,6 +26,7 @@ import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddTransactio
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionDetailItem
 import com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse
 import com.hisaabi.hisaabi_kmp.utils.format
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -372,6 +374,7 @@ private fun PriceTypeSelector(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ProductItemCard(
     item: TransactionDetailItem,
@@ -379,6 +382,77 @@ private fun ProductItemCard(
     viewModel: AddTransactionViewModel
 ) {
     var expanded by remember { mutableStateOf(false) }
+    var showUnitSelectionSheet by remember { mutableStateOf(false) }
+    var siblingUnits by remember { mutableStateOf<List<QuantityUnit>>(emptyList()) }
+    var isLoadingUnits by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+    val sheetState = rememberModalBottomSheetState()
+
+    // Unit Selection Bottom Sheet
+    if (showUnitSelectionSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showUnitSelectionSheet = false },
+            sheetState = sheetState
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                Text(
+                    "Select Unit",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(Modifier.height(16.dp))
+                
+                if (isLoadingUnits) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                } else if (siblingUnits.isEmpty()) {
+                    Text(
+                        "No units available",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    siblingUnits.forEach { unit ->
+                        val isSelected = item.selectedUnit?.slug == unit.slug
+                        ListItem(
+                            headlineContent = { 
+                                Text(
+                                    unit.title,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                )
+                            },
+                            supportingContent = if (unit.conversionFactor != 1.0) {
+                                { Text("Factor: ${unit.conversionFactor}") }
+                            } else null,
+                            leadingContent = {
+                                RadioButton(
+                                    selected = isSelected,
+                                    onClick = {
+                                        viewModel.updateProductUnit(index, unit)
+                                        showUnitSelectionSheet = false
+                                    }
+                                )
+                            },
+                            modifier = Modifier.clickable {
+                                viewModel.updateProductUnit(index, unit)
+                                showUnitSelectionSheet = false
+                            }
+                        )
+                    }
+                }
+                
+                Spacer(Modifier.height(32.dp))
+            }
+        }
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -419,48 +493,31 @@ private fun ProductItemCard(
 
             Spacer(Modifier.height(12.dp))
 
-            // Quantity and Price Row
+            // Quantity, Unit and Price Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Quantity - Simple string input
-                var quantityText by remember(item.quantity) { 
+                // Price - Simple string input with stable key using product slug
+                var priceText by remember(item.product.slug) {
                     mutableStateOf(
-                        if (item.quantity == 0.0) "" 
-                        else item.quantity.toString().trimEnd('0').trimEnd('.')
-                    )
-                }
-                
-                OutlinedTextField(
-                    value = quantityText,
-                    onValueChange = { newText ->
-                        // Allow any text input that matches number pattern
-                        if (newText.isEmpty() || newText.matches(Regex("^-?\\d*\\.?\\d*$"))) {
-                            quantityText = newText
-                            // Only update viewModel when there's a valid complete number
-                            // Don't update for empty, incomplete decimals, or invalid input
-                            if (newText.isNotEmpty() && !newText.endsWith(".") && newText != "-" && newText != "-.") {
-                                newText.toDoubleOrNull()?.let { qty ->
-                                    viewModel.updateProductQuantity(index, qty)
-                                }
-                            }
-                        }
-                    },
-                    label = { Text("Quantity") },
-                    modifier = Modifier.weight(1f),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
-                )
-
-                // Price - Simple string input
-                var priceText by remember(item.price) { 
-                    mutableStateOf(
-                        if (item.price == 0.0) "" 
+                        if (item.price == 0.0) ""
                         else item.price.toString().trimEnd('0').trimEnd('.')
                     )
                 }
                 
+                // Sync price from ViewModel when it changes externally (e.g., price type change)
+                LaunchedEffect(item.price) {
+                    val newPriceText = if (item.price == 0.0) "" 
+                        else item.price.toString().trimEnd('0').trimEnd('.')
+                    // Only update if the values are different (avoid overwriting during typing)
+                    val currentValue = priceText.toDoubleOrNull() ?: 0.0
+                    if (kotlin.math.abs(currentValue - item.price) > 0.001) {
+                        priceText = newPriceText
+                    }
+                }
+
                 OutlinedTextField(
                     value = priceText,
                     onValueChange = { newText ->
@@ -482,6 +539,81 @@ private fun ProductItemCard(
                     prefix = { Text("₨ ") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                 )
+                
+                // Quantity - Simple string input with stable key using product slug
+                var quantityText by remember(item.product.slug) { 
+                    mutableStateOf(
+                        if (item.quantity == 0.0) "" 
+                        else item.quantity.toString().trimEnd('0').trimEnd('.')
+                    )
+                }
+                
+                // Sync quantity from ViewModel when it changes externally (e.g., loading for edit)
+                LaunchedEffect(item.quantity) {
+                    val newQuantityText = if (item.quantity == 0.0) "" 
+                        else item.quantity.toString().trimEnd('0').trimEnd('.')
+                    // Only update if the values are different (avoid overwriting during typing)
+                    val currentValue = quantityText.toDoubleOrNull() ?: 0.0
+                    if (kotlin.math.abs(currentValue - item.quantity) > 0.001) {
+                        quantityText = newQuantityText
+                    }
+                }
+                
+                OutlinedTextField(
+                    value = quantityText,
+                    onValueChange = { newText ->
+                        // Allow any text input that matches number pattern
+                        if (newText.isEmpty() || newText.matches(Regex("^-?\\d*\\.?\\d*$"))) {
+                            quantityText = newText
+                            // Only update viewModel when there's a valid complete number
+                            // Don't update for empty, incomplete decimals, or invalid input
+                            if (newText.isNotEmpty() && !newText.endsWith(".") && newText != "-" && newText != "-.") {
+                                newText.toDoubleOrNull()?.let { qty ->
+                                    viewModel.updateProductQuantity(index, qty)
+                                }
+                            }
+                        }
+                    },
+                    label = { Text("Qty") },
+                    modifier = Modifier.weight(0.8f),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                )
+                
+                // Unit Selection Button
+                val unitText = item.selectedUnit?.title ?: "Unit"
+                val hasUnit = item.selectedUnit != null
+                
+                OutlinedButton(
+                    onClick = {
+                        // Load sibling units when button is clicked
+                        coroutineScope.launch {
+                            isLoadingUnits = true
+                            showUnitSelectionSheet = true
+                            siblingUnits = viewModel.getSiblingUnits(item.selectedUnit)
+                            isLoadingUnits = false
+                        }
+                    },
+                    modifier = Modifier.weight(0.6f),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
+                    enabled = hasUnit // Only enable if there's a unit to get siblings from
+                ) {
+                    Text(
+                        unitText,
+                        maxLines = 1,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    if (hasUnit) {
+                        Spacer(Modifier.width(4.dp))
+                        Icon(
+                            Icons.Default.ArrowDropDown,
+                            contentDescription = "Select unit",
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+
+
             }
 
             // Expanded Details

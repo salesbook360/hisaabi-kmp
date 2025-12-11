@@ -57,6 +57,9 @@ fun App() {
             // Products repository for fetching products by slugs
             val productsRepository: com.hisaabi.hisaabi_kmp.products.data.repository.ProductsRepository = koinInject()
             
+            // Quantity units repository for fetching unit details
+            val quantityUnitsRepository: com.hisaabi.hisaabi_kmp.quantityunits.data.repository.QuantityUnitsRepository = koinInject()
+            
             // Sync manager for background sync
             val syncManager: SyncManager = koinInject()
             
@@ -1984,8 +1987,10 @@ fun App() {
                                 products.forEach { product ->
                                     // Get the quantity for this product
                                     val quantity = selectedProductQuantitiesForTransaction[product.slug] ?: 1
-                                    // Get default unit for the product
-                                    val defaultUnit = null // TODO: Fetch from quantity units
+                                    // Get default unit for the product from its defaultUnitSlug
+                                    val defaultUnit = product.defaultUnitSlug?.let { slug ->
+                                        quantityUnitsRepository.getUnitBySlug(slug)
+                                    }
                                     // Add product with the specified quantity
                                     viewModel.addProduct(product, defaultUnit, quantity.toDouble())
                                 }

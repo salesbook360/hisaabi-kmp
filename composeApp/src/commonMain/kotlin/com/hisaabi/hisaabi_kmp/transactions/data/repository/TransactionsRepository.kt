@@ -13,6 +13,7 @@ import com.hisaabi.hisaabi_kmp.warehouses.data.repository.WarehousesRepository
 import com.hisaabi.hisaabi_kmp.products.data.repository.ProductsRepository
 import com.hisaabi.hisaabi_kmp.quantityunits.data.repository.QuantityUnitsRepository
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
+import com.hisaabi.hisaabi_kmp.sync.domain.model.SyncStatus
 import com.hisaabi.hisaabi_kmp.utils.getCurrentTimestamp
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -238,6 +239,10 @@ class TransactionsRepository(
             // Load old transaction first for validation and to reverse its effects
             val oldTransaction = getTransactionWithDetails(slug)
             
+            // Get the existing entity to preserve its ID for Room's @Update
+            val existingEntity = localDataSource.getTransactionBySlug(slug)
+                ?: return Result.failure(Exception("Transaction not found in database"))
+            
             // Validate transaction before any database changes
             val validationResult = transactionProcessor.validateTransaction(transaction, oldTransaction)
             if (validationResult.isFailure) {
@@ -251,9 +256,12 @@ class TransactionsRepository(
             
             val now = getCurrentTimestamp()
             
-            // Update transaction with only updated_at timestamp
+            // Update transaction with updated_at timestamp and sync_status = UPDATED
+            // Use the existing entity's ID to ensure Room's @Update finds the correct record
             val entity = transaction.toEntity(slug).copy(
-                updated_at = now
+                id = existingEntity.id,
+                updated_at = now,
+                sync_status = SyncStatus.UPDATED.value
             )
             localDataSource.updateTransaction(entity)
             
@@ -272,7 +280,8 @@ class TransactionsRepository(
                 detail.toEntity(slug).copy(
                     slug = detailSlug,
                     created_at = now,
-                    updated_at = now
+                    updated_at = now,
+                    sync_status = SyncStatus.UPDATED.value
                 )
             }
             localDataSource.insertTransactionDetails(detailEntities)

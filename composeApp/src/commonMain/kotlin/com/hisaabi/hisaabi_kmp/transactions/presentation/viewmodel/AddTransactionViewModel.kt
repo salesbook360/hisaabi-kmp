@@ -91,7 +91,8 @@ data class TransactionDetailItem(
 class AddTransactionViewModel(
     private val useCases: TransactionUseCases,
     private val sessionManager: AppSessionManager,
-    private val getTransactionWithDetailsUseCase: com.hisaabi.hisaabi_kmp.transactions.domain.usecase.GetTransactionWithDetailsUseCase
+    private val getTransactionWithDetailsUseCase: com.hisaabi.hisaabi_kmp.transactions.domain.usecase.GetTransactionWithDetailsUseCase,
+    private val quantityUnitsRepository: com.hisaabi.hisaabi_kmp.quantityunits.data.repository.QuantityUnitsRepository
 ) : ViewModel() {
     
     private val _state = MutableStateFlow(AddTransactionState())
@@ -208,6 +209,22 @@ class AddTransactionViewModel(
             }
             it.copy(transactionDetails = updatedDetails)
         }
+    }
+    
+    /**
+     * Get sibling units (units with the same parent) for a given unit.
+     * This is used to populate the unit selection bottom sheet.
+     */
+    suspend fun getSiblingUnits(unit: QuantityUnit?): List<QuantityUnit> {
+        val parentSlug = unit?.parentSlug ?: return emptyList()
+        return quantityUnitsRepository.getUnitsByParentSuspend(parentSlug)
+    }
+    
+    /**
+     * Get a unit by its slug.
+     */
+    suspend fun getUnitBySlug(slug: String): QuantityUnit? {
+        return quantityUnitsRepository.getUnitBySlug(slug)
     }
     
     // Step 2 Functions
@@ -381,9 +398,17 @@ class AddTransactionViewModel(
                 
                 // Convert transaction details to items
                 val detailItems = transaction.transactionDetails.map { detail ->
+                    // Convert quantity from base unit back to selected unit by dividing with conversion factor
+                    val conversionFactor = detail.quantityUnit?.conversionFactor ?: 1.0
+                    val quantityInSelectedUnit = if (conversionFactor != 0.0) {
+                        detail.quantity / conversionFactor
+                    } else {
+                        detail.quantity
+                    }
+                    
                     TransactionDetailItem(
                         product = detail.product ?: throw IllegalStateException("Product not loaded"),
-                        quantity = detail.quantity,
+                        quantity = quantityInSelectedUnit,
                         price = detail.price,
                         flatDiscount = detail.flatDiscount,
                         discountType = FlatOrPercent.fromValue(detail.discountType) ?: FlatOrPercent.FLAT,
@@ -573,10 +598,14 @@ class AddTransactionViewModel(
         val state = _state.value
         
         val transactionDetails = state.transactionDetails.map { item ->
+            // Convert quantity to base unit by multiplying with conversion factor
+            val conversionFactor = item.selectedUnit?.conversionFactor ?: 1.0
+            val quantityInBaseUnit = item.quantity * conversionFactor
+            
             TransactionDetail(
                 productSlug = item.product.slug,
                 product = item.product,
-                quantity = item.quantity,
+                quantity = quantityInBaseUnit,
                 price = item.price,
                 flatTax = item.flatTax,
                 taxType = item.taxType.value,
