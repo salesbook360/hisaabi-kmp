@@ -172,7 +172,7 @@ data class TransactionDto(
     val customerSlug: String? = null,
     val totalBill: Double = 0.0,
     val totalPaid: Double = 0.0,
-    val timestamp: Long? = null,
+    val timestamp: String? = null,
     val remindAtMilliseconds: Long? = null,
     val flatDiscount: Double = 0.0,
     val paymentMethodTo: String? = null,
