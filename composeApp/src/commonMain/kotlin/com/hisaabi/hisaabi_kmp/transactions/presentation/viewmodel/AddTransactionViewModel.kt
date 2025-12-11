@@ -11,6 +11,8 @@ import com.hisaabi.hisaabi_kmp.transactions.domain.model.*
 import com.hisaabi.hisaabi_kmp.transactions.domain.usecase.TransactionUseCases
 import com.hisaabi.hisaabi_kmp.transactions.domain.util.TransactionCalculator
 import com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse
+import com.hisaabi.hisaabi_kmp.warehouses.data.repository.WarehousesRepository
+import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -92,11 +94,34 @@ class AddTransactionViewModel(
     private val useCases: TransactionUseCases,
     private val sessionManager: AppSessionManager,
     private val getTransactionWithDetailsUseCase: com.hisaabi.hisaabi_kmp.transactions.domain.usecase.GetTransactionWithDetailsUseCase,
-    private val quantityUnitsRepository: com.hisaabi.hisaabi_kmp.quantityunits.data.repository.QuantityUnitsRepository
+    private val quantityUnitsRepository: com.hisaabi.hisaabi_kmp.quantityunits.data.repository.QuantityUnitsRepository,
+    private val warehousesRepository: WarehousesRepository,
+    private val preferencesManager: PreferencesManager
 ) : ViewModel() {
     
     private val _state = MutableStateFlow(AddTransactionState())
     val state: StateFlow<AddTransactionState> = _state.asStateFlow()
+    
+    init {
+        // Load last selected warehouse from preferences on initialization
+        loadLastSelectedWarehouse()
+    }
+    
+    /**
+     * Load the last selected warehouse from preferences and set it if available.
+     * This enables speedy transaction creation by pre-populating the warehouse.
+     */
+    private fun loadLastSelectedWarehouse() {
+        viewModelScope.launch {
+            val lastWarehouseSlug = preferencesManager.getLastSelectedWarehouseSlug()
+            if (lastWarehouseSlug != null) {
+                val warehouse = warehousesRepository.getWarehouseBySlug(lastWarehouseSlug)
+                if (warehouse != null) {
+                    _state.update { it.copy(selectedWarehouse = warehouse) }
+                }
+            }
+        }
+    }
     
     // Step 1 Functions
     fun setTransactionType(type: AllTransactionTypes) {
@@ -115,6 +140,10 @@ class AddTransactionViewModel(
     
     fun selectWarehouse(warehouse: Warehouse) {
         _state.update { it.copy(selectedWarehouse = warehouse) }
+        // Save selected warehouse to preferences for speedy future transactions
+        warehouse.slug?.let { slug ->
+            preferencesManager.setLastSelectedWarehouseSlug(slug)
+        }
     }
     
     fun setPriceType(priceType: PriceType) {
@@ -586,12 +615,28 @@ class AddTransactionViewModel(
             return false
         }
         
+        // Validate warehouse for transaction types that require it
+        if (AllTransactionTypes.requiresWarehouse(state.transactionType.value) && state.selectedWarehouse == null) {
+            _state.update { it.copy(error = "Please select a warehouse") }
+            return false
+        }
+        
         if (state.transactionDetails.isEmpty()) {
             _state.update { it.copy(error = "Please add at least one product") }
             return false
         }
         
         return true
+    }
+    
+    /**
+     * Check if warehouse is selected (for enabling/disabling product selection).
+     * Returns true if warehouse is not required for the current transaction type,
+     * or if it's required and a warehouse has been selected.
+     */
+    fun isWarehouseSelectedOrNotRequired(): Boolean {
+        val state = _state.value
+        return !AllTransactionTypes.requiresWarehouse(state.transactionType.value) || state.selectedWarehouse != null
     }
     
     private fun buildTransaction(businessSlug: String): Transaction {

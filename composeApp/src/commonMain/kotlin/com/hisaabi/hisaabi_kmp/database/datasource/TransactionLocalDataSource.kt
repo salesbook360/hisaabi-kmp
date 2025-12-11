@@ -31,6 +31,10 @@ class TransactionLocalDataSource(
         return transactionDao.getTransactionsByType(transactionType)
     }
     
+    fun getTransactionsByBusiness(businessSlug: String): Flow<List<InventoryTransactionEntity>> {
+        return transactionDao.getTransactionsByBusiness(businessSlug)
+    }
+    
     suspend fun insertTransaction(transaction: InventoryTransactionEntity): Long {
         return transactionDao.insertTransaction(transaction)
     }

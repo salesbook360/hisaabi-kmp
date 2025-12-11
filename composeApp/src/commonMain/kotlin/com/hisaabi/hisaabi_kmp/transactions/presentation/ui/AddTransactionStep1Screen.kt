@@ -116,12 +116,22 @@ fun AddTransactionStep1Screen(
                 )
             }
 
-            // Warehouse Selection Card (if needed)
-            if (AllTransactionTypes.affectsStock(state.transactionType.value)) {
+            // Warehouse Selection Card (mandatory for specific transaction types)
+            if (AllTransactionTypes.requiresWarehouse(state.transactionType.value)) {
                 item {
                     WarehouseSelectionCard(
                         selectedWarehouse = state.selectedWarehouse,
-                        onSelectWarehouse = onSelectWarehouse
+                        onSelectWarehouse = onSelectWarehouse,
+                        isMandatory = true
+                    )
+                }
+            } else if (AllTransactionTypes.affectsStock(state.transactionType.value)) {
+                // For other stock-affecting transactions (like Manufacture), show optional warehouse selection
+                item {
+                    WarehouseSelectionCard(
+                        selectedWarehouse = state.selectedWarehouse,
+                        onSelectWarehouse = onSelectWarehouse,
+                        isMandatory = false
                     )
                 }
             }
@@ -137,6 +147,8 @@ fun AddTransactionStep1Screen(
 
             // Products Header
             item {
+                val canAddProducts = viewModel.isWarehouseSelectedOrNotRequired()
+                
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -149,7 +161,8 @@ fun AddTransactionStep1Screen(
                     )
                     Button(
                         onClick = onSelectProducts,
-                        modifier = Modifier.height(36.dp)
+                        modifier = Modifier.height(36.dp),
+                        enabled = canAddProducts
                     ) {
                         Icon(Icons.Default.Add, "Add", Modifier.size(18.dp))
                         Spacer(Modifier.width(4.dp))
@@ -161,6 +174,9 @@ fun AddTransactionStep1Screen(
             // Product List
             if (state.transactionDetails.isEmpty()) {
                 item {
+                    val requiresWarehouse = AllTransactionTypes.requiresWarehouse(state.transactionType.value)
+                    val warehouseSelected = state.selectedWarehouse != null
+                    
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(
@@ -174,20 +190,29 @@ fun AddTransactionStep1Screen(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Icon(
-                                Icons.Default.ShoppingCart,
+                                if (requiresWarehouse && !warehouseSelected) 
+                                    Icons.Default.Warehouse 
+                                else 
+                                    Icons.Default.ShoppingCart,
                                 contentDescription = null,
                                 modifier = Modifier.size(48.dp),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Spacer(Modifier.height(16.dp))
                             Text(
-                                "No products added",
+                                if (requiresWarehouse && !warehouseSelected)
+                                    "Select a warehouse first"
+                                else
+                                    "No products added",
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Spacer(Modifier.height(8.dp))
                             Text(
-                                "Tap 'Add Products' to get started",
+                                if (requiresWarehouse && !warehouseSelected)
+                                    "Please select a warehouse to view product quantities"
+                                else
+                                    "Tap 'Add Products' to get started",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -304,12 +329,24 @@ private fun PartySelectionCard(
 @Composable
 private fun WarehouseSelectionCard(
     selectedWarehouse: Warehouse?,
-    onSelectWarehouse: () -> Unit
+    onSelectWarehouse: () -> Unit,
+    isMandatory: Boolean = false
 ) {
+    val isNotSelected = selectedWarehouse == null
+    val showError = isMandatory && isNotSelected
+    
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onSelectWarehouse)
+            .clickable(onClick = onSelectWarehouse),
+        colors = CardDefaults.cardColors(
+            containerColor = if (showError)
+                MaterialTheme.colorScheme.errorContainer
+            else if (selectedWarehouse != null)
+                MaterialTheme.colorScheme.primaryContainer
+            else
+                MaterialTheme.colorScheme.surfaceVariant
+        )
     ) {
         Row(
             modifier = Modifier
@@ -320,21 +357,66 @@ private fun WarehouseSelectionCard(
             Icon(
                 Icons.Default.Warehouse,
                 contentDescription = null,
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(40.dp),
+                tint = if (showError)
+                    MaterialTheme.colorScheme.onErrorContainer
+                else if (selectedWarehouse != null)
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                else
+                    MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    "Warehouse",
-                    style = MaterialTheme.typography.labelMedium
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "Warehouse",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = if (showError)
+                            MaterialTheme.colorScheme.onErrorContainer
+                        else if (selectedWarehouse != null)
+                            MaterialTheme.colorScheme.onPrimaryContainer
+                        else
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    if (isMandatory) {
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            "*",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
                 Text(
                     selectedWarehouse?.title ?: "Select Warehouse",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = if (showError)
+                        MaterialTheme.colorScheme.onErrorContainer
+                    else if (selectedWarehouse != null)
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    else
+                        MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                if (showError) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Required before adding products",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
             }
-            Icon(Icons.Default.ChevronRight, contentDescription = null)
+            Icon(
+                Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = if (showError)
+                    MaterialTheme.colorScheme.onErrorContainer
+                else if (selectedWarehouse != null)
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                else
+                    MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

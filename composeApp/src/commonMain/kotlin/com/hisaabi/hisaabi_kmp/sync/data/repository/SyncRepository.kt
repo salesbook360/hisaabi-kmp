@@ -9,6 +9,8 @@ import com.hisaabi.hisaabi_kmp.sync.data.mapper.*
 import com.hisaabi.hisaabi_kmp.sync.domain.model.SyncProgress
 import com.hisaabi.hisaabi_kmp.sync.domain.model.SyncStatus
 import com.hisaabi.hisaabi_kmp.sync.domain.model.SyncType
+import com.hisaabi.hisaabi_kmp.utils.getCurrentTimestamp
+import com.hisaabi.hisaabi_kmp.utils.timestampStringToIso
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -341,6 +343,7 @@ class SyncRepositoryImpl(
     // Transactions
     override suspend fun syncTransactionsUp(): Result<Unit> = runCatching {
         val businessSlug = sessionManager.getBusinessSlug() ?: return@runCatching
+        val userSlug = sessionManager.getUserSlug()
         val unsynced = transactionDao.getUnsyncedTransactions(businessSlug)
         
         if (unsynced.isEmpty()) return@runCatching
@@ -359,9 +362,28 @@ class SyncRepositoryImpl(
         val detailsByTransaction = allDetails.groupBy { it.transaction_slug }
         
         // Map transactions to DTOs with their details
+        // Apply transformations: convert timestamp to ISO, set createdAt/createdBy
         val dtos = unsynced.map { transaction ->
-            val details = detailsByTransaction[transaction.slug]?.map { it.toDto() } ?: emptyList()
-            transaction.toDto().copy(transactionDetails = details)
+            val rawDto = transaction.toDto()
+            val details = detailsByTransaction[transaction.slug]?.map { detail ->
+                val detailDto = detail.toDto()
+                // Set createdBy for transaction details if not already set
+                detailDto.copy(
+                    createdBy = detailDto.createdBy ?: userSlug,
+                    createdAt = detailDto.createdAt ?: detailDto.updatedAt ?: getCurrentTimestamp()
+                )
+            } ?: emptyList()
+            
+            // Transform the transaction DTO:
+            // 1. Convert timestamp from milliseconds to ISO 8601 format
+            // 2. Set createdAt if null (use updatedAt as fallback, or generate current timestamp)
+            // 3. Set createdBy from logged in user if not already set
+            rawDto.copy(
+                timestamp = rawDto.timestamp,
+                createdAt = rawDto.createdAt ?: rawDto.updatedAt ?: getCurrentTimestamp(),
+                createdBy = rawDto.createdBy ?: userSlug,
+                transactionDetails = details
+            )
         }
         
         // Double-check before API call

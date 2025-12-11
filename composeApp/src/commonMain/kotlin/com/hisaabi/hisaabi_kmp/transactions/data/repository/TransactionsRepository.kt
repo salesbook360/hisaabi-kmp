@@ -75,6 +75,18 @@ class TransactionsRepository(
         }
     }
     
+    fun getTransactionsByBusiness(businessSlug: String): Flow<List<Transaction>> {
+        return localDataSource.getTransactionsByBusiness(businessSlug).map { entities ->
+            entities.map { entity ->
+                // Load party for each transaction to display in list
+                val party = entity.customer_slug?.let { 
+                    partiesRepository.getPartyBySlug(it) 
+                }
+                entity.toDomainModel(party = party)
+            }
+        }
+    }
+    
     suspend fun getTransactionWithDetails(slug: String): Transaction? {
         val transactionEntity = localDataSource.getTransactionBySlug(slug) ?: return null
         

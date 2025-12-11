@@ -220,6 +220,24 @@ class PreferencesManager(
         storage.putString(KEY_CURRENCY, currency.code)
     }
     
+    // ========== Last Selected Warehouse Methods ==========
+    
+    /**
+     * Get the last selected warehouse slug for transactions.
+     * Returns null if no warehouse has been selected before.
+     */
+    fun getLastSelectedWarehouseSlug(): String? {
+        return storage.getString(KEY_LAST_WAREHOUSE_SLUG)
+    }
+    
+    /**
+     * Save the last selected warehouse slug for transactions.
+     * This is used to pre-populate the warehouse selection for speedy transactions.
+     */
+    fun setLastSelectedWarehouseSlug(warehouseSlug: String) {
+        storage.putString(KEY_LAST_WAREHOUSE_SLUG, warehouseSlug)
+    }
+    
     // ========== Storage Keys ==========
     
     companion object {
@@ -229,6 +247,7 @@ class PreferencesManager(
         private const val KEY_BIOMETRIC_AUTH = "biometric_auth_enabled"
         private const val KEY_LANGUAGE = "selected_language"
         private const val KEY_CURRENCY = "selected_currency"
+        private const val KEY_LAST_WAREHOUSE_SLUG = "last_selected_warehouse_slug"
     }
 }
 

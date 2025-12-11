@@ -208,6 +208,22 @@ enum class AllTransactionTypes(val value: Int, val displayName: String, val cate
                 STOCK_TRANSFER.value
             )
         }
+        
+        /**
+         * Check if transaction type requires warehouse selection
+         * This includes: Sale, Purchase, Sale Order, Purchase Order, Customer Return, Vendor Return, Quotation
+         */
+        fun requiresWarehouse(type: Int): Boolean {
+            return type in listOf(
+                SALE.value,
+                PURCHASE.value,
+                SALE_ORDER.value,
+                PURCHASE_ORDER.value,
+                CUSTOMER_RETURN.value,
+                VENDOR_RETURN.value,
+                QUOTATION.value
+            )
+        }
     }
 }
 

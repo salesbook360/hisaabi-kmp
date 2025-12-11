@@ -66,6 +66,41 @@ fun formatTransactionDate(timestampString: String?): String {
 }
 
 /**
+ * Converts a timestamp (in milliseconds) to ISO 8601 format.
+ * Format: 2024-10-01T16:30:42.000Z
+ * This is used for converting transaction timestamps to the format expected by the API.
+ */
+fun millisToIsoTimestamp(millis: Long): String {
+    val instant = Instant.fromEpochMilliseconds(millis)
+    val dateTime = instant.toLocalDateTime(TimeZone.UTC)
+    
+    return "${dateTime.year}-" +
+           "${dateTime.monthNumber.toString().padStart(2, '0')}-" +
+           "${dateTime.dayOfMonth.toString().padStart(2, '0')}T" +
+           "${dateTime.hour.toString().padStart(2, '0')}:" +
+           "${dateTime.minute.toString().padStart(2, '0')}:" +
+           "${dateTime.second.toString().padStart(2, '0')}.000Z"
+}
+
+/**
+ * Converts a timestamp string (milliseconds as string) to ISO 8601 format.
+ * If the string is already in ISO format or null, returns it as-is.
+ * Format: 2024-10-01T16:30:42.000Z
+ */
+fun timestampStringToIso(timestampString: String?): String? {
+    if (timestampString == null) return null
+    
+    // Check if already in ISO format (contains 'T' and 'Z')
+    if (timestampString.contains("T") && timestampString.contains("Z")) {
+        return timestampString
+    }
+    
+    // Try to parse as milliseconds
+    val millis = timestampString.toLongOrNull() ?: return timestampString
+    return millisToIsoTimestamp(millis)
+}
+
+/**
  * Formats an entry date (ISO 8601 string format "yyyy-MM-DDTHH:mm.000Z") to "dd MMM, yyyy" format.
  * Example: 15 Jan, 2024
  */
