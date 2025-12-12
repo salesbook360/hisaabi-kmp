@@ -26,6 +26,7 @@ import com.hisaabi.hisaabi_kmp.utils.formatEntryDate
 import com.hisaabi.hisaabi_kmp.receipt.ReceiptViewModel
 import com.hisaabi.hisaabi_kmp.receipt.ReceiptPreviewDialog
 import com.hisaabi.hisaabi_kmp.core.ui.FilterChipWithColors
+import com.hisaabi.hisaabi_kmp.sync.domain.model.SyncStatus
 import org.koin.compose.koinInject
 import com.hisaabi.hisaabi_kmp.utils.format
 
@@ -606,12 +607,19 @@ private fun CardHeader(
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
-                transaction.timestamp?.let { timestamp ->
-                    Text(
-                        formatTransactionDate(timestamp),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                // Sync status and timestamp row
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    SyncStatusIndicator(syncStatus = transaction.syncStatus)
+                    transaction.timestamp?.let { timestamp ->
+                        Text(
+                            formatTransactionDate(timestamp),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
                 transaction.slug?.let { slug ->
                     Text(
@@ -627,6 +635,36 @@ private fun CardHeader(
             }
         }
     }
+}
+
+@Composable
+private fun SyncStatusIndicator(syncStatus: Int) {
+    val status = SyncStatus.fromValue(syncStatus)
+    
+    val (icon, tint, description) = when (status) {
+        SyncStatus.SYNCED -> Triple(
+            Icons.Default.CloudDone,
+            Color(0xFF4CAF50), // Green
+            "Synced"
+        )
+        SyncStatus.NONE -> Triple(
+            Icons.Default.CloudUpload,
+            Color(0xFFFF9800), // Orange
+            "Pending sync"
+        )
+        SyncStatus.UPDATED -> Triple(
+            Icons.Default.CloudSync,
+            Color(0xFF2196F3), // Blue
+            "Updated, pending sync"
+        )
+    }
+    
+    Icon(
+        imageVector = icon,
+        contentDescription = description,
+        modifier = Modifier.size(14.dp),
+        tint = tint
+    )
 }
 
 @Composable
