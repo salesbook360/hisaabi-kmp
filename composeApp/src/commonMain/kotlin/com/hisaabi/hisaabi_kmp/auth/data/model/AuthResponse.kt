@@ -39,6 +39,14 @@ data class AuthInfo(
     val refreshToken: String
 )
 
+// Refresh token response - matches the actual API response structure
+@Serializable
+data class RefreshTokenResponse(
+    val accessToken: String,
+    val refreshToken: String,
+    val expirationTime: String? = null
+)
+
 // Error response models
 @Serializable
 data class ApiError(

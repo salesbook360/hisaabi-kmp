@@ -13,7 +13,7 @@ interface AuthRemoteDataSource {
     suspend fun login(request: LoginRequest): RegisterResponse
     suspend fun register(request: RegisterRequest): RegisterResponse
     suspend fun loginWithGoogle(request: GoogleSignInRequest): RegisterResponse
-    suspend fun refreshToken(request: RefreshTokenRequest): RegisterResponse
+    suspend fun refreshToken(request: RefreshTokenRequest): RefreshTokenResponse
     suspend fun forgotPassword(request: ForgotPasswordRequest): Unit
     suspend fun resetPassword(request: ResetPasswordRequest): Unit
     suspend fun logout(): Unit
@@ -99,7 +99,7 @@ class AuthRemoteDataSourceImpl(
         return loginResponse
     }
     
-    override suspend fun refreshToken(request: RefreshTokenRequest): RegisterResponse {
+    override suspend fun refreshToken(request: RefreshTokenRequest): RefreshTokenResponse {
         println("=== REFRESH TOKEN API CALL ===")
         println("Endpoint: $REFRESH_ENDPOINT")
         println("Refresh Token: ${request.refreshToken}")
@@ -121,7 +121,7 @@ class AuthRemoteDataSourceImpl(
             ignoreUnknownKeys = true 
             isLenient = true
         }
-        val refreshResponse = json.decodeFromString<RegisterResponse>(rawBody)
+        val refreshResponse = json.decodeFromString<RefreshTokenResponse>(rawBody)
         println("Parsed Response: $refreshResponse")
         
         return refreshResponse

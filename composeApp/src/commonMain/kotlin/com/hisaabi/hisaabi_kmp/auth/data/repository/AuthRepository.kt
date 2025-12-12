@@ -191,17 +191,20 @@ class AuthRepositoryImpl(
             val request = RefreshTokenRequest(refreshToken)
             val response = remoteDataSource.refreshToken(request)
             
-            // Extract user from the list (should be first item)
-            val userDto = response.data?.list?.firstOrNull()
-                ?: return AuthResult.Error("No user data received from server")
+            println("Token refresh successful - updating local tokens")
             
-            // Update tokens and user data
-            localDataSource.saveAccessToken(userDto.authInfo.accessToken)
-            localDataSource.saveRefreshToken(userDto.authInfo.refreshToken)
-            localDataSource.saveUser(userDto)
+            // Update tokens in local storage
+            localDataSource.saveAccessToken(response.accessToken)
+            localDataSource.saveRefreshToken(response.refreshToken)
             
-            AuthResult.Success(userDto.toDomainModel())
+            // Get current user from local storage (refresh response doesn't include user data)
+            val currentUser = localDataSource.getUser()
+                ?: return AuthResult.Error("No user data in local storage")
+            
+            AuthResult.Success(currentUser.toDomainModel())
         } catch (e: Exception) {
+            println("Token refresh exception: ${e.message}")
+            e.printStackTrace()
             // If refresh fails, clear auth data
             localDataSource.clearAuthData()
             AuthResult.Error(e.message ?: "Token refresh failed")
