@@ -2,6 +2,7 @@ package com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hisaabi.hisaabi_kmp.core.session.AppSessionManager
 import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction
@@ -28,7 +29,8 @@ data class AddRecordState(
 
 class AddRecordViewModel(
     private val transactionUseCases: TransactionUseCases,
-    private val getTransactionWithDetailsUseCase: com.hisaabi.hisaabi_kmp.transactions.domain.usecase.GetTransactionWithDetailsUseCase
+    private val getTransactionWithDetailsUseCase: com.hisaabi.hisaabi_kmp.transactions.domain.usecase.GetTransactionWithDetailsUseCase,
+    private val sessionManager: AppSessionManager
 ) : ViewModel() {
     
     private val _state = MutableStateFlow(AddRecordState())
@@ -126,6 +128,8 @@ class AddRecordViewModel(
             _state.update { it.copy(isLoading = true, error = null) }
             
             try {
+                val businessSlug = sessionManager.getBusinessSlug()
+                
                 val transaction = Transaction(
                     slug = currentState.editingTransactionSlug, // Include slug if editing
                     customerSlug = currentState.selectedParty?.slug,
@@ -139,7 +143,8 @@ class AddRecordViewModel(
                     totalBill = 0.0,
                     flatDiscount = 0.0,
                     flatTax = 0.0,
-                    additionalCharges = 0.0
+                    additionalCharges = 0.0,
+                    businessSlug = businessSlug
                 )
                 
                 // Check if we're editing or creating
