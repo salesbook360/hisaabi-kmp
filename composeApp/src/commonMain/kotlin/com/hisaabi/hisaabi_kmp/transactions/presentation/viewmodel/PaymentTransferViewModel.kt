@@ -2,6 +2,7 @@ package com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hisaabi.hisaabi_kmp.core.session.AppSessionManager
 import com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction
 import com.hisaabi.hisaabi_kmp.transactions.domain.usecase.TransactionUseCases
@@ -24,7 +25,8 @@ data class PaymentTransferState(
 )
 
 class PaymentTransferViewModel(
-    private val transactionUseCases: TransactionUseCases
+    private val transactionUseCases: TransactionUseCases,
+    private val appSessionManager: AppSessionManager
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(PaymentTransferState())
@@ -91,14 +93,16 @@ class PaymentTransferViewModel(
                     paymentMethodTo = currentState.paymentMethodTo,
                     flatDiscount = 0.0,
                     flatTax = 0.0,
-                    additionalCharges = 0.0
+                    additionalCharges = 0.0,
+                    businessSlug = appSessionManager.getBusinessSlug(),
+                    createdBy = appSessionManager.getUserSlug()
                 )
 
                 transactionUseCases.addTransaction(transaction)
                     .onSuccess {
-                        _state.update { 
+                        _state.update {
                             it.copy(
-                                isLoading = false, 
+                                isLoading = false,
                                 success = true,
                                 // Reset form
                                 paymentMethodFrom = null,
@@ -106,23 +110,23 @@ class PaymentTransferViewModel(
                                 amount = "",
                                 description = "",
                                 dateTime = Clock.System.now().toEpochMilliseconds()
-                            ) 
+                            )
                         }
                     }
                     .onFailure { exception ->
-                        _state.update { 
+                        _state.update {
                             it.copy(
-                                isLoading = false, 
+                                isLoading = false,
                                 error = exception.message ?: "Failed to save transaction"
-                            ) 
+                            )
                         }
                     }
             } catch (e: Exception) {
-                _state.update { 
+                _state.update {
                     it.copy(
-                        isLoading = false, 
+                        isLoading = false,
                         error = e.message ?: "An error occurred"
-                    ) 
+                    )
                 }
             }
         }
@@ -137,10 +141,10 @@ class PaymentTransferViewModel(
     }
 
     fun resetForm() {
-        _state.update { 
+        _state.update {
             PaymentTransferState(
                 dateTime = Clock.System.now().toEpochMilliseconds()
-            ) 
+            )
         }
     }
 }

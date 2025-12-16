@@ -2,6 +2,7 @@ package com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hisaabi.hisaabi_kmp.core.session.AppSessionManager
 import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
 import com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType
 import com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod
@@ -32,7 +33,8 @@ data class PayGetCashState(
 )
 
 class PayGetCashViewModel(
-    private val transactionUseCases: TransactionUseCases
+    private val transactionUseCases: TransactionUseCases,
+    private val appSessionManager: AppSessionManager
 ) : ViewModel() {
     
     private val _state = MutableStateFlow(PayGetCashState())
@@ -128,7 +130,10 @@ class PayGetCashViewModel(
                     paymentMethodTo = currentState.selectedPaymentMethod,
                     flatDiscount = 0.0,
                     flatTax = 0.0,
-                    additionalCharges = 0.0
+                    additionalCharges = 0.0,
+                    businessSlug = appSessionManager.getBusinessSlug(),
+                    createdBy = appSessionManager.getUserSlug()
+
                 )
                 
                 transactionUseCases.addTransaction(transaction)
