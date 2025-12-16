@@ -77,7 +77,7 @@ val transactionsModule = module {
     viewModel { PayGetCashViewModel(get(),get()) }
     viewModel { AddExpenseIncomeViewModel(get()) }
     viewModel { PaymentTransferViewModel(get(), get()) }
-    viewModel { AddJournalVoucherViewModel(get()) }
+    viewModel { AddJournalVoucherViewModel(get(), get()) }
     viewModel { StockAdjustmentViewModel(get()) }
     viewModel {
         TransactionDetailViewModel(

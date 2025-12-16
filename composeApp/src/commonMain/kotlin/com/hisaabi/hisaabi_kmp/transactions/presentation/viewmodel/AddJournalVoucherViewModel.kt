@@ -2,6 +2,7 @@ package com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hisaabi.hisaabi_kmp.core.session.AppSessionManager
 import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
 import com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.JournalAccount
@@ -29,7 +30,8 @@ data class AddJournalVoucherState(
 )
 
 class AddJournalVoucherViewModel(
-    private val transactionUseCases: TransactionUseCases
+    private val transactionUseCases: TransactionUseCases,
+    val appSessionManager: AppSessionManager
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AddJournalVoucherState())
@@ -203,7 +205,9 @@ class AddJournalVoucherViewModel(
                     flatDiscount = 0.0,
                     flatTax = 0.0,
                     additionalCharges = 0.0,
-                    transactionDetails = emptyList()
+                    transactionDetails = emptyList(),
+                    businessSlug = appSessionManager.getBusinessSlug(),
+                    createdBy = appSessionManager.getUserSlug()
                 )
 
                 // Save the parent journal voucher transaction
