@@ -503,7 +503,7 @@ private fun AmountSummaryCard(transaction: Transaction) {
 }
 
 @Composable
-private fun ProductDetailCard(detail: com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionDetail) {
+private fun ProductDetailCard(detail: TransactionDetail) {
     Card(
         modifier = Modifier.fillMaxWidth()
     ) {

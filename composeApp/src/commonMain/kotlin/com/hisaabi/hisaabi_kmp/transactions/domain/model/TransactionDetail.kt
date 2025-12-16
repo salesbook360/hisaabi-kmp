@@ -31,27 +31,33 @@ data class TransactionDetail(
         val totalBill = price * quantity
         return totalBill + flatTax - flatDiscount
     }
-    
+
     fun calculateSubtotal(): Double {
         return price * quantity
     }
-    
+
+    fun getConvertedQuantityIntoSelectedUnit(): Double {
+      return  if ((quantityUnit?.conversionFactor ?: 0.0) > 1.0) {
+            (quantity / (quantityUnit?.conversionFactor ?: 0.0))
+        } else quantity
+    }
+
     fun getDisplayQuantity(): String {
         return if (quantityUnit != null) {
-            "$quantity ${quantityUnit.title}"
+            "${getConvertedQuantityIntoSelectedUnit()} ${quantityUnit.title}"
         } else {
             quantity.toString()
         }
     }
-    
+
     /**
      * Calculate and return a copy with updated profit based on transaction type.
-     * 
+     *
      * Profit is calculated as:
      * - Sale: (price - avgPurchasePrice) * quantity
      * - Customer Return: -1 * (price - avgPurchasePrice) * quantity
      * - Other transactions: 0.0
-     * 
+     *
      * @param transactionType The type of transaction
      * @return A copy of this TransactionDetail with calculated profit
      */
