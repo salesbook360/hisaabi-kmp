@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.hisaabi.hisaabi_kmp.core.session.AppSessionManager
 import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
 import com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod
+import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.JournalAccount
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.JournalAccountType
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction
@@ -229,7 +230,7 @@ class AddJournalVoucherViewModel(
                                                 account.isDebit
                                             )
                                             
-                                            val amount = if (transactionType == 8 || transactionType == 9) {
+                                            val amount = if (transactionType == AllTransactionTypes.EXPENSE.value || transactionType == AllTransactionTypes.EXTRA_INCOME.value) {
                                                 // For expense and income, use signed amounts
                                                 if (account.isDebit) account.amount else -account.amount
                                             } else {
@@ -249,7 +250,9 @@ class AddJournalVoucherViewModel(
                                                 paymentMethodTo = currentState.selectedPaymentMethod,
                                                 flatDiscount = 0.0,
                                                 flatTax = 0.0,
-                                                additionalCharges = 0.0
+                                                additionalCharges = 0.0,
+                                                businessSlug = appSessionManager.getBusinessSlug(),
+                                                createdBy = appSessionManager.getBusinessSlug()
                                             )
                                             
                                             transactionUseCases.addTransaction(childTransaction)
@@ -282,7 +285,9 @@ class AddJournalVoucherViewModel(
                                                     currentState.selectedPaymentMethod,
                                                 flatDiscount = 0.0,
                                                 flatTax = 0.0,
-                                                additionalCharges = 0.0
+                                                additionalCharges = 0.0,
+                                                businessSlug = appSessionManager.getBusinessSlug(),
+                                                createdBy = appSessionManager.getBusinessSlug()
                                             )
                                             
                                             transactionUseCases.addTransaction(childTransaction)
