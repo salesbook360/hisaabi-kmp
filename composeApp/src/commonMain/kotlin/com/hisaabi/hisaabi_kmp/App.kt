@@ -274,6 +274,7 @@ fun App() {
             
             // Transactions navigation state
             var transactionType by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes?>(null) }
+            var initialExpenseIncomeType by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes?>(null) }
             var selectingPartyForTransaction by remember { mutableStateOf(false) }
             var selectedPartyForTransaction by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.parties.domain.model.Party?>(null) }
             var returnToScreenAfterPartySelection by remember { mutableStateOf<AppScreen?>(null) }
@@ -557,9 +558,11 @@ fun App() {
                         onNavigateToAddRecord = { navigateTo(AppScreen.ADD_RECORD) },
                         onNavigateToPayGetCash = { navigateTo(AppScreen.PAY_GET_CASH) },
                         onNavigateToExpense = {
+                            initialExpenseIncomeType = com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.EXPENSE
                             navigateTo(AppScreen.ADD_EXPENSE_INCOME)
                         },
                         onNavigateToExtraIncome = {
+                            initialExpenseIncomeType = com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.EXTRA_INCOME
                             navigateTo(AppScreen.ADD_EXPENSE_INCOME)
                         },
                         onNavigateToPaymentTransfer = { navigateTo(AppScreen.PAYMENT_TRANSFER) },
@@ -1632,11 +1635,24 @@ fun App() {
                         }
                     }
                     
+                    // Set initial transaction type when screen is opened
+                    LaunchedEffect(initialExpenseIncomeType, expenseIncomeViewModel) {
+                        initialExpenseIncomeType?.let { type ->
+                            expenseIncomeViewModel?.let { viewModel ->
+                                // Set the transaction type based on navigation source
+                                viewModel.setTransactionType(type)
+                                // Clear the initial type after setting it
+                                initialExpenseIncomeType = null
+                            }
+                        }
+                    }
+                    
                     expenseIncomeViewModel?.let { viewModel ->
                         com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddExpenseIncomeScreen(
                             viewModel = viewModel,
                             onNavigateBack = { success, transactionType ->
                                 isInExpenseIncomeFlow = false
+                                initialExpenseIncomeType = null // Reset initial type
                                 partiesRefreshTrigger++ // Refresh parties to show updated balances
                                 // Show toast if transaction was saved successfully
                                 if (success) {
