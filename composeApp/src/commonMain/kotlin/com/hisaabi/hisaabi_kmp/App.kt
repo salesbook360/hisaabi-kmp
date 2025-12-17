@@ -283,7 +283,6 @@ fun App() {
             var selectingWarehouseForTransaction by remember { mutableStateOf(false) }
             var selectedWarehouseForTransaction by remember { mutableStateOf<com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse?>(null) }
             var selectingProductsForTransaction by remember { mutableStateOf(false) }
-            var selectedProductsForTransaction by remember { mutableStateOf<List<com.hisaabi.hisaabi_kmp.products.domain.model.Product>>(emptyList()) }
             var selectedProductQuantitiesForTransaction by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
             var returnToScreenAfterProductSelection by remember { mutableStateOf<AppScreen?>(null) }
             var selectingPaymentMethodForTransaction by remember { mutableStateOf(false) }
@@ -1869,12 +1868,22 @@ fun App() {
                     }
 
                     // Handle product selection for stock adjustment
-                    LaunchedEffect(selectedProductsForTransaction) {
-                        if (selectingProductsForTransaction && returnToScreenAfterProductSelection == AppScreen.STOCK_ADJUSTMENT && stockAdjustmentViewModel != null) {
-                            selectedProductsForTransaction.forEach { product ->
-                                stockAdjustmentViewModel.addProduct(product)
+                    LaunchedEffect(selectedProductQuantitiesForTransaction.size, selectedBusinessSlug) {
+                        val businessSlug = selectedBusinessSlug
+                        if (selectedProductQuantitiesForTransaction.isNotEmpty() && businessSlug != null &&
+                            selectingProductsForTransaction && returnToScreenAfterProductSelection == AppScreen.STOCK_ADJUSTMENT && stockAdjustmentViewModel != null) {
+                            // Fetch products by their slugs
+                            val allProducts = productsRepository.getProducts(businessSlug)
+                            val selectedSlugs = selectedProductQuantitiesForTransaction.keys.toSet()
+                            val products = allProducts.filter { it.slug in selectedSlugs }
+
+                            products.forEach { product ->
+                                // Get the quantity for this product
+                                val quantity = selectedProductQuantitiesForTransaction[product.slug] ?: 1
+                                // Add product with the specified quantity
+                                stockAdjustmentViewModel.addProduct(product, quantity.toDouble())
                             }
-                            selectedProductsForTransaction = emptyList()
+                            selectedProductQuantitiesForTransaction = emptyMap() // Clear after adding
                             selectingProductsForTransaction = false
                             returnToScreenAfterProductSelection = null
                         }

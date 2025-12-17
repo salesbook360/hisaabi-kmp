@@ -2,6 +2,7 @@ package com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hisaabi.hisaabi_kmp.core.session.AppSessionManager
 import com.hisaabi.hisaabi_kmp.products.domain.model.Product
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction
@@ -28,7 +29,8 @@ data class StockAdjustmentState(
 )
 
 class StockAdjustmentViewModel(
-    private val transactionUseCases: TransactionUseCases
+    private val transactionUseCases: TransactionUseCases,
+    private val appSessionManager: AppSessionManager
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(StockAdjustmentState())
@@ -46,17 +48,17 @@ class StockAdjustmentViewModel(
         _state.update { it.copy(warehouseTo = warehouse) }
     }
 
-    fun addProduct(product: Product) {
+    fun addProduct(product: Product, quantity: Double = 1.0) {
         val existingProduct = _state.value.products.find { it.productSlug == product.slug }
         if (existingProduct != null) {
             // Update quantity if product already exists
-            updateProductQuantity(product.slug, existingProduct.quantity + 1.0)
+            updateProductQuantity(product.slug, existingProduct.quantity + quantity)
         } else {
             // Add new product
             val transactionDetail = TransactionDetail(
                 productSlug = product.slug,
                 product = product,
-                quantity = 1.0,
+                quantity = quantity,
                 price = product.retailPrice,
                 flatDiscount = 0.0,
                 flatTax = 0.0,
@@ -154,7 +156,9 @@ class StockAdjustmentViewModel(
                     totalPaid = 0.0,
                     flatDiscount = 0.0,
                     flatTax = 0.0,
-                    additionalCharges = 0.0
+                    additionalCharges = 0.0,
+                    businessSlug = appSessionManager.getBusinessSlug(),
+                    createdBy = appSessionManager.getUserSlug()
                 )
 
                 transactionUseCases.addTransaction(transaction)
