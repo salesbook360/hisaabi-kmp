@@ -36,7 +36,7 @@ class AddManufactureViewModel(
     val state: StateFlow<ManufactureState> = _state.asStateFlow()
 
     private val originalQuantityMap = mutableMapOf<String, Double>()
-    
+
     private var businessSlug: String? = null
     private var userSlug: String? = null
 
@@ -250,7 +250,9 @@ class AddManufactureViewModel(
                     slug = null,
                     syncStatus = 0,
                     createdAt = null,
-                    updatedAt = null
+                    updatedAt = null,
+                    businessSlug = businessSlug,
+                    createdBy = userSlug
                 )
 
                 val bSlug = businessSlug
