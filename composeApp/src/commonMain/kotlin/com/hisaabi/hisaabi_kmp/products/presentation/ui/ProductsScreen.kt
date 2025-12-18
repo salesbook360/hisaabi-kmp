@@ -57,10 +57,18 @@ fun ProductsScreen(
     var isSearchActive by remember { mutableStateOf(false) }
     var showFilterSheet by remember { mutableStateOf(false) }
     
+    // Track the last initialProductType we processed to avoid resetting on recomposition
+    // This prevents the issue where addProductType is cleared to null, causing recomposition
+    // and potentially resetting the product type
+    var lastProcessedInitialType by remember { mutableStateOf<ProductType?>(null) }
+    
     // Set initial product type when screen loads
+    // Only process if initialProductType is not null AND it's different from what we've already processed
+    // The ViewModel's onProductTypeChanged has internal checks to avoid unnecessary reloads
     LaunchedEffect(initialProductType) {
-        if (initialProductType != null) {
+        if (initialProductType != null && initialProductType != lastProcessedInitialType) {
             viewModel.onProductTypeChanged(initialProductType)
+            lastProcessedInitialType = initialProductType
         }
     }
     
