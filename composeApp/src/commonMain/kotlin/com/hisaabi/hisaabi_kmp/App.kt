@@ -715,7 +715,10 @@ fun App() {
                                 onNavigateToPaymentTransfer = { navigateTo(AppScreen.PAYMENT_TRANSFER) },
                                 onNavigateToJournalVoucher = { navigateTo(AppScreen.JOURNAL_VOUCHER) },
                                 onNavigateToStockAdjustment = { navigateTo(AppScreen.STOCK_ADJUSTMENT) },
-                                onNavigateToManufacture = { navigateTo(AppScreen.ADD_MANUFACTURE) },
+                                onNavigateToManufacture = {
+                                    selectedTransactionSlugForEdit = null // Clear any edit state
+                                    navigateTo(AppScreen.ADD_MANUFACTURE)
+                                },
                                 onNavigateToAddTransaction = { type ->
                                     transactionType = type
                                     navigateTo(AppScreen.ADD_TRANSACTION_STEP1)
@@ -1508,6 +1511,7 @@ fun App() {
                                             }
 
                                             transaction.transactionType == com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.MANUFACTURE.value -> {
+                                                selectedTransactionSlugForEdit = transaction.slug
                                                 navigateTo(AppScreen.ADD_MANUFACTURE)
                                             }
 
@@ -2207,6 +2211,14 @@ fun App() {
                             }
 
                             manufactureViewModel?.let { viewModel ->
+                                // Load transaction for editing if provided
+                                LaunchedEffect(selectedTransactionSlugForEdit) {
+                                    selectedTransactionSlugForEdit?.let { slug ->
+                                        viewModel.loadManufactureTransaction(slug)
+                                        selectedTransactionSlugForEdit = null // Clear after loading
+                                    }
+                                }
+
                                 com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddManufactureScreen(
                                     viewModel = viewModel,
                                     onNavigateBack = {

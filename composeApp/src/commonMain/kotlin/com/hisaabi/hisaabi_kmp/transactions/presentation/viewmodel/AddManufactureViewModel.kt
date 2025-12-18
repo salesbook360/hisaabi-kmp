@@ -38,6 +38,7 @@ class AddManufactureViewModel(
 
     private var businessSlug: String? = null
     private var userSlug: String? = null
+    private var editingTransactionSlug: String? = null
 
     init {
         viewModelScope.launch {
@@ -404,7 +405,99 @@ class AddManufactureViewModel(
     fun resetState() {
         _state.value = ManufactureState()
         originalQuantityMap.clear()
+        editingTransactionSlug = null
         loadInitialData()
+    }
+
+    fun loadManufactureTransaction(transactionSlug: String) {
+        viewModelScope.launch {
+            try {
+                _state.value = _state.value.copy(isLoading = true, error = null)
+
+                // Load parent transaction
+                val parentTransaction = transactionsRepository.getTransactionWithDetails(transactionSlug)
+                    ?: throw IllegalStateException("Transaction not found")
+
+                if (parentTransaction.transactionType != AllTransactionTypes.MANUFACTURE.value) {
+                    throw IllegalStateException("Not a manufacture transaction")
+                }
+
+                // Load child transactions
+                val childTransactions = transactionsRepository.getChildTransactions(transactionSlug)
+
+                // Find Purchase transaction (contains recipe)
+                val purchaseTransaction = childTransactions.find {
+                    it.transactionType == AllTransactionTypes.PURCHASE.value
+                }
+
+                // Find Sale transaction (contains ingredients)
+                val saleTransaction = childTransactions.find {
+                    it.transactionType == AllTransactionTypes.SALE.value
+                }
+
+                // Extract recipe from Purchase transaction
+                val recipeDetail = purchaseTransaction?.transactionDetails?.firstOrNull()
+                    ?: throw IllegalStateException("Recipe not found in manufacture transaction")
+
+                val recipe = recipeDetail.product
+                    ?: throw IllegalStateException("Recipe product not found")
+
+                // Extract ingredients from Sale transaction
+                val ingredients = saleTransaction?.transactionDetails ?: emptyList()
+
+                // Get recipe quantity directly from the purchase transaction detail
+                val recipeQuantity = recipeDetail.quantity
+
+                // Store original quantities based on actual ingredient quantities divided by recipe quantity
+                // This preserves any manual modifications the user made to ingredient quantities
+                originalQuantityMap.clear()
+                if (recipeQuantity > 0) {
+                    ingredients.forEach { ingredient ->
+                        originalQuantityMap[ingredient.productSlug ?: ""] = ingredient.quantity / recipeQuantity
+                    }
+                } else {
+                    // Fallback to recipe ingredients if recipe quantity is 0 (shouldn't happen, but safe)
+                    val recipeIngredients = productsRepository.getRecipeIngredients(recipe.slug)
+                    recipeIngredients.forEach {
+                        originalQuantityMap[it.ingredientSlug] = it.quantity
+                    }
+                }
+
+                // Load recipe unit
+                val recipeUnit = recipe.defaultUnitSlug?.let {
+                    quantityUnitsRepository.getUnitBySlug(it)
+                }
+
+                // Load warehouse
+                val warehouse = parentTransaction.wareHouseSlugFrom?.let {
+                    warehousesRepository.getWarehouseBySlug(it)
+                }
+
+                editingTransactionSlug = transactionSlug
+
+                // Update state with loaded data
+                _state.value = _state.value.copy(
+                    selectedRecipe = recipe,
+                    recipeQuantity = recipeQuantity,
+                    recipeUnit = recipeUnit,
+                    ingredients = ingredients,
+                    additionalCharges = parentTransaction.additionalCharges,
+                    additionalChargesDescription = parentTransaction.additionalChargesDesc ?: "",
+                    selectedWarehouse = warehouse,
+                    transactionTimestamp = parentTransaction.timestamp?.toLongOrNull() ?: currentTimeMillis(),
+                    editingTransactionSlug = transactionSlug,
+                    isLoading = false
+                )
+
+                // Calculate total cost
+                calculateTotalCost()
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(
+                    error = e.message ?: "Failed to load transaction",
+                    isLoading = false
+                )
+            }
+        }
     }
 }
 
@@ -422,6 +515,7 @@ data class ManufactureState(
     val totalCost: Double = 0.0,
     val isLoading: Boolean = true,
     val isSaving: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val editingTransactionSlug: String? = null
 )
 
