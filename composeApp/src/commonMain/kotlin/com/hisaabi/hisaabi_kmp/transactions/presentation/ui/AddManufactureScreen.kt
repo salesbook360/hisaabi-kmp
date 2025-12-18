@@ -1,10 +1,12 @@
 package com.hisaabi.hisaabi_kmp.transactions.presentation.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -18,10 +20,10 @@ import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionDetail
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddManufactureViewModel
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.ManufactureState
 import com.hisaabi.hisaabi_kmp.utils.format
+import com.hisaabi.hisaabi_kmp.utils.formatDateTime
+import com.hisaabi.hisaabi_kmp.utils.SimpleDateTimePickerDialog
 import com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse
-import kotlinx.datetime.Clock
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,22 +55,24 @@ fun AddManufactureScreen(
                 title = { Text("Manufacture Transaction") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, "Back")
-                    }
-                },
-                actions = {
-                    if (!state.isSaving) {
-                        IconButton(onClick = {
-                            viewModel.saveManufactureTransaction(onSuccess = { _ ->
-                                onSaveSuccess()
-                                onNavigateBack()
-                            })
-                        }) {
-                            Icon(Icons.Default.Save, "Save")
-                        }
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                     }
                 }
             )
+        },
+        floatingActionButton = {
+            if (!state.isSaving) {
+                ExtendedFloatingActionButton(
+                    onClick = {
+                        viewModel.saveManufactureTransaction(onSuccess = { _ ->
+                            onSaveSuccess()
+                            onNavigateBack()
+                        })
+                    },
+                    icon = { Icon(Icons.Default.Save, "Save") },
+                    text = { Text("Save Transaction") }
+                )
+            }
         }
     ) { paddingValues ->
         if (state.isLoading) {
@@ -123,43 +127,28 @@ private fun AddManufactureContent(
     modifier: Modifier = Modifier
 ) {
     var showRecipeSelector by remember { mutableStateOf(false) }
+    var showDateTimePicker by remember { mutableStateOf(false) }
 
     LazyColumn(
         modifier = modifier.padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Date and Warehouse Selection
+        // Date Selection
         item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                // Date Selection (simplified - you might want to add a date picker)
-                OutlinedButton(
-                    onClick = { /* TODO: Add date picker */ },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Default.CalendarToday, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text(
-                        formatTimestamp(state.transactionTimestamp),
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
+            DateTimeField(
+                label = "Transaction Date & Time",
+                timestamp = state.transactionTimestamp,
+                onDateTimeClick = { showDateTimePicker = true }
+            )
+        }
 
-                // Warehouse Selection
-                OutlinedButton(
-                    onClick = onSelectWarehouse,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Default.Warehouse, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text(
-                        state.selectedWarehouse?.title ?: "Select Warehouse",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            }
+        // Warehouse Selection Card
+        item {
+            WarehouseSelectionCard(
+                selectedWarehouse = state.selectedWarehouse,
+                onSelectWarehouse = onSelectWarehouse,
+                isMandatory = false
+            )
         }
 
         // Recipe Selection Section
@@ -353,10 +342,22 @@ private fun AddManufactureContent(
             }
         }
 
-        // Bottom padding
+        // Bottom padding for FAB
         item {
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(80.dp))
         }
+    }
+
+    // Date Time Picker Dialog
+    if (showDateTimePicker) {
+        SimpleDateTimePickerDialog(
+            initialTimestamp = state.transactionTimestamp,
+            onConfirm = { timestamp ->
+                onDateChanged(timestamp)
+                showDateTimePicker = false
+            },
+            onDismiss = { showDateTimePicker = false }
+        )
     }
 
     // Recipe Selector Dialog
@@ -555,9 +556,127 @@ private fun RecipeSelectorDialog(
     )
 }
 
-private fun formatTimestamp(timestamp: Long): String {
-    val instant = kotlinx.datetime.Instant.fromEpochMilliseconds(timestamp)
-    val dateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
-    return "${dateTime.dayOfMonth}/${dateTime.monthNumber}/${dateTime.year}"
+@Composable
+private fun DateTimeField(
+    label: String,
+    timestamp: Long,
+    onDateTimeClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onDateTimeClick)
+    ) {
+        OutlinedTextField(
+            value = formatDateTime(timestamp),
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(label) },
+            modifier = Modifier.fillMaxWidth(),
+            leadingIcon = { Icon(Icons.Default.CalendarToday, "Date") },
+            enabled = false,
+            colors = OutlinedTextFieldDefaults.colors(
+                disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                disabledBorderColor = MaterialTheme.colorScheme.outline,
+                disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        )
+    }
+}
+
+@Composable
+private fun WarehouseSelectionCard(
+    selectedWarehouse: Warehouse?,
+    onSelectWarehouse: () -> Unit,
+    isMandatory: Boolean = false
+) {
+    val isNotSelected = selectedWarehouse == null
+    val showError = isMandatory && isNotSelected
+    
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onSelectWarehouse),
+        colors = CardDefaults.cardColors(
+            containerColor = if (showError)
+                MaterialTheme.colorScheme.errorContainer
+            else if (selectedWarehouse != null)
+                MaterialTheme.colorScheme.primaryContainer
+            else
+                MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Default.Warehouse,
+                contentDescription = null,
+                modifier = Modifier.size(40.dp),
+                tint = if (showError)
+                    MaterialTheme.colorScheme.onErrorContainer
+                else if (selectedWarehouse != null)
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                else
+                    MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "Warehouse",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = if (showError)
+                            MaterialTheme.colorScheme.onErrorContainer
+                        else if (selectedWarehouse != null)
+                            MaterialTheme.colorScheme.onPrimaryContainer
+                        else
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    if (isMandatory) {
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            "*",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+                Text(
+                    selectedWarehouse?.title ?: "Select Warehouse",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = if (showError)
+                        MaterialTheme.colorScheme.onErrorContainer
+                    else if (selectedWarehouse != null)
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    else
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                if (showError) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Required before adding products",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+            }
+            Icon(
+                Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = if (showError)
+                    MaterialTheme.colorScheme.onErrorContainer
+                else if (selectedWarehouse != null)
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                else
+                    MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
 }
 
