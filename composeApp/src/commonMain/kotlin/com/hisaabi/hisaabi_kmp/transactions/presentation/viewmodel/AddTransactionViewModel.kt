@@ -451,6 +451,13 @@ class AddTransactionViewModel(
                 // Parse timestamp
                 val timestamp = transaction.timestamp?.toLongOrNull() ?: currentTimeMillis()
                 
+                // Calculate the old transaction's effect on party balance
+                // This needs to be reversed when calculating previousBalance
+                val oldTransactionEffect = calculateTransactionBalanceEffect(transaction)
+                val currentPartyBalance = transaction.party?.balance ?: 0.0
+                // Subtract the old transaction's effect to get the balance before this transaction
+                val previousBalance = currentPartyBalance - oldTransactionEffect
+                
                 // Set state with transaction data
                 _state.update { 
                     it.copy(
@@ -460,7 +467,7 @@ class AddTransactionViewModel(
                         transactionDetails = detailItems,
                         priceType = PriceType.fromValue(transaction.priceTypeId) ?: PriceType.RETAIL,
                         transactionDateTime = timestamp,
-                        previousBalance = transaction.party?.balance ?: 0.0,
+                        previousBalance = previousBalance,
                         additionalCharges = transaction.additionalCharges,
                         additionalChargesDesc = transaction.additionalChargesDesc ?: "",
                         flatDiscount = transaction.flatDiscount,
@@ -582,6 +589,41 @@ class AddTransactionViewModel(
     }
     
     // Private Helper Functions
+    /**
+     * Calculate the effect of a transaction on party balance.
+     * This is used when editing transactions to reverse the old transaction's effect.
+     * 
+     * The logic matches BalanceHistoryScreen.calculateTransactionEffect():
+     * - For transactions that increase balance (you will get money): SALE, SALE_ORDER, VENDOR_RETURN, etc.
+     *   Effect: -(totalBill - totalPaid)
+     * - For transactions that decrease balance (you will pay money): PURCHASE, PURCHASE_ORDER, CUSTOMER_RETURN, etc.
+     *   Effect: (totalBill - totalPaid)
+     */
+    private fun calculateTransactionBalanceEffect(transaction: Transaction): Double {
+        // Use totalBill instead of calculateGrandTotal() to match BalanceHistoryScreen logic
+        val payableAmount = transaction.totalBill - transaction.totalPaid
+        
+        return when (transaction.transactionType) {
+            AllTransactionTypes.SALE.value,
+            AllTransactionTypes.VENDOR_RETURN.value,
+            AllTransactionTypes.GET_FROM_CUSTOMER.value,
+            AllTransactionTypes.GET_FROM_VENDOR.value -> {
+                // These increase balance (you will get money)
+                // Negative because balance decreases when you're owed money (balance becomes more negative)
+                -payableAmount
+            }
+            AllTransactionTypes.PURCHASE.value,
+            AllTransactionTypes.CUSTOMER_RETURN.value,
+            AllTransactionTypes.PAY_TO_VENDOR.value,
+            AllTransactionTypes.PAY_TO_CUSTOMER.value -> {
+                // These decrease balance (you will pay money)
+                // Positive because balance increases when you owe money (balance becomes more positive)
+                payableAmount
+            }
+            else -> 0.0
+        }
+    }
+    
     private fun updateDefaultPriceType(type: AllTransactionTypes) {
         val priceType = when {
             AllTransactionTypes.isDealingWithVendor(type.value) -> PriceType.PURCHASE
