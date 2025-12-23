@@ -1,6 +1,7 @@
 package com.hisaabi.hisaabi_kmp.business.data.datasource
 
 import com.hisaabi.hisaabi_kmp.business.data.model.*
+import com.hisaabi.hisaabi_kmp.config.AppConfig
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
@@ -14,14 +15,17 @@ interface BusinessRemoteDataSource {
 }
 
 class BusinessRemoteDataSourceImpl(
-    private val httpClient: HttpClient
+    private val httpClient: HttpClient,
+    private val appConfig: AppConfig
 ) : BusinessRemoteDataSource {
     
-    companion object {
-        private const val BASE_URL = "http://52.20.167.4:5000"
-        private const val BUSINESS_ENDPOINT = "$BASE_URL/business"
-        private const val DELETE_BUSINESS_ENDPOINT = "$BASE_URL/delete_business"
-    }
+    private val baseUrl: String
+        get() = appConfig.baseUrl
+    
+    private val BUSINESS_ENDPOINT: String
+        get() = "$baseUrl/business"
+    private val DELETE_BUSINESS_ENDPOINT: String
+        get() = "$baseUrl/delete_business"
     
     override suspend fun getAllBusinesses(): BusinessResponse {
         println("=== GET ALL BUSINESSES API CALL ===")

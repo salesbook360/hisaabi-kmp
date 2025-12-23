@@ -1,6 +1,7 @@
 package com.hisaabi.hisaabi_kmp.auth.data.datasource
 
 import com.hisaabi.hisaabi_kmp.auth.data.model.*
+import com.hisaabi.hisaabi_kmp.config.AppConfig
 import io.ktor.client.*
 import io.ktor.client.call.body
 import io.ktor.client.request.*
@@ -20,19 +21,27 @@ interface AuthRemoteDataSource {
 }
 
 class AuthRemoteDataSourceImpl(
-    private val httpClient: HttpClient
+    private val httpClient: HttpClient,
+    private val appConfig: AppConfig
 ) : AuthRemoteDataSource {
     
-    companion object {
-        private const val BASE_URL = "http://52.20.167.4:5000"
-        private const val LOGIN_ENDPOINT = "$BASE_URL/login"
-        private const val REGISTER_ENDPOINT = "$BASE_URL/register"
-        private const val LOGIN_WITH_GOOGLE_ENDPOINT = "$BASE_URL/login-with-google"
-        private const val REFRESH_ENDPOINT = "$BASE_URL/refresh-auth-token"
-        private const val FORGOT_PASSWORD_ENDPOINT = "$BASE_URL/forgot-password"
-        private const val RESET_PASSWORD_ENDPOINT = "$BASE_URL/reset-password"
-        private const val LOGOUT_ENDPOINT = "$BASE_URL/logout"
-    }
+    private val baseUrl: String
+        get() = appConfig.baseUrl
+    
+    private val LOGIN_ENDPOINT: String
+        get() = "$baseUrl/login"
+    private val REGISTER_ENDPOINT: String
+        get() = "$baseUrl/register"
+    private val LOGIN_WITH_GOOGLE_ENDPOINT: String
+        get() = "$baseUrl/login-with-google"
+    private val REFRESH_ENDPOINT: String
+        get() = "$baseUrl/refresh-auth-token"
+    private val FORGOT_PASSWORD_ENDPOINT: String
+        get() = "$baseUrl/forgot-password"
+    private val RESET_PASSWORD_ENDPOINT: String
+        get() = "$baseUrl/reset-password"
+    private val LOGOUT_ENDPOINT: String
+        get() = "$baseUrl/logout"
     
     @OptIn(InternalAPI::class)
     override suspend fun login(request: LoginRequest): RegisterResponse {

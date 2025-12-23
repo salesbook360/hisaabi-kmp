@@ -8,7 +8,7 @@ import org.koin.dsl.module
 
 val profileModule = module {
     // Repository
-    single { ProfileRepository(get(), get<AuthLocalDataSource>()) }
+    single { ProfileRepository(get(), get<AuthLocalDataSource>(), get()) }
     
     // ViewModel
     viewModel { UpdateProfileViewModel(get(), get<AuthLocalDataSource>()) }

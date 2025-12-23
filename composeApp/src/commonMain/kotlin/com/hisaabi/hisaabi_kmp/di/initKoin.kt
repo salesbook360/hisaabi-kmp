@@ -3,6 +3,7 @@ package com.hisaabi.hisaabi_kmp.di
 import com.hisaabi.hisaabi_kmp.auth.di.authModule
 import com.hisaabi.hisaabi_kmp.business.di.businessModule
 import com.hisaabi.hisaabi_kmp.categories.di.categoriesModule
+import com.hisaabi.hisaabi_kmp.config.di.configModule
 import com.hisaabi.hisaabi_kmp.core.di.coreModule
 import com.hisaabi.hisaabi_kmp.database.di.databaseModule
 import com.hisaabi.hisaabi_kmp.parties.di.partiesModule
@@ -23,6 +24,7 @@ fun initKoin(config: KoinAppDeclaration? = null) {
     startKoin {
         config?.invoke(this)
         modules(
+            configModule, // Load first - provides environment configuration
             coreModule, // Core app services
             databaseModule,
             businessModule, // Load before authModule to provide BusinessPreferencesDataSource

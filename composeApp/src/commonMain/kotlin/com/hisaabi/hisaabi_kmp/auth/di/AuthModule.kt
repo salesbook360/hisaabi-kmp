@@ -105,7 +105,7 @@ val authModule = module {
     }
     
     // Remote Data Source - now HttpClient exists
-    single<AuthRemoteDataSource> { AuthRemoteDataSourceImpl(get()) }
+    single<AuthRemoteDataSource> { AuthRemoteDataSourceImpl(get(), get()) }
     
     // Repository - now both data sources exist
     single<AuthRepository> { AuthRepositoryImpl(get(), get()) }

@@ -1,6 +1,7 @@
 package com.hisaabi.hisaabi_kmp.profile.data
 
 import com.hisaabi.hisaabi_kmp.auth.data.datasource.AuthLocalDataSource
+import com.hisaabi.hisaabi_kmp.config.AppConfig
 import com.hisaabi.hisaabi_kmp.profile.domain.model.UpdateProfileRequest
 import com.hisaabi.hisaabi_kmp.profile.domain.model.UpdateProfileResponse
 import com.hisaabi.hisaabi_kmp.profile.domain.model.UserProfile
@@ -11,9 +12,11 @@ import io.ktor.http.*
 
 class ProfileRepository(
     private val httpClient: HttpClient,
-    private val authLocalDataSource: AuthLocalDataSource
+    private val authLocalDataSource: AuthLocalDataSource,
+    private val appConfig: AppConfig
 ) {
-    private val baseUrl = "http://52.20.167.4:5000"
+    private val baseUrl: String
+        get() = appConfig.baseUrl
     
     suspend fun updateProfile(
         profile: UserProfile,

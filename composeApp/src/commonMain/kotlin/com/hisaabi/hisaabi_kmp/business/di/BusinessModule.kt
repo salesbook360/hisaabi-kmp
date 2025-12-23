@@ -15,7 +15,7 @@ import org.koin.dsl.module
 
 val businessModule = module {
     // Remote Data Source - uses HttpClient from authModule
-    single<BusinessRemoteDataSource> { BusinessRemoteDataSourceImpl(get()) }
+    single<BusinessRemoteDataSource> { BusinessRemoteDataSourceImpl(get(), get()) }
     
     // Local Data Source - for caching business data
     single<BusinessLocalDataSource> { BusinessLocalDataSourceImpl(get()) }

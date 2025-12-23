@@ -17,7 +17,8 @@ val syncModule = module {
     // Data Sources
     single<SyncRemoteDataSource> {
         SyncRemoteDataSourceImpl(
-            httpClient = get()
+            httpClient = get(),
+            appConfig = get()
         )
     }
     
