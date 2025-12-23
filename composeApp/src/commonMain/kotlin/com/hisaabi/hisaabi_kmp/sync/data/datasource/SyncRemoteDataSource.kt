@@ -1,6 +1,7 @@
 package com.hisaabi.hisaabi_kmp.sync.data.datasource
 
 import com.hisaabi.hisaabi_kmp.sync.data.model.*
+import com.hisaabi.hisaabi_kmp.sync.util.JsonSanitizer
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
@@ -69,14 +70,16 @@ class SyncRemoteDataSourceImpl(
     
     companion object {
       //  private const val BASE_URL = "http://52.20.167.4:5000" // Production.
-        private const val BASE_URL = "http://10.68.53.161:3000" // Local host.
+        private const val BASE_URL = "http://10.68.53.161:3000" //
     }
     
     // Categories
     override suspend fun syncCategoriesUp(categories: List<CategoryDto>): SyncResponse<CategoryDto> {
+        // Sanitize categories before sending to prevent JSON parsing errors
+        val sanitizedCategories = JsonSanitizer.sanitizeCategories(categories)
         return httpClient.post("$BASE_URL/sync-categories") {
             contentType(ContentType.Application.Json)
-            setBody(SyncRequest(categories))
+            setBody(SyncRequest(sanitizedCategories))
         }.body()
     }
     
@@ -88,9 +91,11 @@ class SyncRemoteDataSourceImpl(
     
     // Products
     override suspend fun syncProductsUp(products: List<ProductDto>): SyncResponse<ProductDto> {
+        // Sanitize products before sending to prevent JSON parsing errors
+        val sanitizedProducts = JsonSanitizer.sanitizeProducts(products)
         return httpClient.post("$BASE_URL/products") {
             contentType(ContentType.Application.Json)
-            setBody(SyncRequest(products))
+            setBody(SyncRequest(sanitizedProducts))
         }.body()
     }
     
@@ -101,17 +106,21 @@ class SyncRemoteDataSourceImpl(
     }
     
     override suspend fun addProducts(products: List<ProductDto>): SyncResponse<ProductDto> {
+        // Sanitize products before sending to prevent JSON parsing errors
+        val sanitizedProducts = JsonSanitizer.sanitizeProducts(products)
         return httpClient.post("$BASE_URL/products") {
             contentType(ContentType.Application.Json)
-            setBody(SyncRequest(products))
+            setBody(SyncRequest(sanitizedProducts))
         }.body()
     }
     
     // Parties
     override suspend fun syncPartiesUp(parties: List<PartyDto>): SyncResponse<PartyDto> {
+        // Sanitize parties before sending to prevent JSON parsing errors
+        val sanitizedParties = JsonSanitizer.sanitizeParties(parties)
         return httpClient.post("$BASE_URL/person") {
             contentType(ContentType.Application.Json)
-            setBody(SyncRequest(parties))
+            setBody(SyncRequest(sanitizedParties))
         }.body()
     }
     
@@ -122,17 +131,21 @@ class SyncRemoteDataSourceImpl(
     }
     
     override suspend fun addParties(parties: List<PartyDto>): SyncResponse<PartyDto> {
+        // Sanitize parties before sending to prevent JSON parsing errors
+        val sanitizedParties = JsonSanitizer.sanitizeParties(parties)
         return httpClient.post("$BASE_URL/person") {
             contentType(ContentType.Application.Json)
-            setBody(SyncRequest(parties))
+            setBody(SyncRequest(sanitizedParties))
         }.body()
     }
     
     // Payment Methods
     override suspend fun syncPaymentMethodsUp(paymentMethods: List<PaymentMethodDto>): SyncResponse<PaymentMethodDto> {
+        // Sanitize payment methods before sending to prevent JSON parsing errors
+        val sanitizedPaymentMethods = JsonSanitizer.sanitizePaymentMethods(paymentMethods)
         return httpClient.post("$BASE_URL/payment-method") {
             contentType(ContentType.Application.Json)
-            setBody(SyncRequest(paymentMethods))
+            setBody(SyncRequest(sanitizedPaymentMethods))
         }.body()
     }
     
@@ -143,17 +156,21 @@ class SyncRemoteDataSourceImpl(
     }
     
     override suspend fun addPaymentMethods(paymentMethods: List<PaymentMethodDto>): SyncResponse<PaymentMethodDto> {
+        // Sanitize payment methods before sending to prevent JSON parsing errors
+        val sanitizedPaymentMethods = JsonSanitizer.sanitizePaymentMethods(paymentMethods)
         return httpClient.post("$BASE_URL/payment-method") {
             contentType(ContentType.Application.Json)
-            setBody(SyncRequest(paymentMethods))
+            setBody(SyncRequest(sanitizedPaymentMethods))
         }.body()
     }
     
     // Quantity Units
     override suspend fun syncQuantityUnitsUp(quantityUnits: List<QuantityUnitDto>): SyncResponse<QuantityUnitDto> {
+        // Sanitize quantity units before sending to prevent JSON parsing errors
+        val sanitizedQuantityUnits = JsonSanitizer.sanitizeQuantityUnits(quantityUnits)
         return httpClient.post("$BASE_URL/sync-quantity-unit") {
             contentType(ContentType.Application.Json)
-            setBody(SyncRequest(quantityUnits))
+            setBody(SyncRequest(sanitizedQuantityUnits))
         }.body()
     }
     
@@ -165,9 +182,11 @@ class SyncRemoteDataSourceImpl(
     
     // Warehouses
     override suspend fun syncWarehousesUp(warehouses: List<WareHouseDto>): SyncResponse<WareHouseDto> {
+        // Sanitize warehouses before sending to prevent JSON parsing errors
+        val sanitizedWarehouses = JsonSanitizer.sanitizeWarehouses(warehouses)
         return httpClient.post("$BASE_URL/sync-warehouse") {
             contentType(ContentType.Application.Json)
-            setBody(SyncRequest(warehouses))
+            setBody(SyncRequest(sanitizedWarehouses))
         }.body()
     }
     
@@ -179,9 +198,11 @@ class SyncRemoteDataSourceImpl(
     
     // Transactions
     override suspend fun syncTransactionsUp(transactions: List<TransactionDto>): SyncResponse<TransactionDto> {
+        // Sanitize transactions before sending to prevent JSON parsing errors
+        val sanitizedTransactions = JsonSanitizer.sanitizeTransactions(transactions)
         return httpClient.post("$BASE_URL/transaction") {
             contentType(ContentType.Application.Json)
-            setBody(SyncRequest(transactions))
+            setBody(SyncRequest(sanitizedTransactions))
         }.body()
     }
     
@@ -192,9 +213,11 @@ class SyncRemoteDataSourceImpl(
     }
     
     override suspend fun addTransactions(transactions: List<TransactionDto>): SyncResponse<TransactionDto> {
+        // Sanitize transactions before sending to prevent JSON parsing errors
+        val sanitizedTransactions = JsonSanitizer.sanitizeTransactions(transactions)
         return httpClient.post("$BASE_URL/transaction") {
             contentType(ContentType.Application.Json)
-            setBody(SyncRequest(transactions))
+            setBody(SyncRequest(sanitizedTransactions))
         }.body()
     }
     
@@ -214,9 +237,11 @@ class SyncRemoteDataSourceImpl(
     
     // Media
     override suspend fun syncMediaUp(media: List<EntityMediaDto>): SyncResponse<EntityMediaDto> {
+        // Sanitize media before sending to prevent JSON parsing errors
+        val sanitizedMedia = JsonSanitizer.sanitizeEntityMediaList(media)
         return httpClient.post("$BASE_URL/sync-media") {
             contentType(ContentType.Application.Json)
-            setBody(SyncRequest(media))
+            setBody(SyncRequest(sanitizedMedia))
         }.body()
     }
     
@@ -228,9 +253,11 @@ class SyncRemoteDataSourceImpl(
     
     // Recipe Ingredients
     override suspend fun syncRecipeIngredientsUp(ingredients: List<RecipeIngredientsDto>): SyncResponse<RecipeIngredientsDto> {
+        // Sanitize recipe ingredients before sending to prevent JSON parsing errors
+        val sanitizedIngredients = JsonSanitizer.sanitizeRecipeIngredients(ingredients)
         return httpClient.post("$BASE_URL/recipe-ingredients") {
             contentType(ContentType.Application.Json)
-            setBody(SyncRequest(ingredients))
+            setBody(SyncRequest(sanitizedIngredients))
         }.body()
     }
     
@@ -241,9 +268,11 @@ class SyncRemoteDataSourceImpl(
     }
     
     override suspend fun addRecipeIngredients(ingredients: List<RecipeIngredientsDto>): SyncResponse<RecipeIngredientsDto> {
+        // Sanitize recipe ingredients before sending to prevent JSON parsing errors
+        val sanitizedIngredients = JsonSanitizer.sanitizeRecipeIngredients(ingredients)
         return httpClient.post("$BASE_URL/recipe-ingredients") {
             contentType(ContentType.Application.Json)
-            setBody(SyncRequest(ingredients))
+            setBody(SyncRequest(sanitizedIngredients))
         }.body()
     }
     
@@ -255,9 +284,11 @@ class SyncRemoteDataSourceImpl(
     }
     
     override suspend fun deleteRecords(records: List<DeletedRecordsDto>): SyncResponse<Any> {
+        // Sanitize deleted records before sending to prevent JSON parsing errors
+        val sanitizedRecords = JsonSanitizer.sanitizeDeletedRecords(records)
         return httpClient.post("$BASE_URL/delete-records") {
             contentType(ContentType.Application.Json)
-            setBody(SyncRequest(records))
+            setBody(SyncRequest(sanitizedRecords))
         }.body()
     }
 }
