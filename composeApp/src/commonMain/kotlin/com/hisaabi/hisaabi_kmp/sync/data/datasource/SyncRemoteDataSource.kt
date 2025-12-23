@@ -68,7 +68,8 @@ class SyncRemoteDataSourceImpl(
 ) : SyncRemoteDataSource {
     
     companion object {
-        private const val BASE_URL = "http://52.20.167.4:5000"
+      //  private const val BASE_URL = "http://52.20.167.4:5000" // Production.
+        private const val BASE_URL = "http://10.68.53.161:3000" // Local host.
     }
     
     // Categories
