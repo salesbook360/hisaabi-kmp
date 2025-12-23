@@ -117,12 +117,14 @@ fun AddTransactionStep1Screen(
             }
 
             // Warehouse Selection Card (mandatory for specific transaction types)
+            val isEditMode = state.editingTransactionSlug != null
             if (AllTransactionTypes.requiresWarehouse(state.transactionType.value)) {
                 item {
                     WarehouseSelectionCard(
                         selectedWarehouse = state.selectedWarehouse,
                         onSelectWarehouse = onSelectWarehouse,
-                        isMandatory = true
+                        isMandatory = true,
+                        enabled = !isEditMode
                     )
                 }
             } else if (AllTransactionTypes.affectsStock(state.transactionType.value)) {
@@ -131,7 +133,8 @@ fun AddTransactionStep1Screen(
                     WarehouseSelectionCard(
                         selectedWarehouse = state.selectedWarehouse,
                         onSelectWarehouse = onSelectWarehouse,
-                        isMandatory = false
+                        isMandatory = false,
+                        enabled = !isEditMode
                     )
                 }
             }
@@ -330,17 +333,26 @@ private fun PartySelectionCard(
 private fun WarehouseSelectionCard(
     selectedWarehouse: Warehouse?,
     onSelectWarehouse: () -> Unit,
-    isMandatory: Boolean = false
+    isMandatory: Boolean = false,
+    enabled: Boolean = true
 ) {
     val isNotSelected = selectedWarehouse == null
-    val showError = isMandatory && isNotSelected
+    val showError = isMandatory && isNotSelected && enabled
     
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onSelectWarehouse),
+            .then(
+                if (enabled) {
+                    Modifier.clickable(onClick = onSelectWarehouse)
+                } else {
+                    Modifier
+                }
+            ),
         colors = CardDefaults.cardColors(
-            containerColor = if (showError)
+            containerColor = if (!enabled)
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+            else if (showError)
                 MaterialTheme.colorScheme.errorContainer
             else if (selectedWarehouse != null)
                 MaterialTheme.colorScheme.primaryContainer
@@ -358,7 +370,9 @@ private fun WarehouseSelectionCard(
                 Icons.Default.Warehouse,
                 contentDescription = null,
                 modifier = Modifier.size(40.dp),
-                tint = if (showError)
+                tint = if (!enabled)
+                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                else if (showError)
                     MaterialTheme.colorScheme.onErrorContainer
                 else if (selectedWarehouse != null)
                     MaterialTheme.colorScheme.onPrimaryContainer
@@ -371,14 +385,16 @@ private fun WarehouseSelectionCard(
                     Text(
                         "Warehouse",
                         style = MaterialTheme.typography.labelMedium,
-                        color = if (showError)
+                        color = if (!enabled)
+                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        else if (showError)
                             MaterialTheme.colorScheme.onErrorContainer
                         else if (selectedWarehouse != null)
                             MaterialTheme.colorScheme.onPrimaryContainer
                         else
                             MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    if (isMandatory) {
+                    if (isMandatory && enabled) {
                         Spacer(Modifier.width(4.dp))
                         Text(
                             "*",
@@ -391,7 +407,9 @@ private fun WarehouseSelectionCard(
                     selectedWarehouse?.title ?: "Select Warehouse",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = if (showError)
+                    color = if (!enabled)
+                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    else if (showError)
                         MaterialTheme.colorScheme.onErrorContainer
                     else if (selectedWarehouse != null)
                         MaterialTheme.colorScheme.onPrimaryContainer
@@ -407,16 +425,18 @@ private fun WarehouseSelectionCard(
                     )
                 }
             }
-            Icon(
-                Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = if (showError)
-                    MaterialTheme.colorScheme.onErrorContainer
-                else if (selectedWarehouse != null)
-                    MaterialTheme.colorScheme.onPrimaryContainer
-                else
-                    MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            if (enabled) {
+                Icon(
+                    Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    tint = if (showError)
+                        MaterialTheme.colorScheme.onErrorContainer
+                    else if (selectedWarehouse != null)
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    else
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }
