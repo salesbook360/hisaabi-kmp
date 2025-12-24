@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.hisaabi.hisaabi_kmp.core.session.AppSessionManager
 import com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction
+import com.hisaabi.hisaabi_kmp.transactions.domain.usecase.GetTransactionWithDetailsUseCase
 import com.hisaabi.hisaabi_kmp.transactions.domain.usecase.TransactionUseCases
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,11 +22,13 @@ data class PaymentTransferState(
     val dateTime: Long = Clock.System.now().toEpochMilliseconds(),
     val isLoading: Boolean = false,
     val error: String? = null,
-    val success: Boolean = false
+    val success: Boolean = false,
+    val editingTransactionSlug: String? = null
 )
 
 class PaymentTransferViewModel(
     private val transactionUseCases: TransactionUseCases,
+    private val getTransactionWithDetailsUseCase: GetTransactionWithDetailsUseCase,
     private val appSessionManager: AppSessionManager
 ) : ViewModel() {
 
@@ -50,6 +53,41 @@ class PaymentTransferViewModel(
 
     fun setDateTime(timestamp: Long) {
         _state.update { it.copy(dateTime = timestamp) }
+    }
+
+    fun loadTransactionForEdit(transactionSlug: String) {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true, error = null) }
+            
+            try {
+                // Load full transaction with all details
+                val transaction = getTransactionWithDetailsUseCase(transactionSlug)
+                    ?: throw IllegalStateException("Transaction not found")
+                
+                // Parse timestamp
+                val timestamp = transaction.timestamp?.toLongOrNull() ?: Clock.System.now().toEpochMilliseconds()
+                
+                // Set state with transaction data
+                _state.update { 
+                    it.copy(
+                        paymentMethodFrom = transaction.paymentMethodFrom,
+                        paymentMethodTo = transaction.paymentMethodTo,
+                        amount = transaction.totalPaid.toString(),
+                        description = transaction.description ?: "",
+                        dateTime = timestamp,
+                        editingTransactionSlug = transaction.slug,
+                        isLoading = false
+                    )
+                }
+            } catch (e: Exception) {
+                _state.update { 
+                    it.copy(
+                        isLoading = false,
+                        error = e.message ?: "Failed to load transaction for editing"
+                    )
+                }
+            }
+        }
     }
 
     fun saveTransaction() {
@@ -82,6 +120,7 @@ class PaymentTransferViewModel(
         viewModelScope.launch {
             try {
                 val transaction = Transaction(
+                    slug = currentState.editingTransactionSlug, // Include slug if editing
                     transactionType = 10, // TRANSACTION_TYPE_CASH_TRANSFER
                     totalPaid = amountValue,
                     totalBill = 0.0,
@@ -98,29 +137,59 @@ class PaymentTransferViewModel(
                     createdBy = appSessionManager.getUserSlug()
                 )
 
-                transactionUseCases.addTransaction(transaction)
-                    .onSuccess {
-                        _state.update {
-                            it.copy(
-                                isLoading = false,
-                                success = true,
-                                // Reset form
-                                paymentMethodFrom = null,
-                                paymentMethodTo = null,
-                                amount = "",
-                                description = "",
-                                dateTime = Clock.System.now().toEpochMilliseconds()
-                            )
+                // Check if we're editing or creating
+                if (currentState.editingTransactionSlug != null) {
+                    // Update existing transaction
+                    transactionUseCases.updateTransaction(transaction)
+                        .onSuccess {
+                            _state.update {
+                                it.copy(
+                                    isLoading = false,
+                                    success = true,
+                                    // Reset form
+                                    paymentMethodFrom = null,
+                                    paymentMethodTo = null,
+                                    amount = "",
+                                    description = "",
+                                    dateTime = Clock.System.now().toEpochMilliseconds(),
+                                    editingTransactionSlug = null
+                                )
+                            }
                         }
-                    }
-                    .onFailure { exception ->
-                        _state.update {
-                            it.copy(
-                                isLoading = false,
-                                error = exception.message ?: "Failed to save transaction"
-                            )
+                        .onFailure { exception ->
+                            _state.update {
+                                it.copy(
+                                    isLoading = false,
+                                    error = exception.message ?: "Failed to update transaction"
+                                )
+                            }
                         }
-                    }
+                } else {
+                    // Create new transaction
+                    transactionUseCases.addTransaction(transaction)
+                        .onSuccess {
+                            _state.update {
+                                it.copy(
+                                    isLoading = false,
+                                    success = true,
+                                    // Reset form
+                                    paymentMethodFrom = null,
+                                    paymentMethodTo = null,
+                                    amount = "",
+                                    description = "",
+                                    dateTime = Clock.System.now().toEpochMilliseconds()
+                                )
+                            }
+                        }
+                        .onFailure { exception ->
+                            _state.update {
+                                it.copy(
+                                    isLoading = false,
+                                    error = exception.message ?: "Failed to save transaction"
+                                )
+                            }
+                        }
+                }
             } catch (e: Exception) {
                 _state.update {
                     it.copy(
