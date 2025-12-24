@@ -1232,16 +1232,16 @@ private fun JournalVoucherCard(
             
             HorizontalDivider()
             
-            // Debit/Credit Section
+            // Pay Amount/Get Amount Section
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Debit
+                // Pay Amount
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        "Debit",
+                        "Pay Amount",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1255,10 +1255,10 @@ private fun JournalVoucherCard(
                 
                 VerticalDivider(modifier = Modifier.height(50.dp))
                 
-                // Credit
+                // Get Amount
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        "Credit",
+                        "Get Amount",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

@@ -5,11 +5,11 @@ import com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod
 
 /**
  * Represents a journal account entry in a journal voucher.
- * Each entry can be a debit or credit to various account types.
+ * Each entry can be a pay amount or get amount to various account types.
  * 
  * @param title Display name of the account
  * @param amount Amount for this account entry
- * @param isDebit true for debit (pay/expense), false for credit (get/income)
+ * @param isDebit true for pay amount (pay/expense), false for get amount (get/income)
  * @param accountType Type of journal account
  * @param party Associated party (if account type is CUSTOMER, VENDOR, INVESTOR, EXPENSE, or EXTRA_INCOME)
  * @param paymentMethod Associated payment method (if account type is PAYMENT_METHOD)
@@ -17,7 +17,7 @@ import com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod
 data class JournalAccount(
     val title: String,
     var amount: Double = 0.0,
-    var isDebit: Boolean = true, // true = Debit/Pay, false = Credit/Get
+    var isDebit: Boolean = true, // true = Pay Amount, false = Get Amount
     val accountType: JournalAccountType,
     val party: Party? = null,
     val paymentMethod: PaymentMethod? = null
@@ -41,13 +41,13 @@ data class JournalAccount(
     }
 
     /**
-     * Gets the label for debit/credit based on account type
+     * Gets the label for pay amount/get amount based on account type
      */
     fun getDebitCreditLabel(): String {
         return if (isExpenseOrIncomeAccount()) {
             if (isDebit) "Add" else "Get"
         } else {
-            if (isDebit) "Debit" else "Credit"
+            if (isDebit) "Pay Amount" else "Get Amount"
         }
     }
 }

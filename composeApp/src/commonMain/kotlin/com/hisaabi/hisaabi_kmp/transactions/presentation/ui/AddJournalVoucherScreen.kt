@@ -124,14 +124,14 @@ fun AddJournalVoucherScreen(
 
                     HorizontalDivider()
 
-                    // Debit/Credit Totals
+                    // Pay Amount/Get Amount Totals
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column {
                             Text(
-                                "Total Debit",
+                                "Total Pay Amount",
                                 style = MaterialTheme.typography.labelMedium
                             )
                             Text(
@@ -144,7 +144,7 @@ fun AddJournalVoucherScreen(
 
                         Column(horizontalAlignment = Alignment.End) {
                             Text(
-                                "Total Credit",
+                                "Total Get Amount",
                                 style = MaterialTheme.typography.labelMedium
                             )
                             Text(
@@ -353,7 +353,7 @@ private fun JournalAccountCard(
 
             Spacer(Modifier.height(12.dp))
 
-            // Amount and Debit/Credit Toggle
+            // Amount and Pay Amount/Get Amount Toggle
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -373,11 +373,11 @@ private fun JournalAccountCard(
                     singleLine = true
                 )
 
-                // Debit/Credit Toggle
+                // Pay Amount/Get Amount Toggle
                 FilterChipWithColors(
                     selected = account.isDebit,
                     onClick = onToggleDebitCredit,
-                    label = if (account.isDebit) "Debit" else "Credit",
+                    label = if (account.isDebit) "Pay Amount" else "Get Amount",
                     leadingIcon = {
                         Icon(
                             if (account.isDebit) Icons.Default.Remove else Icons.Default.Add,

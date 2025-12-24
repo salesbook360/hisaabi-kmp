@@ -741,7 +741,7 @@ private fun JournalVoucherDetailsCard(transaction: Transaction) {
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        "Debit",
+                        "Pay Amount",
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -757,7 +757,7 @@ private fun JournalVoucherDetailsCard(transaction: Transaction) {
                 
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        "Credit",
+                        "Get Amount",
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

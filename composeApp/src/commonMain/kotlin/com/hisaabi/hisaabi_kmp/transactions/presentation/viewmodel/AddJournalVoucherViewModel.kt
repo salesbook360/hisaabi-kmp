@@ -107,7 +107,7 @@ class AddJournalVoucherViewModel(
     }
 
     /**
-     * Toggle debit/credit for an account
+     * Toggle pay amount/get amount for an account
      */
     fun toggleAccountDebitCredit(index: Int) {
         _state.update { 
@@ -178,9 +178,9 @@ class AddJournalVoucherViewModel(
 
         if (!currentState.isBalanced) {
             if (currentState.totalDebit == 0.0) {
-                _state.update { it.copy(error = "Debit and credit values must be greater than zero") }
+                _state.update { it.copy(error = "Pay amount and get amount values must be greater than zero") }
             } else {
-                _state.update { it.copy(error = "Debit and credit values must be equal") }
+                _state.update { it.copy(error = "Pay amount and get amount values must be equal") }
             }
             return
         }
@@ -333,7 +333,7 @@ class AddJournalVoucherViewModel(
     }
     
     /**
-     * Get transaction type based on party role and whether it's debit or credit
+     * Get transaction type based on party role and whether it's pay amount or get amount
      */
     private fun getTransactionTypeFromParty(roleId: Int, isDebit: Boolean): Int {
         return when (roleId) {
