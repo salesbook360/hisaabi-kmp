@@ -8,6 +8,7 @@ import com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType
 import com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction
+import com.hisaabi.hisaabi_kmp.transactions.domain.usecase.GetTransactionWithDetailsUseCase
 import com.hisaabi.hisaabi_kmp.transactions.domain.usecase.TransactionUseCases
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -29,11 +30,13 @@ data class PayGetCashState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val successMessage: String? = null,
-    val savedTransactionSlug: String? = null
+    val savedTransactionSlug: String? = null,
+    val editingTransactionSlug: String? = null
 )
 
 class PayGetCashViewModel(
     private val transactionUseCases: TransactionUseCases,
+    private val getTransactionWithDetailsUseCase: GetTransactionWithDetailsUseCase,
     private val appSessionManager: AppSessionManager
 ) : ViewModel() {
     
@@ -66,6 +69,60 @@ class PayGetCashViewModel(
     
     fun setDateTime(dateTime: Long) {
         _state.update { it.copy(dateTime = dateTime) }
+    }
+    
+    fun loadTransactionForEdit(transactionSlug: String) {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true, error = null) }
+            
+            try {
+                // Load full transaction with all details
+                val transaction = getTransactionWithDetailsUseCase(transactionSlug)
+                    ?: throw IllegalStateException("Transaction not found")
+                
+                // Determine PayGetCashType and PartyType from transaction type
+                val (payGetCashType, partyType) = when (transaction.transactionType) {
+                    AllTransactionTypes.PAY_TO_CUSTOMER.value -> 
+                        PayGetCashType.PAY_CASH to PartyType.CUSTOMER
+                    AllTransactionTypes.GET_FROM_CUSTOMER.value -> 
+                        PayGetCashType.GET_CASH to PartyType.CUSTOMER
+                    AllTransactionTypes.PAY_TO_VENDOR.value -> 
+                        PayGetCashType.PAY_CASH to PartyType.VENDOR
+                    AllTransactionTypes.GET_FROM_VENDOR.value -> 
+                        PayGetCashType.GET_CASH to PartyType.VENDOR
+                    AllTransactionTypes.INVESTMENT_WITHDRAW.value -> 
+                        PayGetCashType.PAY_CASH to PartyType.INVESTOR
+                    AllTransactionTypes.INVESTMENT_DEPOSIT.value -> 
+                        PayGetCashType.GET_CASH to PartyType.INVESTOR
+                    else -> throw IllegalStateException("Invalid transaction type for Pay/Get Cash")
+                }
+                
+                // Parse timestamp
+                val timestamp = transaction.timestamp?.toLongOrNull() ?: Clock.System.now().toEpochMilliseconds()
+                
+                // Set state with transaction data
+                _state.update { 
+                    it.copy(
+                        payGetCashType = payGetCashType,
+                        partyType = partyType,
+                        selectedParty = transaction.party,
+                        amount = transaction.totalPaid.toString(),
+                        description = transaction.description ?: "",
+                        selectedPaymentMethod = transaction.paymentMethodTo,
+                        dateTime = timestamp,
+                        editingTransactionSlug = transaction.slug,
+                        isLoading = false
+                    )
+                }
+            } catch (e: Exception) {
+                _state.update { 
+                    it.copy(
+                        isLoading = false,
+                        error = e.message ?: "Failed to load transaction for editing"
+                    )
+                }
+            }
+        }
     }
     
     fun saveTransaction() {
@@ -119,6 +176,7 @@ class PayGetCashViewModel(
                 }
                 
                 val transaction = Transaction(
+                    slug = currentState.editingTransactionSlug, // Include slug if editing
                     customerSlug = currentState.selectedParty.slug,
                     party = currentState.selectedParty,
                     transactionType = transactionType,
@@ -133,27 +191,50 @@ class PayGetCashViewModel(
                     additionalCharges = 0.0,
                     businessSlug = appSessionManager.getBusinessSlug(),
                     createdBy = appSessionManager.getUserSlug()
-
                 )
                 
-                transactionUseCases.addTransaction(transaction)
-                    .onSuccess { transactionSlug ->
-                        _state.update { 
-                            it.copy(
-                                isLoading = false,
-                                successMessage = "Transaction saved successfully",
-                                savedTransactionSlug = transactionSlug
-                            )
+                // Check if we're editing or creating
+                if (currentState.editingTransactionSlug != null) {
+                    // Update existing transaction
+                    transactionUseCases.updateTransaction(transaction)
+                        .onSuccess {
+                            _state.update { 
+                                it.copy(
+                                    isLoading = false,
+                                    successMessage = "Transaction updated successfully",
+                                    savedTransactionSlug = currentState.editingTransactionSlug
+                                )
+                            }
                         }
-                    }
-                    .onFailure { e ->
-                        _state.update { 
-                            it.copy(
-                                isLoading = false,
-                                error = e.message ?: "Failed to save transaction"
-                            )
+                        .onFailure { e ->
+                            _state.update { 
+                                it.copy(
+                                    isLoading = false,
+                                    error = e.message ?: "Failed to update transaction"
+                                )
+                            }
                         }
-                    }
+                } else {
+                    // Create new transaction
+                    transactionUseCases.addTransaction(transaction)
+                        .onSuccess { transactionSlug ->
+                            _state.update { 
+                                it.copy(
+                                    isLoading = false,
+                                    successMessage = "Transaction saved successfully",
+                                    savedTransactionSlug = transactionSlug
+                                )
+                            }
+                        }
+                        .onFailure { e ->
+                            _state.update { 
+                                it.copy(
+                                    isLoading = false,
+                                    error = e.message ?: "Failed to save transaction"
+                                )
+                            }
+                        }
+                }
             } catch (e: Exception) {
                 _state.update { 
                     it.copy(

@@ -1762,6 +1762,14 @@ fun App() {
                             }
 
                             payGetCashViewModel?.let { viewModel ->
+                                // Load transaction for editing if provided
+                                LaunchedEffect(selectedTransactionSlugForEdit) {
+                                    selectedTransactionSlugForEdit?.let { slug ->
+                                        viewModel.loadTransactionForEdit(slug)
+                                        selectedTransactionSlugForEdit = null // Clear after loading
+                                    }
+                                }
+
                                 com.hisaabi.hisaabi_kmp.transactions.presentation.ui.PayGetCashScreen(
                                     viewModel = viewModel,
                                     onNavigateBack = { successMessage, transactionSlug ->
