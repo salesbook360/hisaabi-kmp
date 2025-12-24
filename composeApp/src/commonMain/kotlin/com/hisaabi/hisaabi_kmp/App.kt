@@ -1501,6 +1501,7 @@ fun App() {
                                             com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.isJournalVoucher(
                                                 transaction.transactionType
                                             ) -> {
+                                                selectedTransactionSlugForEdit = transaction.slug
                                                 navigateTo(AppScreen.JOURNAL_VOUCHER)
                                             }
 
@@ -2032,6 +2033,14 @@ fun App() {
                             }
 
                             journalVoucherViewModel?.let { viewModel ->
+                                // Load transaction for editing if provided
+                                LaunchedEffect(selectedTransactionSlugForEdit) {
+                                    selectedTransactionSlugForEdit?.let { slug ->
+                                        viewModel.loadTransactionForEdit(slug)
+                                        selectedTransactionSlugForEdit = null // Clear after loading
+                                    }
+                                }
+                                
                                 com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddJournalVoucherScreen(
                                     viewModel = viewModel,
                                     onNavigateBack = { success ->
