@@ -1101,6 +1101,7 @@ private fun MetadataCard(transaction: Transaction) {
     }
 }
 
+
 @Composable
 private fun ChildTransactionCard(transaction: Transaction) {
     Card(

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hisaabi.hisaabi_kmp.core.session.AppSessionManager
 import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
+import com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType
 import com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.JournalAccount
@@ -196,7 +197,7 @@ class AddJournalVoucherViewModel(
             try {
                 // Step 1: Create and save the main Journal Voucher transaction
                 val journalTransaction = Transaction(
-                    transactionType = 19, // TRANSACTION_TYPE_JOURNAL
+                    transactionType = AllTransactionTypes.JOURNAL_VOUCHER.value,
                     totalPaid = currentState.totalDebit,
                     totalBill = currentState.totalDebit,
                     description = currentState.description.ifBlank { null },
@@ -262,7 +263,7 @@ class AddJournalVoucherViewModel(
                                         account.paymentMethod != null -> {
                                             val childTransaction = Transaction(
                                                 parentSlug = parentSlug,
-                                                transactionType = 10, // TRANSACTION_TYPE_CASH_TRANSFER
+                                                transactionType = AllTransactionTypes.PAYMENT_TRANSFER.value,
                                                 totalPaid = account.amount,
                                                 totalBill = 0.0,
                                                 timestamp = childTimestamp,
@@ -337,22 +338,28 @@ class AddJournalVoucherViewModel(
      */
     private fun getTransactionTypeFromParty(roleId: Int, isDebit: Boolean): Int {
         return when (roleId) {
-            // Customer: roleId = 1
-            1 -> if (isDebit) 6 else 7  // Pay to Customer (6) or Get from Customer (7)
+            // Customer
+            PartyType.CUSTOMER.type -> if (isDebit) AllTransactionTypes.PAY_TO_CUSTOMER.value else AllTransactionTypes.GET_FROM_CUSTOMER.value
             
-            // Vendor: roleId = 2  
-            2 -> if (isDebit) 4 else 5  // Pay to Vendor (4) or Get from Vendor (5)
+            // Vendor
+            PartyType.VENDOR.type -> if (isDebit) AllTransactionTypes.PAY_TO_VENDOR.value else AllTransactionTypes.GET_FROM_VENDOR.value
             
-            // Investor: roleId = 7
-            7 -> if (isDebit) 12 else 11  // Investment Withdraw (12) or Deposit (11)
+            // Investor
+            PartyType.INVESTOR.type -> if (isDebit) AllTransactionTypes.INVESTMENT_WITHDRAW.value else AllTransactionTypes.INVESTMENT_DEPOSIT.value
             
-            // Expense: roleId = 5
-            5 -> 8  // Expense (8)
+            // Expense
+            PartyType.EXPENSE.type -> AllTransactionTypes.EXPENSE.value
             
-            // Extra Income: roleId = 6
-            6 -> 9  // Extra Income (9)
+            // Extra Income
+            PartyType.EXTRA_INCOME.type -> AllTransactionTypes.EXTRA_INCOME.value
             
-            else -> if (isDebit) 6 else 7  // Default to customer transactions
+            // Walk-in Customer (treat as Customer)
+            PartyType.WALK_IN_CUSTOMER.type -> if (isDebit) AllTransactionTypes.PAY_TO_CUSTOMER.value else AllTransactionTypes.GET_FROM_CUSTOMER.value
+            
+            // Default Vendor (treat as Vendor)
+            PartyType.DEFAULT_VENDOR.type -> if (isDebit) AllTransactionTypes.PAY_TO_VENDOR.value else AllTransactionTypes.GET_FROM_VENDOR.value
+            
+            else -> if (isDebit) AllTransactionTypes.PAY_TO_CUSTOMER.value else AllTransactionTypes.GET_FROM_CUSTOMER.value  // Default to customer transactions
         }
     }
 
