@@ -2,8 +2,6 @@ package com.hisaabi.hisaabi_kmp.transactions.presentation.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -83,6 +81,7 @@ fun AddJournalVoucherScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .verticalScroll(rememberScrollState())
         ) {
             // Header Section with Date and Totals
             Card(
@@ -190,41 +189,38 @@ fun AddJournalVoucherScreen(
 
             // Accounts List
             if (state.accounts.isEmpty()) {
-                Box(
+                Column(
                     modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
-                    contentAlignment = Alignment.Center
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.AccountBalance,
-                            contentDescription = null,
-                            modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                        )
-                        Text(
-                            "No accounts added",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Button(onClick = onSelectAccountType) {
-                            Icon(Icons.Default.Add, "Add")
-                            Spacer(Modifier.width(8.dp))
-                            Text("Add Account")
-                        }
+                    Icon(
+                        Icons.Default.AccountBalance,
+                        contentDescription = null,
+                        modifier = Modifier.size(64.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                    )
+                    Text(
+                        "No accounts added",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Button(onClick = onSelectAccountType) {
+                        Icon(Icons.Default.Add, "Add")
+                        Spacer(Modifier.width(8.dp))
+                        Text("Add Account")
                     }
                 }
             } else {
-                LazyColumn(
-                    modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    itemsIndexed(state.accounts) { index, account ->
+                    state.accounts.forEachIndexed { index, account ->
                         JournalAccountCard(
                             account = account,
                             onAmountChange = { amount ->
@@ -235,19 +231,20 @@ fun AddJournalVoucherScreen(
                             },
                             onRemove = {
                                 viewModel.removeAccount(index)
-                            }
+                            },
+                            modifier = Modifier.padding(horizontal = 16.dp)
                         )
                     }
 
-                    item {
-                        Button(
-                            onClick = onSelectAccountType,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Default.Add, "Add")
-                            Spacer(Modifier.width(8.dp))
-                            Text("Add Another Account")
-                        }
+                    Button(
+                        onClick = onSelectAccountType,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                    ) {
+                        Icon(Icons.Default.Add, "Add")
+                        Spacer(Modifier.width(8.dp))
+                        Text("Add Another Account")
                     }
                 }
             }
@@ -311,14 +308,15 @@ private fun JournalAccountCard(
     account: JournalAccount,
     onAmountChange: (Double) -> Unit,
     onToggleDebitCredit: () -> Unit,
-    onRemove: () -> Unit
+    onRemove: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     var amountText by remember(account.amount) { 
         mutableStateOf(if (account.amount == 0.0) "" else account.amount.toString()) 
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
