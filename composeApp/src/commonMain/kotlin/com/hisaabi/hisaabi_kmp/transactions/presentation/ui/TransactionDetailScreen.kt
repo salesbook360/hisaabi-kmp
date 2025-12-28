@@ -60,59 +60,6 @@ fun TransactionDetailScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                     }
-                },
-                actions = {
-                    // Edit action
-                    IconButton(onClick = { /* TODO: Navigate to edit */ }) {
-                        Icon(Icons.Default.Edit, "Edit")
-                    }
-                    // Share action
-                    IconButton(onClick = { /* TODO: Share transaction */ }) {
-                        Icon(Icons.Default.Share, "Share")
-                    }
-                    // More options
-                    var showMenu by remember { mutableStateOf(false) }
-                    Box {
-                        IconButton(onClick = { showMenu = true }) {
-                            Icon(Icons.Default.MoreVert, "More")
-                        }
-                        DropdownMenu(
-                            expanded = showMenu,
-                            onDismissRequest = { showMenu = false }
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text("Generate Receipt") },
-                                onClick = { 
-                                    showMenu = false
-                                    // TODO: Generate receipt
-                                },
-                                leadingIcon = { Icon(Icons.Default.Receipt, null) }
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Print") },
-                                onClick = { 
-                                    showMenu = false
-                                    // TODO: Print transaction
-                                },
-                                leadingIcon = { Icon(Icons.Default.Print, null) }
-                            )
-                            HorizontalDivider()
-                            DropdownMenuItem(
-                                text = { Text("Delete", color = MaterialTheme.colorScheme.error) },
-                                onClick = { 
-                                    showMenu = false
-                                    // TODO: Delete transaction
-                                },
-                                leadingIcon = { 
-                                    Icon(
-                                        Icons.Default.Delete, 
-                                        null,
-                                        tint = MaterialTheme.colorScheme.error
-                                    ) 
-                                }
-                            )
-                        }
-                    }
                 }
             )
         }
