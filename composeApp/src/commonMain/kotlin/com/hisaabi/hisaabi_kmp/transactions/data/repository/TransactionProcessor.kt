@@ -59,8 +59,13 @@ class TransactionProcessor(
         
         // Check each product in the transaction
         for (detail in transaction.transactionDetails) {
-            // Skip service products and recipes (they don't have physical stock)
-            if (detail.product?.isService == true || detail.product?.isRecipe == true) {
+            // Skip service products (they don't have physical stock)
+            if (detail.product?.isService == true) {
+                continue
+            }
+            
+            // Skip recipes in non-Purchase transactions (recipes can only be added to stock via Purchase/manufacture)
+            if (detail.product?.isRecipe == true && transaction.transactionType != AllTransactionTypes.PURCHASE.value) {
                 continue
             }
             
@@ -169,8 +174,14 @@ class TransactionProcessor(
      */
     private suspend fun updateProductAvgPurchasePrice(transaction: Transaction, isReverse: Boolean) {
         transaction.transactionDetails.forEach { detail ->
-            // Skip service products and recipes (they don't have average purchase price)
-            if (detail.product?.isService == true || detail.product?.isRecipe == true) {
+            // Skip service products (they don't have average purchase price)
+            if (detail.product?.isService == true) {
+                return@forEach
+            }
+            
+            // Recipes can have average purchase price when manufactured (Purchase transaction)
+            // Skip recipes in non-Purchase transactions
+            if (detail.product?.isRecipe == true && transaction.transactionType != AllTransactionTypes.PURCHASE.value) {
                 return@forEach
             }
             
@@ -396,8 +407,14 @@ class TransactionProcessor(
         val warehouseSlug = transaction.wareHouseSlugFrom ?: return
         
         transaction.transactionDetails.forEach { detail ->
-            // Skip service products and recipes (they don't have physical stock)
-            if (detail.product?.isService == true || detail.product?.isRecipe == true) {
+            // Skip service products (they don't have physical stock)
+            if (detail.product?.isService == true) {
+                return@forEach
+            }
+            
+            // Skip recipes in non-Purchase transactions (recipes can only be added to stock via Purchase/manufacture)
+            // Recipes can be manufactured (Purchase transaction) but shouldn't be sold as physical products
+            if (detail.product?.isRecipe == true && transaction.transactionType != AllTransactionTypes.PURCHASE.value) {
                 return@forEach
             }
             
