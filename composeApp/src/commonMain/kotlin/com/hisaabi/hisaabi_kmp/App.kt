@@ -1605,18 +1605,18 @@ fun App() {
                                             }
                                         }
                                     },
-                                    onConvertToSale = TODO(),
-                                    onEditAndConvertToSale = TODO(),
-                                    onConvertToPurchase = TODO(),
-                                    onEditAndConvertToPurchase = TODO(),
-                                    onCancelAndRemove = TODO(),
-                                    onRestore = TODO(),
-                                    onClone = TODO(),
-                                    onChangeStateToPending = TODO(),
-                                    onChangeStateToInProgress = TODO(),
-                                    onChangeStateToCompleted = TODO(),
-                                    onChangeStateToCanceled = TODO(),
-                                    onOutstandingBalanceReminder = TODO()
+                                    onConvertToSale = {},
+                                    onEditAndConvertToSale =  {},
+                                    onConvertToPurchase =  {},
+                                    onEditAndConvertToPurchase =  {},
+                                    onCancelAndRemove =  {},
+                                    onRestore =  {},
+                                    onClone =  {},
+                                    onChangeStateToPending =  {},
+                                    onChangeStateToInProgress =  {},
+                                    onChangeStateToCompleted =  {},
+                                    onChangeStateToCanceled =  {},
+                                    onOutstandingBalanceReminder =  {}
                                 )
                             } ?: run {
                                 // If ViewModel is not available, navigate back to home
