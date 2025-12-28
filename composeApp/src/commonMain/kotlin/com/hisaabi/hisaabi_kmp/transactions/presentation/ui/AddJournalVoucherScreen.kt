@@ -20,10 +20,12 @@ import com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.JournalAccount
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.JournalAccountType
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddJournalVoucherViewModel
+import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
 import com.hisaabi.hisaabi_kmp.utils.SimpleDateTimePickerDialog
 import com.hisaabi.hisaabi_kmp.utils.formatDateTime
 import com.hisaabi.hisaabi_kmp.core.ui.FilterChipWithColors
 import com.hisaabi.hisaabi_kmp.utils.format
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,6 +38,11 @@ fun AddJournalVoucherScreen(
     val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var showDateTimePicker by remember { mutableStateOf(false) }
+    
+    // Currency
+    val preferencesManager: PreferencesManager = koinInject()
+    val selectedCurrency by preferencesManager.selectedCurrency.collectAsState(null)
+    val currencySymbol = selectedCurrency?.symbol ?: ""
 
     // Show error message
     LaunchedEffect(state.error) {
@@ -134,7 +141,7 @@ fun AddJournalVoucherScreen(
                                 style = MaterialTheme.typography.labelMedium
                             )
                             Text(
-                                "₨ ${"%.2f".format(state.totalDebit)}",
+                                "$currencySymbol ${"%.2f".format(state.totalDebit)}",
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.error
@@ -147,7 +154,7 @@ fun AddJournalVoucherScreen(
                                 style = MaterialTheme.typography.labelMedium
                             )
                             Text(
-                                "₨ ${"%.2f".format(state.totalCredit)}",
+                                "$currencySymbol ${"%.2f".format(state.totalCredit)}",
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary
@@ -223,6 +230,7 @@ fun AddJournalVoucherScreen(
                     state.accounts.forEachIndexed { index, account ->
                         JournalAccountCard(
                             account = account,
+                            currencySymbol = currencySymbol,
                             onAmountChange = { amount ->
                                 viewModel.updateAccountAmount(index, amount)
                             },
@@ -306,6 +314,7 @@ fun AddJournalVoucherScreen(
 @Composable
 private fun JournalAccountCard(
     account: JournalAccount,
+    currencySymbol: String,
     onAmountChange: (Double) -> Unit,
     onToggleDebitCredit: () -> Unit,
     onRemove: () -> Unit,
@@ -366,7 +375,7 @@ private fun JournalAccountCard(
                     },
                     label = { Text("Amount") },
                     modifier = Modifier.weight(1f),
-                    prefix = { Text("₨ ") },
+                    prefix = { Text("$currencySymbol ") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true
                 )

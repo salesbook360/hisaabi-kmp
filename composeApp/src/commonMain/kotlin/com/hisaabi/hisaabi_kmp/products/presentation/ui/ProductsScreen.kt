@@ -26,9 +26,11 @@ import com.hisaabi.hisaabi_kmp.products.domain.model.Product
 import com.hisaabi.hisaabi_kmp.products.domain.model.ProductType
 import com.hisaabi.hisaabi_kmp.products.presentation.viewmodel.ProductsViewModel
 import com.hisaabi.hisaabi_kmp.products.presentation.viewmodel.QuantityFilter
+import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
 import com.hisaabi.hisaabi_kmp.settings.domain.model.TransactionSettings
 import com.hisaabi.hisaabi_kmp.utils.format
 import com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,6 +51,9 @@ fun ProductsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val transactionSettings by viewModel.transactionSettings.collectAsState()
+    val preferencesManager: PreferencesManager = koinInject()
+    val selectedCurrency by preferencesManager.selectedCurrency.collectAsState(null)
+    val currencySymbol = selectedCurrency?.symbol ?: ""
     var selectedProduct by remember { mutableStateOf<Product?>(null) }
     var showBottomSheet by remember { mutableStateOf(false) }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
@@ -260,6 +265,7 @@ fun ProductsScreen(
                             product = product,
                             transactionSettings = transactionSettings,
                             availableQuantity = availableQuantity,
+                            currencySymbol = currencySymbol,
                             onClick = { 
                                 if (selectionMode) {
                                     // Increment quantity on tap
@@ -502,6 +508,7 @@ private fun ProductItem(
     product: Product,
     transactionSettings: TransactionSettings,
     availableQuantity: Double = 0.0,
+    currencySymbol: String,
     onClick: () -> Unit,
     isSelected: Boolean = false,
     showCheckbox: Boolean = false,
@@ -645,7 +652,7 @@ private fun ProductItem(
                                 // Single price - show without label
                                 val (_, price) = prices[0]
                                 Text(
-                                    text = "₨ %.2f".format(price),
+                                    text = "$currencySymbol ${"%.2f".format(price)}",
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.primary,
@@ -678,7 +685,7 @@ private fun ProductItem(
                                                     )
                                                 }
                                                 Text(
-                                                    text = "₨ %.2f".format(price),
+                                                    text = "$currencySymbol ${"%.2f".format(price)}",
                                                     style = if (isPrimary) {
                                                         MaterialTheme.typography.bodySmall
                                                     } else {

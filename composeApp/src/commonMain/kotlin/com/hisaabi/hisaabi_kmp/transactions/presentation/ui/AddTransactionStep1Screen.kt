@@ -24,9 +24,11 @@ import com.hisaabi.hisaabi_kmp.transactions.domain.model.PriceType
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionCategory
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddTransactionViewModel
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionDetailItem
+import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
 import com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse
 import com.hisaabi.hisaabi_kmp.utils.format
 import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,6 +42,11 @@ fun AddTransactionStep1Screen(
 ) {
     val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    
+    // Currency
+    val preferencesManager: PreferencesManager = koinInject()
+    val selectedCurrency by preferencesManager.selectedCurrency.collectAsState(null)
+    val currencySymbol = selectedCurrency?.symbol ?: ""
 
     LaunchedEffect(state.error) {
         state.error?.let { error ->
@@ -112,7 +119,8 @@ fun AddTransactionStep1Screen(
                 PartySelectionCard(
                     selectedParty = state.selectedParty,
                     transactionType = state.transactionType,
-                    onSelectParty = onSelectParty
+                    onSelectParty = onSelectParty,
+                    currencySymbol
                 )
             }
 
@@ -227,7 +235,8 @@ fun AddTransactionStep1Screen(
                     ProductItemCard(
                         item = item,
                         index = index,
-                        viewModel = viewModel
+                        viewModel = viewModel,
+                        currencySymbol
                     )
                 }
             }
@@ -237,7 +246,8 @@ fun AddTransactionStep1Screen(
                 item {
                     SummaryCard(
                         subtotal = viewModel.calculateSubtotal(),
-                        itemCount = state.transactionDetails.size
+                        itemCount = state.transactionDetails.size,
+                        currencySymbol
                     )
                 }
             }
@@ -254,7 +264,8 @@ fun AddTransactionStep1Screen(
 private fun PartySelectionCard(
     selectedParty: Party?,
     transactionType: AllTransactionTypes,
-    onSelectParty: () -> Unit
+    onSelectParty: () -> Unit,
+    currencySymbol:String
 ) {
     Card(
         modifier = Modifier
@@ -308,7 +319,7 @@ private fun PartySelectionCard(
                 )
                 selectedParty?.let {
                     Text(
-                        "Balance: ₨ ${"%.2f".format(kotlin.math.abs(it.balance))}",
+                        "Balance: $currencySymbol ${"%.2f".format(kotlin.math.abs(it.balance))}",
                         style = MaterialTheme.typography.bodySmall,
                         color = if (selectedParty == null)
                             MaterialTheme.colorScheme.onErrorContainer
@@ -481,7 +492,8 @@ private fun PriceTypeSelector(
 private fun ProductItemCard(
     item: TransactionDetailItem,
     index: Int,
-    viewModel: AddTransactionViewModel
+    viewModel: AddTransactionViewModel,
+    currencySymbol:String
 ) {
     var expanded by remember { mutableStateOf(false) }
     var showUnitSelectionSheet by remember { mutableStateOf(false) }
@@ -574,7 +586,7 @@ private fun ProductItemCard(
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        "₨ ${"%.2f".format(item.calculateTotal())}",
+                        "$currencySymbol ${"%.2f".format(item.calculateTotal())}",
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
@@ -638,7 +650,7 @@ private fun ProductItemCard(
                     label = { Text("Price") },
                     modifier = Modifier.weight(1f),
                     singleLine = true,
-                    prefix = { Text("₨ ") },
+                    prefix = { Text("$currencySymbol ") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                 )
                 
@@ -754,7 +766,7 @@ private fun ProductItemCard(
                                 viewModel.updateProductDiscount(index, disc, discountType)
                             }
                         },
-                        label = "₨"
+                        label = currencySymbol
                     )
                     FilterChipWithColors(
                         selected = discountType == FlatOrPercent.PERCENT,
@@ -800,7 +812,7 @@ private fun ProductItemCard(
                                 viewModel.updateProductTax(index, tax, taxType)
                             }
                         },
-                        label = "₨"
+                        label = currencySymbol
                     )
                     FilterChipWithColors(
                         selected = taxType == FlatOrPercent.PERCENT,
@@ -832,7 +844,8 @@ private fun ProductItemCard(
 @Composable
 private fun SummaryCard(
     subtotal: Double,
-    itemCount: Int
+    itemCount: Int,
+    currencySymbol:String
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -854,7 +867,7 @@ private fun SummaryCard(
                     color = MaterialTheme.colorScheme.onSecondaryContainer
                 )
                 Text(
-                    "₨ ${"%.2f".format(subtotal)}",
+                    "$currencySymbol ${"%.2f".format(subtotal)}",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSecondaryContainer

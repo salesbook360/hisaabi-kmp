@@ -26,7 +26,7 @@ actual class ReportPdfGenerator(private val context: Context) {
     private val bgLight = Color.rgb(250, 250, 250)
     private val successGreen = Color.rgb(76, 175, 80)
     
-    actual suspend fun generatePdf(reportResult: ReportResult): String? = withContext(Dispatchers.IO) {
+    actual suspend fun generatePdf(reportResult: ReportResult, currencySymbol: String): String? = withContext(Dispatchers.IO) {
         try {
             val pdfDocument = PdfDocument()
             val pageWidth = 595f
@@ -145,7 +145,7 @@ actual class ReportPdfGenerator(private val context: Context) {
                 
                 summary.totalAmount?.let { amount ->
                     canvas.drawText("Total Amount:", currentX, yPosition, bodyPaint)
-                    val amountText = "Rs ${String.format("%,.0f", amount)}"
+                    val amountText = "$currencySymbol ${String.format("%,.0f", amount)}"
                     canvas.drawText(amountText, currentX, yPosition + 12f, bodyBoldPaint.apply { color = successGreen })
                     bodyBoldPaint.color = textPrimary
                     currentX = col2X
@@ -154,7 +154,7 @@ actual class ReportPdfGenerator(private val context: Context) {
                 
                 summary.totalProfit?.let { profit ->
                     canvas.drawText("Total Profit:", currentX, yPosition, bodyPaint)
-                    val profitText = "Rs ${String.format("%,.0f", profit)}"
+                    val profitText = "$currencySymbol ${String.format("%,.0f", profit)}"
                     canvas.drawText(profitText, currentX, yPosition + 12f, bodyBoldPaint.apply { color = accentColor })
                     bodyBoldPaint.color = textPrimary
                     if (itemCount % 2 == 1) {

@@ -86,7 +86,8 @@ class ReceiptViewModel(
             
             try {
                 val config = preferencesManager.receiptConfig.first()
-                val result = receiptCapture.captureReceipt(transaction, config)
+                val currencySymbol = preferencesManager.getSelectedCurrency().symbol
+                val result = receiptCapture.captureReceipt(transaction, config, currencySymbol)
                 
                 when (result) {
                     is ReceiptResult.Error -> {
@@ -126,7 +127,8 @@ class ReceiptViewModel(
             
             try {
                 val config = preferencesManager.receiptConfig.first()
-                val result = receiptCapture.captureReceipt(transaction, config)
+                val currencySymbol = preferencesManager.getSelectedCurrency().symbol
+                val result = receiptCapture.captureReceipt(transaction, config, currencySymbol)
                 
                 when (result) {
                     is ReceiptResult.Error -> {

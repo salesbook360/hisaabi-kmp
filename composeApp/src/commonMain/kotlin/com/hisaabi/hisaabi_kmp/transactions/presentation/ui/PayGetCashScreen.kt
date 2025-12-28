@@ -63,9 +63,11 @@ import com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType
 import com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.PayGetCashType
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.PayGetCashViewModel
+import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
 import com.hisaabi.hisaabi_kmp.utils.SimpleDateTimePickerDialog
 import com.hisaabi.hisaabi_kmp.utils.format
 import com.hisaabi.hisaabi_kmp.utils.formatDateTime
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -78,6 +80,11 @@ fun PayGetCashScreen(
     val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var showDateTimePicker by remember { mutableStateOf(false) }
+    
+    // Currency
+    val preferencesManager: PreferencesManager = koinInject()
+    val selectedCurrency by preferencesManager.selectedCurrency.collectAsState(null)
+    val currencySymbol = selectedCurrency?.symbol ?: ""
 
     LaunchedEffect(state.error) {
         state.error?.let { error ->
@@ -219,7 +226,8 @@ fun PayGetCashScreen(
                 selectedParty = state.selectedParty,
                 partyType = state.partyType,
                 onSelectParty = { onSelectParty(state.partyType) },
-                onRemoveParty = { viewModel.selectParty(null) }
+                onRemoveParty = { viewModel.selectParty(null) },
+                currencySymbol
             )
 
             // Amount
@@ -230,7 +238,7 @@ fun PayGetCashScreen(
                 label = { Text("Amount *") },
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = { Icon(Icons.Default.Money, "Amount") },
-                prefix = { Text("₨ ") },
+                prefix = { Text("$currencySymbol ") },
                 singleLine = true,
                 placeholder = { Text("0.00") }
             )
@@ -308,7 +316,8 @@ private fun PartySelectionCard(
     selectedParty: Party?,
     partyType: PartyType,
     onSelectParty: () -> Unit,
-    onRemoveParty: () -> Unit
+    onRemoveParty: () -> Unit,
+    currencySymbol:String
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -383,7 +392,7 @@ private fun PartySelectionCard(
                         }
                         // Show balance
                         Text(
-                            "Balance: ₨ ${"%.2f".format(selectedParty.balance)}",
+                            "Balance: $currencySymbol ${"%.2f".format(selectedParty.balance)}",
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold,
                             color = if (selectedParty.balance >= 0)

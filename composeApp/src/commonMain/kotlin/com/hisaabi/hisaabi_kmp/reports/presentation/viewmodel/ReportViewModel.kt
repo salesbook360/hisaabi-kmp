@@ -7,6 +7,7 @@ import com.hisaabi.hisaabi_kmp.reports.domain.model.ReportResult
 import com.hisaabi.hisaabi_kmp.reports.domain.usecase.GenerateReportUseCase
 import com.hisaabi.hisaabi_kmp.reports.domain.util.ReportPdfGenerator
 import com.hisaabi.hisaabi_kmp.reports.domain.util.ShareHelper
+import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,7 +23,8 @@ data class ReportUiState(
 class ReportViewModel(
     private val generateReportUseCase: GenerateReportUseCase,
     private val pdfGenerator: ReportPdfGenerator,
-    private val shareHelper: ShareHelper
+    private val shareHelper: ShareHelper,
+    private val preferencesManager: PreferencesManager
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(ReportUiState())
@@ -59,7 +61,8 @@ class ReportViewModel(
             try {
                 _uiState.value = _uiState.value.copy(isGeneratingPdf = true)
                 
-                val pdfPath = pdfGenerator.generatePdf(reportResult)
+                val currencySymbol = preferencesManager.getSelectedCurrency().symbol
+                val pdfPath = pdfGenerator.generatePdf(reportResult, currencySymbol)
                 
                 _uiState.value = _uiState.value.copy(isGeneratingPdf = false)
                 

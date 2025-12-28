@@ -9,12 +9,12 @@ import org.koin.dsl.module
 
 val reportsModule = module {
     // Use Cases
-    singleOf(::GenerateSalesReportUseCase)
-    single { GenerateReportUseCase(get()) }
+    single { GenerateSalesReportUseCase(get(), get(), get(), get()) }
+    single { GenerateReportUseCase(get(), get()) }
     
     // Platform-specific utilities are defined in platformModule
     
     // ViewModels
-    viewModel { ReportViewModel(get(), get(), get()) }
+    viewModel { ReportViewModel(get(), get(), get(), get()) }
 }
 

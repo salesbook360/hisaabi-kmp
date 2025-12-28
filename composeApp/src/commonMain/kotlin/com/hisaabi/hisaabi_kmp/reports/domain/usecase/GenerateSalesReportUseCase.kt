@@ -4,6 +4,7 @@ import com.hisaabi.hisaabi_kmp.business.data.datasource.BusinessPreferencesDataS
 import com.hisaabi.hisaabi_kmp.database.dao.InventoryTransactionDao
 import com.hisaabi.hisaabi_kmp.database.dao.TransactionDetailDao
 import com.hisaabi.hisaabi_kmp.reports.domain.model.*
+import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.*
@@ -14,10 +15,12 @@ import kotlinx.datetime.*
 class GenerateSalesReportUseCase(
     private val transactionDao: InventoryTransactionDao,
     private val transactionDetailDao: TransactionDetailDao,
-    private val businessPreferences: BusinessPreferencesDataSource
+    private val businessPreferences: BusinessPreferencesDataSource,
+    private val preferencesManager: PreferencesManager
 ) {
     
     suspend fun execute(filters: ReportFilters): ReportResult {
+        val currencySymbol = preferencesManager.getSelectedCurrency().symbol
         val businessSlug = businessPreferences.observeSelectedBusinessSlug().first() 
             ?: throw IllegalStateException("No business selected")
         
@@ -84,8 +87,8 @@ class GenerateSalesReportUseCase(
                         String.format("%.2f", qtySold),
                         String.format("%.2f", qtyReturned),
                         String.format("%.2f", netQty),
-                        "Rs ${String.format("%,.0f", amount)}",
-                        "Rs ${String.format("%,.0f", profit)}"
+                        "$currencySymbol ${String.format("%,.0f", amount)}",
+                        "$currencySymbol ${String.format("%,.0f", profit)}"
                     )
                 )
             )

@@ -17,9 +17,11 @@ import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionState
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddRecordViewModel
+import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
 import com.hisaabi.hisaabi_kmp.utils.SimpleDateTimePickerDialog
 import com.hisaabi.hisaabi_kmp.utils.formatDateTime
 import kotlinx.datetime.Clock
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,6 +35,11 @@ fun AddRecordScreen(
     var showDateTimePicker by remember { mutableStateOf(false) }
     var showRemindDateTimePicker by remember { mutableStateOf(false) }
     var isSelectingDateTime by remember { mutableStateOf(false) }
+    
+    // Currency
+    val preferencesManager: PreferencesManager = koinInject()
+    val selectedCurrency by preferencesManager.selectedCurrency.collectAsState(null)
+    val currencySymbol = selectedCurrency?.symbol ?: ""
     
     LaunchedEffect(state.error) {
         state.error?.let { error ->
@@ -101,7 +108,7 @@ fun AddRecordScreen(
                     label = { Text("Promised Amount") },
                     modifier = Modifier.fillMaxWidth(),
                     leadingIcon = { Icon(Icons.Default.Money, "Amount") },
-                    prefix = { Text("₨ ") },
+                    prefix = { Text("$currencySymbol ") },
                     singleLine = true
                 )
             }

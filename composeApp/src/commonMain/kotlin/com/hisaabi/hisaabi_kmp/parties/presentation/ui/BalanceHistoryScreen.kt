@@ -21,9 +21,11 @@ import androidx.compose.ui.unit.sp
 import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
+import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
 import com.hisaabi.hisaabi_kmp.utils.format
 import com.hisaabi.hisaabi_kmp.utils.formatTransactionDate
 import kotlin.math.abs
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,6 +34,11 @@ fun BalanceHistoryScreen(
     transactions: List<Transaction>,
     onNavigateBack: () -> Unit
 ) {
+    // Currency
+    val preferencesManager: PreferencesManager = koinInject()
+    val selectedCurrency by preferencesManager.selectedCurrency.collectAsState(null)
+    val currencySymbol = selectedCurrency?.symbol ?: ""
+    
     Scaffold(
         topBar = {
             TopAppBar(
@@ -81,7 +88,7 @@ fun BalanceHistoryScreen(
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                             Text(
-                                text = "₨ %.2f".format(abs(party.balance)),
+                                text = "$currencySymbol %.2f".format(abs(party.balance)),
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
                                 color = when {
@@ -138,7 +145,8 @@ fun BalanceHistoryScreen(
                                 date = party.createdAt ?: "",
                                 amount = party.openingBalance,
                                 balance = party.openingBalance,
-                                isOpening = true
+                                isOpening = true,
+                                currencySymbol
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                         }
@@ -150,7 +158,8 @@ fun BalanceHistoryScreen(
                             date = item.transaction.timestamp ?: "",
                             amount = item.amount,
                             balance = item.runningBalance,
-                            isOpening = false
+                            isOpening = false,
+                            currencySymbol
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                     }
@@ -166,7 +175,8 @@ private fun BalanceHistoryItem(
     date: String,
     amount: Double,
     balance: Double,
-    isOpening: Boolean
+    isOpening: Boolean,
+    currencySymbol:String
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -221,7 +231,7 @@ private fun BalanceHistoryItem(
             // Amount and Balance
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = "${if (amount > 0) "+" else ""}₨ %.2f".format(abs(amount)),
+                    text = "${if (amount > 0) "+" else ""}$currencySymbol %.2f".format(abs(amount)),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = when {
@@ -231,7 +241,7 @@ private fun BalanceHistoryItem(
                     }
                 )
                 Text(
-                    text = "Balance: ₨ %.2f".format(abs(balance)),
+                    text = "Balance: $currencySymbol %.2f".format(abs(balance)),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

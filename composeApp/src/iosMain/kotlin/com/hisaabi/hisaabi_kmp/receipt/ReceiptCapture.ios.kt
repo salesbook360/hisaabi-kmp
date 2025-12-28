@@ -5,7 +5,7 @@ import com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction
 
 actual fun getReceiptCapture(): ReceiptCapture {
     return object : ReceiptCapture {
-        override suspend fun captureReceipt(transaction: Transaction, config: ReceiptConfig): ReceiptResult {
+        override suspend fun captureReceipt(transaction: Transaction, config: ReceiptConfig, currencySymbol: String): ReceiptResult {
             return ReceiptResult.Error("iOS receipt capture not yet implemented")
         }
         

@@ -23,7 +23,8 @@ class AndroidReceiptCapture(private val context: Context) : ReceiptCapture {
     
     override suspend fun captureReceipt(
         transaction: Transaction,
-        config: ReceiptConfig
+        config: ReceiptConfig,
+        currencySymbol: String
     ): ReceiptResult = withContext(Dispatchers.IO) {
         try {
             // Create a receipt directory
@@ -39,7 +40,7 @@ class AndroidReceiptCapture(private val context: Context) : ReceiptCapture {
             val pdfFile = File(receiptDir, "$fileName.pdf")
             
             // Create PDF from text
-            createPdfFromTransaction(transaction, config, pdfFile)
+            createPdfFromTransaction(transaction, config, currencySymbol, pdfFile)
             
             ReceiptResult.PdfFile(pdfFile.absolutePath)
         } catch (e: Exception) {
@@ -101,6 +102,7 @@ class AndroidReceiptCapture(private val context: Context) : ReceiptCapture {
     private fun createPdfFromTransaction(
         transaction: Transaction,
         config: ReceiptConfig,
+        currencySymbol: String,
         outputFile: File
     ) {
         val pdfDocument = PdfDocument()
@@ -387,13 +389,13 @@ class AndroidReceiptCapture(private val context: Context) : ReceiptCapture {
             val pricePaint = Paint(tablePaint).apply {
                 textAlign = Paint.Align.CENTER
             }
-            canvas.drawText("₨${String.format("%.2f", detail.price)}", pageWidth / 2 + 60f, rowYPos, pricePaint)
+            canvas.drawText("$currencySymbol${String.format("%.2f", detail.price)}", pageWidth / 2 + 60f, rowYPos, pricePaint)
             
             val totalPaint = Paint(tablePaint).apply {
                 textAlign = Paint.Align.RIGHT
                 isFakeBoldText = true
             }
-            canvas.drawText("₨${String.format("%.2f", detail.calculateSubtotal())}", pageWidth - margin - 12f, rowYPos, totalPaint)
+            canvas.drawText("$currencySymbol${String.format("%.2f", detail.calculateSubtotal())}", pageWidth - margin - 12f, rowYPos, totalPaint)
             
             // Show discounts/taxes if any
             if (detail.flatDiscount > 0 || detail.flatTax > 0) {
@@ -405,11 +407,11 @@ class AndroidReceiptCapture(private val context: Context) : ReceiptCapture {
                 }
                 var extraText = ""
                 if (detail.flatDiscount > 0) {
-                    extraText += "Discount: -₨${String.format("%.2f", detail.flatDiscount)}"
+                    extraText += "Discount: -$currencySymbol${String.format("%.2f", detail.flatDiscount)}"
                 }
                 if (detail.flatTax > 0) {
                     if (extraText.isNotEmpty()) extraText += " | "
-                    extraText += "Tax: +₨${String.format("%.2f", detail.flatTax)}"
+                    extraText += "Tax: +$currencySymbol${String.format("%.2f", detail.flatTax)}"
                 }
                 canvas.drawText(extraText, pageWidth - margin - 12f, rowYPos, extraInfoPaint)
             }
@@ -445,36 +447,36 @@ class AndroidReceiptCapture(private val context: Context) : ReceiptCapture {
         // Subtotal
         val subtotal = transaction.calculateSubtotal()
         canvas.drawText("Subtotal", margin + 16f, yPosition, normalPaint)
-        canvas.drawText("₨${String.format("%.2f", subtotal)}", pageWidth - margin - 16f, yPosition, rightAlignSemiBold)
+            canvas.drawText("$currencySymbol${String.format("%.2f", subtotal)}", pageWidth - margin - 16f, yPosition, rightAlignSemiBold)
         yPosition += 18f  // More space between items
         
         if (productsDiscount > 0) {
             canvas.drawText("Products Discount", margin + 16f, yPosition, normalPaint)
-            canvas.drawText("-₨${String.format("%.2f", productsDiscount)}", pageWidth - margin - 16f, yPosition, rightAlignSemiBold)
+            canvas.drawText("-$currencySymbol${String.format("%.2f", productsDiscount)}", pageWidth - margin - 16f, yPosition, rightAlignSemiBold)
             yPosition += 18f  // More space between items
         }
         
         if (productsTax > 0) {
             canvas.drawText("Products Tax", margin + 16f, yPosition, normalPaint)
-            canvas.drawText("₨${String.format("%.2f", productsTax)}", pageWidth - margin - 16f, yPosition, rightAlignSemiBold)
+            canvas.drawText("$currencySymbol${String.format("%.2f", productsTax)}", pageWidth - margin - 16f, yPosition, rightAlignSemiBold)
             yPosition += 18f  // More space between items
         }
         
         if (config.showDiscount && transaction.flatDiscount > 0) {
             canvas.drawText("Transaction Discount", margin + 16f, yPosition, normalPaint)
-            canvas.drawText("-₨${String.format("%.2f", transaction.flatDiscount)}", pageWidth - margin - 16f, yPosition, rightAlignSemiBold)
+            canvas.drawText("-$currencySymbol${String.format("%.2f", transaction.flatDiscount)}", pageWidth - margin - 16f, yPosition, rightAlignSemiBold)
             yPosition += 18f  // More space between items
         }
         
         if (config.showTax && transaction.flatTax > 0) {
             canvas.drawText("Transaction Tax", margin + 16f, yPosition, normalPaint)
-            canvas.drawText("₨${String.format("%.2f", transaction.flatTax)}", pageWidth - margin - 16f, yPosition, rightAlignSemiBold)
+            canvas.drawText("$currencySymbol${String.format("%.2f", transaction.flatTax)}", pageWidth - margin - 16f, yPosition, rightAlignSemiBold)
             yPosition += 18f  // More space between items
         }
         
         if (config.showAdditionalCharges && transaction.additionalCharges > 0) {
             canvas.drawText("Shipping/Handling", margin + 16f, yPosition, normalPaint)
-            canvas.drawText("₨${String.format("%.2f", transaction.additionalCharges)}", pageWidth - margin - 16f, yPosition, rightAlignSemiBold)
+            canvas.drawText("$currencySymbol${String.format("%.2f", transaction.additionalCharges)}", pageWidth - margin - 16f, yPosition, rightAlignSemiBold)
             yPosition += 18f  // More space between items
         }
         
@@ -503,19 +505,19 @@ class AndroidReceiptCapture(private val context: Context) : ReceiptCapture {
             textAlign = Paint.Align.RIGHT
         }
         canvas.drawText("GRAND TOTAL", margin + 16f, yPosition, grandTotalPaint)
-        canvas.drawText("₨${String.format("%.2f", transaction.calculateGrandTotal())}", pageWidth - margin - 16f, yPosition, grandTotalAmountPaint)
+        canvas.drawText("$currencySymbol${String.format("%.2f", transaction.calculateGrandTotal())}", pageWidth - margin - 16f, yPosition, grandTotalAmountPaint)
         yPosition += 18f
         
         // Previous Balance
         if (config.showPreviousBalance && transaction.party != null && transaction.party.balance != 0.0) {
             canvas.drawText("Previous Balance", margin + 16f, yPosition, semiBoldPaint)
-            canvas.drawText("₨${String.format("%.2f", kotlin.math.abs(transaction.party.balance))}", pageWidth - margin - 16f, yPosition, rightAlignSemiBold)
+            canvas.drawText("$currencySymbol${String.format("%.2f", kotlin.math.abs(transaction.party.balance))}", pageWidth - margin - 16f, yPosition, rightAlignSemiBold)
             yPosition += 15f
         }
         
         // Paid
         canvas.drawText("Paid", margin + 16f, yPosition, semiBoldPaint)
-        canvas.drawText("₨${String.format("%.2f", transaction.totalPaid)}", pageWidth - margin - 16f, yPosition, rightAlignSemiBold)
+        canvas.drawText("$currencySymbol${String.format("%.2f", transaction.totalPaid)}", pageWidth - margin - 16f, yPosition, rightAlignSemiBold)
         yPosition += 15f
         
         // Payable Amount or Current Balance
@@ -528,7 +530,7 @@ class AndroidReceiptCapture(private val context: Context) : ReceiptCapture {
                     "Change"
                 }
                 canvas.drawText(balanceLabel, margin + 16f, yPosition, semiBoldPaint)
-                canvas.drawText("₨${String.format("%.2f", kotlin.math.abs(balance))}", pageWidth - margin - 16f, yPosition, rightAlignSemiBold)
+                canvas.drawText("$currencySymbol${String.format("%.2f", kotlin.math.abs(balance))}", pageWidth - margin - 16f, yPosition, rightAlignSemiBold)
             }
         }
         
@@ -579,7 +581,7 @@ actual fun getReceiptCapture(): ReceiptCapture {
     return ReceiptContextHolder.context?.let { context ->
         AndroidReceiptCapture(context)
     } ?: object : ReceiptCapture {
-        override suspend fun captureReceipt(transaction: Transaction, config: ReceiptConfig): ReceiptResult {
+        override suspend fun captureReceipt(transaction: Transaction, config: ReceiptConfig, currencySymbol: String): ReceiptResult {
             return ReceiptResult.Error("Context not available")
         }
         

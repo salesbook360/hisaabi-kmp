@@ -26,6 +26,7 @@ import com.hisaabi.hisaabi_kmp.utils.format
 fun ReceiptContent(
     transaction: Transaction,
     config: ReceiptConfig,
+    currencySymbol: String,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -417,14 +418,14 @@ fun ReceiptContent(
                         modifier = Modifier.weight(0.6f)
                     )
                     Text(
-                        text = "₨${"%.2f".format(detail.price)}",
+                        text = "$currencySymbol${"%.2f".format(detail.price)}",
                         fontSize = 11.sp,
                         color = Color(0xFF616161),
                         textAlign = TextAlign.End,
                         modifier = Modifier.weight(1f)
                     )
                     Text(
-                        text = "₨${"%.2f".format(detail.calculateSubtotal())}",
+                        text = "$currencySymbol${"%.2f".format(detail.calculateSubtotal())}",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color(0xFF212121),
@@ -444,7 +445,7 @@ fun ReceiptContent(
                     ) {
                         if (detail.flatDiscount > 0) {
                             Text(
-                                text = "Discount: -₨${"%.2f".format(detail.flatDiscount)}",
+                                text = "Discount: -$currencySymbol${"%.2f".format(detail.flatDiscount)}",
                                 fontSize = 9.sp,
                                 color = Color(0xFFE53935),
                                 modifier = Modifier.padding(end = 8.dp)
@@ -452,7 +453,7 @@ fun ReceiptContent(
                         }
                         if (detail.flatTax > 0) {
                             Text(
-                                text = "Tax: +₨${"%.2f".format(detail.flatTax)}",
+                                text = "Tax: +$currencySymbol${"%.2f".format(detail.flatTax)}",
                                 fontSize = 9.sp,
                                 color = Color(0xFF43A047)
                             )
@@ -472,33 +473,33 @@ fun ReceiptContent(
                 .padding(16.dp)
         ) {
             // Subtotal
-            SummaryRow("Subtotal", transaction.calculateSubtotal())
+            SummaryRow("Subtotal", transaction.calculateSubtotal(), currencySymbol = currencySymbol)
             
             // Product level totals
             val productsDiscount = transaction.transactionDetails.sumOf { it.flatDiscount }
             val productsTax = transaction.transactionDetails.sumOf { it.flatTax }
             
             if (productsDiscount > 0) {
-                SummaryRow("Products Discount", productsDiscount, isNegative = true)
+                SummaryRow("Products Discount", productsDiscount, isNegative = true, currencySymbol = currencySymbol)
             }
             
             if (productsTax > 0) {
-                SummaryRow("Products Tax", productsTax)
+                SummaryRow("Products Tax", productsTax, currencySymbol = currencySymbol)
             }
             
             // Transaction Discount
             if (config.showDiscount && transaction.flatDiscount > 0) {
-                SummaryRow("Transaction Discount", transaction.flatDiscount, isNegative = true)
+                SummaryRow("Transaction Discount", transaction.flatDiscount, isNegative = true, currencySymbol = currencySymbol)
             }
             
             // Transaction Tax
             if (config.showTax && transaction.flatTax > 0) {
-                SummaryRow("Transaction Tax", transaction.flatTax)
+                SummaryRow("Transaction Tax", transaction.flatTax, currencySymbol = currencySymbol)
             }
             
             // Shipping/Handling
             if (config.showAdditionalCharges && transaction.additionalCharges > 0) {
-                SummaryRow("Shipping/Handling", transaction.additionalCharges)
+                SummaryRow("Shipping/Handling", transaction.additionalCharges, currencySymbol = currencySymbol)
             }
             
             Spacer(Modifier.height(8.dp))
@@ -548,7 +549,7 @@ fun ReceiptContent(
                     letterSpacing = 0.5.sp
                 )
                 Text(
-                    text = "₨${"%.2f".format(transaction.calculateGrandTotal())}",
+                    text = "$currencySymbol${"%.2f".format(transaction.calculateGrandTotal())}",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFFB71C1C)
@@ -570,7 +571,7 @@ fun ReceiptContent(
                         color = Color(0xFF616161)
                     )
                     Text(
-                        text = "₨${"%.2f".format(abs(transaction.party.balance))}",
+                        text = "$currencySymbol${"%.2f".format(abs(transaction.party.balance))}",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = if (transaction.party.balance > 0) Color(0xFF43A047) else Color(0xFFE53935)
@@ -591,7 +592,7 @@ fun ReceiptContent(
                     color = Color(0xFF616161)
                 )
                 Text(
-                    text = "₨${"%.2f".format(transaction.totalPaid)}",
+                    text = "$currencySymbol${"%.2f".format(transaction.totalPaid)}",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color(0xFF43A047)
@@ -618,7 +619,7 @@ fun ReceiptContent(
                             color = Color(0xFF616161)
                         )
                         Text(
-                            text = "₨${"%.2f".format(abs(balance))}",
+                            text = "$currencySymbol${"%.2f".format(abs(balance))}",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = if (balance > 0) Color(0xFFE53935) else Color(0xFF43A047)
@@ -710,7 +711,7 @@ fun ReceiptContent(
 }
 
 @Composable
-private fun SummaryRow(label: String, amount: Double, isNegative: Boolean = false) {
+private fun SummaryRow(label: String, amount: Double, isNegative: Boolean = false, currencySymbol: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -723,7 +724,7 @@ private fun SummaryRow(label: String, amount: Double, isNegative: Boolean = fals
             color = Color(0xFF616161)
         )
         Text(
-            text = "${if (isNegative) "-" else ""}₨${"%.2f".format(amount)}",
+            text = "${if (isNegative) "-" else ""}$currencySymbol${"%.2f".format(amount)}",
             fontSize = 11.sp,
             fontWeight = FontWeight.Medium,
             color = if (isNegative) Color(0xFFE53935) else Color(0xFF212121)

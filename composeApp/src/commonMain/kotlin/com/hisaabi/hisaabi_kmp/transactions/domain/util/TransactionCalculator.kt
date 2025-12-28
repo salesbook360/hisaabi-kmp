@@ -165,7 +165,7 @@ object TransactionCalculator {
     /**
      * Format currency value
      */
-    fun formatCurrency(value: Double, currencySymbol: String = "₨"): String {
+    fun formatCurrency(value: Double, currencySymbol: String): String {
         val absValue = kotlin.math.abs(value)
         val formatted = "%.2f".format(absValue)
         return "$currencySymbol $formatted"

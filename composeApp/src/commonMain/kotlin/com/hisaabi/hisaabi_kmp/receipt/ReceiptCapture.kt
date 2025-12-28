@@ -7,7 +7,7 @@ import com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction
  * Platform-specific receipt capture interface
  */
 interface ReceiptCapture {
-    suspend fun captureReceipt(transaction: Transaction, config: ReceiptConfig): ReceiptResult
+    suspend fun captureReceipt(transaction: Transaction, config: ReceiptConfig, currencySymbol: String): ReceiptResult
     suspend fun shareReceipt(result: ReceiptResult, transaction: Transaction)
 }
 

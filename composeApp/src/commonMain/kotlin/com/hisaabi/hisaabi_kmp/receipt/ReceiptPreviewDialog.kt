@@ -13,8 +13,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
 import com.hisaabi.hisaabi_kmp.settings.domain.model.ReceiptConfig
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -25,6 +27,11 @@ fun ReceiptPreviewDialog(
     onDismiss: () -> Unit,
     onShare: () -> Unit
 ) {
+    // Currency
+    val preferencesManager: PreferencesManager = koinInject()
+    val selectedCurrency by preferencesManager.selectedCurrency.collectAsState(null)
+    val currencySymbol = selectedCurrency?.symbol ?: ""
+    
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(
@@ -85,6 +92,7 @@ fun ReceiptPreviewDialog(
                     ReceiptContent(
                         transaction = transaction,
                         config = config,
+                        currencySymbol = currencySymbol,
                         modifier = Modifier.padding(16.dp)
                     )
                 }

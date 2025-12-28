@@ -23,9 +23,11 @@ import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionDetail
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddManufactureViewModel
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.ManufactureState
 import com.hisaabi.hisaabi_kmp.utils.format
+import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
 import com.hisaabi.hisaabi_kmp.utils.formatDateTime
 import com.hisaabi.hisaabi_kmp.utils.SimpleDateTimePickerDialog
 import com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse
+import org.koin.compose.koinInject
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,6 +39,11 @@ fun AddManufactureScreen(
     onSaveSuccess: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsState()
+    
+    // Currency
+    val preferencesManager: PreferencesManager = koinInject()
+    val selectedCurrency by preferencesManager.selectedCurrency.collectAsState(null)
+    val currencySymbol = selectedCurrency?.symbol ?: ""
 
     // Show error dialog if any
     state.error?.let { error ->
@@ -100,7 +107,8 @@ fun AddManufactureScreen(
                 onAdditionalChargesDescChanged = { viewModel.updateAdditionalChargesDescription(it) },
                 onSelectWarehouse = onSelectWarehouse,
                 onDateChanged = { viewModel.updateTransactionDate(it) },
-                modifier = Modifier.fillMaxSize().padding(paddingValues)
+                modifier = Modifier.fillMaxSize().padding(paddingValues),
+                currencySymbol
             )
         }
     }
@@ -127,7 +135,8 @@ private fun AddManufactureContent(
     onAdditionalChargesDescChanged: (String) -> Unit,
     onSelectWarehouse: () -> Unit,
     onDateChanged: (Long) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    currencySymbol:String
 ) {
     var showRecipeSelector by remember { mutableStateOf(false) }
     var showDateTimePicker by remember { mutableStateOf(false) }
@@ -186,6 +195,7 @@ private fun AddManufactureContent(
                             quantity = state.recipeQuantity,
                             unitTitle = state.recipeUnit?.title ?: "Unit",
                             unitPrice = state.recipeUnitPrice,
+                            currencySymbol = currencySymbol,
                             onQuantityChanged = onRecipeQuantityChanged,
                             onRemove = { showRecipeSelector = true }
                         )
@@ -299,7 +309,7 @@ private fun AddManufactureContent(
                             onDone = { focusManager.clearFocus() }
                         ),
                         modifier = Modifier.fillMaxWidth(),
-                        leadingIcon = { Text("₨") },
+                        leadingIcon = { Text(currencySymbol) },
                         singleLine = true
                     )
 
@@ -335,7 +345,7 @@ private fun AddManufactureContent(
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            "₨ ${"%.2f".format(state.totalCost)}",
+                            "$currencySymbol ${"%.2f".format(state.totalCost)}",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
@@ -345,7 +355,7 @@ private fun AddManufactureContent(
                     if (state.recipeQuantity > 0) {
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            "Unit Price: ₨ ${"%.2f".format(state.recipeUnitPrice)}",
+                            "Unit Price: $currencySymbol ${"%.2f".format(state.recipeUnitPrice)}",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
                         )
@@ -391,6 +401,7 @@ private fun RecipeCard(
     quantity: Double,
     unitTitle: String,
     unitPrice: Double,
+    currencySymbol: String,
     onQuantityChanged: (Double) -> Unit,
     onRemove: () -> Unit
 ) {
@@ -412,7 +423,7 @@ private fun RecipeCard(
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    "₨ ${"%.2f".format(unitPrice)} per $unitTitle",
+                    "$currencySymbol ${"%.2f".format(unitPrice)} per $unitTitle",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                 )

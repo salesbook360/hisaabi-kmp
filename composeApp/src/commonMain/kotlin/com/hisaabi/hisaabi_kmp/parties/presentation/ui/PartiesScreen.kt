@@ -2,16 +2,54 @@ package com.hisaabi.hisaabi_kmp.parties.presentation.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.TrendingDown
+import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,9 +60,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hisaabi.hisaabi_kmp.core.ui.SegmentedControl
-import com.hisaabi.hisaabi_kmp.parties.domain.model.*
+import com.hisaabi.hisaabi_kmp.parties.domain.model.BalanceStatus
+import com.hisaabi.hisaabi_kmp.parties.domain.model.PartiesFilter
+import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
+import com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment
 import com.hisaabi.hisaabi_kmp.parties.presentation.viewmodel.PartiesViewModel
+import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
 import com.hisaabi.hisaabi_kmp.utils.format
+import org.koin.compose.koinInject
 import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -52,26 +95,31 @@ fun PartiesScreen(
     var selectedParty by remember { mutableStateOf<Party?>(null) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showSearchBar by remember { mutableStateOf(false) }
-    
+
+    // Currency
+    val preferencesManager: PreferencesManager = koinInject()
+    val selectedCurrency by preferencesManager.selectedCurrency.collectAsState(null)
+    val currencySymbol = selectedCurrency?.symbol ?: ""
+
     // Set initial segment if provided
     LaunchedEffect(initialSegment) {
         initialSegment?.let { viewModel.onSegmentChanged(it) }
     }
-    
+
     // Refresh when trigger changes
     LaunchedEffect(refreshTrigger) {
         if (refreshTrigger > 0) {
             viewModel.refresh()
         }
     }
-    
+
     // Detect scroll to bottom for pagination
     LaunchedEffect(listState.canScrollForward) {
         if (!listState.canScrollForward && !uiState.isLoadingMore) {
             viewModel.loadMoreParties()
         }
     }
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -90,7 +138,7 @@ fun PartiesScreen(
                         IconButton(onClick = { showFilterMenu = true }) {
                             Icon(Icons.Default.FilterList, contentDescription = "Filter")
                         }
-                        
+
                         DropdownMenu(
                             expanded = showFilterMenu,
                             onDismissRequest = { showFilterMenu = false }
@@ -111,7 +159,7 @@ fun PartiesScreen(
                             }
                         }
                     }
-                    
+
                     // Search Button
                     IconButton(onClick = { showSearchBar = !showSearchBar }) {
                         Icon(Icons.Default.Search, contentDescription = "Search")
@@ -145,7 +193,9 @@ fun PartiesScreen(
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
                     trailingIcon = {
                         if (uiState.searchQuery.isNotEmpty()) {
-                            IconButton(onClick = { viewModel.onSearchQueryChanged(""); showSearchBar = false }) {
+                            IconButton(onClick = {
+                                viewModel.onSearchQueryChanged(""); showSearchBar = false
+                            }) {
                                 Icon(Icons.Default.Clear, contentDescription = "Clear")
                             }
                         }
@@ -165,7 +215,7 @@ fun PartiesScreen(
                     .fillMaxWidth()
                     .padding(16.dp)
             )
-            
+
             // Stats Card
             Card(
                 modifier = Modifier
@@ -194,7 +244,7 @@ fun PartiesScreen(
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
-                    
+
                     Column(horizontalAlignment = Alignment.End) {
                         Text(
                             text = "Total Balance",
@@ -202,7 +252,7 @@ fun PartiesScreen(
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                         Text(
-                            text = formatBalance(uiState.totalBalance),
+                            text = formatBalance(uiState.totalBalance, currencySymbol),
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold,
                             color = when {
@@ -214,9 +264,9 @@ fun PartiesScreen(
                     }
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // Parties List
             if (uiState.isLoading) {
                 Box(
@@ -277,14 +327,15 @@ fun PartiesScreen(
                     items(uiState.parties, key = { it.id }) { party ->
                         PartyItem(
                             party = party,
-                            onClick = { 
+                            onClick = {
                                 selectedParty = party
                                 onPartyClick(party)
-                            }
+                            },
+                            currencySymbol
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                     }
-                    
+
                     // Loading more indicator
                     if (uiState.isLoadingMore) {
                         item {
@@ -303,7 +354,7 @@ fun PartiesScreen(
                 }
             }
         }
-        
+
         // Bottom Sheet for Party Actions
         selectedParty?.let { party ->
             PartyActionsBottomSheet(
@@ -311,7 +362,7 @@ fun PartiesScreen(
                 onDismiss = { selectedParty = null },
                 onPayGetPayment = { onPayGetPayment(party) },
                 onEdit = { onEditParty(party) },
-                onDelete = { 
+                onDelete = {
                     showDeleteDialog = true
                 },
                 onTransactions = { onViewTransactions(party) },
@@ -322,7 +373,7 @@ fun PartiesScreen(
                 }
             )
         }
-        
+
         // Delete Confirmation Dialog
         if (showDeleteDialog && selectedParty != null) {
             DeletePartyDialog(
@@ -354,7 +405,7 @@ private fun PartySegmentControl(
     } else {
         listOf(PartySegment.CUSTOMER, PartySegment.VENDOR, PartySegment.INVESTOR)
     }
-    
+
     SegmentedControl(
         items = visibleSegments,
         selectedItem = selected,
@@ -373,11 +424,12 @@ private fun PartySegmentControl(
 @Composable
 private fun PartyItem(
     party: Party,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    currencySymbol: String
 ) {
     // Check if this is an expense/income type (roleId 14 or 15)
     val isExpenseIncomeType = party.roleId in listOf(14, 15)
-    
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -409,9 +461,9 @@ private fun PartyItem(
                     Icon(
                         imageVector = if (party.roleId == 14) Icons.Default.TrendingDown else Icons.Default.TrendingUp,
                         contentDescription = null,
-                        tint = if (party.roleId == 14) 
-                            MaterialTheme.colorScheme.onErrorContainer 
-                        else 
+                        tint = if (party.roleId == 14)
+                            MaterialTheme.colorScheme.onErrorContainer
+                        else
                             MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 } else {
@@ -423,9 +475,9 @@ private fun PartyItem(
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.width(16.dp))
-            
+
             // Party Info
             Column(modifier = Modifier.weight(1f)) {
                 Text(
@@ -435,7 +487,7 @@ private fun PartyItem(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                
+
                 // Slug
                 if (!party.slug.isBlank()) {
                     Spacer(modifier = Modifier.height(2.dp))
@@ -445,7 +497,7 @@ private fun PartyItem(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                
+
                 // For expense/income types, show type label instead of phone/address
                 if (isExpenseIncomeType) {
                     Spacer(modifier = Modifier.height(2.dp))
@@ -465,7 +517,7 @@ private fun PartyItem(
                             overflow = TextOverflow.Ellipsis
                         )
                     }
-                    
+
                     if (!party.address.isNullOrBlank()) {
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
@@ -478,15 +530,15 @@ private fun PartyItem(
                     }
                 }
             }
-            
+
             // Show balance only for regular parties (not expense/income types)
             if (!isExpenseIncomeType) {
                 Spacer(modifier = Modifier.width(16.dp))
-                
+
                 // Balance
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        text = formatBalance(abs(party.balance)),
+                        text = formatBalance(abs(party.balance), currencySymbol),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = when (party.balanceStatus) {
@@ -495,7 +547,7 @@ private fun PartyItem(
                             BalanceStatus.ZERO -> MaterialTheme.colorScheme.onSurfaceVariant
                         }
                     )
-                    
+
                     Text(
                         text = when (party.balanceStatus) {
                             BalanceStatus.PAYABLE -> "You'll Pay"
@@ -515,8 +567,8 @@ private fun PartyItem(
     }
 }
 
-private fun formatBalance(balance: Double): String {
-    return "₨ %.2f".format(balance)
+private fun formatBalance(balance: Double, currencySymbol: String): String {
+    return "$currencySymbol %.2f".format(balance)
 }
 
 private fun PartiesFilter.getDisplayName(): String = when (this) {

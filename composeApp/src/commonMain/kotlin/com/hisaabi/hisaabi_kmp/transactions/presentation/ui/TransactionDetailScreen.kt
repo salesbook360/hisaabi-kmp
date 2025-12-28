@@ -14,12 +14,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.*
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionDetailViewModel
 import com.hisaabi.hisaabi_kmp.utils.format
 import com.hisaabi.hisaabi_kmp.utils.formatTransactionDate
 import com.hisaabi.hisaabi_kmp.utils.formatEntryDate
 import com.hisaabi.hisaabi_kmp.utils.calculateManufacturingCost
+import org.koin.compose.koinInject
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -29,6 +31,10 @@ fun TransactionDetailScreen(
     transactionSlug: String,
     onNavigateBack: () -> Unit
 ) {
+    val preferencesManager: PreferencesManager = koinInject()
+    val selectedCurrency by preferencesManager.selectedCurrency.collectAsState(null)
+    val currencySymbol = selectedCurrency?.symbol ?: ""
+    
     val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     
@@ -128,7 +134,8 @@ fun TransactionDetailScreen(
                     childTransactions = state.childTransactions,
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(paddingValues)
+                        .padding(paddingValues),
+                    currencySymbol
                 )
             }
             else -> {
@@ -149,7 +156,8 @@ fun TransactionDetailScreen(
 private fun TransactionDetailContent(
     transaction: Transaction,
     childTransactions: List<Transaction>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    currencySymbol:String
 ) {
     val isRecordType = AllTransactionTypes.isRecord(transaction.transactionType)
     val isPayGetCashType = AllTransactionTypes.isPayGetCash(transaction.transactionType)
@@ -225,19 +233,19 @@ private fun TransactionDetailContent(
         // Transaction-specific content based on type
         when {
             isRecordType -> {
-                item { RecordDetailsCard(transaction) }
+                item { RecordDetailsCard(transaction, currencySymbol) }
             }
             isPayGetCashType -> {
-                item { PayGetCashDetailsCard(transaction) }
+                item { PayGetCashDetailsCard(transaction, currencySymbol) }
             }
             isExpenseIncomeType -> {
-                item { ExpenseIncomeDetailsCard(transaction) }
+                item { ExpenseIncomeDetailsCard(transaction, currencySymbol) }
             }
             isPaymentTransferType -> {
-                item { PaymentTransferDetailsCard(transaction) }
+                item { PaymentTransferDetailsCard(transaction, currencySymbol) }
             }
             isJournalVoucherType -> {
-                item { JournalVoucherDetailsCard(transaction) }
+                item { JournalVoucherDetailsCard(transaction, currencySymbol) }
                 
                 // Show child transactions for journal voucher
                 if (childTransactions.isNotEmpty()) {
@@ -251,7 +259,7 @@ private fun TransactionDetailContent(
                     }
                     
                     items(childTransactions) { childTransaction ->
-                        ChildTransactionCard(childTransaction)
+                        ChildTransactionCard(childTransaction, currencySymbol)
                     }
                 }
             }
@@ -285,11 +293,16 @@ private fun TransactionDetailContent(
                             ManufactureIngredientsCard(sale)
                         }
                     }
+                    
+//                    // Show Manufacturing Cost
+//                    item {
+//                        ManufactureCostCard(transaction, currencySymbol)
+//                    }
                 }
             }
             isRegularTransaction -> {
                 // Amount Summary Card
-                item { AmountSummaryCard(transaction) }
+                item { AmountSummaryCard(transaction, currencySymbol) }
                 
                 // Transaction Details (Products)
                 if (transaction.transactionDetails.isNotEmpty()) {
@@ -303,12 +316,12 @@ private fun TransactionDetailContent(
                     }
                     
                     items(transaction.transactionDetails) { detail ->
-                        ProductDetailCard(detail)
+                        ProductDetailCard(detail, currencySymbol)
                     }
                 }
                 
                 // Additional Details Card
-                item { AdditionalDetailsCard(transaction) }
+                item { AdditionalDetailsCard(transaction, currencySymbol) }
             }
         }
         
@@ -417,7 +430,7 @@ private fun PartyInfoCard(party: com.hisaabi.hisaabi_kmp.parties.domain.model.Pa
 }
 
 @Composable
-private fun AmountSummaryCard(transaction: Transaction) {
+private fun AmountSummaryCard(transaction: Transaction, currencySymbol: String) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -436,14 +449,14 @@ private fun AmountSummaryCard(transaction: Transaction) {
             // Subtotal
             DetailRow(
                 label = "Subtotal",
-                value = "₨ ${"%.2f".format(transaction.calculateSubtotal())}"
+                value = "$currencySymbol ${"%.2f".format(transaction.calculateSubtotal())}"
             )
             
             // Discount
             if (transaction.flatDiscount > 0 || transaction.calculateProductsDiscount() > 0) {
                 DetailRow(
                     label = "Discount",
-                    value = "- ₨ ${"%.2f".format(transaction.calculateTotalDiscount())}",
+                    value = "- $currencySymbol ${"%.2f".format(transaction.calculateTotalDiscount())}",
                     valueColor = MaterialTheme.colorScheme.error
                 )
             }
@@ -452,7 +465,7 @@ private fun AmountSummaryCard(transaction: Transaction) {
             if (transaction.flatTax > 0 || transaction.calculateProductsTax() > 0) {
                 DetailRow(
                     label = "Tax",
-                    value = "+ ₨ ${"%.2f".format(transaction.calculateTotalTax())}",
+                    value = "+ $currencySymbol ${"%.2f".format(transaction.calculateTotalTax())}",
                     valueColor = MaterialTheme.colorScheme.tertiary
                 )
             }
@@ -461,7 +474,7 @@ private fun AmountSummaryCard(transaction: Transaction) {
             if (transaction.additionalCharges > 0) {
                 DetailRow(
                     label = "Additional Charges${if (transaction.additionalChargesDesc != null) " (${transaction.additionalChargesDesc})" else ""}",
-                    value = "+ ₨ ${"%.2f".format(transaction.additionalCharges)}",
+                    value = "+ $currencySymbol ${"%.2f".format(transaction.additionalCharges)}",
                     valueColor = MaterialTheme.colorScheme.tertiary
                 )
             }
@@ -473,7 +486,7 @@ private fun AmountSummaryCard(transaction: Transaction) {
             // Total Bill
             DetailRow(
                 label = "Total Bill",
-                value = "₨ ${"%.2f".format(transaction.calculateGrandTotal())}",
+                value = "$currencySymbol ${"%.2f".format(transaction.calculateGrandTotal())}",
                 labelStyle = MaterialTheme.typography.titleMedium,
                 valueStyle = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
@@ -484,7 +497,7 @@ private fun AmountSummaryCard(transaction: Transaction) {
                 Spacer(Modifier.height(8.dp))
                 DetailRow(
                     label = "Paid",
-                    value = "₨ ${"%.2f".format(transaction.totalPaid)}",
+                    value = "$currencySymbol ${"%.2f".format(transaction.totalPaid)}",
                     valueColor = MaterialTheme.colorScheme.primary
                 )
                 
@@ -493,7 +506,7 @@ private fun AmountSummaryCard(transaction: Transaction) {
                 if (remaining > 0) {
                     DetailRow(
                         label = "Remaining",
-                        value = "₨ ${"%.2f".format(remaining)}",
+                        value = "$currencySymbol ${"%.2f".format(remaining)}",
                         valueColor = MaterialTheme.colorScheme.error
                     )
                 }
@@ -503,7 +516,7 @@ private fun AmountSummaryCard(transaction: Transaction) {
 }
 
 @Composable
-private fun ProductDetailCard(detail: TransactionDetail) {
+private fun ProductDetailCard(detail: TransactionDetail, currencySymbol: String) {
     Card(
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -525,7 +538,7 @@ private fun ProductDetailCard(detail: TransactionDetail) {
                     )
                 }
                 Text(
-                    "₨ ${"%.2f".format(detail.calculateBill())}",
+                    "$currencySymbol ${"%.2f".format(detail.calculateBill())}",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
@@ -539,7 +552,7 @@ private fun ProductDetailCard(detail: TransactionDetail) {
             // Price breakdown
             DetailRow(
                 label = "Unit Price",
-                value = "₨ ${"%.2f".format(detail.price)}"
+                value = "$currencySymbol ${"%.2f".format(detail.price)}"
             )
             DetailRow(
                 label = "Quantity",
@@ -547,13 +560,13 @@ private fun ProductDetailCard(detail: TransactionDetail) {
             )
             DetailRow(
                 label = "Subtotal",
-                value = "₨ ${"%.2f".format(detail.calculateSubtotal())}"
+                value = "$currencySymbol ${"%.2f".format(detail.calculateSubtotal())}"
             )
             
             if (detail.flatDiscount > 0) {
                 DetailRow(
                     label = "Discount",
-                    value = "- ₨ ${"%.2f".format(detail.flatDiscount)}",
+                    value = "- $currencySymbol ${"%.2f".format(detail.flatDiscount)}",
                     valueColor = MaterialTheme.colorScheme.error
                 )
             }
@@ -561,7 +574,7 @@ private fun ProductDetailCard(detail: TransactionDetail) {
             if (detail.flatTax > 0) {
                 DetailRow(
                     label = "Tax",
-                    value = "+ ₨ ${"%.2f".format(detail.flatTax)}",
+                    value = "+ $currencySymbol ${"%.2f".format(detail.flatTax)}",
                     valueColor = MaterialTheme.colorScheme.tertiary
                 )
             }
@@ -569,7 +582,7 @@ private fun ProductDetailCard(detail: TransactionDetail) {
             if (detail.profit > 0) {
                 DetailRow(
                     label = "Profit",
-                    value = "₨ ${"%.2f".format(detail.profit)}",
+                    value = "$currencySymbol ${"%.2f".format(detail.profit)}",
                     valueColor = MaterialTheme.colorScheme.primary
                 )
             }
@@ -587,7 +600,7 @@ private fun ProductDetailCard(detail: TransactionDetail) {
 }
 
 @Composable
-private fun RecordDetailsCard(transaction: Transaction) {
+private fun RecordDetailsCard(transaction: Transaction, currencySymbol: String) {
     Card(
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -604,7 +617,7 @@ private fun RecordDetailsCard(transaction: Transaction) {
             if (AllTransactionTypes.isRecord(transaction.transactionType) && transaction.totalPaid > 0) {
                 DetailRow(
                     label = "Promised Amount",
-                    value = "₨ ${"%.2f".format(transaction.totalPaid)}",
+                    value = "$currencySymbol ${"%.2f".format(transaction.totalPaid)}",
                     valueColor = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold
                 )
@@ -624,7 +637,7 @@ private fun RecordDetailsCard(transaction: Transaction) {
 }
 
 @Composable
-private fun PayGetCashDetailsCard(transaction: Transaction) {
+private fun PayGetCashDetailsCard(transaction: Transaction, currencySymbol: String) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -645,7 +658,7 @@ private fun PayGetCashDetailsCard(transaction: Transaction) {
             
             // Amount
             Text(
-                "₨ ${"%.2f".format(transaction.totalPaid)}",
+                "$currencySymbol ${"%.2f".format(transaction.totalPaid)}",
                 style = MaterialTheme.typography.displaySmall,
                 fontWeight = FontWeight.Bold,
                 color = if (transaction.transactionType in listOf(5, 7, 12))
@@ -658,7 +671,7 @@ private fun PayGetCashDetailsCard(transaction: Transaction) {
 }
 
 @Composable
-private fun ExpenseIncomeDetailsCard(transaction: Transaction) {
+private fun ExpenseIncomeDetailsCard(transaction: Transaction, currencySymbol: String) {
     val isExpense = transaction.transactionType == AllTransactionTypes.EXPENSE.value
     
     Card(
@@ -681,7 +694,7 @@ private fun ExpenseIncomeDetailsCard(transaction: Transaction) {
             
             // Amount
             Text(
-                "₨ ${"%.2f".format(transaction.totalPaid)}",
+                "$currencySymbol ${"%.2f".format(transaction.totalPaid)}",
                 style = MaterialTheme.typography.displaySmall,
                 fontWeight = FontWeight.Bold,
                 color = if (isExpense)
@@ -694,7 +707,7 @@ private fun ExpenseIncomeDetailsCard(transaction: Transaction) {
 }
 
 @Composable
-private fun PaymentTransferDetailsCard(transaction: Transaction) {
+private fun PaymentTransferDetailsCard(transaction: Transaction, currencySymbol: String) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -712,7 +725,7 @@ private fun PaymentTransferDetailsCard(transaction: Transaction) {
             
             // Amount
             Text(
-                "₨ ${"%.2f".format(transaction.totalPaid)}",
+                "$currencySymbol ${"%.2f".format(transaction.totalPaid)}",
                 style = MaterialTheme.typography.displaySmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.tertiary
@@ -722,7 +735,7 @@ private fun PaymentTransferDetailsCard(transaction: Transaction) {
 }
 
 @Composable
-private fun JournalVoucherDetailsCard(transaction: Transaction) {
+private fun JournalVoucherDetailsCard(transaction: Transaction, currencySymbol: String) {
     Card(
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -746,7 +759,7 @@ private fun JournalVoucherDetailsCard(transaction: Transaction) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        "₨ ${"%.2f".format(transaction.totalPaid)}",
+                        "$currencySymbol ${"%.2f".format(transaction.totalPaid)}",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.error
@@ -762,7 +775,7 @@ private fun JournalVoucherDetailsCard(transaction: Transaction) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        "₨ ${"%.2f".format(transaction.totalPaid)}",
+                        "$currencySymbol ${"%.2f".format(transaction.totalPaid)}",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
@@ -805,7 +818,7 @@ private fun StockAdjustmentDetailsCard(transaction: Transaction) {
 }
 
 @Composable
-private fun ManufactureDetailsCard(transaction: Transaction) {
+private fun ManufactureDetailsCard(transaction: Transaction, currencySymbol: String) {
     val manufacturedProduct = transaction.transactionDetails.firstOrNull()
     
     Card(
@@ -840,7 +853,7 @@ private fun ManufactureDetailsCard(transaction: Transaction) {
             // Total Manufacturing Cost
             DetailRow(
                 label = "Total Manufacturing Cost",
-                value = "₨ ${"%.2f".format(calculateManufacturingCost(transaction))}",
+                value = "$currencySymbol ${"%.2f".format(calculateManufacturingCost(transaction))}",
                 valueColor = MaterialTheme.colorScheme.tertiary,
                 fontWeight = FontWeight.Bold
             )
@@ -922,7 +935,7 @@ private fun ManufactureIngredientsCard(transaction: Transaction) {
 }
 
 @Composable
-private fun AdditionalDetailsCard(transaction: Transaction) {
+private fun AdditionalDetailsCard(transaction: Transaction, currencySymbol: String) {
     Card(
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -952,7 +965,7 @@ private fun AdditionalDetailsCard(transaction: Transaction) {
             if (transaction.calculateTotalProfit() > 0) {
                 DetailRow(
                     label = "Total Profit",
-                    value = "₨ ${"%.2f".format(transaction.calculateTotalProfit())}",
+                    value = "$currencySymbol ${"%.2f".format(transaction.calculateTotalProfit())}",
                     valueColor = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold
                 )
@@ -1103,7 +1116,7 @@ private fun MetadataCard(transaction: Transaction) {
 
 
 @Composable
-private fun ChildTransactionCard(transaction: Transaction) {
+private fun ChildTransactionCard(transaction: Transaction, currencySymbol: String) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -1132,7 +1145,7 @@ private fun ChildTransactionCard(transaction: Transaction) {
                 
                 // Amount
                 Text(
-                    "₨ ${"%.2f".format(transaction.totalPaid)}",
+                    "$currencySymbol ${"%.2f".format(transaction.totalPaid)}",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = if (transaction.totalPaid >= 0)

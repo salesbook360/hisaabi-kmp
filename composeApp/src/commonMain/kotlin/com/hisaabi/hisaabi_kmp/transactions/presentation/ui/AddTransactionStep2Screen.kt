@@ -20,7 +20,9 @@ import com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.FlatOrPercent
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddTransactionViewModel
 import com.hisaabi.hisaabi_kmp.core.ui.FilterChipWithColors
+import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
 import com.hisaabi.hisaabi_kmp.utils.format
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,6 +34,11 @@ fun AddTransactionStep2Screen(
 ) {
     val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    
+    // Currency
+    val preferencesManager: PreferencesManager = koinInject()
+    val selectedCurrency by preferencesManager.selectedCurrency.collectAsState(null)
+    val currencySymbol = selectedCurrency?.symbol ?: ""
     
     LaunchedEffect(state.error) {
         state.error?.let { error ->
@@ -92,7 +99,8 @@ fun AddTransactionStep2Screen(
             item {
                 PreviousBalanceCard(
                     partyName = state.selectedParty?.name ?: "",
-                    balance = state.previousBalance
+                    balance = state.previousBalance,
+                    currencySymbol
                 )
             }
             
@@ -105,7 +113,8 @@ fun AddTransactionStep2Screen(
                     additionalCharges = state.additionalCharges,
                     transactionDiscount = viewModel.calculateTransactionDiscount(),
                     transactionTax = viewModel.calculateTransactionTax(),
-                    grandTotal = viewModel.calculateGrandTotal()
+                    grandTotal = viewModel.calculateGrandTotal(),
+                    currencySymbol = currencySymbol
                 )
             }
             
@@ -116,7 +125,8 @@ fun AddTransactionStep2Screen(
                     description = state.additionalChargesDesc,
                     onAmountChange = { amount, desc -> 
                         viewModel.updateAdditionalCharges(amount, desc)
-                    }
+                    },
+                    currencySymbol = currencySymbol
                 )
             }
             
@@ -127,7 +137,8 @@ fun AddTransactionStep2Screen(
                     type = state.discountType,
                     onUpdate = { amount, type ->
                         viewModel.updateDiscount(amount, type)
-                    }
+                    },
+                    currencySymbol = currencySymbol
                 )
             }
             
@@ -138,7 +149,8 @@ fun AddTransactionStep2Screen(
                     type = state.taxType,
                     onUpdate = { amount, type ->
                         viewModel.updateTax(amount, type)
-                    }
+                    },
+                    currencySymbol = currencySymbol
                 )
             }
             
@@ -147,14 +159,16 @@ fun AddTransactionStep2Screen(
                 PaidNowSection(
                     amount = state.paidNow,
                     grandTotal = viewModel.calculateGrandTotal(),
-                    onAmountChange = { viewModel.updatePaidNow(it) }
+                    onAmountChange = { viewModel.updatePaidNow(it) },
+                    currencySymbol = currencySymbol
                 )
             }
             
             // Payable Amount Display
             item {
                 PayableAmountCard(
-                    payable = state.totalPayable
+                    payable = state.totalPayable,
+                    currencySymbol = currencySymbol
                 )
             }
             
@@ -203,7 +217,8 @@ fun AddTransactionStep2Screen(
 @Composable
 private fun PreviousBalanceCard(
     partyName: String,
-    balance: Double
+    balance: Double,
+    currencySymbol:String
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -243,7 +258,7 @@ private fun PreviousBalanceCard(
                     style = MaterialTheme.typography.labelSmall
                 )
                 Text(
-                    "₨ ${"%.2f".format(kotlin.math.abs(balance))}",
+                    "$currencySymbol ${"%.2f".format(kotlin.math.abs(balance))}",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
@@ -260,7 +275,8 @@ private fun BillSummaryCard(
     additionalCharges: Double,
     transactionDiscount: Double,
     transactionTax: Double,
-    grandTotal: Double
+    grandTotal: Double,
+    currencySymbol:String
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -271,21 +287,21 @@ private fun BillSummaryCard(
             )
             Spacer(Modifier.height(12.dp))
             
-            SummaryRow("Subtotal", subtotal)
+            SummaryRow("Subtotal", subtotal,currencySymbol = currencySymbol)
             if (productsDiscount > 0) {
-                SummaryRow("Products Discount", -productsDiscount, isNegative = true)
+                SummaryRow("Products Discount", -productsDiscount, isNegative = true,currencySymbol = currencySymbol)
             }
             if (productsTax > 0) {
-                SummaryRow("Products Tax", productsTax)
+                SummaryRow("Products Tax", productsTax,currencySymbol = currencySymbol)
             }
             if (additionalCharges > 0) {
-                SummaryRow("Additional Charges", additionalCharges)
+                SummaryRow("Additional Charges", additionalCharges, currencySymbol = currencySymbol)
             }
             if (transactionDiscount > 0) {
-                SummaryRow("Transaction Discount", -transactionDiscount, isNegative = true)
+                SummaryRow("Transaction Discount", -transactionDiscount, isNegative = true, currencySymbol = currencySymbol)
             }
             if (transactionTax > 0) {
-                SummaryRow("Transaction Tax", transactionTax)
+                SummaryRow("Transaction Tax", transactionTax,currencySymbol = currencySymbol)
             }
             
             Spacer(Modifier.height(8.dp))
@@ -302,7 +318,7 @@ private fun BillSummaryCard(
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    "₨ ${"%.2f".format(grandTotal)}",
+                    "$currencySymbol ${"%.2f".format(grandTotal)}",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
@@ -316,7 +332,8 @@ private fun BillSummaryCard(
 private fun SummaryRow(
     label: String,
     amount: Double,
-    isNegative: Boolean = false
+    isNegative: Boolean = false,
+    currencySymbol:String
 ) {
     Row(
         modifier = Modifier
@@ -329,7 +346,7 @@ private fun SummaryRow(
             style = MaterialTheme.typography.bodyMedium
         )
         Text(
-            "₨ ${"%.2f".format(kotlin.math.abs(amount))}",
+            "$currencySymbol ${"%.2f".format(kotlin.math.abs(amount))}",
             style = MaterialTheme.typography.bodyMedium,
             color = if (isNegative) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
         )
@@ -340,7 +357,8 @@ private fun SummaryRow(
 private fun AdditionalChargesSection(
     amount: Double,
     description: String,
-    onAmountChange: (Double, String) -> Unit
+    onAmountChange: (Double, String) -> Unit,
+    currencySymbol:String
 ) {
     var amountText by remember { mutableStateOf(if (amount > 0) amount.toString() else "") }
     var descText by remember { mutableStateOf(description) }
@@ -365,7 +383,7 @@ private fun AdditionalChargesSection(
                 label = { Text("Amount") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                prefix = { Text("₨ ") },
+                prefix = { Text("$currencySymbol ") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
             )
             
@@ -391,7 +409,8 @@ private fun AdditionalChargesSection(
 private fun DiscountSection(
     amount: Double,
     type: FlatOrPercent,
-    onUpdate: (Double, FlatOrPercent) -> Unit
+    onUpdate: (Double, FlatOrPercent) -> Unit,
+    currencySymbol:String
 ) {
     var amountText by remember { mutableStateOf(if (amount > 0) amount.toString() else "") }
     var selectedType by remember { mutableStateOf(type) }
@@ -432,7 +451,7 @@ private fun DiscountSection(
                             onUpdate(amt, selectedType)
                         }
                     },
-                    label = "₨"
+                    label = currencySymbol
                 )
                 FilterChipWithColors(
                     selected = selectedType == FlatOrPercent.PERCENT,
@@ -453,7 +472,8 @@ private fun DiscountSection(
 private fun TaxSection(
     amount: Double,
     type: FlatOrPercent,
-    onUpdate: (Double, FlatOrPercent) -> Unit
+    onUpdate: (Double, FlatOrPercent) -> Unit,
+    currencySymbol:String
 ) {
     var amountText by remember { mutableStateOf(if (amount > 0) amount.toString() else "") }
     var selectedType by remember { mutableStateOf(type) }
@@ -494,7 +514,7 @@ private fun TaxSection(
                             onUpdate(amt, selectedType)
                         }
                     },
-                    label = "₨"
+                    label = currencySymbol
                 )
                 FilterChipWithColors(
                     selected = selectedType == FlatOrPercent.PERCENT,
@@ -515,7 +535,8 @@ private fun TaxSection(
 private fun PaidNowSection(
     amount: Double,
     grandTotal: Double,
-    onAmountChange: (Double) -> Unit
+    onAmountChange: (Double) -> Unit,
+    currencySymbol:String
 ) {
     var amountText by remember { mutableStateOf(if (amount > 0) amount.toString() else "") }
     
@@ -553,7 +574,7 @@ private fun PaidNowSection(
                 label = { Text("Amount") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                prefix = { Text("₨ ") },
+                prefix = { Text("$currencySymbol ") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
             )
         }
@@ -562,7 +583,8 @@ private fun PaidNowSection(
 
 @Composable
 private fun PayableAmountCard(
-    payable: Double
+    payable: Double,
+    currencySymbol:String
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -586,7 +608,7 @@ private fun PayableAmountCard(
                 fontWeight = FontWeight.Bold
             )
             Text(
-                "₨ ${"%.2f".format(kotlin.math.abs(payable))}",
+                "$currencySymbol ${"%.2f".format(kotlin.math.abs(payable))}",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold
             )

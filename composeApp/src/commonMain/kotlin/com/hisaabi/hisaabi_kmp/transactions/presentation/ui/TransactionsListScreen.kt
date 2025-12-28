@@ -27,6 +27,7 @@ import com.hisaabi.hisaabi_kmp.receipt.ReceiptViewModel
 import com.hisaabi.hisaabi_kmp.receipt.ReceiptPreviewDialog
 import com.hisaabi.hisaabi_kmp.core.ui.FilterChipWithColors
 import com.hisaabi.hisaabi_kmp.sync.domain.model.SyncStatus
+import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
 import org.koin.compose.koinInject
 import com.hisaabi.hisaabi_kmp.utils.format
 
@@ -43,6 +44,11 @@ fun TransactionsListScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val sheetState = rememberModalBottomSheetState()
     var showSearchBar by remember { mutableStateOf(false) }
+    
+    // Currency
+    val preferencesManager: PreferencesManager = koinInject()
+    val selectedCurrency by preferencesManager.selectedCurrency.collectAsState(null)
+    val currencySymbol = selectedCurrency?.symbol ?: ""
     
     // Receipt functionality
     val receiptViewModel: ReceiptViewModel = koinInject()
@@ -156,6 +162,7 @@ fun TransactionsListScreen(
                         items(state.transactions) { transaction ->
                             TransactionCard(
                                 transaction = transaction,
+                                currencySymbol = currencySymbol,
                                 onClick = { onTransactionClick(transaction) },
                                 onDeleteClick = { viewModel.deleteTransaction(transaction) },
                                 onEditClick = { onEditTransaction(transaction) },
@@ -379,6 +386,7 @@ private fun EmptyTransactionsView(
 @Composable
 private fun TransactionCard(
     transaction: Transaction,
+    currencySymbol: String,
     onClick: () -> Unit,
     onDeleteClick: () -> Unit,
     onEditClick: () -> Unit,
@@ -389,33 +397,33 @@ private fun TransactionCard(
     // Determine card type based on transaction type
     when {
         AllTransactionTypes.isRecord(transaction.transactionType) -> {
-            RecordTransactionCard(transaction, onClick, onDeleteClick, onEditClick, receiptViewModel)
+            RecordTransactionCard(transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel)
         }
         AllTransactionTypes.isPayGetCash(transaction.transactionType) -> {
-            PayGetCashCard(transaction, onClick, onDeleteClick, onEditClick, receiptViewModel)
+            PayGetCashCard(transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel)
         }
         AllTransactionTypes.isExpenseIncome(transaction.transactionType) -> {
-            ExpenseIncomeCard(transaction, onClick, onDeleteClick, onEditClick, receiptViewModel)
+            ExpenseIncomeCard(transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel)
         }
         transaction.transactionType == AllTransactionTypes.PAYMENT_TRANSFER.value -> {
-            PaymentTransferCard(transaction, onClick, onDeleteClick, onEditClick, receiptViewModel)
+            PaymentTransferCard(transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel)
         }
         transaction.transactionType == AllTransactionTypes.JOURNAL_VOUCHER.value -> {
-            JournalVoucherCard(transaction, onClick, onDeleteClick, onEditClick, receiptViewModel)
+            JournalVoucherCard(transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel)
         }
         AllTransactionTypes.isStockAdjustment(transaction.transactionType) -> {
-            StockAdjustmentCard(transaction, onClick, onDeleteClick, onEditClick, receiptViewModel, transactionDetailsCounts)
+            StockAdjustmentCard(transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel, transactionDetailsCounts)
         }
         transaction.transactionType == AllTransactionTypes.MANUFACTURE.value -> {
             val info = manufactureInfo[transaction.slug]
-            ManufactureCard(transaction, onClick, onDeleteClick, onEditClick, receiptViewModel, info)
+            ManufactureCard(transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel, info)
         }
         AllTransactionTypes.isOrder(transaction.transactionType) || transaction.transactionType == AllTransactionTypes.QUOTATION.value -> {
-            OrderQuotationCard(transaction, onClick, onDeleteClick, onEditClick, receiptViewModel, transactionDetailsCounts)
+            OrderQuotationCard(transaction, onClick, onDeleteClick, onEditClick, receiptViewModel, transactionDetailsCounts,currencySymbol)
         }
         else -> {
             // Basic transaction card (Sale, Purchase, Returns)
-            BasicTransactionCard(transaction, onClick, onDeleteClick, onEditClick, receiptViewModel, transactionDetailsCounts)
+            BasicTransactionCard(transaction, onClick, onDeleteClick, onEditClick, receiptViewModel, transactionDetailsCounts,currencySymbol)
         }
     }
 }
@@ -761,7 +769,8 @@ private fun BasicTransactionCard(
     onDeleteClick: () -> Unit,
     onEditClick: () -> Unit,
     receiptViewModel: ReceiptViewModel,
-    transactionDetailsCounts: Map<String, Int>
+    transactionDetailsCounts: Map<String, Int>,
+    currencySymbol:String
 ) {
     var showOptions by remember { mutableStateOf(false) }
     
@@ -797,7 +806,7 @@ private fun BasicTransactionCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        "₨ ${"%.2f".format(transaction.totalBill)}",
+                        "$currencySymbol ${"%.2f".format(transaction.totalBill)}",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
@@ -812,7 +821,7 @@ private fun BasicTransactionCard(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            "₨ ${"%.2f".format(transaction.totalPaid)}",
+                            "$currencySymbol ${"%.2f".format(transaction.totalPaid)}",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.secondary
@@ -842,13 +851,13 @@ private fun BasicTransactionCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     if (transaction.flatDiscount > 0) {
-                        DetailChip("−₨${"%.0f".format(transaction.flatDiscount)}", MaterialTheme.colorScheme.errorContainer)
+                        DetailChip("−$currencySymbol${"%.0f".format(transaction.flatDiscount)}", MaterialTheme.colorScheme.errorContainer)
                     }
                     if (transaction.flatTax > 0) {
-                        DetailChip("+₨${"%.0f".format(transaction.flatTax)}", MaterialTheme.colorScheme.tertiaryContainer)
+                        DetailChip("+$currencySymbol${"%.0f".format(transaction.flatTax)}", MaterialTheme.colorScheme.tertiaryContainer)
                     }
                     if (transaction.additionalCharges > 0) {
-                        DetailChip("+₨${"%.0f".format(transaction.additionalCharges)}", MaterialTheme.colorScheme.secondaryContainer)
+                        DetailChip("+$currencySymbol${"%.0f".format(transaction.additionalCharges)}", MaterialTheme.colorScheme.secondaryContainer)
                     }
                 }
             }
@@ -882,6 +891,7 @@ private fun BasicTransactionCard(
 @Composable
 private fun PayGetCashCard(
     transaction: Transaction,
+    currencySymbol: String,
     onClick: () -> Unit,
     onDeleteClick: () -> Unit,
     onEditClick: () -> Unit,
@@ -937,7 +947,7 @@ private fun PayGetCashCard(
                     )
                 }
                 Text(
-                    "₨ ${"%.2f".format(transaction.totalPaid)}",
+                    "$currencySymbol ${"%.2f".format(transaction.totalPaid)}",
                     style = MaterialTheme.typography.displaySmall,
                     fontWeight = FontWeight.Bold,
                     color = if (isReceiving) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
@@ -994,6 +1004,7 @@ private fun PayGetCashCard(
 @Composable
 private fun ExpenseIncomeCard(
     transaction: Transaction,
+    currencySymbol: String,
     onClick: () -> Unit,
     onDeleteClick: () -> Unit,
     onEditClick: () -> Unit,
@@ -1032,7 +1043,7 @@ private fun ExpenseIncomeCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    "₨ ${"%.2f".format(transaction.totalPaid)}",
+                    "$currencySymbol ${"%.2f".format(transaction.totalPaid)}",
                     style = MaterialTheme.typography.displaySmall,
                     fontWeight = FontWeight.Bold,
                     color = if (isExpense) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
@@ -1089,6 +1100,7 @@ private fun ExpenseIncomeCard(
 @Composable
 private fun PaymentTransferCard(
     transaction: Transaction,
+    currencySymbol: String,
     onClick: () -> Unit,
     onDeleteClick: () -> Unit,
     onEditClick: () -> Unit,
@@ -1123,7 +1135,7 @@ private fun PaymentTransferCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    "₨ ${"%.2f".format(transaction.totalPaid)}",
+                    "$currencySymbol ${"%.2f".format(transaction.totalPaid)}",
                     style = MaterialTheme.typography.displaySmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.tertiary
@@ -1203,6 +1215,7 @@ private fun PaymentTransferCard(
 @Composable
 private fun JournalVoucherCard(
     transaction: Transaction,
+    currencySymbol: String,
     onClick: () -> Unit,
     onDeleteClick: () -> Unit,
     onEditClick: () -> Unit,
@@ -1241,7 +1254,7 @@ private fun JournalVoucherCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        "₨ ${"%.2f".format(transaction.totalPaid)}",
+                        "$currencySymbol ${"%.2f".format(transaction.totalPaid)}",
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.error
@@ -1258,7 +1271,7 @@ private fun JournalVoucherCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        "₨ ${"%.2f".format(transaction.totalPaid)}",
+                        "$currencySymbol ${"%.2f".format(transaction.totalPaid)}",
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
@@ -1296,6 +1309,7 @@ private fun JournalVoucherCard(
 @Composable
 private fun StockAdjustmentCard(
     transaction: Transaction,
+    currencySymbol: String,
     onClick: () -> Unit,
     onDeleteClick: () -> Unit,
     onEditClick: () -> Unit,
@@ -1439,6 +1453,7 @@ private fun StockAdjustmentCard(
 @Composable
 private fun ManufactureCard(
     transaction: Transaction,
+    currencySymbol: String,
     onClick: () -> Unit,
     onDeleteClick: () -> Unit,
     onEditClick: () -> Unit,
@@ -1499,7 +1514,7 @@ private fun ManufactureCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        "₨ ${"%.2f".format(transaction.totalPaid)}",
+                        "$currencySymbol ${"%.2f".format(transaction.totalPaid)}",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.tertiary
@@ -1545,7 +1560,8 @@ private fun OrderQuotationCard(
     onDeleteClick: () -> Unit,
     onEditClick: () -> Unit,
     receiptViewModel: ReceiptViewModel,
-    transactionDetailsCounts: Map<String, Int>
+    transactionDetailsCounts: Map<String, Int>,
+    currencySymbol:String
 ) {
     var showOptions by remember { mutableStateOf(false) }
     
@@ -1581,7 +1597,7 @@ private fun OrderQuotationCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        "₨ ${"%.2f".format(transaction.totalBill)}",
+                        "$currencySymbol ${"%.2f".format(transaction.totalBill)}",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
@@ -1631,6 +1647,7 @@ private fun OrderQuotationCard(
 @Composable
 private fun RecordTransactionCard(
     transaction: Transaction,
+    currencySymbol: String,
     onClick: () -> Unit,
     onDeleteClick: () -> Unit,
     onEditClick: () -> Unit,
@@ -1685,7 +1702,7 @@ private fun RecordTransactionCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        "₨ ${"%.2f".format(transaction.totalPaid)}",
+                        "$currencySymbol ${"%.2f".format(transaction.totalPaid)}",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary

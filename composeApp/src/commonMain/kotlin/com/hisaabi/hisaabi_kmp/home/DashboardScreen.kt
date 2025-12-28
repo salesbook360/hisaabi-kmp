@@ -10,6 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.hisaabi.hisaabi_kmp.home.dashboard.*
+import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
 import com.hisaabi.hisaabi_kmp.sync.presentation.SyncStatusComponent
 import org.koin.compose.koinInject
 
@@ -18,6 +19,9 @@ import org.koin.compose.koinInject
 fun DashboardScreen() {
     // Inject DashboardViewModel from Koin
     val viewModel: DashboardViewModel = koinInject()
+    val preferencesManager: PreferencesManager = koinInject()
+    val selectedCurrency by preferencesManager.selectedCurrency.collectAsState(null)
+    val currencySymbol = selectedCurrency?.symbol?:""
     
     // Collect states from ViewModel
     val balanceOverview by viewModel.balanceOverview.collectAsState()
@@ -65,7 +69,7 @@ fun DashboardScreen() {
                 OverviewSection(
                     modifier = Modifier.fillMaxWidth(),
                     dataState = balanceOverview,
-                    currencySymbol = "₹"
+                    currencySymbol = currencySymbol
                 )
             }
             
@@ -74,7 +78,7 @@ fun DashboardScreen() {
                 OverviewSection(
                     modifier = Modifier.fillMaxWidth(),
                     dataState = paymentOverview,
-                    currencySymbol = "₹"
+                    currencySymbol = currencySymbol
                 )
             }
             
@@ -83,7 +87,7 @@ fun DashboardScreen() {
                 OverviewSection(
                     modifier = Modifier.fillMaxWidth(),
                     dataState = salesOverview,
-                    currencySymbol = "₹"
+                    currencySymbol = currencySymbol
                 )
             }
             
@@ -92,7 +96,7 @@ fun DashboardScreen() {
                 OverviewSection(
                     modifier = Modifier.fillMaxWidth(),
                     dataState = purchaseOverview,
-                    currencySymbol = "₹"
+                    currencySymbol = currencySymbol
                 )
             }
             

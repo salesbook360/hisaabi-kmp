@@ -15,9 +15,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hisaabi.hisaabi_kmp.reports.domain.model.ReportResult
+import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,6 +28,10 @@ fun ReportResultScreen(
     onBackClick: () -> Unit = {},
     onShareClick: () -> Unit = {}
 ) {
+    val preferencesManager: PreferencesManager = koinInject()
+    val selectedCurrency by preferencesManager.selectedCurrency.collectAsState(null)
+    val currencySymbol = selectedCurrency?.symbol?:""
+    
     val generatedDate = remember(reportResult.generatedAt) {
         val dateTime = Instant.fromEpochMilliseconds(reportResult.generatedAt)
             .toLocalDateTime(TimeZone.currentSystemDefault())
@@ -72,7 +78,7 @@ fun ReportResultScreen(
             // Summary Card (if available)
             reportResult.summary?.let { summary ->
                 item {
-                    SummaryCard(summary)
+                    SummaryCard(summary, currencySymbol)
                 }
             }
             
@@ -165,7 +171,7 @@ fun ReportResultScreen(
 }
 
 @Composable
-private fun SummaryCard(summary: com.hisaabi.hisaabi_kmp.reports.domain.model.ReportSummary) {
+private fun SummaryCard(summary: com.hisaabi.hisaabi_kmp.reports.domain.model.ReportSummary, currencySymbol:String) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -193,10 +199,10 @@ private fun SummaryCard(summary: com.hisaabi.hisaabi_kmp.reports.domain.model.Re
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     summary.totalAmount?.let { amount ->
-                        SummaryItem("Total Amount", "Rs ${String.format("%,.0f", amount)}")
+                        SummaryItem("Total Amount", "$currencySymbol ${String.format("%,.0f", amount)}")
                     }
                     summary.totalProfit?.let { profit ->
-                        SummaryItem("Total Profit", "Rs ${String.format("%,.0f", profit)}")
+                        SummaryItem("Total Profit", "$currencySymbol ${String.format("%,.0f", profit)}")
                     }
                 }
                 Column(modifier = Modifier.weight(1f)) {
