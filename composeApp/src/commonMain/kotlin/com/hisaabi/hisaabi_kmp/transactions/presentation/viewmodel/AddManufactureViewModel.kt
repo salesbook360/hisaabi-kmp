@@ -265,50 +265,65 @@ class AddManufactureViewModel(
                     return@launch
                 }
                 
-                // Following legacy pattern from TransactionProcessorImp.saveManufactureTransaction:
-                // 1. Save parent transaction first
-                val parentTransaction = Transaction(
-                    id = 0,
-                    customerSlug = null,
-                    party = null,
-                    priceTypeId = 1,
-                    transactionType = AllTransactionTypes.MANUFACTURE.value,
-                    timestamp = _state.value.transactionTimestamp.toString(),
-                    totalPaid = recipeDetail.calculateBill(),
-                    statusId = 0,
-                    wareHouseSlugFrom = selectedWarehouse.slug.orEmpty(),
-                    warehouseFrom = null,
-                    wareHouseSlugTo = null,
-                    warehouseTo = null,
-                    paymentMethodFromSlug = paymentMethod?.slug,
-                    paymentMethodFrom = null,
-                    paymentMethodToSlug = null,
-                    paymentMethodTo = null,
-                    additionalCharges = _state.value.additionalCharges,
-                    additionalChargesDesc = _state.value.additionalChargesDescription,
-                    transactionDetails = emptyList(),
-                    slug = null,
-                    businessSlug = bSlug,
-                    createdBy = uSlug,
-                    syncStatus = 0,
-                    createdAt = null,
-                    updatedAt = null,
-                    parentSlug = null
-                )
+                // Check if we're editing an existing transaction
+                val isEditing = editingTransactionSlug != null
                 
-                // Save parent transaction first
-                val parentResult = transactionsRepository.insertTransaction(parentTransaction)
-                val parentSlug = parentResult.getOrThrow()
-                
-                try {
-                    // 2. Create and save child Sale transaction (ingredients stock out)
+                if (isEditing) {
+                    // Update existing manufacture transaction
+                    val parentSlug = editingTransactionSlug!!
+                    
+                    // Load old parent and child transactions
+                    val oldParentTransaction = transactionsRepository.getTransactionWithDetails(parentSlug)
+                        ?: throw IllegalStateException("Transaction not found")
+                    
+                    val oldChildTransactions = transactionsRepository.getChildTransactions(parentSlug)
+                    val oldSaleTransaction = oldChildTransactions.find { 
+                        it.transactionType == AllTransactionTypes.SALE.value 
+                    }
+                    val oldPurchaseTransaction = oldChildTransactions.find { 
+                        it.transactionType == AllTransactionTypes.PURCHASE.value 
+                    }
+                    
+                    // 1. Update parent transaction
+                    val parentTransaction = Transaction(
+                        id = oldParentTransaction.id,
+                        customerSlug = null,
+                        party = null,
+                        priceTypeId = 1,
+                        transactionType = AllTransactionTypes.MANUFACTURE.value,
+                        timestamp = _state.value.transactionTimestamp.toString(),
+                        totalPaid = recipeDetail.calculateBill(),
+                        statusId = 0,
+                        wareHouseSlugFrom = selectedWarehouse.slug.orEmpty(),
+                        warehouseFrom = null,
+                        wareHouseSlugTo = null,
+                        warehouseTo = null,
+                        paymentMethodFromSlug = paymentMethod?.slug,
+                        paymentMethodFrom = null,
+                        paymentMethodToSlug = null,
+                        paymentMethodTo = null,
+                        additionalCharges = _state.value.additionalCharges,
+                        additionalChargesDesc = _state.value.additionalChargesDescription,
+                        transactionDetails = emptyList(),
+                        slug = parentSlug,
+                        businessSlug = bSlug,
+                        createdBy = uSlug,
+                        syncStatus = 0,
+                        createdAt = oldParentTransaction.createdAt,
+                        updatedAt = null,
+                        parentSlug = null
+                    )
+                    
+                    transactionsRepository.updateTransaction(parentTransaction)
+                    
+                    // 2. Update child Sale transaction (ingredients stock out)
                     val saleTransaction = Transaction(
-                        id = 0,
+                        id = oldSaleTransaction?.id ?: 0,
                         customerSlug = null,
                         party = null,
                         priceTypeId = 1,
                         transactionType = AllTransactionTypes.SALE.value,
-                        timestamp = (_state.value.transactionTimestamp + 1).toString(), // +1ms to maintain order
+                        timestamp = (_state.value.transactionTimestamp + 1).toString(),
                         totalPaid = _state.value.ingredients.sumOf { it.calculateBill() } + _state.value.additionalCharges,
                         statusId = 0,
                         wareHouseSlugFrom = selectedWarehouse.slug.orEmpty(),
@@ -322,29 +337,102 @@ class AddManufactureViewModel(
                         additionalCharges = _state.value.additionalCharges,
                         additionalChargesDesc = _state.value.additionalChargesDescription,
                         transactionDetails = _state.value.ingredients,
+                        slug = oldSaleTransaction?.slug,
+                        businessSlug = bSlug,
+                        createdBy = uSlug,
+                        syncStatus = 0,
+                        createdAt = oldSaleTransaction?.createdAt,
+                        updatedAt = null,
+                        parentSlug = parentSlug
+                    )
+                    
+                    oldSaleTransaction?.slug?.let { saleSlug ->
+                        transactionsRepository.updateTransaction(saleTransaction)
+                    } ?: throw IllegalStateException("Old sale transaction not found")
+                    
+                    // 3. Update child Purchase transaction (recipe stock in)
+                    val purchaseTransaction = Transaction(
+                        id = oldPurchaseTransaction?.id ?: 0,
+                        customerSlug = null,
+                        party = null,
+                        priceTypeId = 1,
+                        transactionType = AllTransactionTypes.PURCHASE.value,
+                        timestamp = (_state.value.transactionTimestamp + 2).toString(),
+                        totalPaid = recipeDetail.calculateBill(),
+                        statusId = 0,
+                        wareHouseSlugFrom = selectedWarehouse.slug.orEmpty(),
+                        warehouseFrom = null,
+                        wareHouseSlugTo = null,
+                        warehouseTo = null,
+                        paymentMethodFromSlug = paymentMethod?.slug,
+                        paymentMethodFrom = null,
+                        paymentMethodToSlug = null,
+                        paymentMethodTo = null,
+                        additionalCharges = 0.0,
+                        additionalChargesDesc = null,
+                        transactionDetails = listOf(recipeDetail),
+                        slug = oldPurchaseTransaction?.slug,
+                        businessSlug = bSlug,
+                        createdBy = uSlug,
+                        syncStatus = 0,
+                        createdAt = oldPurchaseTransaction?.createdAt,
+                        updatedAt = null,
+                        parentSlug = parentSlug
+                    )
+                    
+                    oldPurchaseTransaction?.slug?.let { purchaseSlug ->
+                        transactionsRepository.updateTransaction(purchaseTransaction)
+                    } ?: throw IllegalStateException("Old purchase transaction not found")
+                    
+                    _state.value = _state.value.copy(isSaving = false)
+                    onSuccess(parentSlug)
+                } else {
+                    // Create new manufacture transaction
+                    // Following legacy pattern from TransactionProcessorImp.saveManufactureTransaction:
+                    // 1. Save parent transaction first
+                    val parentTransaction = Transaction(
+                        id = 0,
+                        customerSlug = null,
+                        party = null,
+                        priceTypeId = 1,
+                        transactionType = AllTransactionTypes.MANUFACTURE.value,
+                        timestamp = _state.value.transactionTimestamp.toString(),
+                        totalPaid = recipeDetail.calculateBill(),
+                        statusId = 0,
+                        wareHouseSlugFrom = selectedWarehouse.slug.orEmpty(),
+                        warehouseFrom = null,
+                        wareHouseSlugTo = null,
+                        warehouseTo = null,
+                        paymentMethodFromSlug = paymentMethod?.slug,
+                        paymentMethodFrom = null,
+                        paymentMethodToSlug = null,
+                        paymentMethodTo = null,
+                        additionalCharges = _state.value.additionalCharges,
+                        additionalChargesDesc = _state.value.additionalChargesDescription,
+                        transactionDetails = emptyList(),
                         slug = null,
                         businessSlug = bSlug,
                         createdBy = uSlug,
                         syncStatus = 0,
                         createdAt = null,
                         updatedAt = null,
-                        parentSlug = parentSlug // Set parent slug before saving
+                        parentSlug = null
                     )
                     
-                    // Save Sale transaction
-                    val saleResult = transactionsRepository.insertTransaction(saleTransaction)
-                    val saleSlug = saleResult.getOrThrow()
+                    // Save parent transaction first
+                    val parentResult = transactionsRepository.insertTransaction(parentTransaction)
+                    val parentSlug = parentResult.getOrThrow()
                     
                     try {
-                        // 3. Create and save child Purchase transaction (recipe stock in)
-                        val purchaseTransaction = Transaction(
+                        // 2. Create and save child Sale transaction (ingredients stock out)
+                        val saleTransaction = Transaction(
                             id = 0,
                             customerSlug = null,
                             party = null,
                             priceTypeId = 1,
-                            transactionType = AllTransactionTypes.PURCHASE.value,
-                            timestamp = (_state.value.transactionTimestamp + 2).toString(), // +2ms to maintain order
-                            totalPaid = recipeDetail.calculateBill(),
+                            transactionType = AllTransactionTypes.SALE.value,
+                            timestamp = (_state.value.transactionTimestamp + 1).toString(), // +1ms to maintain order
+                            totalPaid = _state.value.ingredients.sumOf { it.calculateBill() } + _state.value.additionalCharges,
                             statusId = 0,
                             wareHouseSlugFrom = selectedWarehouse.slug.orEmpty(),
                             warehouseFrom = null,
@@ -354,9 +442,9 @@ class AddManufactureViewModel(
                             paymentMethodFrom = null,
                             paymentMethodToSlug = null,
                             paymentMethodTo = null,
-                            additionalCharges = 0.0,
-                            additionalChargesDesc = null,
-                            transactionDetails = listOf(recipeDetail),
+                            additionalCharges = _state.value.additionalCharges,
+                            additionalChargesDesc = _state.value.additionalChargesDescription,
+                            transactionDetails = _state.value.ingredients,
                             slug = null,
                             businessSlug = bSlug,
                             createdBy = uSlug,
@@ -366,28 +454,64 @@ class AddManufactureViewModel(
                             parentSlug = parentSlug // Set parent slug before saving
                         )
                         
-                        // Save Purchase transaction
-                        val purchaseResult = transactionsRepository.insertTransaction(purchaseTransaction)
-                        purchaseResult.getOrThrow()
+                        // Save Sale transaction
+                        val saleResult = transactionsRepository.insertTransaction(saleTransaction)
+                        val saleSlug = saleResult.getOrThrow()
                         
-                        _state.value = _state.value.copy(isSaving = false)
-                        onSuccess(parentSlug)
-                    } catch (purchaseError: Exception) {
-                        // If purchase transaction fails, delete both sale and parent transactions
-                        transactionsRepository.getTransactionBySlug(saleSlug)?.let { sale ->
-                            transactionsRepository.deleteTransaction(sale)
+                        try {
+                            // 3. Create and save child Purchase transaction (recipe stock in)
+                            val purchaseTransaction = Transaction(
+                                id = 0,
+                                customerSlug = null,
+                                party = null,
+                                priceTypeId = 1,
+                                transactionType = AllTransactionTypes.PURCHASE.value,
+                                timestamp = (_state.value.transactionTimestamp + 2).toString(), // +2ms to maintain order
+                                totalPaid = recipeDetail.calculateBill(),
+                                statusId = 0,
+                                wareHouseSlugFrom = selectedWarehouse.slug.orEmpty(),
+                                warehouseFrom = null,
+                                wareHouseSlugTo = null,
+                                warehouseTo = null,
+                                paymentMethodFromSlug = paymentMethod?.slug,
+                                paymentMethodFrom = null,
+                                paymentMethodToSlug = null,
+                                paymentMethodTo = null,
+                                additionalCharges = 0.0,
+                                additionalChargesDesc = null,
+                                transactionDetails = listOf(recipeDetail),
+                                slug = null,
+                                businessSlug = bSlug,
+                                createdBy = uSlug,
+                                syncStatus = 0,
+                                createdAt = null,
+                                updatedAt = null,
+                                parentSlug = parentSlug // Set parent slug before saving
+                            )
+                            
+                            // Save Purchase transaction
+                            val purchaseResult = transactionsRepository.insertTransaction(purchaseTransaction)
+                            purchaseResult.getOrThrow()
+                            
+                            _state.value = _state.value.copy(isSaving = false)
+                            onSuccess(parentSlug)
+                        } catch (purchaseError: Exception) {
+                            // If purchase transaction fails, delete both sale and parent transactions
+                            transactionsRepository.getTransactionBySlug(saleSlug)?.let { sale ->
+                                transactionsRepository.deleteTransaction(sale)
+                            }
+                            transactionsRepository.getTransactionBySlug(parentSlug)?.let { parent ->
+                                transactionsRepository.deleteTransaction(parent)
+                            }
+                            throw purchaseError
                         }
+                    } catch (saleError: Exception) {
+                        // If sale transaction fails, delete the parent transaction
                         transactionsRepository.getTransactionBySlug(parentSlug)?.let { parent ->
                             transactionsRepository.deleteTransaction(parent)
                         }
-                        throw purchaseError
+                        throw saleError
                     }
-                } catch (saleError: Exception) {
-                    // If sale transaction fails, delete the parent transaction
-                    transactionsRepository.getTransactionBySlug(parentSlug)?.let { parent ->
-                        transactionsRepository.deleteTransaction(parent)
-                    }
-                    throw saleError
                 }
             } catch (e: Exception) {
                 _state.value = _state.value.copy(
