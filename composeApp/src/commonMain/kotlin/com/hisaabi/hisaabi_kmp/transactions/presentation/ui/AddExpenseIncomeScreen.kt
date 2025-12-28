@@ -71,7 +71,7 @@ import kotlinx.datetime.toLocalDateTime
 @Composable
 fun AddExpenseIncomeScreen(
     viewModel: AddExpenseIncomeViewModel,
-    onNavigateBack: (success: Boolean, transactionType: com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes?) -> Unit,
+    onNavigateBack: (success: Boolean, transactionType: com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes?, successMessage: String?) -> Unit,
     onSelectParty: () -> Unit,
     onSelectPaymentMethod: () -> Unit
 ) {
@@ -88,11 +88,12 @@ fun AddExpenseIncomeScreen(
     }
 
     // Navigate back on success
-    LaunchedEffect(state.success) {
-        if (state.success) {
+    LaunchedEffect(state.success, state.successMessage) {
+        if (state.success && state.successMessage != null) {
             val transactionType = state.transactionType
+            val message = state.successMessage
             viewModel.clearSuccess()
-            onNavigateBack(true, transactionType)
+            onNavigateBack(true, transactionType, message)
         }
     }
 
@@ -102,14 +103,21 @@ fun AddExpenseIncomeScreen(
             TopAppBar(
                 title = {
                     Text(
-                        if (state.transactionType == AllTransactionTypes.EXPENSE)
-                            "Add Expense"
-                        else
-                            "Add Extra Income"
+                        if (state.editingTransactionSlug != null) {
+                            if (state.transactionType == AllTransactionTypes.EXPENSE)
+                                "Edit Expense"
+                            else
+                                "Edit Extra Income"
+                        } else {
+                            if (state.transactionType == AllTransactionTypes.EXPENSE)
+                                "Add Expense"
+                            else
+                                "Add Extra Income"
+                        }
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { onNavigateBack(false, null) }) {
+                    IconButton(onClick = { onNavigateBack(false, null, null) }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                     }
                 }

@@ -7,6 +7,7 @@ import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
 import com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction
+import com.hisaabi.hisaabi_kmp.transactions.domain.usecase.GetTransactionWithDetailsUseCase
 import com.hisaabi.hisaabi_kmp.transactions.domain.usecase.TransactionUseCases
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,11 +25,14 @@ data class AddExpenseIncomeState(
     val dateTime: Long = Clock.System.now().toEpochMilliseconds(),
     val isLoading: Boolean = false,
     val error: String? = null,
-    val success: Boolean = false
+    val success: Boolean = false,
+    val successMessage: String? = null,
+    val editingTransactionSlug: String? = null
 )
 
 class AddExpenseIncomeViewModel(
     private val transactionUseCases: TransactionUseCases,
+    private val getTransactionWithDetailsUseCase: GetTransactionWithDetailsUseCase,
     private val appSessionManager: AppSessionManager
 ) : ViewModel() {
 
@@ -57,6 +61,50 @@ class AddExpenseIncomeViewModel(
 
     fun setDateTime(timestamp: Long) {
         _state.update { it.copy(dateTime = timestamp) }
+    }
+
+    fun loadTransactionForEdit(transactionSlug: String) {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true, error = null) }
+            
+            try {
+                // Load full transaction with all details
+                val transaction = getTransactionWithDetailsUseCase(transactionSlug)
+                    ?: throw IllegalStateException("Transaction not found")
+                
+                // Determine transaction type
+                val transactionType = AllTransactionTypes.fromValue(transaction.transactionType)
+                    ?: throw IllegalStateException("Invalid transaction type for Expense/Income")
+                
+                if (!AllTransactionTypes.isExpenseIncome(transaction.transactionType)) {
+                    throw IllegalStateException("Transaction is not an Expense or Extra Income transaction")
+                }
+                
+                // Parse timestamp
+                val timestamp = transaction.timestamp?.toLongOrNull() ?: Clock.System.now().toEpochMilliseconds()
+                
+                // Set state with transaction data
+                _state.update { 
+                    it.copy(
+                        transactionType = transactionType,
+                        selectedParty = transaction.party,
+                        amount = transaction.totalPaid.toString(),
+                        description = transaction.description ?: "",
+                        selectedPaymentMethod = transaction.paymentMethodTo,
+                        dateTime = timestamp,
+                        editingTransactionSlug = transaction.slug,
+                        isLoading = false
+                    )
+                }
+            } catch (e: Exception) {
+                _state.update { 
+                    it.copy(
+                        isLoading = false,
+                        error = e.message ?: "Failed to load transaction for editing"
+                    )
+                }
+            }
+        }
     }
 
     fun saveTransaction() {
@@ -91,6 +139,7 @@ class AddExpenseIncomeViewModel(
         viewModelScope.launch {
             try {
                 val transaction = Transaction(
+                    slug = currentState.editingTransactionSlug, // Include slug if editing
                     customerSlug = currentState.selectedParty.slug,
                     party = currentState.selectedParty,
                     transactionType = currentState.transactionType.value,
@@ -107,28 +156,65 @@ class AddExpenseIncomeViewModel(
                     createdBy = appSessionManager.getUserSlug()
                 )
 
-                transactionUseCases.addTransaction(transaction)
-                    .onSuccess {
-                        _state.update { 
-                            it.copy(
-                                isLoading = false, 
-                                success = true,
-                                // Reset form
-                                selectedParty = null,
-                                amount = "",
-                                description = "",
-                                dateTime = Clock.System.now().toEpochMilliseconds()
-                            ) 
+                // Check if we're editing or creating
+                if (currentState.editingTransactionSlug != null) {
+                    // Update existing transaction
+                    transactionUseCases.updateTransaction(transaction)
+                        .onSuccess {
+                            _state.update { 
+                                it.copy(
+                                    isLoading = false, 
+                                    success = true,
+                                    successMessage = if (currentState.transactionType == AllTransactionTypes.EXPENSE)
+                                        "Expense updated successfully"
+                                    else
+                                        "Extra income updated successfully",
+                                    // Reset form
+                                    selectedParty = null,
+                                    amount = "",
+                                    description = "",
+                                    dateTime = Clock.System.now().toEpochMilliseconds(),
+                                    editingTransactionSlug = null
+                                ) 
+                            }
                         }
-                    }
-                    .onFailure { exception ->
-                        _state.update { 
-                            it.copy(
-                                isLoading = false, 
-                                error = exception.message ?: "Failed to save transaction"
-                            ) 
+                        .onFailure { exception ->
+                            _state.update { 
+                                it.copy(
+                                    isLoading = false, 
+                                    error = exception.message ?: "Failed to update transaction"
+                                ) 
+                            }
                         }
-                    }
+                } else {
+                    // Create new transaction
+                    transactionUseCases.addTransaction(transaction)
+                        .onSuccess {
+                            _state.update { 
+                                it.copy(
+                                    isLoading = false, 
+                                    success = true,
+                                    successMessage = if (currentState.transactionType == AllTransactionTypes.EXPENSE)
+                                        "Expense saved successfully"
+                                    else
+                                        "Extra income saved successfully",
+                                    // Reset form
+                                    selectedParty = null,
+                                    amount = "",
+                                    description = "",
+                                    dateTime = Clock.System.now().toEpochMilliseconds()
+                                ) 
+                            }
+                        }
+                        .onFailure { exception ->
+                            _state.update { 
+                                it.copy(
+                                    isLoading = false, 
+                                    error = exception.message ?: "Failed to save transaction"
+                                ) 
+                            }
+                        }
+                }
             } catch (e: Exception) {
                 _state.update { 
                     it.copy(
@@ -145,14 +231,15 @@ class AddExpenseIncomeViewModel(
     }
 
     fun clearSuccess() {
-        _state.update { it.copy(success = false) }
+        _state.update { it.copy(success = false, successMessage = null) }
     }
 
     fun resetForm() {
         _state.update { 
             AddExpenseIncomeState(
                 transactionType = it.transactionType,
-                dateTime = Clock.System.now().toEpochMilliseconds()
+                dateTime = Clock.System.now().toEpochMilliseconds(),
+                editingTransactionSlug = null
             ) 
         }
     }

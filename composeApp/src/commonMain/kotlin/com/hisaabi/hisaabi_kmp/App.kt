@@ -1889,20 +1889,23 @@ fun App() {
                             }
 
                             expenseIncomeViewModel?.let { viewModel ->
+                                // Load transaction for editing if provided
+                                LaunchedEffect(selectedTransactionSlugForEdit) {
+                                    selectedTransactionSlugForEdit?.let { slug ->
+                                        viewModel.loadTransactionForEdit(slug)
+                                        selectedTransactionSlugForEdit = null // Clear after loading
+                                    }
+                                }
+
                                 com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddExpenseIncomeScreen(
                                     viewModel = viewModel,
-                                    onNavigateBack = { success, transactionType ->
+                                    onNavigateBack = { success, transactionType, successMessage ->
                                         isInExpenseIncomeFlow = false
                                         initialExpenseIncomeType = null // Reset initial type
                                         partiesRefreshTrigger++ // Refresh parties to show updated balances
-                                        // Show toast if transaction was saved successfully
-                                        if (success) {
-                                            toastMessage =
-                                                if (transactionType == com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.EXPENSE) {
-                                                    "Expense saved successfully"
-                                                } else {
-                                                    "Extra income saved successfully"
-                                                }
+                                        // Show toast if transaction was saved/updated successfully
+                                        if (success && successMessage != null) {
+                                            toastMessage = successMessage
                                         }
                                         navigateBack()
                                     },
