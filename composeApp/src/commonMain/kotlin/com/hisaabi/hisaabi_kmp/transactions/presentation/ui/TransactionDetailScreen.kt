@@ -273,7 +273,7 @@ private fun PartyInfoCard(party: com.hisaabi.hisaabi_kmp.parties.domain.model.Pa
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
-                    party.phone?.let { phone ->
+                    party.phone?.takeIf { it.isNotBlank() }?.let { phone ->
                         Text(
                             phone,
                             style = MaterialTheme.typography.bodyMedium,
@@ -283,31 +283,42 @@ private fun PartyInfoCard(party: com.hisaabi.hisaabi_kmp.parties.domain.model.Pa
                 }
             }
             
-            if (party.address != null || party.email != null) {
+            // Check if party has location information (address or latLong) or email
+            val hasLocationInfo = !party.address.isNullOrBlank() || !party.latLong.isNullOrBlank()
+            val hasEmail = !party.email.isNullOrBlank()
+            
+            if (hasLocationInfo || hasEmail) {
                 Spacer(Modifier.height(12.dp))
                 HorizontalDivider()
                 Spacer(Modifier.height(12.dp))
                 
-                party.address?.let { address ->
-                    Row(
-                        verticalAlignment = Alignment.Top,
-                        modifier = Modifier.padding(vertical = 4.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.LocationOn,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            address,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
+                // Show location icon and address only if location information exists
+                if (hasLocationInfo) {
+                    val locationText = party.address?.takeIf { it.isNotBlank() } 
+                        ?: party.latLong?.takeIf { it.isNotBlank() }
+                    
+                    locationText?.let { location ->
+                        Row(
+                            verticalAlignment = Alignment.Top,
+                            modifier = Modifier.padding(vertical = 4.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.LocationOn,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                location,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
                     }
                 }
                 
-                party.email?.let { email ->
+                // Show email icon and email only if email exists
+                party.email?.takeIf { it.isNotBlank() }?.let { email ->
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(vertical = 4.dp)
