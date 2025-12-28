@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -12,7 +13,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.hisaabi.hisaabi_kmp.products.domain.model.Product
@@ -276,6 +279,8 @@ private fun AddManufactureContent(
                     var chargesText by remember(state.additionalCharges) {
                         mutableStateOf(if (state.additionalCharges > 0) state.additionalCharges.toString() else "")
                     }
+                    
+                    val focusManager = LocalFocusManager.current
 
                     OutlinedTextField(
                         value = chargesText,
@@ -286,9 +291,16 @@ private fun AddManufactureContent(
                             } ?: onAdditionalChargesChanged(0.0)
                         },
                         label = { Text("Amount") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Decimal,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = { focusManager.clearFocus() }
+                        ),
                         modifier = Modifier.fillMaxWidth(),
-                        leadingIcon = { Text("₨") }
+                        leadingIcon = { Text("₨") },
+                        singleLine = true
                     )
 
                     Spacer(Modifier.height(8.dp))
