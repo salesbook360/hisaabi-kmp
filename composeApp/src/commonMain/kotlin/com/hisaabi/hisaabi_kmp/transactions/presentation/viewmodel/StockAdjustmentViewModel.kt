@@ -7,6 +7,7 @@ import com.hisaabi.hisaabi_kmp.products.domain.model.Product
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionDetail
+import com.hisaabi.hisaabi_kmp.transactions.domain.usecase.GetTransactionWithDetailsUseCase
 import com.hisaabi.hisaabi_kmp.transactions.domain.usecase.TransactionUseCases
 import com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,11 +26,13 @@ data class StockAdjustmentState(
     val description: String = "",
     val isLoading: Boolean = false,
     val error: String? = null,
-    val success: Boolean = false
+    val success: Boolean = false,
+    val editingTransactionSlug: String? = null
 )
 
 class StockAdjustmentViewModel(
     private val transactionUseCases: TransactionUseCases,
+    private val getTransactionWithDetailsUseCase: GetTransactionWithDetailsUseCase,
     private val appSessionManager: AppSessionManager
 ) : ViewModel() {
 
@@ -99,6 +102,50 @@ class StockAdjustmentViewModel(
         _state.update { it.copy(description = description) }
     }
 
+    fun loadTransactionForEdit(transactionSlug: String) {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true, error = null) }
+            
+            try {
+                // Load full transaction with all details
+                val transaction = getTransactionWithDetailsUseCase(transactionSlug)
+                    ?: throw IllegalStateException("Transaction not found")
+                
+                // Determine transaction type
+                val transactionType = AllTransactionTypes.fromValue(transaction.transactionType)
+                    ?: throw IllegalStateException("Invalid transaction type for Stock Adjustment")
+                
+                if (!AllTransactionTypes.isStockAdjustment(transaction.transactionType)) {
+                    throw IllegalStateException("Transaction is not a Stock Adjustment transaction")
+                }
+                
+                // Parse timestamp
+                val timestamp = transaction.timestamp?.toLongOrNull() ?: Clock.System.now().toEpochMilliseconds()
+                
+                // Set state with transaction data
+                _state.update { 
+                    it.copy(
+                        adjustmentType = transactionType,
+                        warehouseFrom = transaction.warehouseFrom,
+                        warehouseTo = transaction.warehouseTo,
+                        products = transaction.transactionDetails,
+                        dateTime = timestamp,
+                        description = transaction.description ?: "",
+                        editingTransactionSlug = transaction.slug,
+                        isLoading = false
+                    )
+                }
+            } catch (e: Exception) {
+                _state.update { 
+                    it.copy(
+                        isLoading = false,
+                        error = e.message ?: "Failed to load transaction for editing"
+                    )
+                }
+            }
+        }
+    }
+
     fun saveStockAdjustment() {
         val currentState = _state.value
 
@@ -140,6 +187,7 @@ class StockAdjustmentViewModel(
         viewModelScope.launch {
             try {
                 val transaction = Transaction(
+                    slug = currentState.editingTransactionSlug, // Include slug if editing
                     transactionType = currentState.adjustmentType.value,
                     wareHouseSlugFrom = currentState.warehouseFrom?.slug,
                     warehouseFrom = currentState.warehouseFrom,
@@ -161,24 +209,48 @@ class StockAdjustmentViewModel(
                     createdBy = appSessionManager.getUserSlug()
                 )
 
-                transactionUseCases.addTransaction(transaction)
-                    .onSuccess {
-                        _state.update { 
-                            StockAdjustmentState(
-                                success = true,
-                                adjustmentType = currentState.adjustmentType,
-                                dateTime = Clock.System.now().toEpochMilliseconds()
-                            )
+                // Check if we're editing or creating
+                if (currentState.editingTransactionSlug != null) {
+                    // Update existing transaction
+                    transactionUseCases.updateTransaction(transaction)
+                        .onSuccess {
+                            _state.update { 
+                                StockAdjustmentState(
+                                    success = true,
+                                    adjustmentType = currentState.adjustmentType,
+                                    dateTime = Clock.System.now().toEpochMilliseconds()
+                                )
+                            }
                         }
-                    }
-                    .onFailure { exception ->
-                        _state.update { 
-                            it.copy(
-                                isLoading = false,
-                                error = exception.message ?: "Failed to save stock adjustment"
-                            )
+                        .onFailure { exception ->
+                            _state.update { 
+                                it.copy(
+                                    isLoading = false,
+                                    error = exception.message ?: "Failed to update stock adjustment"
+                                )
+                            }
                         }
-                    }
+                } else {
+                    // Create new transaction
+                    transactionUseCases.addTransaction(transaction)
+                        .onSuccess {
+                            _state.update { 
+                                StockAdjustmentState(
+                                    success = true,
+                                    adjustmentType = currentState.adjustmentType,
+                                    dateTime = Clock.System.now().toEpochMilliseconds()
+                                )
+                            }
+                        }
+                        .onFailure { exception ->
+                            _state.update { 
+                                it.copy(
+                                    isLoading = false,
+                                    error = exception.message ?: "Failed to save stock adjustment"
+                                )
+                            }
+                        }
+                }
             } catch (e: Exception) {
                 _state.update { 
                     it.copy(
@@ -202,7 +274,8 @@ class StockAdjustmentViewModel(
         _state.update { 
             StockAdjustmentState(
                 adjustmentType = it.adjustmentType,
-                dateTime = Clock.System.now().toEpochMilliseconds()
+                dateTime = Clock.System.now().toEpochMilliseconds(),
+                editingTransactionSlug = null
             )
         }
     }

@@ -1508,6 +1508,7 @@ fun App() {
                                             com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.isStockAdjustment(
                                                 transaction.transactionType
                                             ) -> {
+                                                selectedTransactionSlugForEdit = transaction.slug
                                                 navigateTo(AppScreen.STOCK_ADJUSTMENT)
                                             }
 
@@ -2189,6 +2190,13 @@ fun App() {
                             }
 
                             stockAdjustmentViewModel?.let { viewModel ->
+                                // Load transaction for editing if provided
+                                LaunchedEffect(selectedTransactionSlugForEdit) {
+                                    selectedTransactionSlugForEdit?.let { slug ->
+                                        viewModel.loadTransactionForEdit(slug)
+                                        selectedTransactionSlugForEdit = null // Clear after loading
+                                    }
+                                }
                                 com.hisaabi.hisaabi_kmp.transactions.presentation.ui.StockAdjustmentScreen(
                                     viewModel = viewModel,
                                     onNavigateBack = { success ->
