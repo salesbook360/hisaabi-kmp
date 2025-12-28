@@ -26,6 +26,7 @@ import com.hisaabi.hisaabi_kmp.utils.formatEntryDate
 import com.hisaabi.hisaabi_kmp.receipt.ReceiptViewModel
 import com.hisaabi.hisaabi_kmp.receipt.ReceiptPreviewDialog
 import com.hisaabi.hisaabi_kmp.core.ui.FilterChipWithColors
+import com.hisaabi.hisaabi_kmp.core.ui.getStatusBadgeColors
 import com.hisaabi.hisaabi_kmp.sync.domain.model.SyncStatus
 import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
 import org.koin.compose.koinInject
@@ -2043,20 +2044,17 @@ private fun RecordTransactionCard(
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                val statusColors = getStatusBadgeColors(transaction.stateId)
                 Surface(
-                    color = when (transaction.stateId) {
-                        TransactionState.COMPLETED.value -> MaterialTheme.colorScheme.primaryContainer
-                        TransactionState.PENDING.value -> MaterialTheme.colorScheme.tertiaryContainer
-                        TransactionState.CANCELLED.value -> MaterialTheme.colorScheme.errorContainer
-                        else -> MaterialTheme.colorScheme.surfaceVariant
-                    },
+                    color = statusColors.backgroundColor,
                     shape = MaterialTheme.shapes.small
                 ) {
                     Text(
                         transaction.getStateName(),
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                         style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = statusColors.textColor
                     )
                 }
             }

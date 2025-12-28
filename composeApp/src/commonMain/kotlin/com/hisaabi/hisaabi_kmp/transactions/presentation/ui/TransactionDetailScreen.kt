@@ -21,6 +21,7 @@ import com.hisaabi.hisaabi_kmp.utils.format
 import com.hisaabi.hisaabi_kmp.utils.formatTransactionDate
 import com.hisaabi.hisaabi_kmp.utils.formatEntryDate
 import com.hisaabi.hisaabi_kmp.utils.calculateManufacturingCost
+import com.hisaabi.hisaabi_kmp.core.ui.getStatusBadgeColors
 import org.koin.compose.koinInject
 
 
@@ -149,21 +150,17 @@ private fun TransactionDetailContent(
                     }
                     
                     // State badge
+                    val statusColors = getStatusBadgeColors(transaction.stateId)
                     Surface(
-                        color = when (transaction.stateId) {
-                            TransactionState.COMPLETED.value -> MaterialTheme.colorScheme.primaryContainer
-                            TransactionState.PENDING.value -> MaterialTheme.colorScheme.tertiaryContainer
-                            TransactionState.IN_PROGRESS.value -> MaterialTheme.colorScheme.secondaryContainer
-                            TransactionState.CANCELLED.value -> MaterialTheme.colorScheme.errorContainer
-                            else -> MaterialTheme.colorScheme.surfaceVariant
-                        },
+                        color = statusColors.backgroundColor,
                         shape = MaterialTheme.shapes.small
                     ) {
                         Text(
                             transaction.getStateName(),
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                             style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color = statusColors.textColor
                         )
                     }
                 }
