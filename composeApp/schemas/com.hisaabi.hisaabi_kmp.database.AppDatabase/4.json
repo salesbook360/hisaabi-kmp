@@ -1,0 +1,1468 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 4,
+    "identityHash": "772609390333600b99398dfe0b46460b",
+    "entities": [
+      {
+        "tableName": "Party",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT, `phone` TEXT, `address` TEXT, `balance` REAL NOT NULL, `opening_balance` REAL NOT NULL, `thumbnail` TEXT, `role_id` INTEGER NOT NULL, `person_status` INTEGER NOT NULL, `digital_id` TEXT, `lat_long` TEXT, `area_slug` TEXT, `category_slug` TEXT, `email` TEXT, `description` TEXT, `slug` TEXT, `business_slug` TEXT, `created_by` TEXT, `sync_status` INTEGER NOT NULL, `created_at` TEXT, `updated_at` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "phone",
+            "columnName": "phone",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "address",
+            "columnName": "address",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "balance",
+            "columnName": "balance",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "opening_balance",
+            "columnName": "opening_balance",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "thumbnail",
+            "columnName": "thumbnail",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "role_id",
+            "columnName": "role_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "person_status",
+            "columnName": "person_status",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "digital_id",
+            "columnName": "digital_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lat_long",
+            "columnName": "lat_long",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "area_slug",
+            "columnName": "area_slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "category_slug",
+            "columnName": "category_slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "email",
+            "columnName": "email",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "slug",
+            "columnName": "slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "business_slug",
+            "columnName": "business_slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "created_by",
+            "columnName": "created_by",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sync_status",
+            "columnName": "sync_status",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "created_at",
+            "columnName": "created_at",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "updated_at",
+            "columnName": "updated_at",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_Party_slug",
+            "unique": true,
+            "columnNames": [
+              "slug"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_Party_slug` ON `${TABLE_NAME}` (`slug`)"
+          }
+        ]
+      },
+      {
+        "tableName": "Product",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT, `description` TEXT, `type_id` INTEGER NOT NULL, `tax_percentage` REAL NOT NULL, `discount_percentage` REAL NOT NULL, `retail_price` REAL NOT NULL, `wholesale_price` REAL NOT NULL, `thumbnail` TEXT, `purchase_price` REAL NOT NULL, `status_id` INTEGER NOT NULL, `digital_id` TEXT, `base_unit_slug` TEXT, `default_unit_slug` TEXT, `minimum_quantity_unit_slug` TEXT, `opening_quantity_unit_slug` TEXT, `category_slug` TEXT, `avg_purchase_price` REAL NOT NULL, `opening_quantity_purchase_price` REAL NOT NULL, `expiry_date` TEXT, `expiry_alert` TEXT, `manufacturer` TEXT, `slug` TEXT, `business_slug` TEXT, `created_by` TEXT, `sync_status` INTEGER NOT NULL, `created_at` TEXT, `updated_at` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "type_id",
+            "columnName": "type_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tax_percentage",
+            "columnName": "tax_percentage",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "discount_percentage",
+            "columnName": "discount_percentage",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "retail_price",
+            "columnName": "retail_price",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wholesale_price",
+            "columnName": "wholesale_price",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "thumbnail",
+            "columnName": "thumbnail",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "purchase_price",
+            "columnName": "purchase_price",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status_id",
+            "columnName": "status_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "digital_id",
+            "columnName": "digital_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "base_unit_slug",
+            "columnName": "base_unit_slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "default_unit_slug",
+            "columnName": "default_unit_slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "minimum_quantity_unit_slug",
+            "columnName": "minimum_quantity_unit_slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "opening_quantity_unit_slug",
+            "columnName": "opening_quantity_unit_slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "category_slug",
+            "columnName": "category_slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "avg_purchase_price",
+            "columnName": "avg_purchase_price",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "opening_quantity_purchase_price",
+            "columnName": "opening_quantity_purchase_price",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "expiry_date",
+            "columnName": "expiry_date",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "expiry_alert",
+            "columnName": "expiry_alert",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "manufacturer",
+            "columnName": "manufacturer",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "slug",
+            "columnName": "slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "business_slug",
+            "columnName": "business_slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "created_by",
+            "columnName": "created_by",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sync_status",
+            "columnName": "sync_status",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "created_at",
+            "columnName": "created_at",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "updated_at",
+            "columnName": "updated_at",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_Product_slug",
+            "unique": true,
+            "columnNames": [
+              "slug"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_Product_slug` ON `${TABLE_NAME}` (`slug`)"
+          }
+        ]
+      },
+      {
+        "tableName": "InventoryTransaction",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `customer_slug` TEXT, `parent_slug` TEXT, `total_bill` REAL NOT NULL, `total_paid` REAL NOT NULL, `timestamp` TEXT, `flat_discount` REAL NOT NULL, `payment_method_to_slug` TEXT, `payment_method_from_slug` TEXT, `transaction_type` INTEGER NOT NULL, `price_type_id` INTEGER NOT NULL, `additional_charges_slug` TEXT, `additional_charges_desc` TEXT, `additional_charges` REAL NOT NULL, `discount_type_id` INTEGER NOT NULL, `tax_type_id` INTEGER NOT NULL, `flat_tax` REAL NOT NULL, `description` TEXT, `shipping_address` TEXT, `status_id` INTEGER NOT NULL, `state_id` INTEGER NOT NULL, `remind_at_milliseconds` INTEGER NOT NULL, `ware_house_slug_from` TEXT, `ware_house_slug_to` TEXT, `slug` TEXT, `business_slug` TEXT, `created_by` TEXT, `sync_status` INTEGER NOT NULL, `created_at` TEXT, `updated_at` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "customer_slug",
+            "columnName": "customer_slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "parent_slug",
+            "columnName": "parent_slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "total_bill",
+            "columnName": "total_bill",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "total_paid",
+            "columnName": "total_paid",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "flat_discount",
+            "columnName": "flat_discount",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "payment_method_to_slug",
+            "columnName": "payment_method_to_slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "payment_method_from_slug",
+            "columnName": "payment_method_from_slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "transaction_type",
+            "columnName": "transaction_type",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "price_type_id",
+            "columnName": "price_type_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "additional_charges_slug",
+            "columnName": "additional_charges_slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "additional_charges_desc",
+            "columnName": "additional_charges_desc",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "additional_charges",
+            "columnName": "additional_charges",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "discount_type_id",
+            "columnName": "discount_type_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tax_type_id",
+            "columnName": "tax_type_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "flat_tax",
+            "columnName": "flat_tax",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "shipping_address",
+            "columnName": "shipping_address",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "status_id",
+            "columnName": "status_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "state_id",
+            "columnName": "state_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "remind_at_milliseconds",
+            "columnName": "remind_at_milliseconds",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ware_house_slug_from",
+            "columnName": "ware_house_slug_from",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "ware_house_slug_to",
+            "columnName": "ware_house_slug_to",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "slug",
+            "columnName": "slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "business_slug",
+            "columnName": "business_slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "created_by",
+            "columnName": "created_by",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sync_status",
+            "columnName": "sync_status",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "created_at",
+            "columnName": "created_at",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "updated_at",
+            "columnName": "updated_at",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_InventoryTransaction_slug",
+            "unique": true,
+            "columnNames": [
+              "slug"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_InventoryTransaction_slug` ON `${TABLE_NAME}` (`slug`)"
+          }
+        ]
+      },
+      {
+        "tableName": "TransactionDetail",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `transaction_slug` TEXT, `flat_tax` REAL NOT NULL, `tax_type` INTEGER NOT NULL, `flat_discount` REAL NOT NULL, `discount_type` INTEGER NOT NULL, `product_slug` TEXT, `description` TEXT, `recipe_slug` TEXT NOT NULL, `quantity` REAL NOT NULL, `price` REAL NOT NULL, `profit` REAL NOT NULL, `quantity_unit_slug` TEXT, `slug` TEXT, `business_slug` TEXT, `created_by` TEXT, `sync_status` INTEGER NOT NULL, `created_at` TEXT, `updated_at` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "transaction_slug",
+            "columnName": "transaction_slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "flat_tax",
+            "columnName": "flat_tax",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tax_type",
+            "columnName": "tax_type",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "flat_discount",
+            "columnName": "flat_discount",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "discount_type",
+            "columnName": "discount_type",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "product_slug",
+            "columnName": "product_slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "recipe_slug",
+            "columnName": "recipe_slug",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "quantity",
+            "columnName": "quantity",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "price",
+            "columnName": "price",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "profit",
+            "columnName": "profit",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "quantity_unit_slug",
+            "columnName": "quantity_unit_slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "slug",
+            "columnName": "slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "business_slug",
+            "columnName": "business_slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "created_by",
+            "columnName": "created_by",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sync_status",
+            "columnName": "sync_status",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "created_at",
+            "columnName": "created_at",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "updated_at",
+            "columnName": "updated_at",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_TransactionDetail_transaction_slug_product_slug_recipe_slug",
+            "unique": true,
+            "columnNames": [
+              "transaction_slug",
+              "product_slug",
+              "recipe_slug"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_TransactionDetail_transaction_slug_product_slug_recipe_slug` ON `${TABLE_NAME}` (`transaction_slug`, `product_slug`, `recipe_slug`)"
+          }
+        ]
+      },
+      {
+        "tableName": "QuantityUnit",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `sort_order` INTEGER NOT NULL, `parent_slug` TEXT, `conversion_factor` REAL NOT NULL, `base_conversion_unit_slug` TEXT, `status_id` INTEGER NOT NULL, `slug` TEXT, `business_slug` TEXT, `created_by` TEXT, `sync_status` INTEGER NOT NULL, `created_at` TEXT, `updated_at` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sort_order",
+            "columnName": "sort_order",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parent_slug",
+            "columnName": "parent_slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "conversion_factor",
+            "columnName": "conversion_factor",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "base_conversion_unit_slug",
+            "columnName": "base_conversion_unit_slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "status_id",
+            "columnName": "status_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "slug",
+            "columnName": "slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "business_slug",
+            "columnName": "business_slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "created_by",
+            "columnName": "created_by",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sync_status",
+            "columnName": "sync_status",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "created_at",
+            "columnName": "created_at",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "updated_at",
+            "columnName": "updated_at",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_QuantityUnit_slug",
+            "unique": true,
+            "columnNames": [
+              "slug"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_QuantityUnit_slug` ON `${TABLE_NAME}` (`slug`)"
+          }
+        ]
+      },
+      {
+        "tableName": "PaymentMethod",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `description` TEXT NOT NULL, `amount` REAL NOT NULL, `opening_amount` REAL NOT NULL, `status_id` INTEGER NOT NULL, `slug` TEXT, `business_slug` TEXT, `created_by` TEXT, `sync_status` INTEGER NOT NULL, `created_at` TEXT, `updated_at` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "amount",
+            "columnName": "amount",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "opening_amount",
+            "columnName": "opening_amount",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status_id",
+            "columnName": "status_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "slug",
+            "columnName": "slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "business_slug",
+            "columnName": "business_slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "created_by",
+            "columnName": "created_by",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sync_status",
+            "columnName": "sync_status",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "created_at",
+            "columnName": "created_at",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "updated_at",
+            "columnName": "updated_at",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_PaymentMethod_slug",
+            "unique": true,
+            "columnNames": [
+              "slug"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_PaymentMethod_slug` ON `${TABLE_NAME}` (`slug`)"
+          }
+        ]
+      },
+      {
+        "tableName": "WareHouse",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT, `address` TEXT, `description` TEXT, `lat_long` TEXT, `thumbnail` TEXT, `type_id` INTEGER NOT NULL, `status_id` INTEGER NOT NULL, `slug` TEXT, `business_slug` TEXT, `created_by` TEXT, `sync_status` INTEGER NOT NULL, `created_at` TEXT, `updated_at` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "address",
+            "columnName": "address",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lat_long",
+            "columnName": "lat_long",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "thumbnail",
+            "columnName": "thumbnail",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "type_id",
+            "columnName": "type_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status_id",
+            "columnName": "status_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "slug",
+            "columnName": "slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "business_slug",
+            "columnName": "business_slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "created_by",
+            "columnName": "created_by",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sync_status",
+            "columnName": "sync_status",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "created_at",
+            "columnName": "created_at",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "updated_at",
+            "columnName": "updated_at",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_WareHouse_slug",
+            "unique": true,
+            "columnNames": [
+              "slug"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_WareHouse_slug` ON `${TABLE_NAME}` (`slug`)"
+          }
+        ]
+      },
+      {
+        "tableName": "ProductQuantities",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `product_slug` TEXT, `warehouse_slug` TEXT, `opening_quantity` REAL NOT NULL, `current_quantity` REAL NOT NULL, `minimum_quantity` REAL NOT NULL, `maximum_quantity` REAL NOT NULL, `business_slug` TEXT, `sync_status` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "product_slug",
+            "columnName": "product_slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "warehouse_slug",
+            "columnName": "warehouse_slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "opening_quantity",
+            "columnName": "opening_quantity",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "current_quantity",
+            "columnName": "current_quantity",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "minimum_quantity",
+            "columnName": "minimum_quantity",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "maximum_quantity",
+            "columnName": "maximum_quantity",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "business_slug",
+            "columnName": "business_slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sync_status",
+            "columnName": "sync_status",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_ProductQuantities_product_slug_warehouse_slug",
+            "unique": true,
+            "columnNames": [
+              "product_slug",
+              "warehouse_slug"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_ProductQuantities_product_slug_warehouse_slug` ON `${TABLE_NAME}` (`product_slug`, `warehouse_slug`)"
+          }
+        ]
+      },
+      {
+        "tableName": "Category",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT, `description` TEXT, `thumbnail` TEXT, `type_id` INTEGER NOT NULL, `slug` TEXT, `business_slug` TEXT, `created_by` TEXT, `sync_status` INTEGER NOT NULL, `created_at` TEXT, `updated_at` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "thumbnail",
+            "columnName": "thumbnail",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "type_id",
+            "columnName": "type_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "slug",
+            "columnName": "slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "business_slug",
+            "columnName": "business_slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "created_by",
+            "columnName": "created_by",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sync_status",
+            "columnName": "sync_status",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "created_at",
+            "columnName": "created_at",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "updated_at",
+            "columnName": "updated_at",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_Category_slug",
+            "unique": true,
+            "columnNames": [
+              "slug"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_Category_slug` ON `${TABLE_NAME}` (`slug`)"
+          }
+        ]
+      },
+      {
+        "tableName": "DeletedRecords",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `record_slug` TEXT, `record_type` TEXT, `deletion_type` TEXT, `slug` TEXT, `business_slug` TEXT, `created_by` TEXT, `sync_status` INTEGER NOT NULL, `created_at` TEXT, `updated_at` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "record_slug",
+            "columnName": "record_slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "record_type",
+            "columnName": "record_type",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "deletion_type",
+            "columnName": "deletion_type",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "slug",
+            "columnName": "slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "business_slug",
+            "columnName": "business_slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "created_by",
+            "columnName": "created_by",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sync_status",
+            "columnName": "sync_status",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "created_at",
+            "columnName": "created_at",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "updated_at",
+            "columnName": "updated_at",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_DeletedRecords_slug",
+            "unique": true,
+            "columnNames": [
+              "slug"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_DeletedRecords_slug` ON `${TABLE_NAME}` (`slug`)"
+          }
+        ]
+      },
+      {
+        "tableName": "EntityMedia",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `entity_name` TEXT, `entity_slug` TEXT, `local_url` TEXT, `url` TEXT, `media_type` TEXT, `action_required` TEXT, `slug` TEXT, `business_slug` TEXT, `created_by` TEXT, `sync_status` INTEGER NOT NULL, `created_at` TEXT, `updated_at` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "entity_name",
+            "columnName": "entity_name",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "entity_slug",
+            "columnName": "entity_slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "local_url",
+            "columnName": "local_url",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "url",
+            "columnName": "url",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "media_type",
+            "columnName": "media_type",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "action_required",
+            "columnName": "action_required",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "slug",
+            "columnName": "slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "business_slug",
+            "columnName": "business_slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "created_by",
+            "columnName": "created_by",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sync_status",
+            "columnName": "sync_status",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "created_at",
+            "columnName": "created_at",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "updated_at",
+            "columnName": "updated_at",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_EntityMedia_slug",
+            "unique": true,
+            "columnNames": [
+              "slug"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_EntityMedia_slug` ON `${TABLE_NAME}` (`slug`)"
+          }
+        ]
+      },
+      {
+        "tableName": "RecipeIngredients",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `recipe_slug` TEXT, `ingredient_slug` TEXT, `quantity` REAL, `quantity_unit_slug` TEXT, `slug` TEXT, `business_slug` TEXT, `created_by` TEXT, `sync_status` INTEGER NOT NULL, `created_at` TEXT, `updated_at` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recipe_slug",
+            "columnName": "recipe_slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "ingredient_slug",
+            "columnName": "ingredient_slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "quantity",
+            "columnName": "quantity",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "quantity_unit_slug",
+            "columnName": "quantity_unit_slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "slug",
+            "columnName": "slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "business_slug",
+            "columnName": "business_slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "created_by",
+            "columnName": "created_by",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sync_status",
+            "columnName": "sync_status",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "created_at",
+            "columnName": "created_at",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "updated_at",
+            "columnName": "updated_at",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_RecipeIngredients_recipe_slug_ingredient_slug",
+            "unique": true,
+            "columnNames": [
+              "recipe_slug",
+              "ingredient_slug"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_RecipeIngredients_recipe_slug_ingredient_slug` ON `${TABLE_NAME}` (`recipe_slug`, `ingredient_slug`)"
+          }
+        ]
+      },
+      {
+        "tableName": "Business",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT, `email` TEXT, `address` TEXT, `phone` TEXT, `logo` TEXT, `slug` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "email",
+            "columnName": "email",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "address",
+            "columnName": "address",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "phone",
+            "columnName": "phone",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "logo",
+            "columnName": "logo",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "slug",
+            "columnName": "slug",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_Business_slug",
+            "unique": true,
+            "columnNames": [
+              "slug"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_Business_slug` ON `${TABLE_NAME}` (`slug`)"
+          }
+        ]
+      },
+      {
+        "tableName": "user_auth",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `user_id` INTEGER NOT NULL, `name` TEXT NOT NULL, `email` TEXT NOT NULL, `address` TEXT NOT NULL, `phone` TEXT NOT NULL, `slug` TEXT NOT NULL, `firebase_id` TEXT NOT NULL, `pic` TEXT, `access_token` TEXT NOT NULL, `refresh_token` TEXT NOT NULL, `selected_business_slug` TEXT, `last_updated` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "userId",
+            "columnName": "user_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "email",
+            "columnName": "email",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "address",
+            "columnName": "address",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "phone",
+            "columnName": "phone",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "slug",
+            "columnName": "slug",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "firebaseId",
+            "columnName": "firebase_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pic",
+            "columnName": "pic",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "accessToken",
+            "columnName": "access_token",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "refreshToken",
+            "columnName": "refresh_token",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "selectedBusinessSlug",
+            "columnName": "selected_business_slug",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lastUpdated",
+            "columnName": "last_updated",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '772609390333600b99398dfe0b46460b')"
+    ]
+  }
+}

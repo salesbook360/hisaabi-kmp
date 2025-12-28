@@ -435,14 +435,42 @@ class AddTransactionViewModel(
                         detail.quantity
                     }
                     
+                    // Convert flat values back to percent if the type is PERCENT for display in edit mode
+                    val detailDiscountType = FlatOrPercent.fromValue(detail.discountType) ?: FlatOrPercent.FLAT
+                    val detailTaxType = FlatOrPercent.fromValue(detail.taxType) ?: FlatOrPercent.FLAT
+                    
+                    val detailSubtotal = detail.price * quantityInSelectedUnit
+                    
+                    val detailDiscountForEdit = if (detailDiscountType == FlatOrPercent.PERCENT) {
+                        // Convert flat discount back to percent for display
+                        if (detailSubtotal != 0.0) {
+                            TransactionCalculator.calculatePercentFromFlat(detail.flatDiscount, detailSubtotal)
+                        } else {
+                            detail.flatDiscount
+                        }
+                    } else {
+                        detail.flatDiscount
+                    }
+                    
+                    val detailTaxForEdit = if (detailTaxType == FlatOrPercent.PERCENT) {
+                        // Convert flat tax back to percent for display
+                        if (detailSubtotal != 0.0) {
+                            TransactionCalculator.calculatePercentFromFlat(detail.flatTax, detailSubtotal)
+                        } else {
+                            detail.flatTax
+                        }
+                    } else {
+                        detail.flatTax
+                    }
+                    
                     TransactionDetailItem(
                         product = detail.product ?: throw IllegalStateException("Product not loaded"),
                         quantity = quantityInSelectedUnit,
                         price = detail.price,
-                        flatDiscount = detail.flatDiscount,
-                        discountType = FlatOrPercent.fromValue(detail.discountType) ?: FlatOrPercent.FLAT,
-                        flatTax = detail.flatTax,
-                        taxType = FlatOrPercent.fromValue(detail.taxType) ?: FlatOrPercent.FLAT,
+                        flatDiscount = detailDiscountForEdit,
+                        discountType = detailDiscountType,
+                        flatTax = detailTaxForEdit,
+                        taxType = detailTaxType,
                         description = detail.description ?: "",
                         selectedUnit = detail.quantityUnit
                     )
@@ -458,6 +486,38 @@ class AddTransactionViewModel(
                 // Subtract the old transaction's effect to get the balance before this transaction
                 val previousBalance = currentPartyBalance - oldTransactionEffect
                 
+                // Convert flat values back to percent if the type is PERCENT for display in edit mode
+                val discountType = FlatOrPercent.fromValue(transaction.discountTypeId) ?: FlatOrPercent.FLAT
+                val taxType = FlatOrPercent.fromValue(transaction.taxTypeId) ?: FlatOrPercent.FLAT
+                
+                val discountForEdit = if (discountType == FlatOrPercent.PERCENT) {
+                    // Convert flat discount back to percent for display
+                    val subtotal = transaction.calculateSubtotal()
+                    val baseAmount = subtotal + transaction.additionalCharges
+                    if (baseAmount != 0.0) {
+                        TransactionCalculator.calculatePercentFromFlat(transaction.flatDiscount, baseAmount)
+                    } else {
+                        transaction.flatDiscount
+                    }
+                } else {
+                    transaction.flatDiscount
+                }
+                
+                val taxForEdit = if (taxType == FlatOrPercent.PERCENT) {
+                    // Convert flat tax back to percent for display
+                    // The base amount for tax conversion matches what's used in calculateTransactionTax
+                    // Since we use taxBeforeDiscount = true, base is subtotal + additionalCharges
+                    val subtotal = transaction.calculateSubtotal()
+                    val baseAmount = subtotal + transaction.additionalCharges
+                    if (baseAmount != 0.0) {
+                        TransactionCalculator.calculatePercentFromFlat(transaction.flatTax, baseAmount)
+                    } else {
+                        transaction.flatTax
+                    }
+                } else {
+                    transaction.flatTax
+                }
+                
                 // Set state with transaction data
                 _state.update { 
                     it.copy(
@@ -470,10 +530,10 @@ class AddTransactionViewModel(
                         previousBalance = previousBalance,
                         additionalCharges = transaction.additionalCharges,
                         additionalChargesDesc = transaction.additionalChargesDesc ?: "",
-                        flatDiscount = transaction.flatDiscount,
-                        discountType = FlatOrPercent.fromValue(transaction.discountTypeId) ?: FlatOrPercent.FLAT,
-                        flatTax = transaction.flatTax,
-                        taxType = FlatOrPercent.fromValue(transaction.taxTypeId) ?: FlatOrPercent.FLAT,
+                        flatDiscount = discountForEdit,
+                        discountType = discountType,
+                        flatTax = taxForEdit,
+                        taxType = taxType,
                         paidNow = transaction.totalPaid,
                         remarks = transaction.description ?: "",
                         shippingAddress = transaction.shippingAddress ?: "",
@@ -684,19 +744,36 @@ class AddTransactionViewModel(
     private fun buildTransaction(businessSlug: String): Transaction {
         val state = _state.value
         
+        val subtotal = calculateSubtotal()
+        
         val transactionDetails = state.transactionDetails.map { item ->
             // Convert quantity to base unit by multiplying with conversion factor
             val conversionFactor = item.selectedUnit?.conversionFactor ?: 1.0
             val quantityInBaseUnit = item.quantity * conversionFactor
+            
+            val itemSubtotal = item.price * quantityInBaseUnit
+            
+            // Convert percent to flat for detail level tax and discount before saving
+            val detailFlatTax = if (item.taxType == FlatOrPercent.PERCENT) {
+                TransactionCalculator.calculateFlatFromPercent(item.flatTax, itemSubtotal)
+            } else {
+                item.flatTax
+            }
+            
+            val detailFlatDiscount = if (item.discountType == FlatOrPercent.PERCENT) {
+                TransactionCalculator.calculateFlatFromPercent(item.flatDiscount, itemSubtotal)
+            } else {
+                item.flatDiscount
+            }
             
             TransactionDetail(
                 productSlug = item.product.slug,
                 product = item.product,
                 quantity = quantityInBaseUnit,
                 price = item.price,
-                flatTax = item.flatTax,
+                flatTax = detailFlatTax,
                 taxType = item.taxType.value,
-                flatDiscount = item.flatDiscount,
+                flatDiscount = detailFlatDiscount,
                 discountType = item.discountType.value,
                 description = item.description,
                 quantityUnitSlug = item.selectedUnit?.slug,
@@ -704,16 +781,34 @@ class AddTransactionViewModel(
             )
         }
         
+        // Convert percent to flat for transaction level tax and discount before saving
+        // Use the existing calculation methods which handle percent conversion properly
+        val transactionFlatDiscount = TransactionCalculator.calculateTransactionDiscount(
+            subtotal,
+            state.additionalCharges,
+            state.flatDiscount,
+            state.discountType.value
+        )
+        
+        val transactionFlatTax = TransactionCalculator.calculateTransactionTax(
+            subtotal,
+            state.additionalCharges,
+            transactionFlatDiscount,
+            state.flatTax,
+            state.taxType.value,
+            true // taxBeforeDiscount - using default, should match what's used in calculateTransactionTax method
+        )
+        
         return Transaction(
             slug = state.editingTransactionSlug, // Include slug if editing
             customerSlug = state.selectedParty?.slug,
             party = state.selectedParty,
-            totalBill = calculateSubtotal(),
+            totalBill = subtotal,
             totalPaid = state.paidNow,
             timestamp = state.transactionDateTime.toString(),
-            flatDiscount = state.flatDiscount,
+            flatDiscount = transactionFlatDiscount,
             discountTypeId = state.discountType.value,
-            flatTax = state.flatTax,
+            flatTax = transactionFlatTax,
             taxTypeId = state.taxType.value,
             additionalCharges = state.additionalCharges,
             additionalChargesDesc = state.additionalChargesDesc,

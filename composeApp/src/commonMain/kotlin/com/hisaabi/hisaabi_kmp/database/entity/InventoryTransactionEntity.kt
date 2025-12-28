@@ -16,7 +16,7 @@ data class InventoryTransactionEntity(
     val total_bill: Double = 0.0,
     val total_paid: Double = 0.0,
     val timestamp: String?,
-    val discount: Double = 0.0,
+    val flat_discount: Double = 0.0,
     val payment_method_to_slug: String?,
     val payment_method_from_slug: String?,
     val transaction_type: Int = 0,
@@ -26,7 +26,7 @@ data class InventoryTransactionEntity(
     val additional_charges: Double = 0.0,
     val discount_type_id: Int = 0,
     val tax_type_id: Int = 0,
-    val tax: Double = 0.0,
+    val flat_tax: Double = 0.0,
     val description: String?,
     val shipping_address: String?,
     val status_id: Int = 0, // 0=Active, 2=Deleted

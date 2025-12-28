@@ -62,7 +62,7 @@ class GenerateSalesReportUseCase(
             } else 0.0
             
             val netQty = qtySold - qtyReturned
-            val amount = transaction.total_bill + transaction.additional_charges + transaction.tax - transaction.discount
+            val amount = transaction.total_bill + transaction.additional_charges + transaction.flat_tax - transaction.flat_discount
             val profit = details.sumOf { it.profit * it.quantity }
             
             totalQtySold += qtySold

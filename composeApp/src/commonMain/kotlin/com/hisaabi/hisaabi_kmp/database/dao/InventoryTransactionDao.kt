@@ -71,7 +71,7 @@ interface InventoryTransactionDao {
     ): Int?
     
     @Query("""
-        SELECT SUM(total_bill + additional_charges + tax - discount) 
+        SELECT SUM(total_bill + additional_charges + flat_tax - flat_discount) 
         FROM InventoryTransaction 
         WHERE transaction_type IN (:transactionTypes) 
         AND business_slug = :businessSlug 
@@ -101,7 +101,7 @@ interface InventoryTransactionDao {
     ): Double?
     
     @Query("""
-        SELECT SUM(tax) 
+        SELECT SUM(flat_tax) 
         FROM InventoryTransaction 
         WHERE transaction_type IN (:transactionTypes) 
         AND business_slug = :businessSlug 
