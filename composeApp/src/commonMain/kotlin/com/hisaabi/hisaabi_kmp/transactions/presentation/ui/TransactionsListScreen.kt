@@ -1018,6 +1018,8 @@ private fun ExpenseIncomeCard(
         ) {
             CardHeader(transaction, { showOptions = !showOptions })
             
+            HorizontalDivider()
+            
             // Amount - centered
             Column(
                 modifier = Modifier.fillMaxWidth(),
