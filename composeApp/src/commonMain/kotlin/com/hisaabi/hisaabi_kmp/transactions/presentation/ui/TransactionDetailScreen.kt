@@ -123,50 +123,7 @@ private fun TransactionDetailContent(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Transaction type badge
-        item {
-            Surface(
-                color = getTransactionColor(transaction),
-                shape = MaterialTheme.shapes.medium
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            transaction.getTransactionTypeName(),
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            transaction.timestamp ?: "",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    
-                    // State badge
-                    val statusColors = getStatusBadgeColors(transaction.stateId)
-                    Surface(
-                        color = statusColors.backgroundColor,
-                        shape = MaterialTheme.shapes.small
-                    ) {
-                        Text(
-                            transaction.getStateName(),
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = statusColors.textColor
-                        )
-                    }
-                }
-            }
-        }
-        
+
         // Party Information (if applicable)
         if (transaction.party != null) {
             item {
