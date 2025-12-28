@@ -7,6 +7,7 @@ import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionSortOption
 import com.hisaabi.hisaabi_kmp.transactions.domain.usecase.TransactionUseCases
+import com.hisaabi.hisaabi_kmp.utils.currentTimeMillis
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -31,7 +32,8 @@ data class TransactionsListState(
 )
 
 class TransactionsListViewModel(
-    private val transactionUseCases: TransactionUseCases
+    private val transactionUseCases: TransactionUseCases,
+    private val transactionsRepository: com.hisaabi.hisaabi_kmp.transactions.data.repository.TransactionsRepository
 ) : ViewModel() {
     
     private val _state = MutableStateFlow(TransactionsListState())
@@ -245,6 +247,208 @@ class TransactionsListViewModel(
     
     fun clearError() {
         _state.update { it.copy(error = null) }
+    }
+    
+    // Convert Sale Order/Quotation to Sale
+    fun convertToSale(transaction: Transaction, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                if (transaction.slug == null) {
+                    onError("Transaction slug is required for conversion")
+                    return@launch
+                }
+                
+                // Always load full transaction with details to ensure we have all product information
+                val fullTransaction = transactionsRepository.getTransactionWithDetails(transaction.slug!!)
+                    ?: run {
+                        onError("Transaction not found")
+                        return@launch
+                    }
+                
+                if (fullTransaction.transactionDetails.isEmpty()) {
+                    onError("Transaction must have at least one product")
+                    return@launch
+                }
+                
+                // Update existing transaction by changing its type
+                // Preserve all details, warehouse, and other fields
+                val updatedTransaction = fullTransaction.copy(
+                    transactionType = AllTransactionTypes.SALE.value
+                )
+                
+                transactionUseCases.updateTransaction(updatedTransaction)
+                    .onSuccess {
+                        onSuccess()
+                        loadTransactions() // Refresh the list
+                    }
+                    .onFailure { e ->
+                        onError(e.message ?: "Failed to convert transaction")
+                    }
+            } catch (e: Exception) {
+                onError(e.message ?: "Failed to convert transaction")
+            }
+        }
+    }
+    
+    // Edit and Convert Sale Order/Quotation to Sale
+    fun editAndConvertToSale(transaction: Transaction, onNavigateToEdit: (Transaction) -> Unit) {
+        val copyOfTransaction = transaction.copy(
+            transactionType = AllTransactionTypes.SALE.value
+        )
+        onNavigateToEdit(copyOfTransaction)
+    }
+    
+    // Convert Purchase Order to Purchase
+    fun convertToPurchase(transaction: Transaction, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                if (transaction.slug == null) {
+                    onError("Transaction slug is required for conversion")
+                    return@launch
+                }
+                
+                // Always load full transaction with details to ensure we have all product information
+                val fullTransaction = transactionsRepository.getTransactionWithDetails(transaction.slug!!)
+                    ?: run {
+                        onError("Transaction not found")
+                        return@launch
+                    }
+                
+                if (fullTransaction.transactionDetails.isEmpty()) {
+                    onError("Transaction must have at least one product")
+                    return@launch
+                }
+                
+                // Ensure warehouse is set (required for stock updates)
+                if (fullTransaction.wareHouseSlugFrom == null) {
+                    onError("Warehouse is required for purchase transactions")
+                    return@launch
+                }
+                
+                // Update existing transaction by changing its type
+                // Preserve all details, warehouse, and other fields
+                val updatedTransaction = fullTransaction.copy(
+                    transactionType = AllTransactionTypes.PURCHASE.value
+                )
+                
+                transactionUseCases.updateTransaction(updatedTransaction)
+                    .onSuccess {
+                        onSuccess()
+                        loadTransactions() // Refresh the list
+                    }
+                    .onFailure { e ->
+                        onError(e.message ?: "Failed to convert transaction")
+                    }
+            } catch (e: Exception) {
+                onError(e.message ?: "Failed to convert transaction")
+            }
+        }
+    }
+    
+    // Edit and Convert Purchase Order to Purchase
+    fun editAndConvertToPurchase(transaction: Transaction, onNavigateToEdit: (Transaction) -> Unit) {
+        val copyOfTransaction = transaction.copy(
+            transactionType = AllTransactionTypes.PURCHASE.value
+        )
+        onNavigateToEdit(copyOfTransaction)
+    }
+    
+    // Cancel and Remove (Delete) transaction
+    fun cancelAndRemove(transaction: Transaction, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                transactionUseCases.deleteTransaction(transaction)
+                    .onSuccess {
+                        onSuccess()
+                        loadTransactions() // Refresh the list
+                    }
+                    .onFailure { e ->
+                        onError(e.message ?: "Failed to delete transaction")
+                    }
+            } catch (e: Exception) {
+                onError(e.message ?: "Failed to delete transaction")
+            }
+        }
+    }
+    
+    // Restore deleted transaction
+    fun restoreTransaction(transaction: Transaction, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val restoredTransaction = transaction.copy(
+                    statusId = 0 // Active
+                )
+                
+                // If transaction has slug, update it; otherwise add as new
+                if (restoredTransaction.slug != null) {
+                    transactionUseCases.updateTransaction(restoredTransaction)
+                        .onSuccess {
+                            onSuccess()
+                            loadTransactions() // Refresh the list
+                        }
+                        .onFailure { e ->
+                            onError(e.message ?: "Failed to restore transaction")
+                        }
+                } else {
+                    // If no slug, add as new transaction
+                    transactionUseCases.addTransaction(restoredTransaction)
+                        .onSuccess {
+                            onSuccess()
+                            loadTransactions() // Refresh the list
+                        }
+                        .onFailure { e ->
+                            onError(e.message ?: "Failed to restore transaction")
+                        }
+                }
+            } catch (e: Exception) {
+                onError(e.message ?: "Failed to restore transaction")
+            }
+        }
+    }
+    
+    // Clone transaction
+    fun cloneTransaction(transaction: Transaction, cloneAsType: AllTransactionTypes?, onNavigateToEdit: (Transaction) -> Unit) {
+        val clonedTransaction = transaction.copy(
+            slug = null, // New transaction will get a new slug
+            id = 0,
+            timestamp = currentTimeMillis().toString(),
+            statusId = 0, // Active
+            transactionDetails = transaction.transactionDetails.map { detail ->
+                detail.copy(
+                    id = 0,
+                    slug = null
+                )
+            },
+            transactionType = cloneAsType?.value ?: transaction.transactionType
+        )
+        onNavigateToEdit(clonedTransaction)
+    }
+    
+    // Update transaction state
+    fun updateTransactionState(
+        transaction: Transaction,
+        newState: com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionState,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val updatedTransaction = transaction.copy(
+                    stateId = newState.value
+                )
+                
+                transactionUseCases.updateTransaction(updatedTransaction)
+                    .onSuccess {
+                        onSuccess()
+                        loadTransactions() // Refresh the list
+                    }
+                    .onFailure { e ->
+                        onError(e.message ?: "Failed to update transaction state")
+                    }
+            } catch (e: Exception) {
+                onError(e.message ?: "Failed to update transaction state")
+            }
+        }
     }
 }
 

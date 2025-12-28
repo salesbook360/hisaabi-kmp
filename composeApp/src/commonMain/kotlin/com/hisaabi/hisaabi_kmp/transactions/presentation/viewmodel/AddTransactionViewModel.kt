@@ -412,7 +412,8 @@ class AddTransactionViewModel(
     }
     
     // Load Transaction for Editing by Slug
-    fun loadTransactionForEdit(transactionSlug: String) {
+    // overrideTransactionType: If provided, will override the transaction type from the loaded transaction
+    fun loadTransactionForEdit(transactionSlug: String, overrideTransactionType: AllTransactionTypes? = null) {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
             
@@ -421,8 +422,9 @@ class AddTransactionViewModel(
                 val transaction = getTransactionWithDetailsUseCase(transactionSlug)
                     ?: throw IllegalStateException("Transaction not found")
                 
-                // Convert transaction type
-                val transactionType = AllTransactionTypes.fromValue(transaction.transactionType) 
+                // Use override transaction type if provided, otherwise use the transaction's type
+                val transactionType = overrideTransactionType 
+                    ?: AllTransactionTypes.fromValue(transaction.transactionType) 
                     ?: AllTransactionTypes.SALE
                 
                 // Convert transaction details to items

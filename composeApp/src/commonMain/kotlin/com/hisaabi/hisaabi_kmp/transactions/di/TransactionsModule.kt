@@ -72,7 +72,7 @@ val transactionsModule = module {
     
     // ViewModels - use viewModel scope instead of single to reset state when navigating
     viewModel { AddTransactionViewModel(get(), get(), get(), get(), get(), get()) }
-    viewModel { TransactionsListViewModel(get()) }
+    viewModel { TransactionsListViewModel(get(), get()) }
     viewModel { AddRecordViewModel(get(), get(), get()) }
     viewModel { PayGetCashViewModel(get(),get(),get()) }
     viewModel { AddExpenseIncomeViewModel(get(), get(), get()) }

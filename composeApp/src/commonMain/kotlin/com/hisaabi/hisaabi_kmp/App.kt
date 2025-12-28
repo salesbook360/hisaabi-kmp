@@ -1,19 +1,26 @@
 package com.hisaabi.hisaabi_kmp
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -185,6 +192,7 @@ fun App() {
             // Global toast/snackbar state for success messages
             val snackbarHostState = remember { SnackbarHostState() }
             var toastMessage by remember { mutableStateOf<String?>(null) }
+            var snackbarMessage by remember { mutableStateOf<String?>(null) }
 
             // Show toast message
             LaunchedEffect(toastMessage) {
@@ -194,6 +202,17 @@ fun App() {
                         duration = SnackbarDuration.Short
                     )
                     toastMessage = null  // Clear after showing
+                }
+            }
+            
+            // Show snackbar message from transaction actions
+            LaunchedEffect(snackbarMessage) {
+                snackbarMessage?.let { message ->
+                    snackbarHostState.showSnackbar(
+                        message = message,
+                        duration = SnackbarDuration.Short
+                    )
+                    snackbarMessage = null  // Clear after showing
                 }
             }
 
@@ -465,6 +484,10 @@ fun App() {
             }
             var selectedTransactionSlug by remember { mutableStateOf<String?>(null) }
             var selectedTransactionSlugForEdit by remember { mutableStateOf<String?>(null) }
+            
+            // Transaction action dialogs state
+            var showDeleteConfirmationDialog by remember { mutableStateOf<Transaction?>(null) }
+            var showCloneDialog by remember { mutableStateOf<Transaction?>(null) }
 
             // Track if we're in a transaction creation flow (including selection screens)
             var isInTransactionFlow by remember { mutableStateOf(false) }
@@ -1605,22 +1628,256 @@ fun App() {
                                             }
                                         }
                                     },
-                                    onConvertToSale = {},
-                                    onEditAndConvertToSale =  {},
-                                    onConvertToPurchase =  {},
-                                    onEditAndConvertToPurchase =  {},
-                                    onCancelAndRemove =  {},
-                                    onRestore =  {},
-                                    onClone =  {},
-                                    onChangeStateToPending =  {},
-                                    onChangeStateToInProgress =  {},
-                                    onChangeStateToCompleted =  {},
-                                    onChangeStateToCanceled =  {},
-                                    onOutstandingBalanceReminder =  {}
+                                    onConvertToSale = { transaction ->
+                                        viewModel.convertToSale(
+                                            transaction = transaction,
+                                            onSuccess = {
+                                                snackbarMessage = "Transaction converted to sale successfully"
+                                            },
+                                            onError = { error ->
+                                                snackbarMessage = error
+                                            }
+                                        )
+                                    },
+                                    onEditAndConvertToSale = { transaction ->
+                                        viewModel.editAndConvertToSale(transaction) { editedTransaction ->
+                                            selectedTransactionSlugForEdit = editedTransaction.slug
+                                            transactionType = AllTransactionTypes.SALE
+                                            navigateTo(AppScreen.ADD_TRANSACTION_STEP1)
+                                        }
+                                    },
+                                    onConvertToPurchase = { transaction ->
+                                        viewModel.convertToPurchase(
+                                            transaction = transaction,
+                                            onSuccess = {
+                                                snackbarMessage = "Transaction converted to purchase successfully"
+                                            },
+                                            onError = { error ->
+                                                snackbarMessage = error
+                                            }
+                                        )
+                                    },
+                                    onEditAndConvertToPurchase = { transaction ->
+                                        viewModel.editAndConvertToPurchase(transaction) { editedTransaction ->
+                                            selectedTransactionSlugForEdit = editedTransaction.slug
+                                            transactionType = AllTransactionTypes.PURCHASE
+                                            navigateTo(AppScreen.ADD_TRANSACTION_STEP1)
+                                        }
+                                    },
+                                    onCancelAndRemove = { transaction ->
+                                        showDeleteConfirmationDialog = transaction
+                                    },
+                                    onRestore = { transaction ->
+                                        viewModel.restoreTransaction(
+                                            transaction = transaction,
+                                            onSuccess = {
+                                                snackbarMessage = "Transaction restored successfully"
+                                            },
+                                            onError = { error ->
+                                                snackbarMessage = error
+                                            }
+                                        )
+                                    },
+                                    onClone = { transaction ->
+                                        showCloneDialog = transaction
+                                    },
+                                    onChangeStateToPending = { transaction ->
+                                        viewModel.updateTransactionState(
+                                            transaction = transaction,
+                                            newState = com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionState.PENDING,
+                                            onSuccess = {
+                                                snackbarMessage = "Transaction state updated to Pending"
+                                            },
+                                            onError = { error ->
+                                                snackbarMessage = error
+                                            }
+                                        )
+                                    },
+                                    onChangeStateToInProgress = { transaction ->
+                                        viewModel.updateTransactionState(
+                                            transaction = transaction,
+                                            newState = com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionState.IN_PROGRESS,
+                                            onSuccess = {
+                                                snackbarMessage = "Transaction state updated to In Progress"
+                                            },
+                                            onError = { error ->
+                                                snackbarMessage = error
+                                            }
+                                        )
+                                    },
+                                    onChangeStateToCompleted = { transaction ->
+                                        viewModel.updateTransactionState(
+                                            transaction = transaction,
+                                            newState = com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionState.COMPLETED,
+                                            onSuccess = {
+                                                snackbarMessage = "Transaction state updated to Completed"
+                                            },
+                                            onError = { error ->
+                                                snackbarMessage = error
+                                            }
+                                        )
+                                    },
+                                    onChangeStateToCanceled = { transaction ->
+                                        viewModel.updateTransactionState(
+                                            transaction = transaction,
+                                            newState = com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionState.CANCELLED,
+                                            onSuccess = {
+                                                snackbarMessage = "Transaction state updated to Cancelled"
+                                            },
+                                            onError = { error ->
+                                                snackbarMessage = error
+                                            }
+                                        )
+                                    },
+                                    onOutstandingBalanceReminder = { transaction ->
+                                        // Navigate to templates screen for reminder
+                                        navigateTo(AppScreen.TEMPLATES)
+                                    }
                                 )
                             } ?: run {
                                 // If ViewModel is not available, navigate back to home
                                 currentScreen = AppScreen.HOME
+                            }
+                            
+                            // Delete confirmation dialog
+                            showDeleteConfirmationDialog?.let { transaction ->
+                                AlertDialog(
+                                    onDismissRequest = { showDeleteConfirmationDialog = null },
+                                    title = { Text("Cancel and Remove") },
+                                    text = { Text("Are you sure you want to delete this transaction?") },
+                                    confirmButton = {
+                                        TextButton(
+                                            onClick = {
+                                                transactionsListViewModel?.cancelAndRemove(
+                                                    transaction = transaction,
+                                                    onSuccess = {
+                                                        snackbarMessage = "Transaction deleted successfully"
+                                                        showDeleteConfirmationDialog = null
+                                                    },
+                                                    onError = { error ->
+                                                        snackbarMessage = error
+                                                        showDeleteConfirmationDialog = null
+                                                    }
+                                                )
+                                            }
+                                        ) {
+                                            Text("Delete", color = MaterialTheme.colorScheme.error)
+                                        }
+                                    },
+                                    dismissButton = {
+                                        TextButton(onClick = { showDeleteConfirmationDialog = null }) {
+                                            Text("Cancel")
+                                        }
+                                    }
+                                )
+                            }
+                            
+                            // Clone transaction dialog
+                            var selectedCloneType by remember { mutableStateOf<AllTransactionTypes?>(null) }
+                            
+                            showCloneDialog?.let { transaction ->
+                                AlertDialog(
+                                    onDismissRequest = { 
+                                        selectedCloneType = null
+                                        showCloneDialog = null 
+                                    },
+                                    title = { Text("Clone as") },
+                                    text = {
+                                        Column {
+                                            Text("Select transaction type to clone as:")
+                                            Spacer(Modifier.height(16.dp))
+                                            AllTransactionTypes.SALE.let { type ->
+                                                Row(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .clickable { selectedCloneType = type }
+                                                        .padding(vertical = 8.dp),
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    RadioButton(
+                                                        selected = selectedCloneType == type,
+                                                        onClick = { selectedCloneType = type }
+                                                    )
+                                                    Spacer(Modifier.width(8.dp))
+                                                    Text("Sale")
+                                                }
+                                            }
+                                            AllTransactionTypes.PURCHASE.let { type ->
+                                                Row(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .clickable { selectedCloneType = type }
+                                                        .padding(vertical = 8.dp),
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    RadioButton(
+                                                        selected = selectedCloneType == type,
+                                                        onClick = { selectedCloneType = type }
+                                                    )
+                                                    Spacer(Modifier.width(8.dp))
+                                                    Text("Purchase")
+                                                }
+                                            }
+                                            AllTransactionTypes.CUSTOMER_RETURN.let { type ->
+                                                Row(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .clickable { selectedCloneType = type }
+                                                        .padding(vertical = 8.dp),
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    RadioButton(
+                                                        selected = selectedCloneType == type,
+                                                        onClick = { selectedCloneType = type }
+                                                    )
+                                                    Spacer(Modifier.width(8.dp))
+                                                    Text("Return from Customer")
+                                                }
+                                            }
+                                            AllTransactionTypes.VENDOR_RETURN.let { type ->
+                                                Row(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .clickable { selectedCloneType = type }
+                                                        .padding(vertical = 8.dp),
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    RadioButton(
+                                                        selected = selectedCloneType == type,
+                                                        onClick = { selectedCloneType = type }
+                                                    )
+                                                    Spacer(Modifier.width(8.dp))
+                                                    Text("Return to Vendor")
+                                                }
+                                            }
+                                        }
+                                    },
+                                    confirmButton = {
+                                        TextButton(
+                                            onClick = {
+                                                selectedCloneType?.let { cloneType ->
+                                                    transactionsListViewModel?.cloneTransaction(
+                                                        transaction = transaction,
+                                                        cloneAsType = cloneType
+                                                    ) { clonedTransaction ->
+                                                        selectedTransactionSlugForEdit = clonedTransaction.slug
+                                                        transactionType = cloneType
+                                                        showCloneDialog = null
+                                                        navigateTo(AppScreen.ADD_TRANSACTION_STEP1)
+                                                    }
+                                                }
+                                            },
+                                            enabled = selectedCloneType != null
+                                        ) {
+                                            Text("Clone")
+                                        }
+                                    },
+                                    dismissButton = {
+                                        TextButton(onClick = { showCloneDialog = null }) {
+                                            Text("Cancel")
+                                        }
+                                    }
+                                )
                             }
                         }
 
@@ -2377,9 +2634,10 @@ fun App() {
                                 }
 
                                 // Load transaction for editing if provided
-                                LaunchedEffect(selectedTransactionSlugForEdit) {
+                                // Pass transactionType override if set (for edit and convert scenarios)
+                                LaunchedEffect(selectedTransactionSlugForEdit, transactionType) {
                                     selectedTransactionSlugForEdit?.let { slug ->
-                                        viewModel.loadTransactionForEdit(slug)
+                                        viewModel.loadTransactionForEdit(slug, transactionType)
                                         selectedTransactionSlugForEdit = null // Clear after loading
                                     }
                                 }
