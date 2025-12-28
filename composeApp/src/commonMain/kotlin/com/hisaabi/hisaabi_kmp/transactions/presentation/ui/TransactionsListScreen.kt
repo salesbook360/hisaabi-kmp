@@ -1154,13 +1154,6 @@ private fun PaymentTransferCard(
                     }
                 }
                 
-                Icon(
-                    Icons.Default.ArrowForward,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.tertiary,
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
-                
                 // To
                 transaction.paymentMethodTo?.let { paymentMethodTo ->
                     Column(
