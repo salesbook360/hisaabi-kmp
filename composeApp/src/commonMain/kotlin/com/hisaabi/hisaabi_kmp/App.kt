@@ -1,10 +1,19 @@
 package com.hisaabi.hisaabi_kmp
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -14,23 +23,92 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.hisaabi.hisaabi_kmp.auth.AuthNavigation
 import com.hisaabi.hisaabi_kmp.auth.presentation.viewmodel.AuthViewModel
 import com.hisaabi.hisaabi_kmp.business.data.datasource.BusinessPreferencesDataSource
+import com.hisaabi.hisaabi_kmp.business.data.repository.BusinessRepository
+import com.hisaabi.hisaabi_kmp.business.domain.model.Business
+import com.hisaabi.hisaabi_kmp.business.presentation.ui.AddBusinessScreen
 import com.hisaabi.hisaabi_kmp.business.presentation.ui.BusinessSelectionGateScreen
+import com.hisaabi.hisaabi_kmp.business.presentation.ui.MyBusinessScreen
+import com.hisaabi.hisaabi_kmp.business.presentation.viewmodel.MyBusinessViewModel
+import com.hisaabi.hisaabi_kmp.categories.domain.model.Category
+import com.hisaabi.hisaabi_kmp.categories.domain.model.CategoryType
+import com.hisaabi.hisaabi_kmp.categories.presentation.ui.AddCategoryScreen
+import com.hisaabi.hisaabi_kmp.categories.presentation.ui.CategoriesScreen
+import com.hisaabi.hisaabi_kmp.categories.presentation.viewmodel.CategoriesViewModel
 import com.hisaabi.hisaabi_kmp.core.ui.BackHandler
+import com.hisaabi.hisaabi_kmp.database.entity.CategoryEntity
 import com.hisaabi.hisaabi_kmp.home.HomeScreen
+import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
+import com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment
 import com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType
+import com.hisaabi.hisaabi_kmp.parties.presentation.ui.AddPartyScreen
+import com.hisaabi.hisaabi_kmp.parties.presentation.ui.BalanceHistoryScreen
+import com.hisaabi.hisaabi_kmp.parties.presentation.ui.PartiesScreen
+import com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod
+import com.hisaabi.hisaabi_kmp.paymentmethods.presentation.ui.AddPaymentMethodScreen
+import com.hisaabi.hisaabi_kmp.paymentmethods.presentation.ui.PaymentMethodsScreen
+import com.hisaabi.hisaabi_kmp.products.data.repository.ProductsRepository
+import com.hisaabi.hisaabi_kmp.products.domain.model.Product
+import com.hisaabi.hisaabi_kmp.products.domain.model.ProductType
+import com.hisaabi.hisaabi_kmp.products.presentation.ui.AddProductScreen
+import com.hisaabi.hisaabi_kmp.products.presentation.ui.ManageRecipeIngredientsScreen
+import com.hisaabi.hisaabi_kmp.products.presentation.ui.ProductsScreen
 import com.hisaabi.hisaabi_kmp.products.presentation.viewmodel.AddProductViewModel
 import com.hisaabi.hisaabi_kmp.products.presentation.viewmodel.ProductsViewModel
+import com.hisaabi.hisaabi_kmp.profile.presentation.ui.UpdateProfileScreen
+import com.hisaabi.hisaabi_kmp.quantityunits.data.repository.QuantityUnitsRepository
+import com.hisaabi.hisaabi_kmp.quantityunits.domain.model.QuantityUnit
+import com.hisaabi.hisaabi_kmp.quantityunits.presentation.ui.AddQuantityUnitScreen
+import com.hisaabi.hisaabi_kmp.quantityunits.presentation.ui.QuantityUnitsScreen
 import com.hisaabi.hisaabi_kmp.receipt.ReceiptPreviewDialog
 import com.hisaabi.hisaabi_kmp.receipt.ReceiptViewModel
+import com.hisaabi.hisaabi_kmp.reports.domain.model.ReportType
+import com.hisaabi.hisaabi_kmp.reports.presentation.ReportFiltersScreen
+import com.hisaabi.hisaabi_kmp.reports.presentation.ReportResultScreen
+import com.hisaabi.hisaabi_kmp.reports.presentation.ReportsScreen
+import com.hisaabi.hisaabi_kmp.reports.presentation.viewmodel.ReportViewModel
 import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
+import com.hisaabi.hisaabi_kmp.settings.domain.model.ReceiptConfig
+import com.hisaabi.hisaabi_kmp.settings.presentation.ui.DashboardSettingsScreen
+import com.hisaabi.hisaabi_kmp.settings.presentation.ui.ReceiptSettingsScreen
+import com.hisaabi.hisaabi_kmp.settings.presentation.ui.TransactionTypeSelectionScreen
 import com.hisaabi.hisaabi_kmp.sync.domain.manager.SyncManager
+import com.hisaabi.hisaabi_kmp.templates.presentation.ui.AddTemplateScreen
+import com.hisaabi.hisaabi_kmp.templates.presentation.ui.TemplatesScreen
+import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
+import com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction
+import com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddExpenseIncomeScreen
+import com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddJournalVoucherScreen
+import com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddManufactureScreen
+import com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddRecordScreen
+import com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddTransactionStep1Screen
+import com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddTransactionStep2Screen
+import com.hisaabi.hisaabi_kmp.transactions.presentation.ui.JournalAccountTypeDialog
+import com.hisaabi.hisaabi_kmp.transactions.presentation.ui.PayGetCashScreen
+import com.hisaabi.hisaabi_kmp.transactions.presentation.ui.PaymentTransferScreen
+import com.hisaabi.hisaabi_kmp.transactions.presentation.ui.StockAdjustmentScreen
+import com.hisaabi.hisaabi_kmp.transactions.presentation.ui.TransactionDetailScreen
+import com.hisaabi.hisaabi_kmp.transactions.presentation.ui.TransactionsListScreen
+import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddExpenseIncomeViewModel
+import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddJournalVoucherViewModel
+import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddManufactureViewModel
+import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddRecordViewModel
+import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddTransactionViewModel
+import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.PayGetCashType
+import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.PayGetCashViewModel
+import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.PaymentTransferViewModel
+import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.StockAdjustmentViewModel
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionDetailViewModel
+import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionsListViewModel
+import com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse
+import com.hisaabi.hisaabi_kmp.warehouses.presentation.ui.AddWarehouseScreen
+import com.hisaabi.hisaabi_kmp.warehouses.presentation.ui.WarehousesScreen
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.KoinContext
 import org.koin.compose.koinInject
@@ -51,15 +129,15 @@ fun App() {
             var selectedBusinessSlug by remember { mutableStateOf<String?>(null) }
 
             // Business repository for fetching and caching businesses
-            val businessRepository: com.hisaabi.hisaabi_kmp.business.data.repository.BusinessRepository =
+            val businessRepository: BusinessRepository =
                 koinInject()
 
             // Products repository for fetching products by slugs
-            val productsRepository: com.hisaabi.hisaabi_kmp.products.data.repository.ProductsRepository =
+            val productsRepository: ProductsRepository =
                 koinInject()
 
             // Quantity units repository for fetching unit details
-            val quantityUnitsRepository: com.hisaabi.hisaabi_kmp.quantityunits.data.repository.QuantityUnitsRepository =
+            val quantityUnitsRepository: QuantityUnitsRepository =
                 koinInject()
 
             // Sync manager for background sync
@@ -105,7 +183,7 @@ fun App() {
             var navigationStack by remember { mutableStateOf<List<AppScreen>>(emptyList()) }
 
             // Global toast/snackbar state for success messages
-            val snackbarHostState = remember { androidx.compose.material3.SnackbarHostState() }
+            val snackbarHostState = remember { SnackbarHostState() }
             var toastMessage by remember { mutableStateOf<String?>(null) }
 
             // Show toast message
@@ -113,7 +191,7 @@ fun App() {
                 toastMessage?.let { message ->
                     snackbarHostState.showSnackbar(
                         message = message,
-                        duration = androidx.compose.material3.SnackbarDuration.Short
+                        duration = SnackbarDuration.Short
                     )
                     toastMessage = null  // Clear after showing
                 }
@@ -123,7 +201,7 @@ fun App() {
             val receiptViewModel: ReceiptViewModel = koinInject()
             val receiptState by receiptViewModel.state.collectAsState()
             val preferencesManager: PreferencesManager = koinInject()
-            val receiptConfig by preferencesManager.receiptConfig.collectAsState(initial = com.hisaabi.hisaabi_kmp.settings.domain.model.ReceiptConfig.DEFAULT)
+            val receiptConfig by preferencesManager.receiptConfig.collectAsState(initial = ReceiptConfig.DEFAULT)
 
             // Handle receipt errors (only show errors, not success messages)
             LaunchedEffect(receiptState.error) {
@@ -199,12 +277,12 @@ fun App() {
                 }
             }
             var selectedPartySegment by remember {
-                mutableStateOf<com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment?>(
+                mutableStateOf<PartySegment?>(
                     null
                 )
             }
             var addPartyType by remember {
-                mutableStateOf<com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType?>(
+                mutableStateOf<PartyType?>(
                     null
                 )
             }
@@ -212,50 +290,50 @@ fun App() {
             var addPartyScreenKey by remember { mutableStateOf(0) }  // Key to force reset AddPartyScreen
             val addPartySaveableStateHolder = rememberSaveableStateHolder()
             var selectedPartyForBalanceHistory by remember {
-                mutableStateOf<com.hisaabi.hisaabi_kmp.parties.domain.model.Party?>(
+                mutableStateOf<Party?>(
                     null
                 )
             }
             var selectedPartyForTransactionFilter by remember {
-                mutableStateOf<com.hisaabi.hisaabi_kmp.parties.domain.model.Party?>(
+                mutableStateOf<Party?>(
                     null
                 )
             }
             var selectedPartyForEdit by remember {
-                mutableStateOf<com.hisaabi.hisaabi_kmp.parties.domain.model.Party?>(
+                mutableStateOf<Party?>(
                     null
                 )
             }
 
             // Reports navigation state
             var selectedReportType by remember {
-                mutableStateOf<com.hisaabi.hisaabi_kmp.reports.domain.model.ReportType?>(
+                mutableStateOf<ReportType?>(
                     null
                 )
             }
-            val reportViewModel: com.hisaabi.hisaabi_kmp.reports.presentation.viewmodel.ReportViewModel =
+            val reportViewModel: ReportViewModel =
                 koinInject()
 
             // Category navigation state
             var categoryType by remember {
-                mutableStateOf<com.hisaabi.hisaabi_kmp.categories.domain.model.CategoryType?>(
+                mutableStateOf<CategoryType?>(
                     null
                 )
             }
             var categoriesRefreshTrigger by remember { mutableStateOf(0) }
             var selectedCategoryForParty by remember {
-                mutableStateOf<com.hisaabi.hisaabi_kmp.database.entity.CategoryEntity?>(
+                mutableStateOf<CategoryEntity?>(
                     null
                 )
             }
             var selectedAreaForParty by remember {
-                mutableStateOf<com.hisaabi.hisaabi_kmp.database.entity.CategoryEntity?>(
+                mutableStateOf<CategoryEntity?>(
                     null
                 )
             }
             var returnToAddParty by remember { mutableStateOf(false) }
             var selectedCategoryForProduct by remember {
-                mutableStateOf<com.hisaabi.hisaabi_kmp.categories.domain.model.Category?>(
+                mutableStateOf<Category?>(
                     null
                 )
             }
@@ -263,7 +341,7 @@ fun App() {
 
             // Products navigation state
             var addProductType by remember {
-                mutableStateOf<com.hisaabi.hisaabi_kmp.products.domain.model.ProductType?>(
+                mutableStateOf<ProductType?>(
                     null
                 )
             }
@@ -271,12 +349,12 @@ fun App() {
             var addProductViewModelHolder by remember { mutableStateOf<AddProductViewModel?>(null) }
             var productsRefreshTrigger by remember { mutableStateOf(0) }
             var selectedRecipeProduct by remember {
-                mutableStateOf<com.hisaabi.hisaabi_kmp.products.domain.model.Product?>(
+                mutableStateOf<Product?>(
                     null
                 )
             }
             var selectedProductForEdit by remember {
-                mutableStateOf<com.hisaabi.hisaabi_kmp.products.domain.model.Product?>(
+                mutableStateOf<Product?>(
                     null
                 )
             }
@@ -294,7 +372,7 @@ fun App() {
             // Payment Methods navigation state
             var paymentMethodsRefreshTrigger by remember { mutableStateOf(0) }
             var selectedPaymentMethodForEdit by remember {
-                mutableStateOf<com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod?>(
+                mutableStateOf<PaymentMethod?>(
                     null
                 )
             }
@@ -302,7 +380,7 @@ fun App() {
             // Warehouses navigation state
             var warehousesRefreshTrigger by remember { mutableStateOf(0) }
             var selectedWarehouseForEdit by remember {
-                mutableStateOf<com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse?>(
+                mutableStateOf<Warehouse?>(
                     null
                 )
             }
@@ -310,7 +388,7 @@ fun App() {
             // Business navigation state
             var businessRefreshTrigger by remember { mutableStateOf(0) }
             var selectedBusinessForEdit by remember {
-                mutableStateOf<com.hisaabi.hisaabi_kmp.business.domain.model.Business?>(
+                mutableStateOf<Business?>(
                     null
                 )
             }
@@ -318,13 +396,13 @@ fun App() {
             // Quantity Units navigation state
             var quantityUnitsRefreshTrigger by remember { mutableStateOf(0) }
             var selectedUnitForEdit by remember {
-                mutableStateOf<com.hisaabi.hisaabi_kmp.quantityunits.domain.model.QuantityUnit?>(
+                mutableStateOf<QuantityUnit?>(
                     null
                 )
             }
             var isAddingParentUnitType by remember { mutableStateOf(false) }
             var selectedParentUnitForChildUnit by remember {
-                mutableStateOf<com.hisaabi.hisaabi_kmp.quantityunits.domain.model.QuantityUnit?>(
+                mutableStateOf<QuantityUnit?>(
                     null
                 )
             }
@@ -348,18 +426,18 @@ fun App() {
 
             // Transactions navigation state
             var transactionType by remember {
-                mutableStateOf<com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes?>(
+                mutableStateOf<AllTransactionTypes?>(
                     null
                 )
             }
             var initialExpenseIncomeType by remember {
-                mutableStateOf<com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes?>(
+                mutableStateOf<AllTransactionTypes?>(
                     null
                 )
             }
             var selectingPartyForTransaction by remember { mutableStateOf(false) }
             var selectedPartyForTransaction by remember {
-                mutableStateOf<com.hisaabi.hisaabi_kmp.parties.domain.model.Party?>(
+                mutableStateOf<Party?>(
                     null
                 )
             }
@@ -368,7 +446,7 @@ fun App() {
             var isSelectingPaymentMethodFrom by remember { mutableStateOf(false) }  // Flag for payment transfer From/To
             var selectingWarehouseForTransaction by remember { mutableStateOf(false) }
             var selectedWarehouseForTransaction by remember {
-                mutableStateOf<com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse?>(
+                mutableStateOf<Warehouse?>(
                     null
                 )
             }
@@ -381,7 +459,7 @@ fun App() {
             var returnToScreenAfterProductSelection by remember { mutableStateOf<AppScreen?>(null) }
             var selectingPaymentMethodForTransaction by remember { mutableStateOf(false) }
             var selectedPaymentMethodForTransaction by remember {
-                mutableStateOf<com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod?>(
+                mutableStateOf<PaymentMethod?>(
                     null
                 )
             }
@@ -586,56 +664,56 @@ fun App() {
 
             // Create ViewModels for each flow - will be disposed when navigating away from their respective flows
             // koinInject() must be called at composable scope, not inside remember lambda
-            val transactionViewModel: com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddTransactionViewModel? =
+            val transactionViewModel: AddTransactionViewModel? =
                 if (isInTransactionFlow) {
                     koinInject()
                 } else {
                     null
                 }
 
-            val payGetCashViewModel: com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.PayGetCashViewModel? =
+            val payGetCashViewModel: PayGetCashViewModel? =
                 if (isInPayGetCashFlow) {
                     koinInject()
                 } else {
                     null
                 }
 
-            val recordViewModel: com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddRecordViewModel? =
+            val recordViewModel: AddRecordViewModel? =
                 if (isInAddRecordFlow) {
                     koinInject()
                 } else {
                     null
                 }
 
-            val expenseIncomeViewModel: com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddExpenseIncomeViewModel? =
+            val expenseIncomeViewModel: AddExpenseIncomeViewModel? =
                 if (isInExpenseIncomeFlow) {
                     koinInject()
                 } else {
                     null
                 }
 
-            val paymentTransferViewModel: com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.PaymentTransferViewModel? =
+            val paymentTransferViewModel: PaymentTransferViewModel? =
                 if (isInPaymentTransferFlow) {
                     koinInject()
                 } else {
                     null
                 }
 
-            val journalVoucherViewModel: com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddJournalVoucherViewModel? =
+            val journalVoucherViewModel: AddJournalVoucherViewModel? =
                 if (isInJournalVoucherFlow) {
                     koinInject()
                 } else {
                     null
                 }
 
-            val stockAdjustmentViewModel: com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.StockAdjustmentViewModel? =
+            val stockAdjustmentViewModel: StockAdjustmentViewModel? =
                 if (isInStockAdjustmentFlow) {
                     koinInject()
                 } else {
                     null
                 }
 
-            val manufactureViewModel: com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddManufactureViewModel? =
+            val manufactureViewModel: AddManufactureViewModel? =
                 if (isInManufactureFlow) {
                     koinInject()
                 } else {
@@ -648,7 +726,7 @@ fun App() {
                     currentScreen == AppScreen.TRANSACTION_DETAIL ||
                     isInTransactionsListFlow
 
-            val transactionsListViewModel: com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionsListViewModel? =
+            val transactionsListViewModel: TransactionsListViewModel? =
                 if (shouldShowTransactionsListFlow) {
                     koinInject()
                 } else {
@@ -666,7 +744,7 @@ fun App() {
                 SplashScreen()
             } else {
                 // Wrap content with Box to show snackbar overlay
-                androidx.compose.foundation.layout.Box(modifier = androidx.compose.ui.Modifier.fillMaxSize()) {
+                Box(modifier = Modifier.fillMaxSize()) {
                     // Show content only when currentScreen is initialized
                     when (currentScreen!!) {
                         AppScreen.HOME -> {
@@ -704,12 +782,12 @@ fun App() {
                                 onNavigateToPayGetCash = { navigateTo(AppScreen.PAY_GET_CASH) },
                                 onNavigateToExpense = {
                                     initialExpenseIncomeType =
-                                        com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.EXPENSE
+                                        AllTransactionTypes.EXPENSE
                                     navigateTo(AppScreen.ADD_EXPENSE_INCOME)
                                 },
                                 onNavigateToExtraIncome = {
                                     initialExpenseIncomeType =
-                                        com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.EXTRA_INCOME
+                                        AllTransactionTypes.EXTRA_INCOME
                                     navigateTo(AppScreen.ADD_EXPENSE_INCOME)
                                 },
                                 onNavigateToPaymentTransfer = { navigateTo(AppScreen.PAYMENT_TRANSFER) },
@@ -745,7 +823,7 @@ fun App() {
                         }
 
                         AppScreen.BUSINESS_SELECTION_GATE -> {
-                            val myBusinessViewModel: com.hisaabi.hisaabi_kmp.business.presentation.viewmodel.MyBusinessViewModel =
+                            val myBusinessViewModel: MyBusinessViewModel =
                                 koinInject()
                             BusinessSelectionGateScreen(
                                 viewModel = myBusinessViewModel,
@@ -766,7 +844,7 @@ fun App() {
                         }
 
                         AppScreen.PARTIES -> {
-                            com.hisaabi.hisaabi_kmp.parties.presentation.ui.PartiesScreen(
+                            PartiesScreen(
                                 viewModel = koinInject(),
                                 onPartyClick = { party ->
                                     if (selectingPartyForTransaction) {
@@ -783,22 +861,22 @@ fun App() {
                                 onAddPartyClick = {
                                     // Determine party type based on current segment
                                     addPartyType = when (selectedPartySegment) {
-                                        com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.CUSTOMER ->
-                                            com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType.CUSTOMER
+                                        PartySegment.CUSTOMER ->
+                                            PartyType.CUSTOMER
 
-                                        com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.VENDOR ->
-                                            com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType.VENDOR
+                                        PartySegment.VENDOR ->
+                                            PartyType.VENDOR
 
-                                        com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.INVESTOR ->
-                                            com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType.INVESTOR
+                                        PartySegment.INVESTOR ->
+                                            PartyType.INVESTOR
 
-                                        com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.EXPENSE ->
-                                            com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType.EXPENSE
+                                        PartySegment.EXPENSE ->
+                                            PartyType.EXPENSE
 
-                                        com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.EXTRA_INCOME ->
-                                            com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType.EXTRA_INCOME
+                                        PartySegment.EXTRA_INCOME ->
+                                            PartyType.EXTRA_INCOME
 
-                                        else -> com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType.CUSTOMER
+                                        else -> PartyType.CUSTOMER
                                     }
                                     addPartyScreenKey++  // Increment key to force reset
                                     currentScreen = AppScreen.ADD_PARTY
@@ -831,7 +909,7 @@ fun App() {
                                 onEditParty = { party ->
                                     selectedPartyForEdit = party
                                     addPartyType =
-                                        com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType.fromInt(
+                                        PartyType.fromInt(
                                             party.roleId
                                         )
                                     addPartyScreenKey++  // Increment key to force reset
@@ -853,16 +931,16 @@ fun App() {
                                     // Set up for new transaction with selected party and type
                                     selectedPartyForTransaction = party
                                     val txType =
-                                        com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.fromValue(
+                                        AllTransactionTypes.fromValue(
                                             transactionTypeValue
                                         )
 
                                     // Navigate to the appropriate transaction screen
                                     when (txType) {
-                                        com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.SALE,
-                                        com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.PURCHASE,
-                                        com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.CUSTOMER_RETURN,
-                                        com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.VENDOR_RETURN -> {
+                                        AllTransactionTypes.SALE,
+                                        AllTransactionTypes.PURCHASE,
+                                        AllTransactionTypes.CUSTOMER_RETURN,
+                                        AllTransactionTypes.VENDOR_RETURN -> {
                                             transactionViewModel?.reset()
                                             transactionViewModel?.setTransactionType(txType!!)
                                             navigateTo(AppScreen.ADD_TRANSACTION_STEP1)
@@ -885,7 +963,7 @@ fun App() {
                                 ) {
                                     // Use key to force recomposition when navigating to edit
                                     key(addPartyScreenKey) {
-                                        com.hisaabi.hisaabi_kmp.parties.presentation.ui.AddPartyScreen(
+                                        AddPartyScreen(
                                             viewModel = koinInject(),
                                             partyType = type,
                                             partyToEdit = selectedPartyForEdit,
@@ -900,13 +978,13 @@ fun App() {
                                             },
                                             onNavigateToCategories = {
                                                 categoryType =
-                                                    com.hisaabi.hisaabi_kmp.categories.domain.model.CategoryType.CUSTOMER_CATEGORY
+                                                    CategoryType.CUSTOMER_CATEGORY
                                                 returnToAddParty = true
                                                 currentScreen = AppScreen.CATEGORIES
                                             },
                                             onNavigateToAreas = {
                                                 categoryType =
-                                                    com.hisaabi.hisaabi_kmp.categories.domain.model.CategoryType.AREA
+                                                    CategoryType.AREA
                                                 returnToAddParty = true
                                                 currentScreen = AppScreen.CATEGORIES
                                             },
@@ -919,14 +997,14 @@ fun App() {
                         }
 
                         AppScreen.CATEGORIES -> {
-                            val categoriesViewModel: com.hisaabi.hisaabi_kmp.categories.presentation.viewmodel.CategoriesViewModel =
+                            val categoriesViewModel: CategoriesViewModel =
                                 koinInject()
-                            com.hisaabi.hisaabi_kmp.categories.presentation.ui.CategoriesScreen(
+                            CategoriesScreen(
                                 viewModel = categoriesViewModel,
                                 categoryType = categoryType, // Optional - will default to CUSTOMER_CATEGORY if null
                                 onCategorySelected = { category ->
                                     // Handle category selection for AddProduct flow
-                                    if (returnToAddProduct && categoryType == com.hisaabi.hisaabi_kmp.categories.domain.model.CategoryType.PRODUCTS) {
+                                    if (returnToAddProduct && categoryType == CategoryType.PRODUCTS) {
                                         selectedCategoryForProduct = category
                                         currentScreen = AppScreen.ADD_PRODUCT
                                     }
@@ -934,10 +1012,10 @@ fun App() {
                                     else if (returnToAddParty && categoryType != null) {
                                         val type = categoryType
                                         // Store selected category based on type
-                                        if (type == com.hisaabi.hisaabi_kmp.categories.domain.model.CategoryType.CUSTOMER_CATEGORY) {
+                                        if (type == CategoryType.CUSTOMER_CATEGORY) {
                                             category?.let {
                                                 selectedCategoryForParty =
-                                                    com.hisaabi.hisaabi_kmp.database.entity.CategoryEntity(
+                                                    CategoryEntity(
                                                         id = it.id,
                                                         title = it.title,
                                                         description = it.description,
@@ -951,10 +1029,10 @@ fun App() {
                                                         updated_at = it.updatedAt
                                                     )
                                             }
-                                        } else if (type == com.hisaabi.hisaabi_kmp.categories.domain.model.CategoryType.AREA) {
+                                        } else if (type == CategoryType.AREA) {
                                             category?.let {
                                                 selectedAreaForParty =
-                                                    com.hisaabi.hisaabi_kmp.database.entity.CategoryEntity(
+                                                    CategoryEntity(
                                                         id = it.id,
                                                         title = it.title,
                                                         description = it.description,
@@ -978,7 +1056,7 @@ fun App() {
                                     val currentType =
                                         categoriesViewModel.uiState.value.selectedCategoryType
                                             ?: categoryType
-                                            ?: com.hisaabi.hisaabi_kmp.categories.domain.model.CategoryType.CUSTOMER_CATEGORY
+                                            ?: CategoryType.CUSTOMER_CATEGORY
                                     categoryType = currentType
                                     currentScreen = AppScreen.ADD_CATEGORY
                                 },
@@ -997,7 +1075,7 @@ fun App() {
 
                         AppScreen.ADD_CATEGORY -> {
                             categoryType?.let { type ->
-                                com.hisaabi.hisaabi_kmp.categories.presentation.ui.AddCategoryScreen(
+                                AddCategoryScreen(
                                     viewModel = koinInject(),
                                     categoryType = type,
                                     onNavigateBack = {
@@ -1055,7 +1133,7 @@ fun App() {
                                 }
                             }
 
-                            com.hisaabi.hisaabi_kmp.products.presentation.ui.ProductsScreen(
+                            ProductsScreen(
                                 viewModel = productsViewModel,
                                 onProductClick = { product ->
                                     // This is no longer used in selection mode - handled via onSelectionChanged
@@ -1077,7 +1155,7 @@ fun App() {
                                 onAddProductClick = { selectedType ->
                                     // Use the selected product type, or default to simple product if none selected
                                     addProductType = selectedType
-                                        ?: com.hisaabi.hisaabi_kmp.products.domain.model.ProductType.SIMPLE_PRODUCT
+                                        ?: ProductType.SIMPLE_PRODUCT
                                     selectedProductForEdit =
                                         null // Clear any selected product for editing
                                     addProductScreenKey++
@@ -1139,7 +1217,7 @@ fun App() {
                                 }
                             addProductType?.let { type ->
                                 val productToEdit = selectedProductForEdit
-                                com.hisaabi.hisaabi_kmp.products.presentation.ui.AddProductScreen(
+                                AddProductScreen(
                                     viewModel = addProductViewModel,
                                     productType = type,
                                     productToEdit = productToEdit,
@@ -1160,7 +1238,7 @@ fun App() {
                                     },
                                     onNavigateToCategories = {
                                         categoryType =
-                                            com.hisaabi.hisaabi_kmp.categories.domain.model.CategoryType.PRODUCTS
+                                            CategoryType.PRODUCTS
                                         returnToAddProduct = true
                                         currentScreen = AppScreen.CATEGORIES
                                     }
@@ -1195,7 +1273,7 @@ fun App() {
 
                         AppScreen.MANAGE_RECIPE_INGREDIENTS -> {
                             selectedRecipeProduct?.let { recipe ->
-                                com.hisaabi.hisaabi_kmp.products.presentation.ui.ManageRecipeIngredientsScreen(
+                                ManageRecipeIngredientsScreen(
                                     recipeProduct = recipe,
                                     onNavigateBack = {
                                         currentScreen = AppScreen.PRODUCTS
@@ -1205,7 +1283,7 @@ fun App() {
                         }
 
                         AppScreen.PAYMENT_METHODS -> {
-                            com.hisaabi.hisaabi_kmp.paymentmethods.presentation.ui.PaymentMethodsScreen(
+                            PaymentMethodsScreen(
                                 viewModel = koinInject(),
                                 onPaymentMethodClick = { paymentMethod ->
                                     if (selectingPaymentMethodForTransaction) {
@@ -1242,7 +1320,7 @@ fun App() {
                         }
 
                         AppScreen.ADD_PAYMENT_METHOD -> {
-                            com.hisaabi.hisaabi_kmp.paymentmethods.presentation.ui.AddPaymentMethodScreen(
+                            AddPaymentMethodScreen(
                                 viewModel = koinInject(),
                                 paymentMethodToEdit = selectedPaymentMethodForEdit,
                                 onNavigateBack = {
@@ -1256,7 +1334,7 @@ fun App() {
                         }
 
                         AppScreen.WAREHOUSES -> {
-                            com.hisaabi.hisaabi_kmp.warehouses.presentation.ui.WarehousesScreen(
+                            WarehousesScreen(
                                 viewModel = koinInject(),
                                 onWarehouseClick = { warehouse ->
                                     if (selectingWarehouseForTransaction) {
@@ -1292,7 +1370,7 @@ fun App() {
                         }
 
                         AppScreen.ADD_WAREHOUSE -> {
-                            com.hisaabi.hisaabi_kmp.warehouses.presentation.ui.AddWarehouseScreen(
+                            AddWarehouseScreen(
                                 viewModel = koinInject(),
                                 warehouseToEdit = selectedWarehouseForEdit,
                                 onNavigateBack = {
@@ -1303,7 +1381,7 @@ fun App() {
                         }
 
                         AppScreen.MY_BUSINESS -> {
-                            com.hisaabi.hisaabi_kmp.business.presentation.ui.MyBusinessScreen(
+                            MyBusinessScreen(
                                 viewModel = koinInject(),
                                 onBusinessClick = { business ->
                                     selectedBusinessForEdit = business
@@ -1319,7 +1397,7 @@ fun App() {
                         }
 
                         AppScreen.ADD_BUSINESS -> {
-                            com.hisaabi.hisaabi_kmp.business.presentation.ui.AddBusinessScreen(
+                            AddBusinessScreen(
                                 viewModel = koinInject(),
                                 businessToEdit = selectedBusinessForEdit,
                                 onNavigateBack = {
@@ -1335,7 +1413,7 @@ fun App() {
                         }
 
                         AppScreen.QUANTITY_UNITS -> {
-                            com.hisaabi.hisaabi_kmp.quantityunits.presentation.ui.QuantityUnitsScreen(
+                            QuantityUnitsScreen(
                                 viewModel = koinInject(),
                                 onUnitClick = { unit ->
                                     // Save the current selected parent slug for restoration when returning
@@ -1378,7 +1456,7 @@ fun App() {
                         }
 
                         AppScreen.ADD_QUANTITY_UNIT -> {
-                            com.hisaabi.hisaabi_kmp.quantityunits.presentation.ui.AddQuantityUnitScreen(
+                            AddQuantityUnitScreen(
                                 viewModel = koinInject(),
                                 unitToEdit = selectedUnitForEdit,
                                 isAddingParentUnitType = isAddingParentUnitType,
@@ -1391,28 +1469,28 @@ fun App() {
                         }
 
                         AppScreen.TRANSACTION_SETTINGS -> {
-                            com.hisaabi.hisaabi_kmp.settings.presentation.ui.TransactionTypeSelectionScreen(
+                            TransactionTypeSelectionScreen(
                                 viewModel = koinInject(),
                                 onNavigateBack = { navigateBack() }
                             )
                         }
 
                         AppScreen.RECEIPT_SETTINGS -> {
-                            com.hisaabi.hisaabi_kmp.settings.presentation.ui.ReceiptSettingsScreen(
+                            ReceiptSettingsScreen(
                                 viewModel = koinInject(),
                                 onNavigateBack = { navigateBack() }
                             )
                         }
 
                         AppScreen.DASHBOARD_SETTINGS -> {
-                            com.hisaabi.hisaabi_kmp.settings.presentation.ui.DashboardSettingsScreen(
+                            DashboardSettingsScreen(
                                 viewModel = koinInject(),
                                 onNavigateBack = { navigateBack() }
                             )
                         }
 
                         AppScreen.TEMPLATES -> {
-                            com.hisaabi.hisaabi_kmp.templates.presentation.ui.TemplatesScreen(
+                            TemplatesScreen(
                                 viewModel = koinInject(),
                                 onNavigateBack = { navigateBack() },
                                 onAddTemplateClick = {
@@ -1427,7 +1505,7 @@ fun App() {
                         }
 
                         AppScreen.ADD_TEMPLATE -> {
-                            com.hisaabi.hisaabi_kmp.templates.presentation.ui.AddTemplateScreen(
+                            AddTemplateScreen(
                                 viewModel = koinInject(),
                                 templateId = selectedTemplateIdForEdit,
                                 onNavigateBack = {
@@ -1438,7 +1516,7 @@ fun App() {
                         }
 
                         AppScreen.UPDATE_PROFILE -> {
-                            com.hisaabi.hisaabi_kmp.profile.presentation.ui.UpdateProfileScreen(
+                            UpdateProfileScreen(
                                 viewModel = koinInject(),
                                 onNavigateBack = { navigateBack() }
                             )
@@ -1454,7 +1532,7 @@ fun App() {
                                     }
                                 }
 
-                                com.hisaabi.hisaabi_kmp.transactions.presentation.ui.TransactionsListScreen(
+                                TransactionsListScreen(
                                     viewModel = viewModel,
                                     onNavigateBack = {
                                         selectedPartyForTransactionFilter = null
@@ -1474,45 +1552,45 @@ fun App() {
 
                                         // Route to appropriate screen based on transaction type
                                         when {
-                                            com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.isRecord(
+                                            AllTransactionTypes.isRecord(
                                                 transaction.transactionType
                                             ) -> {
                                                 navigateTo(AppScreen.ADD_RECORD)
                                             }
 
-                                            com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.isPayGetCash(
+                                            AllTransactionTypes.isPayGetCash(
                                                 transaction.transactionType
                                             ) -> {
                                                 navigateTo(AppScreen.PAY_GET_CASH)
                                             }
 
-                                            com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.isExpenseIncome(
+                                            AllTransactionTypes.isExpenseIncome(
                                                 transaction.transactionType
                                             ) -> {
                                                 navigateTo(AppScreen.ADD_EXPENSE_INCOME)
                                             }
 
-                                            com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.isPaymentTransfer(
+                                            AllTransactionTypes.isPaymentTransfer(
                                                 transaction.transactionType
                                             ) -> {
                                                 navigateTo(AppScreen.PAYMENT_TRANSFER)
                                             }
 
-                                            com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.isJournalVoucher(
+                                            AllTransactionTypes.isJournalVoucher(
                                                 transaction.transactionType
                                             ) -> {
                                                 selectedTransactionSlugForEdit = transaction.slug
                                                 navigateTo(AppScreen.JOURNAL_VOUCHER)
                                             }
 
-                                            com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.isStockAdjustment(
+                                            AllTransactionTypes.isStockAdjustment(
                                                 transaction.transactionType
                                             ) -> {
                                                 selectedTransactionSlugForEdit = transaction.slug
                                                 navigateTo(AppScreen.STOCK_ADJUSTMENT)
                                             }
 
-                                            transaction.transactionType == com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.MANUFACTURE.value -> {
+                                            transaction.transactionType == AllTransactionTypes.MANUFACTURE.value -> {
                                                 selectedTransactionSlugForEdit = transaction.slug
                                                 navigateTo(AppScreen.ADD_MANUFACTURE)
                                             }
@@ -1520,13 +1598,25 @@ fun App() {
                                             else -> {
                                                 // Regular transactions (Sale, Purchase, Returns, Orders)
                                                 transactionType =
-                                                    com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.fromValue(
+                                                    AllTransactionTypes.fromValue(
                                                         transaction.transactionType
                                                     )
                                                 navigateTo(AppScreen.ADD_TRANSACTION_STEP1)
                                             }
                                         }
-                                    }
+                                    },
+                                    onConvertToSale = TODO(),
+                                    onEditAndConvertToSale = TODO(),
+                                    onConvertToPurchase = TODO(),
+                                    onEditAndConvertToPurchase = TODO(),
+                                    onCancelAndRemove = TODO(),
+                                    onRestore = TODO(),
+                                    onClone = TODO(),
+                                    onChangeStateToPending = TODO(),
+                                    onChangeStateToInProgress = TODO(),
+                                    onChangeStateToCompleted = TODO(),
+                                    onChangeStateToCanceled = TODO(),
+                                    onOutstandingBalanceReminder = TODO()
                                 )
                             } ?: run {
                                 // If ViewModel is not available, navigate back to home
@@ -1538,7 +1628,7 @@ fun App() {
                             val transactionDetailViewModel: TransactionDetailViewModel =
                                 koinInject()
                             selectedTransactionSlug?.let { slug ->
-                                com.hisaabi.hisaabi_kmp.transactions.presentation.ui.TransactionDetailScreen(
+                                TransactionDetailScreen(
                                     viewModel = transactionDetailViewModel,
                                     transactionSlug = slug,
                                     onNavigateBack = {
@@ -1555,7 +1645,7 @@ fun App() {
                         AppScreen.BALANCE_HISTORY -> {
                             selectedPartyForBalanceHistory?.let { party ->
                                 // Fetch transactions for this party
-                                val transactionsListViewModel: com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionsListViewModel =
+                                val transactionsListViewModel: TransactionsListViewModel =
                                     koinInject()
                                 val transactionsState by transactionsListViewModel.state.collectAsState()
 
@@ -1564,7 +1654,7 @@ fun App() {
                                     transactionsListViewModel.setPartyFilter(party)
                                 }
 
-                                com.hisaabi.hisaabi_kmp.parties.presentation.ui.BalanceHistoryScreen(
+                                BalanceHistoryScreen(
                                     party = party,
                                     transactions = transactionsState.transactions,
                                     onNavigateBack = {
@@ -1579,7 +1669,7 @@ fun App() {
                         }
 
                         AppScreen.REPORTS -> {
-                            com.hisaabi.hisaabi_kmp.reports.presentation.ReportsScreen(
+                            ReportsScreen(
                                 onBackClick = {
                                     // Clear selected report type when going back
                                     selectedReportType = null
@@ -1594,7 +1684,7 @@ fun App() {
 
                         AppScreen.REPORT_FILTERS -> {
                             selectedReportType?.let { reportType ->
-                                com.hisaabi.hisaabi_kmp.reports.presentation.ReportFiltersScreen(
+                                ReportFiltersScreen(
                                     reportType = reportType,
                                     onBackClick = { navigateBack() },
                                     onFiltersChanged = { filters ->
@@ -1626,16 +1716,16 @@ fun App() {
                             when {
                                 reportState.isLoading -> {
                                     // Loading screen
-                                    androidx.compose.foundation.layout.Box(
+                                    Box(
                                         modifier = Modifier.fillMaxSize(),
-                                        contentAlignment = androidx.compose.ui.Alignment.Center
+                                        contentAlignment = Alignment.Center
                                     ) {
-                                        androidx.compose.material3.CircularProgressIndicator()
+                                        CircularProgressIndicator()
                                     }
                                 }
 
                                 reportState.reportResult != null -> {
-                                    com.hisaabi.hisaabi_kmp.reports.presentation.ReportResultScreen(
+                                    ReportResultScreen(
                                         reportResult = reportState.reportResult!!,
                                         onBackClick = {
                                             reportViewModel.clearReport()
@@ -1648,22 +1738,22 @@ fun App() {
 
                                     // Show loading indicator during PDF generation
                                     if (reportState.isGeneratingPdf) {
-                                        androidx.compose.foundation.layout.Box(
+                                        Box(
                                             modifier = Modifier
                                                 .fillMaxSize()
                                                 .background(Color.Black.copy(alpha = 0.5f)),
-                                            contentAlignment = androidx.compose.ui.Alignment.Center
+                                            contentAlignment = Alignment.Center
                                         ) {
-                                            androidx.compose.material3.Card {
-                                                androidx.compose.foundation.layout.Column(
+                                            Card {
+                                                Column(
                                                     modifier = Modifier.padding(24.dp),
-                                                    horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+                                                    horizontalAlignment = Alignment.CenterHorizontally
                                                 ) {
-                                                    androidx.compose.material3.CircularProgressIndicator()
-                                                    androidx.compose.foundation.layout.Spacer(
+                                                    CircularProgressIndicator()
+                                                    Spacer(
                                                         modifier = Modifier.height(16.dp)
                                                     )
-                                                    androidx.compose.material3.Text("Generating PDF...")
+                                                    Text("Generating PDF...")
                                                 }
                                             }
                                         }
@@ -1702,7 +1792,7 @@ fun App() {
                                     }
                                 }
 
-                                com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddRecordScreen(
+                                AddRecordScreen(
                                     viewModel = viewModel,
                                     onNavigateBack = { successMessage, transactionSlug ->
                                         isInAddRecordFlow = false
@@ -1713,7 +1803,7 @@ fun App() {
                                                 // Show receipt instead of toast
                                                 viewModel.state.value.recordType?.let { recordType ->
                                                     val transaction =
-                                                        com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction(
+                                                        Transaction(
                                                             slug = transactionSlug,
                                                             transactionType = recordType.value
                                                         )
@@ -1730,7 +1820,7 @@ fun App() {
                                         selectingPartyForTransaction = true
                                         returnToScreenAfterPartySelection = AppScreen.ADD_RECORD
                                         selectedPartySegment =
-                                            com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.CUSTOMER
+                                            PartySegment.CUSTOMER
                                         currentScreen = AppScreen.PARTIES
                                     }
                                 )
@@ -1772,7 +1862,7 @@ fun App() {
                                     }
                                 }
 
-                                com.hisaabi.hisaabi_kmp.transactions.presentation.ui.PayGetCashScreen(
+                                PayGetCashScreen(
                                     viewModel = viewModel,
                                     onNavigateBack = { successMessage, transactionSlug ->
                                         isInPayGetCashFlow = false
@@ -1785,32 +1875,32 @@ fun App() {
                                                 val transactionType =
                                                     when (currentState.partyType) {
                                                         PartyType.CUSTOMER -> {
-                                                            if (currentState.payGetCashType == com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.PayGetCashType.PAY_CASH)
-                                                                com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.PAY_TO_CUSTOMER.value
+                                                            if (currentState.payGetCashType == PayGetCashType.PAY_CASH)
+                                                                AllTransactionTypes.PAY_TO_CUSTOMER.value
                                                             else
-                                                                com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.GET_FROM_CUSTOMER.value
+                                                                AllTransactionTypes.GET_FROM_CUSTOMER.value
                                                         }
 
                                                         PartyType.VENDOR -> {
-                                                            if (currentState.payGetCashType == com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.PayGetCashType.PAY_CASH)
-                                                                com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.PAY_TO_VENDOR.value
+                                                            if (currentState.payGetCashType == PayGetCashType.PAY_CASH)
+                                                                AllTransactionTypes.PAY_TO_VENDOR.value
                                                             else
-                                                                com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.GET_FROM_VENDOR.value
+                                                                AllTransactionTypes.GET_FROM_VENDOR.value
                                                         }
 
                                                         PartyType.INVESTOR -> {
-                                                            if (currentState.payGetCashType == com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.PayGetCashType.PAY_CASH)
-                                                                com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.INVESTMENT_WITHDRAW.value
+                                                            if (currentState.payGetCashType == PayGetCashType.PAY_CASH)
+                                                                AllTransactionTypes.INVESTMENT_WITHDRAW.value
                                                             else
-                                                                com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.INVESTMENT_DEPOSIT.value
+                                                                AllTransactionTypes.INVESTMENT_DEPOSIT.value
                                                         }
 
                                                         else -> {
-                                                            com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.PAY_TO_CUSTOMER.value
+                                                            AllTransactionTypes.PAY_TO_CUSTOMER.value
                                                         }
                                                     }
                                                 val transaction =
-                                                    com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction(
+                                                    Transaction(
                                                         slug = transactionSlug,
                                                         transactionType = transactionType
                                                     )
@@ -1827,16 +1917,16 @@ fun App() {
                                         returnToScreenAfterPartySelection = AppScreen.PAY_GET_CASH
                                         selectedPartySegment = when (partyType) {
                                             PartyType.CUSTOMER ->
-                                                com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.CUSTOMER
+                                                PartySegment.CUSTOMER
 
                                             PartyType.VENDOR ->
-                                                com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.VENDOR
+                                                PartySegment.VENDOR
 
                                             PartyType.INVESTOR ->
-                                                com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.INVESTOR
+                                                PartySegment.INVESTOR
 
                                             else -> {
-                                                com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.CUSTOMER
+                                                PartySegment.CUSTOMER
                                             }
                                         }
                                         currentScreen = AppScreen.PARTIES
@@ -1898,7 +1988,7 @@ fun App() {
                                     }
                                 }
 
-                                com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddExpenseIncomeScreen(
+                                AddExpenseIncomeScreen(
                                     viewModel = viewModel,
                                     onNavigateBack = { success, transactionType, successMessage ->
                                         isInExpenseIncomeFlow = false
@@ -1919,10 +2009,10 @@ fun App() {
                                         // Set initial segment based on transaction type
                                         val state = viewModel.state.value
                                         selectedPartySegment =
-                                            if (state.transactionType == com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.EXPENSE) {
-                                                com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.EXPENSE
+                                            if (state.transactionType == AllTransactionTypes.EXPENSE) {
+                                                PartySegment.EXPENSE
                                             } else {
-                                                com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.EXTRA_INCOME
+                                                PartySegment.EXTRA_INCOME
                                             }
                                         currentScreen = AppScreen.PARTIES
                                     },
@@ -1970,7 +2060,7 @@ fun App() {
                                     }
                                 }
 
-                                com.hisaabi.hisaabi_kmp.transactions.presentation.ui.PaymentTransferScreen(
+                                PaymentTransferScreen(
                                     viewModel = viewModel,
                                     onNavigateBack = { success ->
                                         isInPaymentTransferFlow = false
@@ -2044,8 +2134,8 @@ fun App() {
                                         selectedTransactionSlugForEdit = null // Clear after loading
                                     }
                                 }
-                                
-                                com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddJournalVoucherScreen(
+
+                                AddJournalVoucherScreen(
                                     viewModel = viewModel,
                                     onNavigateBack = { success ->
                                         isInJournalVoucherFlow = false
@@ -2071,7 +2161,7 @@ fun App() {
 
                                 // Account Type Selection Dialog
                                 if (showJournalAccountTypeDialog) {
-                                    com.hisaabi.hisaabi_kmp.transactions.presentation.ui.JournalAccountTypeDialog(
+                                    JournalAccountTypeDialog(
                                         onDismiss = { showJournalAccountTypeDialog = false },
                                         onSelectExpense = {
                                             showJournalAccountTypeDialog = false
@@ -2080,7 +2170,7 @@ fun App() {
                                                 AppScreen.JOURNAL_VOUCHER
                                             isExpenseIncomePartySelection = true
                                             selectedPartySegment =
-                                                com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.EXPENSE
+                                                PartySegment.EXPENSE
                                             currentScreen = AppScreen.PARTIES
                                         },
                                         onSelectExtraIncome = {
@@ -2090,7 +2180,7 @@ fun App() {
                                                 AppScreen.JOURNAL_VOUCHER
                                             isExpenseIncomePartySelection = true
                                             selectedPartySegment =
-                                                com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.EXTRA_INCOME
+                                                PartySegment.EXTRA_INCOME
                                             currentScreen = AppScreen.PARTIES
                                         },
                                         onSelectCustomer = {
@@ -2100,7 +2190,7 @@ fun App() {
                                                 AppScreen.JOURNAL_VOUCHER
                                             isExpenseIncomePartySelection = false
                                             selectedPartySegment =
-                                                com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.CUSTOMER
+                                                PartySegment.CUSTOMER
                                             currentScreen = AppScreen.PARTIES
                                         },
                                         onSelectVendor = {
@@ -2110,7 +2200,7 @@ fun App() {
                                                 AppScreen.JOURNAL_VOUCHER
                                             isExpenseIncomePartySelection = false
                                             selectedPartySegment =
-                                                com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.VENDOR
+                                                PartySegment.VENDOR
                                             currentScreen = AppScreen.PARTIES
                                         },
                                         onSelectInvestor = {
@@ -2120,7 +2210,7 @@ fun App() {
                                                 AppScreen.JOURNAL_VOUCHER
                                             isExpenseIncomePartySelection = false
                                             selectedPartySegment =
-                                                com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.INVESTOR
+                                                PartySegment.INVESTOR
                                             currentScreen = AppScreen.PARTIES
                                         },
                                         onSelectPaymentMethod = {
@@ -2197,7 +2287,7 @@ fun App() {
                                         selectedTransactionSlugForEdit = null // Clear after loading
                                     }
                                 }
-                                com.hisaabi.hisaabi_kmp.transactions.presentation.ui.StockAdjustmentScreen(
+                                StockAdjustmentScreen(
                                     viewModel = viewModel,
                                     onNavigateBack = { success ->
                                         isInStockAdjustmentFlow = false
@@ -2255,7 +2345,7 @@ fun App() {
                                     }
                                 }
 
-                                com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddManufactureScreen(
+                                AddManufactureScreen(
                                     viewModel = viewModel,
                                     onNavigateBack = {
                                         viewModel.resetState()
@@ -2360,20 +2450,20 @@ fun App() {
                                     }
                                 }
 
-                                com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddTransactionStep1Screen(
+                                AddTransactionStep1Screen(
                                     viewModel = viewModel,
                                     onNavigateBack = { navigateBack() },
                                     onSelectParty = {
                                         // Determine party segment based on transaction type
                                         val state = viewModel.state.value
                                         selectedPartySegment =
-                                            if (com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes.isDealingWithVendor(
+                                            if (AllTransactionTypes.isDealingWithVendor(
                                                     state.transactionType.value
                                                 )
                                             ) {
-                                                com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.VENDOR
+                                                PartySegment.VENDOR
                                             } else {
-                                                com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment.CUSTOMER
+                                                PartySegment.CUSTOMER
                                             }
                                         selectingPartyForTransaction = true
                                         returnToScreenAfterPartySelection =
@@ -2413,7 +2503,7 @@ fun App() {
                                     }
                                 }
 
-                                com.hisaabi.hisaabi_kmp.transactions.presentation.ui.AddTransactionStep2Screen(
+                                AddTransactionStep2Screen(
                                     viewModel = viewModel,
                                     onNavigateBack = { navigateBack() },
                                     onSelectPaymentMethod = {
@@ -2431,7 +2521,7 @@ fun App() {
                                         if (receiptConfig.isReceiptEnabled && transactionSlug != null) {
                                             // Show receipt instead of toast
                                             val transaction =
-                                                com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction(
+                                                Transaction(
                                                     slug = transactionSlug,
                                                     transactionType = transactionType
                                                 )
@@ -2450,10 +2540,10 @@ fun App() {
                     }
 
                     // Snackbar Host at bottom for toast messages
-                    androidx.compose.material3.SnackbarHost(
+                    SnackbarHost(
                         hostState = snackbarHostState,
-                        modifier = androidx.compose.ui.Modifier
-                            .align(androidx.compose.ui.Alignment.BottomCenter)
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
                             .padding(bottom = 16.dp)
                     )
                 }

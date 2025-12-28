@@ -38,7 +38,19 @@ fun TransactionsListScreen(
     onNavigateBack: () -> Unit,
     onTransactionClick: (Transaction) -> Unit,
     onAddTransactionClick: () -> Unit,
-    onEditTransaction: (Transaction) -> Unit
+    onEditTransaction: (Transaction) -> Unit,
+    onConvertToSale: ((Transaction) -> Unit)? ,
+    onEditAndConvertToSale: ((Transaction) -> Unit)? ,
+    onConvertToPurchase: ((Transaction) -> Unit)? ,
+    onEditAndConvertToPurchase: ((Transaction) -> Unit)? ,
+    onCancelAndRemove: ((Transaction) -> Unit)? ,
+    onRestore: ((Transaction) -> Unit)? ,
+    onClone: ((Transaction) -> Unit)? ,
+    onChangeStateToPending: ((Transaction) -> Unit)? ,
+    onChangeStateToInProgress: ((Transaction) -> Unit)? ,
+    onChangeStateToCompleted: ((Transaction) -> Unit)? ,
+    onChangeStateToCanceled: ((Transaction) -> Unit)? ,
+    onOutstandingBalanceReminder: ((Transaction) -> Unit)?
 ) {
     val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -168,7 +180,19 @@ fun TransactionsListScreen(
                                 onEditClick = { onEditTransaction(transaction) },
                                 transactionDetailsCounts = state.transactionDetailsCounts,
                                 manufactureInfo = state.manufactureInfo,
-                                receiptViewModel = receiptViewModel
+                                receiptViewModel = receiptViewModel,
+                                onConvertToSale = onConvertToSale?.let { { it(transaction) } },
+                                onEditAndConvertToSale = onEditAndConvertToSale?.let { { it(transaction) } },
+                                onConvertToPurchase = onConvertToPurchase?.let { { it(transaction) } },
+                                onEditAndConvertToPurchase = onEditAndConvertToPurchase?.let { { it(transaction) } },
+                                onCancelAndRemove = onCancelAndRemove?.let { { it(transaction) } },
+                                onRestore = onRestore?.let { { it(transaction) } },
+                                onClone = onClone?.let { { it(transaction) } },
+                                onChangeStateToPending = onChangeStateToPending?.let { { it(transaction) } },
+                                onChangeStateToInProgress = onChangeStateToInProgress?.let { { it(transaction) } },
+                                onChangeStateToCompleted = onChangeStateToCompleted?.let { { it(transaction) } },
+                                onChangeStateToCanceled = onChangeStateToCanceled?.let { { it(transaction) } },
+                                onOutstandingBalanceReminder = onOutstandingBalanceReminder?.let { { it(transaction) } }
                             )
                         }
                         
@@ -392,38 +416,63 @@ private fun TransactionCard(
     onEditClick: () -> Unit,
     transactionDetailsCounts: Map<String, Int>,
     manufactureInfo: Map<String, ManufactureInfo>,
-    receiptViewModel: ReceiptViewModel
+    receiptViewModel: ReceiptViewModel,
+    onConvertToSale: (() -> Unit)? = null,
+    onEditAndConvertToSale: (() -> Unit)? = null,
+    onConvertToPurchase: (() -> Unit)? = null,
+    onEditAndConvertToPurchase: (() -> Unit)? = null,
+    onCancelAndRemove: (() -> Unit)? = null,
+    onRestore: (() -> Unit)? = null,
+    onClone: (() -> Unit)? = null,
+    onChangeStateToPending: (() -> Unit)? = null,
+    onChangeStateToInProgress: (() -> Unit)? = null,
+    onChangeStateToCompleted: (() -> Unit)? = null,
+    onChangeStateToCanceled: (() -> Unit)? = null,
+    onOutstandingBalanceReminder: (() -> Unit)? = null
 ) {
     // Determine card type based on transaction type
     when {
         AllTransactionTypes.isRecord(transaction.transactionType) -> {
-            RecordTransactionCard(transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel)
+            RecordTransactionCard(
+                transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel,
+                onRestore, onChangeStateToPending, onChangeStateToInProgress, onChangeStateToCompleted, 
+                onChangeStateToCanceled, onOutstandingBalanceReminder
+            )
         }
         AllTransactionTypes.isPayGetCash(transaction.transactionType) -> {
-            PayGetCashCard(transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel)
+            PayGetCashCard(transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel, onRestore)
         }
         AllTransactionTypes.isExpenseIncome(transaction.transactionType) -> {
-            ExpenseIncomeCard(transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel)
+            ExpenseIncomeCard(transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel, onRestore)
         }
         transaction.transactionType == AllTransactionTypes.PAYMENT_TRANSFER.value -> {
-            PaymentTransferCard(transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel)
+            PaymentTransferCard(transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel, onRestore)
         }
         transaction.transactionType == AllTransactionTypes.JOURNAL_VOUCHER.value -> {
-            JournalVoucherCard(transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel)
+            JournalVoucherCard(transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel, onRestore)
         }
         AllTransactionTypes.isStockAdjustment(transaction.transactionType) -> {
-            StockAdjustmentCard(transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel, transactionDetailsCounts)
+            StockAdjustmentCard(transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel, transactionDetailsCounts, onRestore)
         }
         transaction.transactionType == AllTransactionTypes.MANUFACTURE.value -> {
             val info = manufactureInfo[transaction.slug]
-            ManufactureCard(transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel, info)
+            ManufactureCard(transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel, info, onRestore)
         }
         AllTransactionTypes.isOrder(transaction.transactionType) || transaction.transactionType == AllTransactionTypes.QUOTATION.value -> {
-            OrderQuotationCard(transaction, onClick, onDeleteClick, onEditClick, receiptViewModel, transactionDetailsCounts,currencySymbol)
+            OrderQuotationCard(
+                transaction, onClick, onDeleteClick, onEditClick, receiptViewModel, 
+                transactionDetailsCounts, currencySymbol,
+                onConvertToSale, onEditAndConvertToSale, 
+                onConvertToPurchase, onEditAndConvertToPurchase,
+                onCancelAndRemove, onRestore, onClone
+            )
         }
         else -> {
             // Basic transaction card (Sale, Purchase, Returns)
-            BasicTransactionCard(transaction, onClick, onDeleteClick, onEditClick, receiptViewModel, transactionDetailsCounts,currencySymbol)
+            BasicTransactionCard(
+                transaction, onClick, onDeleteClick, onEditClick, receiptViewModel, 
+                transactionDetailsCounts, currencySymbol, onRestore, onClone
+            )
         }
     }
 }
@@ -714,49 +763,278 @@ private fun PartyInfo(transaction: Transaction) {
 
 @Composable
 private fun TransactionOptionsMenu(
+    transaction: Transaction,
     expanded: Boolean,
     onDismiss: () -> Unit,
     onClick: () -> Unit,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
-    onReceiptClick: () -> Unit
+    onReceiptClick: () -> Unit,
+    onConvertToSale: (() -> Unit)? = null,
+    onEditAndConvertToSale: (() -> Unit)? = null,
+    onConvertToPurchase: (() -> Unit)? = null,
+    onEditAndConvertToPurchase: (() -> Unit)? = null,
+    onCancelAndRemove: (() -> Unit)? = null,
+    onRestore: (() -> Unit)? = null,
+    onClone: (() -> Unit)? = null,
+    onChangeStateToPending: (() -> Unit)? = null,
+    onChangeStateToInProgress: (() -> Unit)? = null,
+    onChangeStateToCompleted: (() -> Unit)? = null,
+    onChangeStateToCanceled: (() -> Unit)? = null,
+    onOutstandingBalanceReminder: (() -> Unit)? = null
 ) {
+    val isDeleted = !transaction.isActive
+    val transactionType = AllTransactionTypes.fromValue(transaction.transactionType)
+    val isRecordType = AllTransactionTypes.isRecord(transaction.transactionType)
+    val isCashTransfer = transaction.transactionType == AllTransactionTypes.PAYMENT_TRANSFER.value
+    val isJournal = transaction.transactionType == AllTransactionTypes.JOURNAL_VOUCHER.value
+    val currentState = TransactionState.fromValue(transaction.stateId)
+    
+    // Determine if we should show Generate Receipt and Clone options
+    val showGenerateReceipt = !isDeleted && !isCashTransfer && !isJournal && !isRecordType
+    val showClone = !isDeleted && !isCashTransfer && !isJournal && !isRecordType
+    
     DropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismiss
     ) {
-        DropdownMenuItem(
-            text = { Text("View Details") },
-            onClick = {
-                onDismiss()
-                onClick()
-            },
-            leadingIcon = { Icon(Icons.Default.Visibility, null) }
-        )
-        DropdownMenuItem(
-            text = { Text("Edit") },
-            onClick = {
-                onDismiss()
-                onEditClick()
-            },
-            leadingIcon = { Icon(Icons.Default.Edit, null) }
-        )
-        DropdownMenuItem(
-            text = { Text("Delete") },
-            onClick = {
-                onDismiss()
-                onDeleteClick()
-            },
-            leadingIcon = { Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error) }
-        )
-        DropdownMenuItem(
-            text = { Text("Generate Receipt") },
-            onClick = {
-                onDismiss()
-                onReceiptClick()
-            },
-            leadingIcon = { Icon(Icons.Default.Receipt, null) }
-        )
+        // For deleted transactions
+        if (isDeleted) {
+            onRestore?.let {
+                DropdownMenuItem(
+                    text = { Text("Restore") },
+                    onClick = {
+                        onDismiss()
+                        it()
+                    },
+                    leadingIcon = { Icon(Icons.Default.Undo, null) }
+                )
+            }
+            DropdownMenuItem(
+                text = { Text("View Details") },
+                onClick = {
+                    onDismiss()
+                    onClick()
+                },
+                leadingIcon = { Icon(Icons.Default.Visibility, null) }
+            )
+            if (showClone) {
+                onClone?.let {
+                    DropdownMenuItem(
+                        text = { Text("Clone Transaction") },
+                        onClick = {
+                            onDismiss()
+                            it()
+                        },
+                        leadingIcon = { Icon(Icons.Default.ContentCopy, null) }
+                    )
+                }
+            }
+        } else {
+            // For active transactions
+            
+            // Generate Receipt (if applicable)
+            if (showGenerateReceipt) {
+                DropdownMenuItem(
+                    text = { Text("Generate Receipt") },
+                    onClick = {
+                        onDismiss()
+                        onReceiptClick()
+                    },
+                    leadingIcon = { Icon(Icons.Default.Receipt, null) }
+                )
+            }
+            
+            // View Details
+            DropdownMenuItem(
+                text = { Text("View Details") },
+                onClick = {
+                    onDismiss()
+                    onClick()
+                },
+                leadingIcon = { Icon(Icons.Default.Visibility, null) }
+            )
+            
+            // Edit
+            DropdownMenuItem(
+                text = { Text("Edit") },
+                onClick = {
+                    onDismiss()
+                    onEditClick()
+                },
+                leadingIcon = { Icon(Icons.Default.Edit, null) }
+            )
+            
+            // Delete
+            DropdownMenuItem(
+                text = { Text("Delete") },
+                onClick = {
+                    onDismiss()
+                    onDeleteClick()
+                },
+                leadingIcon = { Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error) }
+            )
+            
+            // Clone Transaction (if applicable)
+            if (showClone) {
+                onClone?.let {
+                    DropdownMenuItem(
+                        text = { Text("Clone Transaction") },
+                        onClick = {
+                            onDismiss()
+                            it()
+                        },
+                        leadingIcon = { Icon(Icons.Default.ContentCopy, null) }
+                    )
+                }
+            }
+            
+            // Transaction type-specific options
+            when (transactionType) {
+                AllTransactionTypes.SALE_ORDER, AllTransactionTypes.QUOTATION -> {
+                    HorizontalDivider()
+                    onConvertToSale?.let {
+                        DropdownMenuItem(
+                            text = { Text("Convert to Sale") },
+                            onClick = {
+                                onDismiss()
+                                it()
+                            },
+                            leadingIcon = { Icon(Icons.Default.SwapHoriz, null) }
+                        )
+                    }
+                    onEditAndConvertToSale?.let {
+                        DropdownMenuItem(
+                            text = { Text("Edit and Convert to Sale") },
+                            onClick = {
+                                onDismiss()
+                                it()
+                            },
+                            leadingIcon = { Icon(Icons.Default.Edit, null) }
+                        )
+                    }
+                    onCancelAndRemove?.let {
+                        DropdownMenuItem(
+                            text = { Text("Cancel and Remove") },
+                            onClick = {
+                                onDismiss()
+                                it()
+                            },
+                            leadingIcon = { Icon(Icons.Default.Close, null, tint = MaterialTheme.colorScheme.error) }
+                        )
+                    }
+                }
+                
+                AllTransactionTypes.PURCHASE_ORDER -> {
+                    HorizontalDivider()
+                    onConvertToPurchase?.let {
+                        DropdownMenuItem(
+                            text = { Text("Convert to Purchase") },
+                            onClick = {
+                                onDismiss()
+                                it()
+                            },
+                            leadingIcon = { Icon(Icons.Default.SwapHoriz, null) }
+                        )
+                    }
+                    onEditAndConvertToPurchase?.let {
+                        DropdownMenuItem(
+                            text = { Text("Edit and Convert to Purchase") },
+                            onClick = {
+                                onDismiss()
+                                it()
+                            },
+                            leadingIcon = { Icon(Icons.Default.Edit, null) }
+                        )
+                    }
+                    onCancelAndRemove?.let {
+                        DropdownMenuItem(
+                            text = { Text("Cancel and Remove") },
+                            onClick = {
+                                onDismiss()
+                                it()
+                            },
+                            leadingIcon = { Icon(Icons.Default.Close, null, tint = MaterialTheme.colorScheme.error) }
+                        )
+                    }
+                }
+                
+                AllTransactionTypes.MEETING, AllTransactionTypes.TASK, AllTransactionTypes.CASH_REMINDER -> {
+                    HorizontalDivider()
+                    
+                    // Outstanding Balance Reminder (only for CASH_REMINDER)
+                    if (transactionType == AllTransactionTypes.CASH_REMINDER) {
+                        onOutstandingBalanceReminder?.let {
+                            DropdownMenuItem(
+                                text = { Text("Outstanding Balance Reminder") },
+                                onClick = {
+                                    onDismiss()
+                                    it()
+                                },
+                                leadingIcon = { Icon(Icons.Default.Notifications, null) }
+                            )
+                        }
+                    }
+                    
+                    // State management options (only show if not already in that state)
+                    if (currentState != TransactionState.PENDING) {
+                        onChangeStateToPending?.let {
+                            DropdownMenuItem(
+                                text = { Text("Convert to Pending") },
+                                onClick = {
+                                    onDismiss()
+                                    it()
+                                },
+                                leadingIcon = { Icon(Icons.Default.Schedule, null) }
+                            )
+                        }
+                    }
+                    
+                    if (currentState != TransactionState.IN_PROGRESS) {
+                        onChangeStateToInProgress?.let {
+                            DropdownMenuItem(
+                                text = { Text("Convert to In Progress") },
+                                onClick = {
+                                    onDismiss()
+                                    it()
+                                },
+                                leadingIcon = { Icon(Icons.Default.PlayArrow, null) }
+                            )
+                        }
+                    }
+                    
+                    if (currentState != TransactionState.COMPLETED) {
+                        onChangeStateToCompleted?.let {
+                            DropdownMenuItem(
+                                text = { Text("Convert to Completed") },
+                                onClick = {
+                                    onDismiss()
+                                    it()
+                                },
+                                leadingIcon = { Icon(Icons.Default.CheckCircle, null) }
+                            )
+                        }
+                    }
+                    
+                    if (currentState != TransactionState.CANCELLED) {
+                        onChangeStateToCanceled?.let {
+                            DropdownMenuItem(
+                                text = { Text("Convert to Cancelled") },
+                                onClick = {
+                                    onDismiss()
+                                    it()
+                                },
+                                leadingIcon = { Icon(Icons.Default.Close, null) }
+                            )
+                        }
+                    }
+                }
+                
+                else -> {
+                    // No additional options for other types
+                }
+            }
+        }
     }
 }
 
@@ -770,7 +1048,9 @@ private fun BasicTransactionCard(
     onEditClick: () -> Unit,
     receiptViewModel: ReceiptViewModel,
     transactionDetailsCounts: Map<String, Int>,
-    currencySymbol:String
+    currencySymbol: String,
+    onRestore: (() -> Unit)? = null,
+    onClone: (() -> Unit)? = null
 ) {
     var showOptions by remember { mutableStateOf(false) }
     
@@ -876,12 +1156,15 @@ private fun BasicTransactionCard(
         }
         
         TransactionOptionsMenu(
+            transaction = transaction,
             expanded = showOptions,
             onDismiss = { showOptions = false },
             onClick = onClick,
             onEditClick = onEditClick,
             onDeleteClick = onDeleteClick,
-            onReceiptClick = { receiptViewModel.showPreview(transaction) }
+            onReceiptClick = { receiptViewModel.showPreview(transaction) },
+            onRestore = onRestore,
+            onClone = onClone
         )
     }
 }
@@ -895,7 +1178,8 @@ private fun PayGetCashCard(
     onClick: () -> Unit,
     onDeleteClick: () -> Unit,
     onEditClick: () -> Unit,
-    receiptViewModel: ReceiptViewModel
+    receiptViewModel: ReceiptViewModel,
+    onRestore: (() -> Unit)? = null
 ) {
     var showOptions by remember { mutableStateOf(false) }
     
@@ -989,12 +1273,14 @@ private fun PayGetCashCard(
         }
         
         TransactionOptionsMenu(
+            transaction = transaction,
             expanded = showOptions,
             onDismiss = { showOptions = false },
             onClick = onClick,
             onEditClick = onEditClick,
             onDeleteClick = onDeleteClick,
-            onReceiptClick = { receiptViewModel.showPreview(transaction) }
+            onReceiptClick = { receiptViewModel.showPreview(transaction) },
+            onRestore = onRestore
         )
     }
 }
@@ -1008,7 +1294,8 @@ private fun ExpenseIncomeCard(
     onClick: () -> Unit,
     onDeleteClick: () -> Unit,
     onEditClick: () -> Unit,
-    receiptViewModel: ReceiptViewModel
+    receiptViewModel: ReceiptViewModel,
+    onRestore: (() -> Unit)? = null
 ) {
     var showOptions by remember { mutableStateOf(false) }
     
@@ -1085,12 +1372,14 @@ private fun ExpenseIncomeCard(
         }
         
         TransactionOptionsMenu(
+            transaction = transaction,
             expanded = showOptions,
             onDismiss = { showOptions = false },
             onClick = onClick,
             onEditClick = onEditClick,
             onDeleteClick = onDeleteClick,
-            onReceiptClick = { receiptViewModel.showPreview(transaction) }
+            onReceiptClick = { receiptViewModel.showPreview(transaction) },
+            onRestore = onRestore
         )
     }
 }
@@ -1104,7 +1393,8 @@ private fun PaymentTransferCard(
     onClick: () -> Unit,
     onDeleteClick: () -> Unit,
     onEditClick: () -> Unit,
-    receiptViewModel: ReceiptViewModel
+    receiptViewModel: ReceiptViewModel,
+    onRestore: (() -> Unit)? = null
 ) {
     var showOptions by remember { mutableStateOf(false) }
     
@@ -1200,12 +1490,14 @@ private fun PaymentTransferCard(
         }
         
         TransactionOptionsMenu(
+            transaction = transaction,
             expanded = showOptions,
             onDismiss = { showOptions = false },
             onClick = onClick,
             onEditClick = onEditClick,
             onDeleteClick = onDeleteClick,
-            onReceiptClick = { receiptViewModel.showPreview(transaction) }
+            onReceiptClick = { receiptViewModel.showPreview(transaction) },
+            onRestore = onRestore
         )
     }
 }
@@ -1219,7 +1511,8 @@ private fun JournalVoucherCard(
     onClick: () -> Unit,
     onDeleteClick: () -> Unit,
     onEditClick: () -> Unit,
-    receiptViewModel: ReceiptViewModel
+    receiptViewModel: ReceiptViewModel,
+    onRestore: (() -> Unit)? = null
 ) {
     var showOptions by remember { mutableStateOf(false) }
     
@@ -1294,12 +1587,14 @@ private fun JournalVoucherCard(
         }
         
         TransactionOptionsMenu(
+            transaction = transaction,
             expanded = showOptions,
             onDismiss = { showOptions = false },
             onClick = onClick,
             onEditClick = onEditClick,
             onDeleteClick = onDeleteClick,
-            onReceiptClick = { receiptViewModel.showPreview(transaction) }
+            onReceiptClick = { receiptViewModel.showPreview(transaction) },
+            onRestore = onRestore
         )
     }
 }
@@ -1314,7 +1609,8 @@ private fun StockAdjustmentCard(
     onDeleteClick: () -> Unit,
     onEditClick: () -> Unit,
     receiptViewModel: ReceiptViewModel,
-    transactionDetailsCounts: Map<String, Int>
+    transactionDetailsCounts: Map<String, Int>,
+    onRestore: (() -> Unit)? = null
 ) {
     var showOptions by remember { mutableStateOf(false) }
     
@@ -1438,12 +1734,14 @@ private fun StockAdjustmentCard(
         }
         
         TransactionOptionsMenu(
+            transaction = transaction,
             expanded = showOptions,
             onDismiss = { showOptions = false },
             onClick = onClick,
             onEditClick = onEditClick,
             onDeleteClick = onDeleteClick,
-            onReceiptClick = { receiptViewModel.showPreview(transaction) }
+            onReceiptClick = { receiptViewModel.showPreview(transaction) },
+            onRestore = onRestore
         )
     }
 }
@@ -1458,7 +1756,8 @@ private fun ManufactureCard(
     onDeleteClick: () -> Unit,
     onEditClick: () -> Unit,
     receiptViewModel: ReceiptViewModel,
-    manufactureInfo: ManufactureInfo?
+    manufactureInfo: ManufactureInfo?,
+    onRestore: (() -> Unit)? = null
 ) {
     var showOptions by remember { mutableStateOf(false) }
     
@@ -1541,6 +1840,7 @@ private fun ManufactureCard(
         }
         
         TransactionOptionsMenu(
+            transaction = transaction,
             expanded = showOptions,
             onDismiss = { showOptions = false },
             onClick = onClick,
@@ -1561,7 +1861,14 @@ private fun OrderQuotationCard(
     onEditClick: () -> Unit,
     receiptViewModel: ReceiptViewModel,
     transactionDetailsCounts: Map<String, Int>,
-    currencySymbol:String
+    currencySymbol: String,
+    onConvertToSale: (() -> Unit)? = null,
+    onEditAndConvertToSale: (() -> Unit)? = null,
+    onConvertToPurchase: (() -> Unit)? = null,
+    onEditAndConvertToPurchase: (() -> Unit)? = null,
+    onCancelAndRemove: (() -> Unit)? = null,
+    onRestore: (() -> Unit)? = null,
+    onClone: (() -> Unit)? = null
 ) {
     var showOptions by remember { mutableStateOf(false) }
     
@@ -1632,12 +1939,20 @@ private fun OrderQuotationCard(
         }
         
         TransactionOptionsMenu(
+            transaction = transaction,
             expanded = showOptions,
             onDismiss = { showOptions = false },
             onClick = onClick,
             onEditClick = onEditClick,
             onDeleteClick = onDeleteClick,
-            onReceiptClick = { receiptViewModel.showPreview(transaction) }
+            onReceiptClick = { receiptViewModel.showPreview(transaction) },
+            onConvertToSale = onConvertToSale,
+            onEditAndConvertToSale = onEditAndConvertToSale,
+            onConvertToPurchase = onConvertToPurchase,
+            onEditAndConvertToPurchase = onEditAndConvertToPurchase,
+            onCancelAndRemove = onCancelAndRemove,
+            onRestore = onRestore,
+            onClone = onClone
         )
     }
 }
@@ -1651,7 +1966,13 @@ private fun RecordTransactionCard(
     onClick: () -> Unit,
     onDeleteClick: () -> Unit,
     onEditClick: () -> Unit,
-    receiptViewModel: ReceiptViewModel
+    receiptViewModel: ReceiptViewModel,
+    onRestore: (() -> Unit)? = null,
+    onChangeStateToPending: (() -> Unit)? = null,
+    onChangeStateToInProgress: (() -> Unit)? = null,
+    onChangeStateToCompleted: (() -> Unit)? = null,
+    onChangeStateToCanceled: (() -> Unit)? = null,
+    onOutstandingBalanceReminder: (() -> Unit)? = null
 ) {
     var showOptions by remember { mutableStateOf(false) }
     
@@ -1742,12 +2063,19 @@ private fun RecordTransactionCard(
         }
         
         TransactionOptionsMenu(
+            transaction = transaction,
             expanded = showOptions,
             onDismiss = { showOptions = false },
             onClick = onClick,
             onEditClick = onEditClick,
             onDeleteClick = onDeleteClick,
-            onReceiptClick = { receiptViewModel.showPreview(transaction) }
+            onReceiptClick = { receiptViewModel.showPreview(transaction) },
+            onRestore = onRestore,
+            onChangeStateToPending = onChangeStateToPending,
+            onChangeStateToInProgress = onChangeStateToInProgress,
+            onChangeStateToCompleted = onChangeStateToCompleted,
+            onChangeStateToCanceled = onChangeStateToCanceled,
+            onOutstandingBalanceReminder = onOutstandingBalanceReminder
         )
     }
 }
