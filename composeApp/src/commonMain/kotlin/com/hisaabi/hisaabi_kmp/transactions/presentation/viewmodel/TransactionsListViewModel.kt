@@ -6,6 +6,7 @@ import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionSortOption
+import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionState
 import com.hisaabi.hisaabi_kmp.transactions.domain.usecase.TransactionUseCases
 import com.hisaabi.hisaabi_kmp.utils.currentTimeMillis
 import kotlinx.coroutines.flow.*
@@ -408,20 +409,60 @@ class TransactionsListViewModel(
     
     // Clone transaction
     fun cloneTransaction(transaction: Transaction, cloneAsType: AllTransactionTypes?, onNavigateToEdit: (Transaction) -> Unit) {
-        val clonedTransaction = transaction.copy(
-            slug = null, // New transaction will get a new slug
-            id = 0,
-            timestamp = currentTimeMillis().toString(),
-            statusId = 0, // Active
-            transactionDetails = transaction.transactionDetails.map { detail ->
-                detail.copy(
+        viewModelScope.launch {
+            try {
+                // Always load full transaction with details to ensure we have all data
+                val fullTransaction = if (transaction.transactionDetails.isEmpty() && transaction.slug != null) {
+                    transactionsRepository.getTransactionWithDetails(transaction.slug!!)
+                        ?: transaction
+                } else {
+                    transaction
+                }
+                
+                // Create cloned transaction with all data preserved
+                val clonedTransaction = fullTransaction.copy(
+                    slug = null, // New transaction will get a new slug
                     id = 0,
-                    slug = null
+                    timestamp = currentTimeMillis().toString(),
+                    statusId = 0, // Active
+                    totalPaid = 0.0, // Reset payment for cloned transaction
+                    transactionDetails = fullTransaction.transactionDetails.map { detail ->
+                        detail.copy(
+                            id = 0,
+                            slug = null,
+                            transactionSlug = null
+                        )
+                    },
+                    transactionType = cloneAsType?.value ?: fullTransaction.transactionType,
+                    parentSlug = null, // Clear parent slug for cloned transaction
+                    remindAtMilliseconds = 0, // Clear reminder
+                    stateId = TransactionState.PENDING.value // Reset to pending state
                 )
-            },
-            transactionType = cloneAsType?.value ?: transaction.transactionType
-        )
-        onNavigateToEdit(clonedTransaction)
+                
+                onNavigateToEdit(clonedTransaction)
+            } catch (e: Exception) {
+                // If loading fails, still try to clone with available data
+                val clonedTransaction = transaction.copy(
+                    slug = null,
+                    id = 0,
+                    timestamp = currentTimeMillis().toString(),
+                    statusId = 0,
+                    totalPaid = 0.0,
+                    transactionDetails = transaction.transactionDetails.map { detail ->
+                        detail.copy(
+                            id = 0,
+                            slug = null,
+                            transactionSlug = null
+                        )
+                    },
+                    transactionType = cloneAsType?.value ?: transaction.transactionType,
+                    parentSlug = null,
+                    remindAtMilliseconds = 0,
+                    stateId = TransactionState.PENDING.value
+                )
+                onNavigateToEdit(clonedTransaction)
+            }
+        }
     }
     
     // Update transaction state

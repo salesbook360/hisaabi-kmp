@@ -484,6 +484,7 @@ fun App() {
             }
             var selectedTransactionSlug by remember { mutableStateOf<String?>(null) }
             var selectedTransactionSlugForEdit by remember { mutableStateOf<String?>(null) }
+            var clonedTransactionForEdit by remember { mutableStateOf<Transaction?>(null) }
             
             // Transaction action dialogs state
             var showDeleteConfirmationDialog by remember { mutableStateOf<Transaction?>(null) }
@@ -1860,7 +1861,8 @@ fun App() {
                                                         transaction = transaction,
                                                         cloneAsType = cloneType
                                                     ) { clonedTransaction ->
-                                                        selectedTransactionSlugForEdit = clonedTransaction.slug
+                                                        // Store cloned transaction to initialize ViewModel when screen loads
+                                                        clonedTransactionForEdit = clonedTransaction
                                                         transactionType = cloneType
                                                         showCloneDialog = null
                                                         navigateTo(AppScreen.ADD_TRANSACTION_STEP1)
@@ -2639,6 +2641,14 @@ fun App() {
                                     selectedTransactionSlugForEdit?.let { slug ->
                                         viewModel.loadTransactionForEdit(slug, transactionType)
                                         selectedTransactionSlugForEdit = null // Clear after loading
+                                    }
+                                }
+                                
+                                // Initialize ViewModel with cloned transaction if provided
+                                LaunchedEffect(clonedTransactionForEdit) {
+                                    clonedTransactionForEdit?.let { clonedTransaction ->
+                                        viewModel.initializeFromTransaction(clonedTransaction)
+                                        clonedTransactionForEdit = null // Clear after loading
                                     }
                                 }
 

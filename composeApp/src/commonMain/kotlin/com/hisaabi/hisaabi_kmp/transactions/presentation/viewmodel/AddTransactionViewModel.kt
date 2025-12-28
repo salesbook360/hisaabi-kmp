@@ -558,6 +558,136 @@ class AddTransactionViewModel(
         }
     }
     
+    // Initialize ViewModel from Transaction object (for cloning)
+    fun initializeFromTransaction(transaction: Transaction) {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true, error = null) }
+            
+            try {
+                val transactionType = AllTransactionTypes.fromValue(transaction.transactionType) 
+                    ?: AllTransactionTypes.SALE
+                
+                // Convert transaction details to items
+                val detailItems = transaction.transactionDetails.map { detail ->
+                    // Convert quantity from base unit back to selected unit by dividing with conversion factor
+                    val conversionFactor = detail.quantityUnit?.conversionFactor ?: 1.0
+                    val quantityInSelectedUnit = if (conversionFactor != 0.0) {
+                        detail.quantity / conversionFactor
+                    } else {
+                        detail.quantity
+                    }
+                    
+                    // Convert flat values back to percent if the type is PERCENT for display
+                    val detailDiscountType = FlatOrPercent.fromValue(detail.discountType) ?: FlatOrPercent.FLAT
+                    val detailTaxType = FlatOrPercent.fromValue(detail.taxType) ?: FlatOrPercent.FLAT
+                    
+                    val detailSubtotal = detail.price * quantityInSelectedUnit
+                    
+                    val detailDiscountForEdit = if (detailDiscountType == FlatOrPercent.PERCENT) {
+                        if (detailSubtotal != 0.0) {
+                            TransactionCalculator.calculatePercentFromFlat(detail.flatDiscount, detailSubtotal)
+                        } else {
+                            detail.flatDiscount
+                        }
+                    } else {
+                        detail.flatDiscount
+                    }
+                    
+                    val detailTaxForEdit = if (detailTaxType == FlatOrPercent.PERCENT) {
+                        if (detailSubtotal != 0.0) {
+                            TransactionCalculator.calculatePercentFromFlat(detail.flatTax, detailSubtotal)
+                        } else {
+                            detail.flatTax
+                        }
+                    } else {
+                        detail.flatTax
+                    }
+                    
+                    TransactionDetailItem(
+                        product = detail.product ?: throw IllegalStateException("Product not loaded"),
+                        quantity = quantityInSelectedUnit,
+                        price = detail.price,
+                        flatDiscount = detailDiscountForEdit,
+                        discountType = detailDiscountType,
+                        flatTax = detailTaxForEdit,
+                        taxType = detailTaxType,
+                        description = detail.description ?: "",
+                        selectedUnit = detail.quantityUnit
+                    )
+                }
+                
+                // Parse timestamp
+                val timestamp = transaction.timestamp?.toLongOrNull() ?: currentTimeMillis()
+                
+                // For cloned transactions, use current party balance as previous balance
+                val previousBalance = transaction.party?.balance ?: 0.0
+                
+                // Convert flat values back to percent if the type is PERCENT for display
+                val discountType = FlatOrPercent.fromValue(transaction.discountTypeId) ?: FlatOrPercent.FLAT
+                val taxType = FlatOrPercent.fromValue(transaction.taxTypeId) ?: FlatOrPercent.FLAT
+                
+                val discountForEdit = if (discountType == FlatOrPercent.PERCENT) {
+                    val subtotal = transaction.calculateSubtotal()
+                    val baseAmount = subtotal + transaction.additionalCharges
+                    if (baseAmount != 0.0) {
+                        TransactionCalculator.calculatePercentFromFlat(transaction.flatDiscount, baseAmount)
+                    } else {
+                        transaction.flatDiscount
+                    }
+                } else {
+                    transaction.flatDiscount
+                }
+                
+                val taxForEdit = if (taxType == FlatOrPercent.PERCENT) {
+                    val subtotal = transaction.calculateSubtotal()
+                    val baseAmount = subtotal + transaction.additionalCharges
+                    if (baseAmount != 0.0) {
+                        TransactionCalculator.calculatePercentFromFlat(transaction.flatTax, baseAmount)
+                    } else {
+                        transaction.flatTax
+                    }
+                } else {
+                    transaction.flatTax
+                }
+                
+                // Set state with transaction data
+                _state.update { 
+                    it.copy(
+                        transactionType = transactionType,
+                        selectedParty = transaction.party,
+                        selectedWarehouse = transaction.warehouseFrom,
+                        transactionDetails = detailItems,
+                        priceType = PriceType.fromValue(transaction.priceTypeId) ?: PriceType.RETAIL,
+                        transactionDateTime = timestamp,
+                        previousBalance = previousBalance,
+                        additionalCharges = transaction.additionalCharges,
+                        additionalChargesDesc = transaction.additionalChargesDesc ?: "",
+                        flatDiscount = discountForEdit,
+                        discountType = discountType,
+                        flatTax = taxForEdit,
+                        taxType = taxType,
+                        paidNow = transaction.totalPaid, // For cloned transactions, this will be 0.0
+                        remarks = transaction.description ?: "",
+                        shippingAddress = transaction.shippingAddress ?: "",
+                        selectedPaymentMethod = transaction.paymentMethodTo,
+                        editingTransactionSlug = null, // No slug for new cloned transaction
+                        isLoading = false
+                    )
+                }
+                
+                // Recalculate totals
+                updateTotalBillState()
+            } catch (e: Exception) {
+                _state.update { 
+                    it.copy(
+                        isLoading = false,
+                        error = e.message ?: "Failed to initialize transaction"
+                    )
+                }
+            }
+        }
+    }
+    
     // Save Transaction
     fun saveTransaction() {
         val currentState = _state.value
