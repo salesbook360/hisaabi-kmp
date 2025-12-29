@@ -27,6 +27,8 @@ import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionDe
 import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
 import com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse
 import com.hisaabi.hisaabi_kmp.utils.format
+import com.hisaabi.hisaabi_kmp.utils.SimpleDateTimePickerDialog
+import com.hisaabi.hisaabi_kmp.utils.formatDateTime
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -42,6 +44,7 @@ fun AddTransactionStep1Screen(
 ) {
     val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    var showDateTimePicker by remember { mutableStateOf(false) }
     
     // Currency
     val preferencesManager: PreferencesManager = koinInject()
@@ -156,6 +159,15 @@ fun AddTransactionStep1Screen(
                 )
             }
 
+            // Date & Time
+            item {
+                DateTimeField(
+                    label = "Transaction Date & Time",
+                    timestamp = state.transactionDateTime,
+                    onDateTimeClick = { showDateTimePicker = true }
+                )
+            }
+
             // Products Header
             item {
                 val canAddProducts = viewModel.isWarehouseSelectedOrNotRequired()
@@ -257,6 +269,18 @@ fun AddTransactionStep1Screen(
                 Spacer(Modifier.height(80.dp))
             }
         }
+    }
+    
+    // Date Time Picker Dialog
+    if (showDateTimePicker) {
+        SimpleDateTimePickerDialog(
+            initialTimestamp = state.transactionDateTime,
+            onConfirm = { timestamp ->
+                viewModel.setTransactionDateTime(timestamp)
+                showDateTimePicker = false
+            },
+            onDismiss = { showDateTimePicker = false }
+        )
     }
 }
 
@@ -449,6 +473,35 @@ private fun WarehouseSelectionCard(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun DateTimeField(
+    label: String,
+    timestamp: Long,
+    onDateTimeClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onDateTimeClick)
+    ) {
+        OutlinedTextField(
+            value = formatDateTime(timestamp),
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(label) },
+            modifier = Modifier.fillMaxWidth(),
+            leadingIcon = { Icon(Icons.Default.CalendarToday, "Date") },
+            enabled = false,
+            colors = OutlinedTextFieldDefaults.colors(
+                disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                disabledBorderColor = MaterialTheme.colorScheme.outline,
+                disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        )
     }
 }
 

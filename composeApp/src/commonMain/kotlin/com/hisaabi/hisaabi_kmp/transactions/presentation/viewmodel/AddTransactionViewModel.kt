@@ -152,6 +152,10 @@ class AddTransactionViewModel(
         updateProductPrices(priceType)
     }
     
+    fun setTransactionDateTime(timestamp: Long) {
+        _state.update { it.copy(transactionDateTime = timestamp) }
+    }
+    
     fun addProduct(product: Product, unit: QuantityUnit?, quantity: Double = 1.0) {
         val price = getProductPrice(product, _state.value.priceType)
         val newDetail = TransactionDetailItem(
