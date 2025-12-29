@@ -35,6 +35,98 @@ class TransactionLocalDataSource(
         return transactionDao.getTransactionsByBusiness(businessSlug)
     }
     
+    // Paginated queries with all filters applied at DB level
+    suspend fun getTransactionsPaginated(
+        businessSlug: String,
+        partySlug: String?,
+        transactionTypes: List<Int>?,
+        startDate: Long?,
+        endDate: Long?,
+        searchQuery: String,
+        idOrSlugFilter: String,
+        areaSlug: String?,
+        categorySlug: String?,
+        limit: Int,
+        offset: Int
+    ): List<InventoryTransactionEntity> {
+        // filterByTypes: 1 = apply filter, -1 = skip filter (using -1 to avoid conflict with SALE type = 0)
+        val filterByTypes = if (transactionTypes.isNullOrEmpty()) -1 else 1
+        return transactionDao.getTransactionsPaginated(
+            businessSlug = businessSlug,
+            partySlug = partySlug,
+            filterByTypes = filterByTypes,
+            transactionTypes = transactionTypes ?: emptyList(),
+            startDate = startDate,
+            endDate = endDate,
+            searchQuery = searchQuery,
+            idOrSlugFilter = idOrSlugFilter,
+            areaSlug = areaSlug,
+            categorySlug = categorySlug,
+            limit = limit,
+            offset = offset
+        )
+    }
+    
+    suspend fun getTransactionsPaginatedByEntryDate(
+        businessSlug: String,
+        partySlug: String?,
+        transactionTypes: List<Int>?,
+        startDate: Long?,
+        startDateStr: String?,
+        endDate: Long?,
+        endDateStr: String?,
+        searchQuery: String,
+        idOrSlugFilter: String,
+        areaSlug: String?,
+        categorySlug: String?,
+        limit: Int,
+        offset: Int
+    ): List<InventoryTransactionEntity> {
+        val filterByTypes = if (transactionTypes.isNullOrEmpty()) -1 else 1
+        return transactionDao.getTransactionsPaginatedByEntryDate(
+            businessSlug = businessSlug,
+            partySlug = partySlug,
+            filterByTypes = filterByTypes,
+            transactionTypes = transactionTypes ?: emptyList(),
+            startDate = startDate,
+            startDateStr = startDateStr,
+            endDate = endDate,
+            endDateStr = endDateStr,
+            searchQuery = searchQuery,
+            idOrSlugFilter = idOrSlugFilter,
+            areaSlug = areaSlug,
+            categorySlug = categorySlug,
+            limit = limit,
+            offset = offset
+        )
+    }
+    
+    suspend fun getTransactionsCount(
+        businessSlug: String,
+        partySlug: String?,
+        transactionTypes: List<Int>?,
+        startDate: Long?,
+        endDate: Long?,
+        searchQuery: String,
+        idOrSlugFilter: String,
+        areaSlug: String?,
+        categorySlug: String?
+    ): Int {
+        val filterByTypes = if (transactionTypes.isNullOrEmpty()) -1 else 1
+        return transactionDao.getTransactionsCount(
+            businessSlug = businessSlug,
+            partySlug = partySlug,
+            filterByTypes = filterByTypes,
+            transactionTypes = transactionTypes ?: emptyList(),
+            startDate = startDate,
+            endDate = endDate,
+            searchQuery = searchQuery,
+            idOrSlugFilter = idOrSlugFilter,
+            areaSlug = areaSlug,
+            categorySlug = categorySlug
+        )
+    }
+    
     suspend fun insertTransaction(transaction: InventoryTransactionEntity): Long {
         return transactionDao.insertTransaction(transaction)
     }

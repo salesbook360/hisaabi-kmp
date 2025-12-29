@@ -10,6 +10,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -80,6 +81,22 @@ fun TransactionsListScreen(
             listState.firstVisibleItemIndex,
             listState.firstVisibleItemScrollOffset
         )
+    }
+    
+    // Infinite scroll - load more when near the end
+    val shouldLoadMore = remember {
+        derivedStateOf {
+            val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+            val totalItems = listState.layoutInfo.totalItemsCount
+            // Load more when we're within 5 items of the end
+            lastVisibleItem >= totalItems - 5 && totalItems > 0
+        }
+    }
+    
+    LaunchedEffect(shouldLoadMore.value) {
+        if (shouldLoadMore.value && state.hasMore && !state.isLoadingMore && !state.isLoading) {
+            viewModel.loadMore()
+        }
     }
     
     // Currency
@@ -226,6 +243,23 @@ fun TransactionsListScreen(
                                 onChangeStateToCanceled = onChangeStateToCanceled?.let { { it(transaction) } },
                                 onOutstandingBalanceReminder = onOutstandingBalanceReminder?.let { { it(transaction) } }
                             )
+                        }
+                        
+                        // Loading more indicator
+                        if (state.isLoadingMore) {
+                            item {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(32.dp),
+                                        strokeWidth = 2.dp
+                                    )
+                                }
+                            }
                         }
                         
                         // Bottom padding for FAB

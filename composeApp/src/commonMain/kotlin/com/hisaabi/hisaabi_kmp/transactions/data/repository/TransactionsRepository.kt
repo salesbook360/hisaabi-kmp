@@ -19,6 +19,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import com.hisaabi.hisaabi_kmp.utils.currentTimeMillis
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 class TransactionsRepository(
     private val localDataSource: TransactionLocalDataSource,
@@ -85,6 +88,108 @@ class TransactionsRepository(
                 entity.toDomainModel(party = party)
             }
         }
+    }
+    
+    /**
+     * Get paginated transactions with all filters applied at the database level.
+     * Includes party area/category filtering via subqueries.
+     */
+    suspend fun getTransactionsPaginated(
+        businessSlug: String,
+        partySlug: String?,
+        transactionTypes: List<Int>?,
+        startDate: Long?,
+        endDate: Long?,
+        searchQuery: String,
+        idOrSlugFilter: String,
+        areaSlug: String?,
+        categorySlug: String?,
+        sortByEntryDate: Boolean,
+        limit: Int,
+        offset: Int
+    ): List<Transaction> {
+        val entities = if (sortByEntryDate) {
+            // For entry date sorting, we need to convert timestamps to ISO strings
+            val startDateStr = startDate?.let { formatMillisToIsoDate(it) }
+            val endDateStr = endDate?.let { formatMillisToIsoDate(it, endOfDay = true) }
+            
+            localDataSource.getTransactionsPaginatedByEntryDate(
+                businessSlug = businessSlug,
+                partySlug = partySlug,
+                transactionTypes = transactionTypes,
+                startDate = startDate,
+                startDateStr = startDateStr,
+                endDate = endDate,
+                endDateStr = endDateStr,
+                searchQuery = searchQuery,
+                idOrSlugFilter = idOrSlugFilter,
+                areaSlug = areaSlug,
+                categorySlug = categorySlug,
+                limit = limit,
+                offset = offset
+            )
+        } else {
+            localDataSource.getTransactionsPaginated(
+                businessSlug = businessSlug,
+                partySlug = partySlug,
+                transactionTypes = transactionTypes,
+                startDate = startDate,
+                endDate = endDate,
+                searchQuery = searchQuery,
+                idOrSlugFilter = idOrSlugFilter,
+                areaSlug = areaSlug,
+                categorySlug = categorySlug,
+                limit = limit,
+                offset = offset
+            )
+        }
+        
+        return entities.map { entity ->
+            val party = entity.party_slug?.let { 
+                partiesRepository.getPartyBySlug(it) 
+            }
+            entity.toDomainModel(party = party)
+        }
+    }
+    
+    /**
+     * Get total count of transactions matching all filters.
+     */
+    suspend fun getTransactionsCount(
+        businessSlug: String,
+        partySlug: String?,
+        transactionTypes: List<Int>?,
+        startDate: Long?,
+        endDate: Long?,
+        searchQuery: String,
+        idOrSlugFilter: String,
+        areaSlug: String?,
+        categorySlug: String?
+    ): Int {
+        return localDataSource.getTransactionsCount(
+            businessSlug = businessSlug,
+            partySlug = partySlug,
+            transactionTypes = transactionTypes,
+            startDate = startDate,
+            endDate = endDate,
+            searchQuery = searchQuery,
+            idOrSlugFilter = idOrSlugFilter,
+            areaSlug = areaSlug,
+            categorySlug = categorySlug
+        )
+    }
+    
+    /**
+     * Convert milliseconds timestamp to ISO date string for database comparison.
+     */
+    private fun formatMillisToIsoDate(millis: Long, endOfDay: Boolean = false): String {
+        val instant = kotlinx.datetime.Instant.fromEpochMilliseconds(millis)
+        val localDateTime = instant.toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault())
+        val year = localDateTime.year.toString().padStart(4, '0')
+        val month = localDateTime.monthNumber.toString().padStart(2, '0')
+        val day = localDateTime.dayOfMonth.toString().padStart(2, '0')
+        val time = if (endOfDay) "23:59:59.999Z" else "00:00:00.000Z"
+        return "$year-$month-${day}T$time"
     }
     
     suspend fun getTransactionWithDetails(slug: String): Transaction? {

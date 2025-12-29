@@ -34,6 +34,102 @@ interface InventoryTransactionDao {
     @Query("SELECT * FROM InventoryTransaction WHERE business_slug = :businessSlug AND (parent_slug IS NULL OR parent_slug = '') ORDER BY timestamp DESC")
     fun getTransactionsByBusiness(businessSlug: String): Flow<List<InventoryTransactionEntity>>
     
+    // Paginated query - sorted by transaction date (timestamp)
+    // All filters are applied at DB level including party area/category via subquery
+    // Note: filterByTypes = 1 means apply the transaction type filter, -1 means skip it (using -1 to avoid conflict with SALE type which is 0)
+    @Query("""
+        SELECT * FROM InventoryTransaction 
+        WHERE business_slug = :businessSlug 
+        AND (parent_slug IS NULL OR parent_slug = '')
+        AND (:partySlug IS NULL OR party_slug = :partySlug)
+        AND (:filterByTypes = -1 OR transaction_type IN (:transactionTypes))
+        AND (:startDate IS NULL OR CAST(timestamp AS INTEGER) >= :startDate)
+        AND (:endDate IS NULL OR CAST(timestamp AS INTEGER) <= :endDate)
+        AND (:searchQuery = '' OR slug LIKE '%' || :searchQuery || '%' OR description LIKE '%' || :searchQuery || '%' 
+             OR party_slug IN (SELECT slug FROM Party WHERE name LIKE '%' || :searchQuery || '%'))
+        AND (:idOrSlugFilter = '' OR slug = :idOrSlugFilter OR slug LIKE '%' || :idOrSlugFilter || '%' OR CAST(id AS TEXT) = :idOrSlugFilter)
+        AND (:areaSlug IS NULL OR party_slug IN (SELECT slug FROM Party WHERE area_slug = :areaSlug))
+        AND (:categorySlug IS NULL OR party_slug IN (SELECT slug FROM Party WHERE category_slug = :categorySlug))
+        ORDER BY timestamp DESC
+        LIMIT :limit OFFSET :offset
+    """)
+    suspend fun getTransactionsPaginated(
+        businessSlug: String,
+        partySlug: String?,
+        filterByTypes: Int,
+        transactionTypes: List<Int>,
+        startDate: Long?,
+        endDate: Long?,
+        searchQuery: String,
+        idOrSlugFilter: String,
+        areaSlug: String?,
+        categorySlug: String?,
+        limit: Int,
+        offset: Int
+    ): List<InventoryTransactionEntity>
+    
+    // Paginated query - sorted by entry date (created_at)
+    @Query("""
+        SELECT * FROM InventoryTransaction 
+        WHERE business_slug = :businessSlug 
+        AND (parent_slug IS NULL OR parent_slug = '')
+        AND (:partySlug IS NULL OR party_slug = :partySlug)
+        AND (:filterByTypes = -1 OR transaction_type IN (:transactionTypes))
+        AND (:startDate IS NULL OR created_at >= :startDateStr)
+        AND (:endDate IS NULL OR created_at <= :endDateStr)
+        AND (:searchQuery = '' OR slug LIKE '%' || :searchQuery || '%' OR description LIKE '%' || :searchQuery || '%'
+             OR party_slug IN (SELECT slug FROM Party WHERE name LIKE '%' || :searchQuery || '%'))
+        AND (:idOrSlugFilter = '' OR slug = :idOrSlugFilter OR slug LIKE '%' || :idOrSlugFilter || '%' OR CAST(id AS TEXT) = :idOrSlugFilter)
+        AND (:areaSlug IS NULL OR party_slug IN (SELECT slug FROM Party WHERE area_slug = :areaSlug))
+        AND (:categorySlug IS NULL OR party_slug IN (SELECT slug FROM Party WHERE category_slug = :categorySlug))
+        ORDER BY created_at DESC
+        LIMIT :limit OFFSET :offset
+    """)
+    suspend fun getTransactionsPaginatedByEntryDate(
+        businessSlug: String,
+        partySlug: String?,
+        filterByTypes: Int,
+        transactionTypes: List<Int>,
+        startDate: Long?,
+        startDateStr: String?,
+        endDate: Long?,
+        endDateStr: String?,
+        searchQuery: String,
+        idOrSlugFilter: String,
+        areaSlug: String?,
+        categorySlug: String?,
+        limit: Int,
+        offset: Int
+    ): List<InventoryTransactionEntity>
+    
+    // Count query for pagination - matching paginated query filters
+    @Query("""
+        SELECT COUNT(*) FROM InventoryTransaction 
+        WHERE business_slug = :businessSlug 
+        AND (parent_slug IS NULL OR parent_slug = '')
+        AND (:partySlug IS NULL OR party_slug = :partySlug)
+        AND (:filterByTypes = -1 OR transaction_type IN (:transactionTypes))
+        AND (:startDate IS NULL OR CAST(timestamp AS INTEGER) >= :startDate)
+        AND (:endDate IS NULL OR CAST(timestamp AS INTEGER) <= :endDate)
+        AND (:searchQuery = '' OR slug LIKE '%' || :searchQuery || '%' OR description LIKE '%' || :searchQuery || '%'
+             OR party_slug IN (SELECT slug FROM Party WHERE name LIKE '%' || :searchQuery || '%'))
+        AND (:idOrSlugFilter = '' OR slug = :idOrSlugFilter OR slug LIKE '%' || :idOrSlugFilter || '%' OR CAST(id AS TEXT) = :idOrSlugFilter)
+        AND (:areaSlug IS NULL OR party_slug IN (SELECT slug FROM Party WHERE area_slug = :areaSlug))
+        AND (:categorySlug IS NULL OR party_slug IN (SELECT slug FROM Party WHERE category_slug = :categorySlug))
+    """)
+    suspend fun getTransactionsCount(
+        businessSlug: String,
+        partySlug: String?,
+        filterByTypes: Int,
+        transactionTypes: List<Int>,
+        startDate: Long?,
+        endDate: Long?,
+        searchQuery: String,
+        idOrSlugFilter: String,
+        areaSlug: String?,
+        categorySlug: String?
+    ): Int
+    
     @Query("SELECT * FROM InventoryTransaction WHERE business_slug = :businessSlug AND sync_status != $SYNCED_STATUS")
     suspend fun getUnsyncedTransactions(businessSlug:String): List<InventoryTransactionEntity>
     
