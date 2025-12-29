@@ -1413,9 +1413,7 @@ private fun CardHeader(
         )
         Surface(
             color = badgeColors.backgroundColor,
-            shape = badgeShape,
-            modifier = Modifier
-                .offset(x = (-16).dp, y = (-16).dp) // Offset to align with Card edge (negating parent padding)
+            shape = badgeShape
         ) {
             Text(
                 transaction.getTransactionTypeName(),
@@ -1429,7 +1427,7 @@ private fun CardHeader(
         // Dates and options - positioned at top-end
         Row(
             modifier = Modifier.align(Alignment.TopEnd),
-            verticalAlignment = Alignment.Top
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Column(
                 horizontalAlignment = Alignment.End,
@@ -1834,97 +1832,100 @@ private fun BasicTransactionCard(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
         )
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
+        Column {
             CardHeader(transaction, { showOptions = !showOptions })
-            
-            PartyInfo(transaction)
-            
-            HorizontalDivider()
-            
-            // Financial info
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Column {
-                    Text(
-                        "Total",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        "$currencySymbol ${"%.2f".format(transaction.totalBill)}",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-                
-                if (transaction.totalPaid > 0) {
-                    Column(horizontalAlignment = Alignment.End) {
+
+                PartyInfo(transaction)
+
+                HorizontalDivider()
+
+                // Financial info
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Column {
                         Text(
-                            "Paid",
+                            "Total",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            "$currencySymbol ${"%.2f".format(transaction.totalPaid)}",
-                            style = MaterialTheme.typography.titleLarge,
+                            "$currencySymbol ${"%.2f".format(transaction.totalBill)}",
+                            style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.secondary
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+                    if (transaction.totalPaid > 0) {
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(
+                                "Paid",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                "$currencySymbol ${"%.2f".format(transaction.totalPaid)}",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.secondary
+                            )
+                        }
+                    }
+
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            "Items",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            "${transactionDetailsCounts[transaction.slug] ?: transaction.transactionDetails.size}",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
-                
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        "Items",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        "${transactionDetailsCounts[transaction.slug] ?: transaction.transactionDetails.size}",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-            
-            // Additional charges if any
-            if (transaction.flatDiscount > 0 || transaction.flatTax > 0 || transaction.additionalCharges > 0) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (transaction.flatDiscount > 0) {
-                        DetailChip("−$currencySymbol${"%.0f".format(transaction.flatDiscount)}", MaterialTheme.colorScheme.errorContainer)
-                    }
-                    if (transaction.flatTax > 0) {
-                        DetailChip("+$currencySymbol${"%.0f".format(transaction.flatTax)}", MaterialTheme.colorScheme.tertiaryContainer)
-                    }
-                    if (transaction.additionalCharges > 0) {
-                        DetailChip("+$currencySymbol${"%.0f".format(transaction.additionalCharges)}", MaterialTheme.colorScheme.secondaryContainer)
+
+                // Additional charges if any
+                if (transaction.flatDiscount > 0 || transaction.flatTax > 0 || transaction.additionalCharges > 0) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (transaction.flatDiscount > 0) {
+                            DetailChip("−$currencySymbol${"%.0f".format(transaction.flatDiscount)}", MaterialTheme.colorScheme.errorContainer)
+                        }
+                        if (transaction.flatTax > 0) {
+                            DetailChip("+$currencySymbol${"%.0f".format(transaction.flatTax)}", MaterialTheme.colorScheme.tertiaryContainer)
+                        }
+                        if (transaction.additionalCharges > 0) {
+                            DetailChip("+$currencySymbol${"%.0f".format(transaction.additionalCharges)}", MaterialTheme.colorScheme.secondaryContainer)
+                        }
                     }
                 }
-            }
-            
-            // Description if available
-            transaction.description?.let { desc ->
-                if (desc.isNotBlank()) {
-                    Text(
-                        desc,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2
-                    )
+
+                // Description if available
+                transaction.description?.let { desc ->
+                    if (desc.isNotBlank()) {
+                        Text(
+                            desc,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2
+                        )
+                    }
                 }
             }
         }
+
         
         TransactionOptionsMenu(
             transaction = transaction,
@@ -1969,79 +1970,83 @@ private fun PayGetCashCard(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
         )
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
+        Column {
             CardHeader(transaction, { showOptions = !showOptions })
-            
-            PartyInfo(transaction)
-            
-            HorizontalDivider()
-            
-            // Amount - centered and prominent
             Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        if (isReceiving) Icons.Default.ArrowDownward else Icons.Default.ArrowUpward,
-                        contentDescription = null,
-                        tint = if (isReceiving) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Text(
-                        if (isReceiving) "Received" else "Paid",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Text(
-                    "$currencySymbol ${"%.2f".format(transaction.totalPaid)}",
-                    style = MaterialTheme.typography.displaySmall,
-                    fontWeight = FontWeight.Bold,
-                    color = if (isReceiving) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
-                )
-            }
-            
-            // Payment method
-            transaction.paymentMethodTo?.let { paymentMethod ->
+
+                PartyInfo(transaction)
+
                 HorizontalDivider()
-                Row(
+
+                // Amount - centered and prominent
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            if (isReceiving) Icons.Default.ArrowDownward else Icons.Default.ArrowUpward,
+                            contentDescription = null,
+                            tint = if (isReceiving) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Text(
+                            if (isReceiving) "Received" else "Paid",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                     Text(
-                        "Method",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        paymentMethod.title,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold
+                        "$currencySymbol ${"%.2f".format(transaction.totalPaid)}",
+                        style = MaterialTheme.typography.displaySmall,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isReceiving) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
                     )
                 }
-            }
-            
-            // Description
-            transaction.description?.let { desc ->
-                if (desc.isNotBlank()) {
-                    Text(
-                        desc,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2
-                    )
+
+                // Payment method
+                transaction.paymentMethodTo?.let { paymentMethod ->
+                    HorizontalDivider()
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Method",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            paymentMethod.title,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                // Description
+                transaction.description?.let { desc ->
+                    if (desc.isNotBlank()) {
+                        Text(
+                            desc,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2
+                        )
+                    }
                 }
             }
         }
+
+
         
         TransactionOptionsMenu(
             transaction = transaction,
@@ -2081,66 +2086,69 @@ private fun ExpenseIncomeCard(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
         )
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
+        Column {
             CardHeader(transaction, { showOptions = !showOptions })
-            
-            HorizontalDivider()
-            
-            // Amount - centered
             Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text(
-                    if (isExpense) "Expense Amount" else "Income Amount",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    "$currencySymbol ${"%.2f".format(transaction.totalPaid)}",
-                    style = MaterialTheme.typography.displaySmall,
-                    fontWeight = FontWeight.Bold,
-                    color = if (isExpense) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-                )
-            }
-            
-            // Payment method
-            transaction.paymentMethodTo?.let { paymentMethod ->
+
                 HorizontalDivider()
-                Row(
+
+                // Amount - centered
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        "Payment Method",
-                        style = MaterialTheme.typography.labelMedium,
+                        if (isExpense) "Expense Amount" else "Income Amount",
+                        style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        paymentMethod.title,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold
+                        "$currencySymbol ${"%.2f".format(transaction.totalPaid)}",
+                        style = MaterialTheme.typography.displaySmall,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isExpense) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
                     )
                 }
-            }
-            
-            // Description
-            transaction.description?.let { desc ->
-                if (desc.isNotBlank()) {
-                    Text(
-                        desc,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2
-                    )
+
+                // Payment method
+                transaction.paymentMethodTo?.let { paymentMethod ->
+                    HorizontalDivider()
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Payment Method",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            paymentMethod.title,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                // Description
+                transaction.description?.let { desc ->
+                    if (desc.isNotBlank()) {
+                        Text(
+                            desc,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2
+                        )
+                    }
                 }
             }
         }
+
         
         TransactionOptionsMenu(
             transaction = transaction,
@@ -2178,87 +2186,89 @@ private fun PaymentTransferCard(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
         )
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
+        Column {
             CardHeader(transaction, { showOptions = !showOptions })
-            
-            // Amount
             Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text(
-                    "Transfer Amount",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    "$currencySymbol ${"%.2f".format(transaction.totalPaid)}",
-                    style = MaterialTheme.typography.displaySmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.tertiary
-                )
-            }
-            
-            HorizontalDivider()
-            
-            // From/To Section
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // From
-                transaction.paymentMethodFrom?.let { paymentMethodFrom ->
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            "From",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            paymentMethodFrom.title,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-                
-                // To
-                transaction.paymentMethodTo?.let { paymentMethodTo ->
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        horizontalAlignment = Alignment.End
-                    ) {
-                        Text(
-                            "To",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            paymentMethodTo.title,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-            }
-            
-            // Description
-            transaction.description?.let { desc ->
-                if (desc.isNotBlank()) {
+                // Amount
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
                     Text(
-                        desc,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2
+                        "Transfer Amount",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    Text(
+                        "$currencySymbol ${"%.2f".format(transaction.totalPaid)}",
+                        style = MaterialTheme.typography.displaySmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.tertiary
+                    )
+                }
+
+                HorizontalDivider()
+
+                // From/To Section
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // From
+                    transaction.paymentMethodFrom?.let { paymentMethodFrom ->
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "From",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                paymentMethodFrom.title,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    // To
+                    transaction.paymentMethodTo?.let { paymentMethodTo ->
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            horizontalAlignment = Alignment.End
+                        ) {
+                            Text(
+                                "To",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                paymentMethodTo.title,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+
+                // Description
+                transaction.description?.let { desc ->
+                    if (desc.isNotBlank()) {
+                        Text(
+                            desc,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2
+                        )
+                    }
                 }
             }
         }
+
         
         TransactionOptionsMenu(
             transaction = transaction,
@@ -2296,66 +2306,69 @@ private fun JournalVoucherCard(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
         )
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
+        Column {
             CardHeader(transaction, { showOptions = !showOptions })
-            
-            HorizontalDivider()
-            
-            // Pay Amount/Get Amount Section
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Pay Amount
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        "Pay Amount",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        "$currencySymbol ${"%.2f".format(transaction.totalPaid)}",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.error
-                    )
+
+                HorizontalDivider()
+
+                // Pay Amount/Get Amount Section
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Pay Amount
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            "Pay Amount",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            "$currencySymbol ${"%.2f".format(transaction.totalPaid)}",
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+
+                    VerticalDivider(modifier = Modifier.height(50.dp))
+
+                    // Get Amount
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            "Get Amount",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            "$currencySymbol ${"%.2f".format(transaction.totalPaid)}",
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
-                
-                VerticalDivider(modifier = Modifier.height(50.dp))
-                
-                // Get Amount
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        "Get Amount",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        "$currencySymbol ${"%.2f".format(transaction.totalPaid)}",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-            
-            // Description
-            transaction.description?.let { desc ->
-                if (desc.isNotBlank()) {
-                    HorizontalDivider()
-                    Text(
-                        desc,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2
-                    )
+
+                // Description
+                transaction.description?.let { desc ->
+                    if (desc.isNotBlank()) {
+                        HorizontalDivider()
+                        Text(
+                            desc,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2
+                        )
+                    }
                 }
             }
         }
+
         
         TransactionOptionsMenu(
             transaction = transaction,
@@ -2394,115 +2407,118 @@ private fun StockAdjustmentCard(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
         )
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
+        Column {
             CardHeader(transaction, { showOptions = !showOptions })
-            
-            // Warehouse info
-            if (transaction.transactionType == AllTransactionTypes.STOCK_TRANSFER.value) {
-                // Transfer: From -> To
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    transaction.warehouseFrom?.let { warehouseFrom ->
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                "From",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                warehouseFrom.title,
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                    
-                    Icon(
-                        Icons.Default.ArrowForward,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.tertiary,
-                        modifier = Modifier.padding(horizontal = 8.dp)
-                    )
-                    
-                    transaction.warehouseTo?.let { warehouseTo ->
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            horizontalAlignment = Alignment.End
-                        ) {
-                            Text(
-                                "To",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                warehouseTo.title,
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                }
-            } else {
-                // Increase/Decrease: Single warehouse
-                transaction.warehouseFrom?.let { warehouse ->
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+
+                // Warehouse info
+                if (transaction.transactionType == AllTransactionTypes.STOCK_TRANSFER.value) {
+                    // Transfer: From -> To
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            "Warehouse",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        transaction.warehouseFrom?.let { warehouseFrom ->
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    "From",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    warehouseFrom.title,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+
+                        Icon(
+                            Icons.Default.ArrowForward,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.padding(horizontal = 8.dp)
                         )
+
+                        transaction.warehouseTo?.let { warehouseTo ->
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                horizontalAlignment = Alignment.End
+                            ) {
+                                Text(
+                                    "To",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    warehouseTo.title,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    // Increase/Decrease: Single warehouse
+                    transaction.warehouseFrom?.let { warehouse ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "Warehouse",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                warehouse.title,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+
+                HorizontalDivider()
+
+                // Product count
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Products Adjusted",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        "${transactionDetailsCounts[transaction.slug] ?: transaction.transactionDetails.size} items",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.tertiary
+                    )
+                }
+
+                // Description
+                transaction.description?.let { desc ->
+                    if (desc.isNotBlank()) {
                         Text(
-                            warehouse.title,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold
+                            desc,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2
                         )
                     }
                 }
             }
-            
-            HorizontalDivider()
-            
-            // Product count
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    "Products Adjusted",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    "${transactionDetailsCounts[transaction.slug] ?: transaction.transactionDetails.size} items",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.tertiary
-                )
-            }
-            
-            // Description
-            transaction.description?.let { desc ->
-                if (desc.isNotBlank()) {
-                    Text(
-                        desc,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2
-                    )
-                }
-            }
         }
+
         
         TransactionOptionsMenu(
             transaction = transaction,
@@ -2541,74 +2557,77 @@ private fun ManufactureCard(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
         )
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
+        Column {
             CardHeader(transaction, { showOptions = !showOptions })
-            
-            // Recipe name
-            if (manufactureInfo != null) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+
+                // Recipe name
+                if (manufactureInfo != null) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Build,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            manufactureInfo.recipeName,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                HorizontalDivider()
+
+                // Cost and Quantity
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top
                 ) {
-                    Icon(
-                        Icons.Default.Build,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.tertiary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Text(
-                        manufactureInfo.recipeName,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-            
-            HorizontalDivider()
-            
-            // Cost and Quantity
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
-            ) {
-                // Manufacturing Cost (from transaction.totalPaid which stores the total cost)
-                Column {
-                    Text(
-                        "Total Cost",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        "$currencySymbol ${"%.2f".format(transaction.totalPaid)}",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.tertiary
-                    )
-                }
-                
-                // Quantity
-                if (manufactureInfo != null) {
-                    Column(horizontalAlignment = Alignment.End) {
+                    // Manufacturing Cost (from transaction.totalPaid which stores the total cost)
+                    Column {
                         Text(
-                            "Quantity",
+                            "Total Cost",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            manufactureInfo.recipeQuantity,
+                            "$currencySymbol ${"%.2f".format(transaction.totalPaid)}",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.tertiary
                         )
                     }
+
+                    // Quantity
+                    if (manufactureInfo != null) {
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(
+                                "Quantity",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                manufactureInfo.recipeQuantity,
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.tertiary
+                            )
+                        }
+                    }
                 }
             }
         }
+
         
         TransactionOptionsMenu(
             transaction = transaction,
@@ -2652,62 +2671,65 @@ private fun OrderQuotationCard(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
         )
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
+        Column {
             CardHeader(transaction, { showOptions = !showOptions })
-            
-            PartyInfo(transaction)
-            
-            HorizontalDivider()
-            
-            // Order/Quotation info
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Column {
-                    Text(
-                        "Amount",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        "$currencySymbol ${"%.2f".format(transaction.totalBill)}",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+
+                PartyInfo(transaction)
+
+                HorizontalDivider()
+
+                // Order/Quotation info
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Column {
+                        Text(
+                            "Amount",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            "$currencySymbol ${"%.2f".format(transaction.totalBill)}",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            "Items",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            "${transactionDetailsCounts[transaction.slug] ?: transaction.transactionDetails.size}",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
-                
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        "Items",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        "${transactionDetailsCounts[transaction.slug] ?: transaction.transactionDetails.size}",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-            
-            // Description
-            transaction.description?.let { desc ->
-                if (desc.isNotBlank()) {
-                    Text(
-                        desc,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2
-                    )
+
+                // Description
+                transaction.description?.let { desc ->
+                    if (desc.isNotBlank()) {
+                        Text(
+                            desc,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2
+                        )
+                    }
                 }
             }
         }
+
         
         TransactionOptionsMenu(
             transaction = transaction,
@@ -2756,32 +2778,54 @@ private fun RecordTransactionCard(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
         )
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
+        Column {
             CardHeader(transaction, { showOptions = !showOptions })
-            
-            // Party info for client-related records
-            if (transaction.transactionType != AllTransactionTypes.SELF_NOTE.value) {
-                PartyInfo(transaction)
-                HorizontalDivider()
-            }
-            
-            // Description/Content
-            transaction.description?.let { desc ->
-                if (desc.isNotBlank()) {
-                    Text(
-                        desc,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 3
-                    )
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+
+                // Party info for client-related records
+                if (transaction.transactionType != AllTransactionTypes.SELF_NOTE.value) {
+                    PartyInfo(transaction)
+                    HorizontalDivider()
                 }
-            }
-            
-            // For Cash Reminder, show promised amount
-            if (transaction.transactionType == AllTransactionTypes.CASH_REMINDER.value && transaction.totalPaid > 0) {
+
+                // Description/Content
+                transaction.description?.let { desc ->
+                    if (desc.isNotBlank()) {
+                        Text(
+                            desc,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 3
+                        )
+                    }
+                }
+
+                // For Cash Reminder, show promised amount
+                if (transaction.transactionType == AllTransactionTypes.CASH_REMINDER.value && transaction.totalPaid > 0) {
+                    HorizontalDivider()
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Promised Amount",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            "$currencySymbol ${"%.2f".format(transaction.totalPaid)}",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+
+                // Status
                 HorizontalDivider()
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -2789,46 +2833,27 @@ private fun RecordTransactionCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        "Promised Amount",
+                        "Status",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Text(
-                        "$currencySymbol ${"%.2f".format(transaction.totalPaid)}",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-            
-            // Status
-            HorizontalDivider()
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    "Status",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                val statusColors = getStatusBadgeColors(transaction.stateId)
-                Surface(
-                    color = statusColors.backgroundColor,
-                    shape = MaterialTheme.shapes.small
-                ) {
-                    Text(
-                        transaction.getStateName(),
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = statusColors.textColor
-                    )
+                    val statusColors = getStatusBadgeColors(transaction.stateId)
+                    Surface(
+                        color = statusColors.backgroundColor,
+                        shape = MaterialTheme.shapes.small
+                    ) {
+                        Text(
+                            transaction.getStateName(),
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = statusColors.textColor
+                        )
+                    }
                 }
             }
         }
+
         
         TransactionOptionsMenu(
             transaction = transaction,
