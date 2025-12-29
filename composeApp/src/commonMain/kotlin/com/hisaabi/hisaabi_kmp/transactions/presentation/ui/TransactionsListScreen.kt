@@ -22,6 +22,7 @@ import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionState
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionSortOption
+import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionCategory
 import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
 import com.hisaabi.hisaabi_kmp.database.entity.CategoryEntity
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionsListViewModel
@@ -130,7 +131,13 @@ fun TransactionsListScreen(
                         Icon(
                             Icons.Default.FilterList,
                             "Filters",
-                            tint = if (state.selectedTransactionType != null || state.selectedParty != null) 
+                            tint = if (state.selectedTransactionTypes.isNotEmpty() || 
+                                state.selectedParty != null || 
+                                state.selectedArea != null || 
+                                state.selectedCategory != null ||
+                                state.idOrSlugFilter.isNotEmpty() ||
+                                state.startDate != null ||
+                                state.endDate != null) 
                                 MaterialTheme.colorScheme.primary 
                             else 
                                 MaterialTheme.colorScheme.onSurface
@@ -240,7 +247,7 @@ fun TransactionsListScreen(
             sheetState = sheetState
         ) {
             FiltersBottomSheetContent(
-                selectedType = state.selectedTransactionType,
+                selectedTypes = state.selectedTransactionTypes,
                 selectedSortBy = state.sortBy,
                 idOrSlugFilter = state.idOrSlugFilter,
                 startDate = state.startDate,
@@ -249,7 +256,8 @@ fun TransactionsListScreen(
                 selectedParty = state.selectedParty,
                 selectedArea = state.selectedArea,
                 selectedCategory = state.selectedCategory,
-                onTypeSelected = { viewModel.setTransactionTypeFilter(it) },
+                onTypeToggled = { viewModel.toggleTransactionTypeFilter(it) },
+                onClearTransactionTypes = { viewModel.clearTransactionTypeFilters() },
                 onSortBySelected = { viewModel.setSortBy(it) },
                 onIdOrSlugFilterChange = { viewModel.setIdOrSlugFilter(it) },
                 onStartDateChange = { viewModel.setDateRange(it, state.endDate) },
@@ -297,7 +305,7 @@ fun TransactionsListScreen(
 
 @Composable
 private fun FiltersBottomSheetContent(
-    selectedType: AllTransactionTypes?,
+    selectedTypes: Set<AllTransactionTypes>,
     selectedSortBy: TransactionSortOption,
     idOrSlugFilter: String,
     startDate: Long?,
@@ -306,7 +314,8 @@ private fun FiltersBottomSheetContent(
     selectedParty: Party?,
     selectedArea: CategoryEntity?,
     selectedCategory: CategoryEntity?,
-    onTypeSelected: (AllTransactionTypes?) -> Unit,
+    onTypeToggled: (AllTransactionTypes) -> Unit,
+    onClearTransactionTypes: () -> Unit,
     onSortBySelected: (TransactionSortOption) -> Unit,
     onIdOrSlugFilterChange: (String) -> Unit,
     onStartDateChange: (Long?) -> Unit,
@@ -374,7 +383,7 @@ private fun FiltersBottomSheetContent(
             }
         )
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(4.dp))
 
         // Party filter section
         Text(
@@ -453,7 +462,7 @@ private fun FiltersBottomSheetContent(
             }
         }
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(4.dp))
 
         // Area filter section
         Text(
@@ -523,7 +532,7 @@ private fun FiltersBottomSheetContent(
             }
         }
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(4.dp))
 
         // Category filter section
         Text(
@@ -593,69 +602,15 @@ private fun FiltersBottomSheetContent(
             }
         }
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(4.dp))
 
-        // Transaction type filter
-        Text(
-            "Transaction Type",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold
-        )
-        
-        // First row of chips
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            FilterChipWithColors(
-                selected = selectedType == null,
-                onClick = { onTypeSelected(null) },
-                label = "All",
-                modifier = Modifier.weight(1f)
-            )
-            FilterChipWithColors(
-                selected = selectedType == AllTransactionTypes.SALE,
-                onClick = { onTypeSelected(AllTransactionTypes.SALE) },
-                label = "Sale",
-                modifier = Modifier.weight(1f)
-            )
-            FilterChipWithColors(
-                selected = selectedType == AllTransactionTypes.PURCHASE,
-                onClick = { onTypeSelected(AllTransactionTypes.PURCHASE) },
-                label = "Purchase",
-                modifier = Modifier.weight(1f)
-            )
-        }
-        
-        // Second row of chips
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            FilterChipWithColors(
-                selected = selectedType == AllTransactionTypes.CUSTOMER_RETURN,
-                onClick = { onTypeSelected(AllTransactionTypes.CUSTOMER_RETURN) },
-                label = "Return",
-                modifier = Modifier.weight(1f)
-            )
-            FilterChipWithColors(
-                selected = selectedType == AllTransactionTypes.SALE_ORDER,
-                onClick = { onTypeSelected(AllTransactionTypes.SALE_ORDER) },
-                label = "Order",
-                modifier = Modifier.weight(1f)
-            )
-            Spacer(Modifier.weight(1f))
-        }
-        
-        Spacer(Modifier.height(8.dp))
-        
         // Date filter section
         Text(
             "Date Range",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold
         )
-        
+
         // Date filter type selection
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -674,9 +629,9 @@ private fun FiltersBottomSheetContent(
                 modifier = Modifier.weight(1f)
             )
         }
-        
-        Spacer(Modifier.height(8.dp))
-        
+
+        Spacer(Modifier.height(4.dp))
+
         // Start date field
         Box(
             modifier = Modifier
@@ -707,7 +662,7 @@ private fun FiltersBottomSheetContent(
                 )
             )
         }
-        
+
         // End date field
         Box(
             modifier = Modifier
@@ -738,16 +693,16 @@ private fun FiltersBottomSheetContent(
                 )
             )
         }
-        
-        Spacer(Modifier.height(8.dp))
-        
+
+        Spacer(Modifier.height(4.dp))
+
         // Sort by section
         Text(
             "Sort by",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold
         )
-        
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -765,9 +720,132 @@ private fun FiltersBottomSheetContent(
                 modifier = Modifier.weight(1f)
             )
         }
+
+        Spacer(Modifier.height(4.dp))
+
+        // Transaction type filter
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "Transaction Type",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            if (selectedTypes.isNotEmpty()) {
+                TextButton(onClick = onClearTransactionTypes) {
+                    Text("Clear")
+                }
+            }
+        }
         
-        Spacer(Modifier.height(8.dp))
+        // Group transaction types by category for better organization
+        val basicTypes = AllTransactionTypes.entries.filter { it.category == TransactionCategory.BASIC }
+        val cashPaymentTypes = AllTransactionTypes.entries.filter { it.category == TransactionCategory.CASH_PAYMENT }
+        val expenseIncomeTypes = AllTransactionTypes.entries.filter { it.category == TransactionCategory.EXPENSE_INCOME }
+        val stockAdjustmentTypes = AllTransactionTypes.entries.filter { it.category == TransactionCategory.STOCK_ADJUSTMENT }
+        val recordTypes = AllTransactionTypes.entries.filter { it.category == TransactionCategory.RECORD }
+        val otherTypes = AllTransactionTypes.entries.filter { it.category == TransactionCategory.OTHER }
         
+        // Helper composable to render chips in rows (3 per row)
+        @Composable
+        fun renderTypeChips(types: List<AllTransactionTypes>) {
+            types.chunked(3).forEach { rowTypes ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    rowTypes.forEach { type ->
+                        FilterChipWithColors(
+                            selected = selectedTypes.contains(type),
+                            onClick = { onTypeToggled(type) },
+                            label = type.displayName,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    // Fill remaining space if row has less than 3 items
+                    repeat(3 - rowTypes.size) {
+                        Spacer(Modifier.weight(1f))
+                    }
+                }
+            }
+        }
+        
+        // Basic Transaction Types
+        if (basicTypes.isNotEmpty()) {
+            Text(
+                "Basic",
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            renderTypeChips(basicTypes)
+            Spacer(Modifier.height(4.dp))
+        }
+        
+        // Cash Payment Types
+        if (cashPaymentTypes.isNotEmpty()) {
+            Text(
+                "Cash Payment",
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            renderTypeChips(cashPaymentTypes)
+            Spacer(Modifier.height(4.dp))
+        }
+        
+        // Expense & Income Types
+        if (expenseIncomeTypes.isNotEmpty()) {
+            Text(
+                "Expense & Income",
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            renderTypeChips(expenseIncomeTypes)
+            Spacer(Modifier.height(4.dp))
+        }
+        
+        // Stock Adjustment Types
+        if (stockAdjustmentTypes.isNotEmpty()) {
+            Text(
+                "Stock Adjustment",
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            renderTypeChips(stockAdjustmentTypes)
+            Spacer(Modifier.height(4.dp))
+        }
+        
+        // Record Types
+        if (recordTypes.isNotEmpty()) {
+            Text(
+                "Records",
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            renderTypeChips(recordTypes)
+            Spacer(Modifier.height(4.dp))
+        }
+        
+        // Other Types
+        if (otherTypes.isNotEmpty()) {
+            Text(
+                "Other",
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            renderTypeChips(otherTypes)
+            Spacer(Modifier.height(4.dp))
+        }
+        
+   
         // Apply button
         Button(
             onClick = onApplyFilters,
@@ -828,7 +906,7 @@ private fun EmptyTransactionsView(
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold
         )
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(4.dp))
         Text(
             "Start by creating your first transaction",
             style = MaterialTheme.typography.bodyMedium,

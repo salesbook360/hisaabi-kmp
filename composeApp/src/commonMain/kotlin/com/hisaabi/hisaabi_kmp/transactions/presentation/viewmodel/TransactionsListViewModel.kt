@@ -28,7 +28,7 @@ data class TransactionsListState(
     val manufactureInfo: Map<String, ManufactureInfo> = emptyMap(),
     val isLoading: Boolean = false,
     val error: String? = null,
-    val selectedTransactionType: AllTransactionTypes? = null,
+    val selectedTransactionTypes: Set<AllTransactionTypes> = emptySet(),
     val selectedParty: Party? = null,
     val selectedArea: CategoryEntity? = null,
     val selectedCategory: CategoryEntity? = null,
@@ -159,9 +159,10 @@ class TransactionsListViewModel(
         val state = _state.value
         var filtered = transactions
         
-        // Filter by transaction type
-        state.selectedTransactionType?.let { type ->
-            filtered = filtered.filter { it.transactionType == type.value }
+        // Filter by transaction types (multiple selection)
+        if (state.selectedTransactionTypes.isNotEmpty()) {
+            val selectedTypeValues = state.selectedTransactionTypes.map { it.value }.toSet()
+            filtered = filtered.filter { it.transactionType in selectedTypeValues }
         }
         
         // Filter by party
@@ -292,8 +293,20 @@ class TransactionsListViewModel(
         }
     }
     
-    fun setTransactionTypeFilter(type: AllTransactionTypes?) {
-        _state.update { it.copy(selectedTransactionType = type) }
+    fun toggleTransactionTypeFilter(type: AllTransactionTypes) {
+        _state.update { currentState ->
+            val newTypes = if (currentState.selectedTransactionTypes.contains(type)) {
+                currentState.selectedTransactionTypes - type
+            } else {
+                currentState.selectedTransactionTypes + type
+            }
+            currentState.copy(selectedTransactionTypes = newTypes)
+        }
+        refreshFilters()
+    }
+    
+    fun clearTransactionTypeFilters() {
+        _state.update { it.copy(selectedTransactionTypes = emptySet()) }
         refreshFilters()
     }
     
@@ -344,7 +357,7 @@ class TransactionsListViewModel(
     fun clearFilters() {
         _state.update { 
             it.copy(
-                selectedTransactionType = null,
+                selectedTransactionTypes = emptySet(),
                 selectedParty = null,
                 selectedArea = null,
                 selectedCategory = null,
