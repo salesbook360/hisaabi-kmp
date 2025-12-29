@@ -336,49 +336,79 @@ private fun FiltersBottomSheetContent(
     LazyColumn(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
+            .padding(horizontal = 20.dp, vertical = 16.dp),
         state = listState,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
         // Header
         item {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     "Filter Transactions",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
-                TextButton(onClick = onClearFilters) {
-                    Text("Clear All")
+                TextButton(
+                    onClick = onClearFilters,
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                ) {
+                    Text(
+                        "Clear All",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Medium
+                    )
                 }
             }
         }
         
         item {
-            HorizontalDivider()
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 16.dp),
+                thickness = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant
+            )
         }
 
         // ID/Slug filter section
         item {
-            Text(
-                "ID/Slug",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp, bottom = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.Search,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    "ID/Slug",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
         }
 
         item {
             OutlinedTextField(
                 value = idOrSlugFilter,
                 onValueChange = onIdOrSlugFilterChange,
-                label = { Text("ID/Slug") },
+                label = { Text("Transaction ID or slug") },
                 placeholder = { Text("Enter transaction ID or slug") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
+                shape = RoundedCornerShape(12.dp),
                 trailingIcon = {
                     if (idOrSlugFilter.isNotEmpty()) {
                         IconButton(onClick = { onIdOrSlugFilterChange("") }) {
@@ -390,401 +420,503 @@ private fun FiltersBottomSheetContent(
         }
 
         item {
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(24.dp))
         }
 
         // Party filter section
         item {
-            Text(
-                "Party",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp, bottom = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.Person,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    "Party",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
         }
         
         item {
             Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(onClick = onSelectParty),
-            colors = CardDefaults.cardColors(
-                containerColor = if (selectedParty == null)
-                    MaterialTheme.colorScheme.surfaceVariant
-                else
-                    MaterialTheme.colorScheme.primaryContainer
-            )
-        ) {
-            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                    .clickable(onClick = onSelectParty),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (selectedParty == null)
+                        MaterialTheme.colorScheme.surfaceVariant
+                    else
+                        MaterialTheme.colorScheme.primaryContainer
+                )
             ) {
                 Row(
-                    modifier = Modifier.weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        Icons.Default.Person,
-                        contentDescription = null,
-                        tint = if (selectedParty == null)
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        else
-                            MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            selectedParty?.name ?: "Select Party",
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = if (selectedParty != null) FontWeight.Bold else FontWeight.Normal,
-                            color = if (selectedParty == null)
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.Person,
+                            contentDescription = null,
+                            tint = if (selectedParty == null)
                                 MaterialTheme.colorScheme.onSurfaceVariant
                             else
-                                MaterialTheme.colorScheme.onPrimaryContainer
+                                MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(24.dp)
                         )
-                        selectedParty?.phone?.let { phone ->
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                phone,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                selectedParty?.name ?: "Select Party",
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = if (selectedParty != null) FontWeight.Bold else FontWeight.Normal,
+                                color = if (selectedParty == null)
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                else
+                                    MaterialTheme.colorScheme.onPrimaryContainer
                             )
+                            selectedParty?.phone?.let { phone ->
+                                Text(
+                                    phone,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
-                }
-                if (selectedParty != null) {
-                    IconButton(onClick = onClearPartyFilter) {
+                    if (selectedParty != null) {
+                        IconButton(onClick = onClearPartyFilter) {
+                            Icon(
+                                Icons.Default.Clear,
+                                contentDescription = "Clear",
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    } else {
                         Icon(
-                            Icons.Default.Clear,
-                            contentDescription = "Clear",
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            Icons.Default.ArrowForward,
+                            contentDescription = "Select",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
-                } else {
-                    Icon(
-                        Icons.Default.ArrowForward,
-                        contentDescription = "Select",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp)
-                    )
                 }
             }
         }
-        }
 
         item {
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(24.dp))
         }
 
         // Area filter section
         item {
-            Text(
-                "Party Area",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp, bottom = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.LocationOn,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    "Party Area",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
         }
         
         item {
             Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(onClick = onSelectArea),
-            colors = CardDefaults.cardColors(
-                containerColor = if (selectedArea == null)
-                    MaterialTheme.colorScheme.surfaceVariant
-                else
-                    MaterialTheme.colorScheme.primaryContainer
-            )
-        ) {
-            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                    .clickable(onClick = onSelectArea),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (selectedArea == null)
+                        MaterialTheme.colorScheme.surfaceVariant
+                    else
+                        MaterialTheme.colorScheme.primaryContainer
+                )
             ) {
                 Row(
-                    modifier = Modifier.weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        Icons.Default.LocationOn,
-                        contentDescription = null,
-                        tint = if (selectedArea == null)
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        else
-                            MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Text(
-                        selectedArea?.title ?: "Select Area",
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = if (selectedArea != null) FontWeight.Bold else FontWeight.Normal,
-                        color = if (selectedArea == null)
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        else
-                            MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                }
-                if (selectedArea != null) {
-                    IconButton(onClick = onClearAreaFilter) {
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Icon(
-                            Icons.Default.Clear,
-                            contentDescription = "Clear",
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            Icons.Default.LocationOn,
+                            contentDescription = null,
+                            tint = if (selectedArea == null)
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            else
+                                MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Text(
+                            selectedArea?.title ?: "Select Area",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = if (selectedArea != null) FontWeight.Bold else FontWeight.Normal,
+                            color = if (selectedArea == null)
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            else
+                                MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
-                } else {
-                    Icon(
-                        Icons.Default.ArrowForward,
-                        contentDescription = "Select",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp)
-                    )
+                    if (selectedArea != null) {
+                        IconButton(onClick = onClearAreaFilter) {
+                            Icon(
+                                Icons.Default.Clear,
+                                contentDescription = "Clear",
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    } else {
+                        Icon(
+                            Icons.Default.ArrowForward,
+                            contentDescription = "Select",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
             }
         }
-        }
 
         item {
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(24.dp))
         }
 
         // Category filter section
         item {
-            Text(
-                "Party Category",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp, bottom = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.Category,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    "Party Category",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
         }
         
         item {
             Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(onClick = onSelectCategory),
-            colors = CardDefaults.cardColors(
-                containerColor = if (selectedCategory == null)
-                    MaterialTheme.colorScheme.surfaceVariant
-                else
-                    MaterialTheme.colorScheme.primaryContainer
-            )
-        ) {
-            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                    .clickable(onClick = onSelectCategory),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (selectedCategory == null)
+                        MaterialTheme.colorScheme.surfaceVariant
+                    else
+                        MaterialTheme.colorScheme.primaryContainer
+                )
             ) {
                 Row(
-                    modifier = Modifier.weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        Icons.Default.Category,
-                        contentDescription = null,
-                        tint = if (selectedCategory == null)
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        else
-                            MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Text(
-                        selectedCategory?.title ?: "Select Category",
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = if (selectedCategory != null) FontWeight.Bold else FontWeight.Normal,
-                        color = if (selectedCategory == null)
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        else
-                            MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                }
-                if (selectedCategory != null) {
-                    IconButton(onClick = onClearCategoryFilter) {
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Icon(
-                            Icons.Default.Clear,
-                            contentDescription = "Clear",
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            Icons.Default.Category,
+                            contentDescription = null,
+                            tint = if (selectedCategory == null)
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            else
+                                MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Text(
+                            selectedCategory?.title ?: "Select Category",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = if (selectedCategory != null) FontWeight.Bold else FontWeight.Normal,
+                            color = if (selectedCategory == null)
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            else
+                                MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
-                } else {
-                    Icon(
-                        Icons.Default.ArrowForward,
-                        contentDescription = "Select",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp)
-                    )
+                    if (selectedCategory != null) {
+                        IconButton(onClick = onClearCategoryFilter) {
+                            Icon(
+                                Icons.Default.Clear,
+                                contentDescription = "Clear",
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    } else {
+                        Icon(
+                            Icons.Default.ArrowForward,
+                            contentDescription = "Select",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
             }
         }
-        }
 
         item {
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(24.dp))
         }
 
         // Date filter section
         item {
-            Text(
-                "Date Range",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp, bottom = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.CalendarToday,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    "Date Range",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
         }
 
         // Date filter type selection
         item {
             Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            FilterChipWithColors(
-                selected = dateFilterType == TransactionSortOption.ENTRY_DATE,
-                onClick = { onDateFilterTypeChange(TransactionSortOption.ENTRY_DATE) },
-                label = "Entry date",
-                modifier = Modifier.weight(1f)
-            )
-            FilterChipWithColors(
-                selected = dateFilterType == TransactionSortOption.TRANSACTION_DATE,
-                onClick = { onDateFilterTypeChange(TransactionSortOption.TRANSACTION_DATE) },
-                label = "Transaction date",
-                modifier = Modifier.weight(1f)
-            )
-        }
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FilterChipWithColors(
+                    selected = dateFilterType == TransactionSortOption.ENTRY_DATE,
+                    onClick = { onDateFilterTypeChange(TransactionSortOption.ENTRY_DATE) },
+                    label = "Entry date",
+                    modifier = Modifier.weight(1f)
+                )
+                FilterChipWithColors(
+                    selected = dateFilterType == TransactionSortOption.TRANSACTION_DATE,
+                    onClick = { onDateFilterTypeChange(TransactionSortOption.TRANSACTION_DATE) },
+                    label = "Transaction date",
+                    modifier = Modifier.weight(1f)
+                )
+            }
         }
 
         item {
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(12.dp))
         }
 
         // Start date field
         item {
             Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { showStartDatePicker = true }
-        ) {
-            OutlinedTextField(
-                value = startDate?.let { formatDate(it) } ?: "",
-                onValueChange = {},
-                readOnly = true,
-                label = { Text("Start Date") },
-                placeholder = { Text("Select start date") },
-                modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(Icons.Default.CalendarToday, "Date") },
-                trailingIcon = {
-                    if (startDate != null) {
-                        IconButton(onClick = { onStartDateChange(null) }) {
-                            Icon(Icons.Default.Clear, "Clear")
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { showStartDatePicker = true }
+            ) {
+                OutlinedTextField(
+                    value = startDate?.let { formatDate(it) } ?: "",
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Start Date") },
+                    placeholder = { Text("Select start date") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    leadingIcon = { Icon(Icons.Default.CalendarToday, "Date") },
+                    trailingIcon = {
+                        if (startDate != null) {
+                            IconButton(onClick = { onStartDateChange(null) }) {
+                                Icon(Icons.Default.Clear, "Clear")
+                            }
                         }
-                    }
-                },
-                enabled = false,
-                colors = OutlinedTextFieldDefaults.colors(
-                    disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                    disabledBorderColor = MaterialTheme.colorScheme.outline,
-                    disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                    enabled = false,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                        disabledBorderColor = MaterialTheme.colorScheme.outline,
+                        disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 )
-            )
+            }
         }
+
+        item {
+            Spacer(Modifier.height(12.dp))
         }
 
         // End date field
         item {
             Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { showEndDatePicker = true }
-        ) {
-            OutlinedTextField(
-                value = endDate?.let { formatDate(it) } ?: "",
-                onValueChange = {},
-                readOnly = true,
-                label = { Text("End Date") },
-                placeholder = { Text("Select end date") },
-                modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(Icons.Default.CalendarToday, "Date") },
-                trailingIcon = {
-                    if (endDate != null) {
-                        IconButton(onClick = { onEndDateChange(null) }) {
-                            Icon(Icons.Default.Clear, "Clear")
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { showEndDatePicker = true }
+            ) {
+                OutlinedTextField(
+                    value = endDate?.let { formatDate(it) } ?: "",
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("End Date") },
+                    placeholder = { Text("Select end date") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    leadingIcon = { Icon(Icons.Default.CalendarToday, "Date") },
+                    trailingIcon = {
+                        if (endDate != null) {
+                            IconButton(onClick = { onEndDateChange(null) }) {
+                                Icon(Icons.Default.Clear, "Clear")
+                            }
                         }
-                    }
-                },
-                enabled = false,
-                colors = OutlinedTextFieldDefaults.colors(
-                    disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                    disabledBorderColor = MaterialTheme.colorScheme.outline,
-                    disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                    enabled = false,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                        disabledBorderColor = MaterialTheme.colorScheme.outline,
+                        disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 )
-            )
-        }
+            }
         }
 
         item {
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(24.dp))
         }
 
         // Sort by section
         item {
-            Text(
-                "Sort by",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp, bottom = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.Sort,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    "Sort by",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
         }
 
         item {
             Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            FilterChipWithColors(
-                selected = selectedSortBy == TransactionSortOption.ENTRY_DATE,
-                onClick = { onSortBySelected(TransactionSortOption.ENTRY_DATE) },
-                label = "Entry date",
-                modifier = Modifier.weight(1f)
-            )
-            FilterChipWithColors(
-                selected = selectedSortBy == TransactionSortOption.TRANSACTION_DATE,
-                onClick = { onSortBySelected(TransactionSortOption.TRANSACTION_DATE) },
-                label = "Transaction date",
-                modifier = Modifier.weight(1f)
-            )
-        }
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FilterChipWithColors(
+                    selected = selectedSortBy == TransactionSortOption.ENTRY_DATE,
+                    onClick = { onSortBySelected(TransactionSortOption.ENTRY_DATE) },
+                    label = "Entry date",
+                    modifier = Modifier.weight(1f)
+                )
+                FilterChipWithColors(
+                    selected = selectedSortBy == TransactionSortOption.TRANSACTION_DATE,
+                    onClick = { onSortBySelected(TransactionSortOption.TRANSACTION_DATE) },
+                    label = "Transaction date",
+                    modifier = Modifier.weight(1f)
+                )
+            }
         }
 
         item {
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(24.dp))
         }
 
         // Transaction type filter
         item {
             Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                "Transaction Type",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            if (selectedTypes.isNotEmpty()) {
-                TextButton(onClick = onClearTransactionTypes) {
-                    Text("Clear")
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp, bottom = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.FilterList,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        "Transaction Type",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                if (selectedTypes.isNotEmpty()) {
+                    TextButton(
+                        onClick = onClearTransactionTypes,
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            "Clear",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                 }
             }
-        }
         }
         
         // Group transaction types by category for better organization
@@ -797,10 +929,12 @@ private fun FiltersBottomSheetContent(
         
         // Helper function to render chips in rows (3 per row) using items
         fun renderTypeChipsItems(types: List<AllTransactionTypes>) {
-            types.chunked(3).forEach { rowTypes ->
+            types.chunked(3).forEachIndexed { index, rowTypes ->
                 item {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = if (index < types.chunked(3).size - 1) 8.dp else 0.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         rowTypes.forEach { type ->
@@ -826,13 +960,14 @@ private fun FiltersBottomSheetContent(
                 Text(
                     "Basic",
                     style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)
                 )
             }
             renderTypeChipsItems(basicTypes)
             item {
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(12.dp))
             }
         }
         
@@ -842,13 +977,14 @@ private fun FiltersBottomSheetContent(
                 Text(
                     "Cash Payment",
                     style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)
                 )
             }
             renderTypeChipsItems(cashPaymentTypes)
             item {
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(12.dp))
             }
         }
         
@@ -858,13 +994,14 @@ private fun FiltersBottomSheetContent(
                 Text(
                     "Expense & Income",
                     style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)
                 )
             }
             renderTypeChipsItems(expenseIncomeTypes)
             item {
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(12.dp))
             }
         }
         
@@ -874,13 +1011,14 @@ private fun FiltersBottomSheetContent(
                 Text(
                     "Stock Adjustment",
                     style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)
                 )
             }
             renderTypeChipsItems(stockAdjustmentTypes)
             item {
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(12.dp))
             }
         }
         
@@ -890,13 +1028,14 @@ private fun FiltersBottomSheetContent(
                 Text(
                     "Records",
                     style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)
                 )
             }
             renderTypeChipsItems(recordTypes)
             item {
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(12.dp))
             }
         }
         
@@ -906,13 +1045,14 @@ private fun FiltersBottomSheetContent(
                 Text(
                     "Other",
                     style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)
                 )
             }
             renderTypeChipsItems(otherTypes)
             item {
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(12.dp))
             }
         }
         
@@ -921,15 +1061,23 @@ private fun FiltersBottomSheetContent(
         item {
             Button(
                 onClick = onApplyFilters,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+                shape = RoundedCornerShape(12.dp),
+                contentPadding = PaddingValues(vertical = 16.dp)
             ) {
-                Text("Apply Filters")
+                Text(
+                    "Apply Filters",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
         }
         
         // Bottom padding for safe area
         item {
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(24.dp))
         }
     }
     
