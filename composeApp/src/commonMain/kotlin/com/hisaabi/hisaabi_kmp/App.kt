@@ -318,6 +318,7 @@ fun App() {
                     null
                 )
             }
+            var selectingPartyForFilter by remember { mutableStateOf(false) }
             var selectedPartyForEdit by remember {
                 mutableStateOf<Party?>(
                     null
@@ -878,6 +879,11 @@ fun App() {
                                         // Return to the appropriate screen
                                         currentScreen = returnToScreenAfterPartySelection
                                             ?: AppScreen.ADD_TRANSACTION_STEP1
+                                    } else if (selectingPartyForFilter) {
+                                        // Set the selected party for filter and navigate back to transactions list
+                                        selectedPartyForTransactionFilter = party
+                                        selectingPartyForFilter = false
+                                        currentScreen = AppScreen.TRANSACTIONS_LIST
                                     } else {
                                         // Party click handled by bottom sheet
                                     }
@@ -914,6 +920,10 @@ fun App() {
                                         returnToScreenAfterPartySelection = null
                                         isExpenseIncomePartySelection = false
                                         currentScreen = targetScreen
+                                    } else if (selectingPartyForFilter) {
+                                        // User cancelled party filter selection - navigate back to transactions list
+                                        selectingPartyForFilter = false
+                                        currentScreen = AppScreen.TRANSACTIONS_LIST
                                     } else {
                                         currentScreen = AppScreen.HOME
                                     }
@@ -1561,6 +1571,10 @@ fun App() {
                                     onNavigateBack = {
                                         selectedPartyForTransactionFilter = null
                                         navigateBack()
+                                    },
+                                    onSelectParty = {
+                                        selectingPartyForFilter = true
+                                        navigateTo(AppScreen.PARTIES)
                                     },
                                     onTransactionClick = { transaction ->
                                         selectedTransactionSlug = transaction.slug

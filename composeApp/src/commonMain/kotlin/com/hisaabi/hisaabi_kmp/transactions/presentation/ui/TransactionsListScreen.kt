@@ -22,6 +22,7 @@ import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionState
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionSortOption
+import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionsListViewModel
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.ManufactureInfo
 import com.hisaabi.hisaabi_kmp.utils.formatTransactionDate
@@ -57,7 +58,8 @@ fun TransactionsListScreen(
     onChangeStateToInProgress: ((Transaction) -> Unit)? ,
     onChangeStateToCompleted: ((Transaction) -> Unit)? ,
     onChangeStateToCanceled: ((Transaction) -> Unit)? ,
-    onOutstandingBalanceReminder: ((Transaction) -> Unit)?
+    onOutstandingBalanceReminder: ((Transaction) -> Unit)?,
+    onSelectParty: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -241,12 +243,18 @@ fun TransactionsListScreen(
                 startDate = state.startDate,
                 endDate = state.endDate,
                 dateFilterType = state.dateFilterType,
+                selectedParty = state.selectedParty,
                 onTypeSelected = { viewModel.setTransactionTypeFilter(it) },
                 onSortBySelected = { viewModel.setSortBy(it) },
                 onIdOrSlugFilterChange = { viewModel.setIdOrSlugFilter(it) },
                 onStartDateChange = { viewModel.setDateRange(it, state.endDate) },
                 onEndDateChange = { viewModel.setDateRange(state.startDate, it) },
                 onDateFilterTypeChange = { viewModel.setDateFilterType(it) },
+                onSelectParty = {
+                    viewModel.toggleFilters() // Close filter sheet first
+                    onSelectParty() // Then navigate to parties screen
+                },
+                onClearPartyFilter = { viewModel.setPartyFilter(null) },
                 onClearFilters = { 
                     viewModel.clearFilters()
                     viewModel.toggleFilters()
@@ -280,12 +288,15 @@ private fun FiltersBottomSheetContent(
     startDate: Long?,
     endDate: Long?,
     dateFilterType: TransactionSortOption,
+    selectedParty: Party?,
     onTypeSelected: (AllTransactionTypes?) -> Unit,
     onSortBySelected: (TransactionSortOption) -> Unit,
     onIdOrSlugFilterChange: (String) -> Unit,
     onStartDateChange: (Long?) -> Unit,
     onEndDateChange: (Long?) -> Unit,
     onDateFilterTypeChange: (TransactionSortOption) -> Unit,
+    onSelectParty: () -> Unit,
+    onClearPartyFilter: () -> Unit,
     onClearFilters: () -> Unit,
     onApplyFilters: () -> Unit
 ) {
@@ -341,6 +352,85 @@ private fun FiltersBottomSheetContent(
                 }
             }
         )
+
+        Spacer(Modifier.height(8.dp))
+
+        // Party filter section
+        Text(
+            "Party",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+        
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onSelectParty),
+            colors = CardDefaults.cardColors(
+                containerColor = if (selectedParty == null)
+                    MaterialTheme.colorScheme.surfaceVariant
+                else
+                    MaterialTheme.colorScheme.primaryContainer
+            )
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Person,
+                        contentDescription = null,
+                        tint = if (selectedParty == null)
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        else
+                            MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            selectedParty?.name ?: "Select Party",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = if (selectedParty != null) FontWeight.Bold else FontWeight.Normal,
+                            color = if (selectedParty == null)
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            else
+                                MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        selectedParty?.phone?.let { phone ->
+                            Text(
+                                phone,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+                if (selectedParty != null) {
+                    IconButton(onClick = onClearPartyFilter) {
+                        Icon(
+                            Icons.Default.Clear,
+                            contentDescription = "Clear",
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                } else {
+                    Icon(
+                        Icons.Default.ArrowForward,
+                        contentDescription = "Select",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+        }
 
         Spacer(Modifier.height(8.dp))
 
