@@ -5,8 +5,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -333,66 +331,79 @@ private fun FiltersBottomSheetContent(
     var showStartDatePicker by remember { mutableStateOf(false) }
     var showEndDatePicker by remember { mutableStateOf(false) }
     val currentTime = Clock.System.now().toEpochMilliseconds()
-    val scrollState = rememberScrollState()
+    val listState = rememberLazyListState()
     
-    Column(
+    LazyColumn(
         modifier = Modifier
             .fillMaxWidth()
-            .verticalScroll(scrollState)
             .padding(16.dp),
+        state = listState,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // Header
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                "Filter Transactions",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
-            TextButton(onClick = onClearFilters) {
-                Text("Clear All")
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Filter Transactions",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                TextButton(onClick = onClearFilters) {
+                    Text("Clear All")
+                }
             }
         }
         
-        HorizontalDivider()
+        item {
+            HorizontalDivider()
+        }
 
         // ID/Slug filter section
-        Text(
-            "ID/Slug",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold
-        )
+        item {
+            Text(
+                "ID/Slug",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+        }
 
-        OutlinedTextField(
-            value = idOrSlugFilter,
-            onValueChange = onIdOrSlugFilterChange,
-            label = { Text("ID/Slug") },
-            placeholder = { Text("Enter transaction ID or slug") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            trailingIcon = {
-                if (idOrSlugFilter.isNotEmpty()) {
-                    IconButton(onClick = { onIdOrSlugFilterChange("") }) {
-                        Icon(Icons.Default.Clear, "Clear")
+        item {
+            OutlinedTextField(
+                value = idOrSlugFilter,
+                onValueChange = onIdOrSlugFilterChange,
+                label = { Text("ID/Slug") },
+                placeholder = { Text("Enter transaction ID or slug") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                trailingIcon = {
+                    if (idOrSlugFilter.isNotEmpty()) {
+                        IconButton(onClick = { onIdOrSlugFilterChange("") }) {
+                            Icon(Icons.Default.Clear, "Clear")
+                        }
                     }
                 }
-            }
-        )
+            )
+        }
 
-        Spacer(Modifier.height(4.dp))
+        item {
+            Spacer(Modifier.height(4.dp))
+        }
 
         // Party filter section
-        Text(
-            "Party",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold
-        )
+        item {
+            Text(
+                "Party",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+        }
         
-        Card(
+        item {
+            Card(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable(onClick = onSelectParty),
@@ -461,17 +472,23 @@ private fun FiltersBottomSheetContent(
                 }
             }
         }
+        }
 
-        Spacer(Modifier.height(4.dp))
+        item {
+            Spacer(Modifier.height(4.dp))
+        }
 
         // Area filter section
-        Text(
-            "Party Area",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold
-        )
+        item {
+            Text(
+                "Party Area",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+        }
         
-        Card(
+        item {
+            Card(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable(onClick = onSelectArea),
@@ -531,17 +548,23 @@ private fun FiltersBottomSheetContent(
                 }
             }
         }
+        }
 
-        Spacer(Modifier.height(4.dp))
+        item {
+            Spacer(Modifier.height(4.dp))
+        }
 
         // Category filter section
-        Text(
-            "Party Category",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold
-        )
+        item {
+            Text(
+                "Party Category",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+        }
         
-        Card(
+        item {
+            Card(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable(onClick = onSelectCategory),
@@ -601,18 +624,24 @@ private fun FiltersBottomSheetContent(
                 }
             }
         }
+        }
 
-        Spacer(Modifier.height(4.dp))
+        item {
+            Spacer(Modifier.height(4.dp))
+        }
 
         // Date filter section
-        Text(
-            "Date Range",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold
-        )
+        item {
+            Text(
+                "Date Range",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+        }
 
         // Date filter type selection
-        Row(
+        item {
+            Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -629,11 +658,15 @@ private fun FiltersBottomSheetContent(
                 modifier = Modifier.weight(1f)
             )
         }
+        }
 
-        Spacer(Modifier.height(4.dp))
+        item {
+            Spacer(Modifier.height(4.dp))
+        }
 
         // Start date field
-        Box(
+        item {
+            Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { showStartDatePicker = true }
@@ -662,9 +695,11 @@ private fun FiltersBottomSheetContent(
                 )
             )
         }
+        }
 
         // End date field
-        Box(
+        item {
+            Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { showEndDatePicker = true }
@@ -693,17 +728,23 @@ private fun FiltersBottomSheetContent(
                 )
             )
         }
+        }
 
-        Spacer(Modifier.height(4.dp))
+        item {
+            Spacer(Modifier.height(4.dp))
+        }
 
         // Sort by section
-        Text(
-            "Sort by",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold
-        )
+        item {
+            Text(
+                "Sort by",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+        }
 
-        Row(
+        item {
+            Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -720,11 +761,15 @@ private fun FiltersBottomSheetContent(
                 modifier = Modifier.weight(1f)
             )
         }
+        }
 
-        Spacer(Modifier.height(4.dp))
+        item {
+            Spacer(Modifier.height(4.dp))
+        }
 
         // Transaction type filter
-        Row(
+        item {
+            Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
@@ -740,6 +785,7 @@ private fun FiltersBottomSheetContent(
                 }
             }
         }
+        }
         
         // Group transaction types by category for better organization
         val basicTypes = AllTransactionTypes.entries.filter { it.category == TransactionCategory.BASIC }
@@ -749,25 +795,26 @@ private fun FiltersBottomSheetContent(
         val recordTypes = AllTransactionTypes.entries.filter { it.category == TransactionCategory.RECORD }
         val otherTypes = AllTransactionTypes.entries.filter { it.category == TransactionCategory.OTHER }
         
-        // Helper composable to render chips in rows (3 per row)
-        @Composable
-        fun renderTypeChips(types: List<AllTransactionTypes>) {
+        // Helper function to render chips in rows (3 per row) using items
+        fun renderTypeChipsItems(types: List<AllTransactionTypes>) {
             types.chunked(3).forEach { rowTypes ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    rowTypes.forEach { type ->
-                        FilterChipWithColors(
-                            selected = selectedTypes.contains(type),
-                            onClick = { onTypeToggled(type) },
-                            label = type.displayName,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                    // Fill remaining space if row has less than 3 items
-                    repeat(3 - rowTypes.size) {
-                        Spacer(Modifier.weight(1f))
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        rowTypes.forEach { type ->
+                            FilterChipWithColors(
+                                selected = selectedTypes.contains(type),
+                                onClick = { onTypeToggled(type) },
+                                label = type.displayName,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        // Fill remaining space if row has less than 3 items
+                        repeat(3 - rowTypes.size) {
+                            Spacer(Modifier.weight(1f))
+                        }
                     }
                 }
             }
@@ -775,87 +822,115 @@ private fun FiltersBottomSheetContent(
         
         // Basic Transaction Types
         if (basicTypes.isNotEmpty()) {
-            Text(
-                "Basic",
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            renderTypeChips(basicTypes)
-            Spacer(Modifier.height(4.dp))
+            item {
+                Text(
+                    "Basic",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            renderTypeChipsItems(basicTypes)
+            item {
+                Spacer(Modifier.height(4.dp))
+            }
         }
         
         // Cash Payment Types
         if (cashPaymentTypes.isNotEmpty()) {
-            Text(
-                "Cash Payment",
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            renderTypeChips(cashPaymentTypes)
-            Spacer(Modifier.height(4.dp))
+            item {
+                Text(
+                    "Cash Payment",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            renderTypeChipsItems(cashPaymentTypes)
+            item {
+                Spacer(Modifier.height(4.dp))
+            }
         }
         
         // Expense & Income Types
         if (expenseIncomeTypes.isNotEmpty()) {
-            Text(
-                "Expense & Income",
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            renderTypeChips(expenseIncomeTypes)
-            Spacer(Modifier.height(4.dp))
+            item {
+                Text(
+                    "Expense & Income",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            renderTypeChipsItems(expenseIncomeTypes)
+            item {
+                Spacer(Modifier.height(4.dp))
+            }
         }
         
         // Stock Adjustment Types
         if (stockAdjustmentTypes.isNotEmpty()) {
-            Text(
-                "Stock Adjustment",
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            renderTypeChips(stockAdjustmentTypes)
-            Spacer(Modifier.height(4.dp))
+            item {
+                Text(
+                    "Stock Adjustment",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            renderTypeChipsItems(stockAdjustmentTypes)
+            item {
+                Spacer(Modifier.height(4.dp))
+            }
         }
         
         // Record Types
         if (recordTypes.isNotEmpty()) {
-            Text(
-                "Records",
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            renderTypeChips(recordTypes)
-            Spacer(Modifier.height(4.dp))
+            item {
+                Text(
+                    "Records",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            renderTypeChipsItems(recordTypes)
+            item {
+                Spacer(Modifier.height(4.dp))
+            }
         }
         
         // Other Types
         if (otherTypes.isNotEmpty()) {
-            Text(
-                "Other",
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            renderTypeChips(otherTypes)
-            Spacer(Modifier.height(4.dp))
+            item {
+                Text(
+                    "Other",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            renderTypeChipsItems(otherTypes)
+            item {
+                Spacer(Modifier.height(4.dp))
+            }
         }
         
    
         // Apply button
-        Button(
-            onClick = onApplyFilters,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Apply Filters")
+        item {
+            Button(
+                onClick = onApplyFilters,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Apply Filters")
+            }
         }
         
         // Bottom padding for safe area
-        Spacer(Modifier.height(16.dp))
+        item {
+            Spacer(Modifier.height(16.dp))
+        }
     }
     
     // Start Date Picker Dialog
