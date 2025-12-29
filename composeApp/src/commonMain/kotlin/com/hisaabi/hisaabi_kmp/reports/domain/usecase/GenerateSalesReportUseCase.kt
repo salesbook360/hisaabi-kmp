@@ -75,7 +75,7 @@ class GenerateSalesReportUseCase(
             
             val date = formatTimestamp(transaction.timestamp)
             val invoiceNo = transaction.slug?.takeLast(8)?.uppercase() ?: "-"
-            val customerName = transaction.customer_slug?.takeLast(10) ?: "Walk-in Customer"
+            val customerName = transaction.party_slug?.takeLast(10) ?: "Walk-in Customer"
             
             rows.add(
                 ReportRow(

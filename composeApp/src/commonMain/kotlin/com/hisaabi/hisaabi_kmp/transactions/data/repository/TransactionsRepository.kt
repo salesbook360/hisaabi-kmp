@@ -35,7 +35,7 @@ class TransactionsRepository(
         return localDataSource.getAllTransactions().map { entities ->
             entities.map { entity ->
                 // Load party for each transaction to display in list
-                val party = entity.customer_slug?.let { 
+                val party = entity.party_slug?.let { 
                     partiesRepository.getPartyBySlug(it) 
                 }
                 entity.toDomainModel(party = party)
@@ -51,11 +51,11 @@ class TransactionsRepository(
         return localDataSource.getTransactionBySlug(slug)?.toDomainModel()
     }
     
-    fun getTransactionsByCustomer(customerSlug: String): Flow<List<Transaction>> {
-        return localDataSource.getTransactionsByCustomer(customerSlug).map { entities ->
+    fun getTransactionsByCustomer(partySlug: String): Flow<List<Transaction>> {
+        return localDataSource.getTransactionsByCustomer(partySlug).map { entities ->
             entities.map { entity ->
                 // Load party for each transaction to display in list
-                val party = entity.customer_slug?.let { 
+                val party = entity.party_slug?.let { 
                     partiesRepository.getPartyBySlug(it) 
                 }
                 entity.toDomainModel(party = party)
@@ -67,7 +67,7 @@ class TransactionsRepository(
         return localDataSource.getTransactionsByType(transactionType).map { entities ->
             entities.map { entity ->
                 // Load party for each transaction to display in list
-                val party = entity.customer_slug?.let { 
+                val party = entity.party_slug?.let { 
                     partiesRepository.getPartyBySlug(it) 
                 }
                 entity.toDomainModel(party = party)
@@ -79,7 +79,7 @@ class TransactionsRepository(
         return localDataSource.getTransactionsByBusiness(businessSlug).map { entities ->
             entities.map { entity ->
                 // Load party for each transaction to display in list
-                val party = entity.customer_slug?.let { 
+                val party = entity.party_slug?.let { 
                     partiesRepository.getPartyBySlug(it) 
                 }
                 entity.toDomainModel(party = party)
@@ -91,7 +91,7 @@ class TransactionsRepository(
         val transactionEntity = localDataSource.getTransactionBySlug(slug) ?: return null
         
         // Load related entities
-        val party = transactionEntity.customer_slug?.let { 
+        val party = transactionEntity.party_slug?.let { 
             partiesRepository.getPartyBySlug(it) 
         }
         
@@ -144,7 +144,7 @@ class TransactionsRepository(
         
         return childEntities.map { entity ->
             // Load related entities for each child
-            val party = entity.customer_slug?.let { 
+            val party = entity.party_slug?.let { 
                 partiesRepository.getPartyBySlug(it) 
             }
             
@@ -374,7 +374,7 @@ class TransactionsRepository(
             // 1. Create and save parent manufacture transaction
             val parentTransaction = Transaction(
                 id = 0,
-                customerSlug = null, // No customer for manufacture
+                partySlug = null, // No party for manufacture
                 party = null,
                 priceTypeId = 1, // Purchase price type
                 transactionType = AllTransactionTypes.MANUFACTURE.value, // MANUFACTURE type
@@ -411,7 +411,7 @@ class TransactionsRepository(
             // 2. Create and save child Sale transaction (ingredients stock out)
             val saleTransaction = Transaction(
                 id = 0,
-                customerSlug = null,
+                partySlug = null,
                 party = null,
                 priceTypeId = 1,
                 transactionType = AllTransactionTypes.SALE.value,
@@ -466,7 +466,7 @@ class TransactionsRepository(
             // 3. Create and save child Purchase transaction (recipe stock in)
             val purchaseTransaction = Transaction(
                 id = 0,
-                customerSlug = null,
+                partySlug = null,
                 party = null,
                 priceTypeId = 1,
                 transactionType = AllTransactionTypes.PURCHASE.value,
@@ -545,7 +545,7 @@ class TransactionsRepository(
     ): Transaction {
         return Transaction(
             id = id,
-            customerSlug = customer_slug,
+            partySlug = party_slug,
             party = party,
             parentSlug = parent_slug,
             totalBill = total_bill,
@@ -616,7 +616,7 @@ class TransactionsRepository(
     private fun Transaction.toEntity(transactionSlug: String): InventoryTransactionEntity {
         return InventoryTransactionEntity(
             id = id,
-            customer_slug = customerSlug,
+            party_slug = partySlug,
             parent_slug = parentSlug,
             total_bill = totalBill,
             total_paid = totalPaid,

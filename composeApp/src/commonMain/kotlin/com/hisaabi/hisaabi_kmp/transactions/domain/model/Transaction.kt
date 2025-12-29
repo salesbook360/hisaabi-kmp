@@ -6,7 +6,7 @@ import com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse
 
 data class Transaction(
     val id: Int = 0,
-    val customerSlug: String? = null,
+    val partySlug: String? = null,
     val party: Party? = null,
     val parentSlug: String? = null,
     val totalBill: Double = 0.0,

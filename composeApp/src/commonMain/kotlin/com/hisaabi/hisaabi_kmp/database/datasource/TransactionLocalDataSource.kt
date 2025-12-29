@@ -23,8 +23,8 @@ class TransactionLocalDataSource(
         return transactionDao.getTransactionBySlug(slug)
     }
     
-    fun getTransactionsByCustomer(customerSlug: String): Flow<List<InventoryTransactionEntity>> {
-        return transactionDao.getTransactionsByCustomer(customerSlug)
+    fun getTransactionsByCustomer(partySlug: String): Flow<List<InventoryTransactionEntity>> {
+        return transactionDao.getTransactionsByCustomer(partySlug)
     }
     
     fun getTransactionsByType(transactionType: Int): Flow<List<InventoryTransactionEntity>> {

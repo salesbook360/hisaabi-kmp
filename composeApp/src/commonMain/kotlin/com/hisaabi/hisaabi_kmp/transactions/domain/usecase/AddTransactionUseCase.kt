@@ -35,7 +35,7 @@ class AddTransactionUseCase(
         
         // Records may not require a party (e.g., Self Note)
         // Payment transfers, journal vouchers, and stock adjustments don't need a party either
-        if (!isRecordType && !isPayGetCashTransaction && !isExpenseIncomeTransaction && !isPaymentTransferTransaction && !isJournalVoucherTransaction && !isStockAdjustmentTransaction && transaction.customerSlug.isNullOrBlank() && transaction.party == null) {
+        if (!isRecordType && !isPayGetCashTransaction && !isExpenseIncomeTransaction && !isPaymentTransferTransaction && !isJournalVoucherTransaction && !isStockAdjustmentTransaction && transaction.partySlug.isNullOrBlank() && transaction.party == null) {
             return Result.failure(Exception("Transaction must have a party (customer/vendor)"))
         }
         

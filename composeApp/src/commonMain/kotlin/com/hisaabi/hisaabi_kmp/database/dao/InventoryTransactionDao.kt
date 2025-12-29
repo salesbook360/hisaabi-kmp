@@ -25,8 +25,8 @@ interface InventoryTransactionDao {
     @Query("SELECT * FROM InventoryTransaction WHERE parent_slug = :parentSlug ORDER BY timestamp ASC")
     suspend fun getChildTransactionsList(parentSlug: String): List<InventoryTransactionEntity>
     
-    @Query("SELECT * FROM InventoryTransaction WHERE customer_slug = :customerSlug AND (parent_slug IS NULL OR parent_slug = '') ORDER BY timestamp DESC")
-    fun getTransactionsByCustomer(customerSlug: String): Flow<List<InventoryTransactionEntity>>
+    @Query("SELECT * FROM InventoryTransaction WHERE party_slug = :partySlug AND (parent_slug IS NULL OR parent_slug = '') ORDER BY timestamp DESC")
+    fun getTransactionsByCustomer(partySlug: String): Flow<List<InventoryTransactionEntity>>
     
     @Query("SELECT * FROM InventoryTransaction WHERE transaction_type = :transactionType AND (parent_slug IS NULL OR parent_slug = '') ORDER BY timestamp DESC")
     fun getTransactionsByType(transactionType: Int): Flow<List<InventoryTransactionEntity>>

@@ -287,7 +287,7 @@ class AddManufactureViewModel(
                     // 1. Update parent transaction
                     val parentTransaction = Transaction(
                         id = oldParentTransaction.id,
-                        customerSlug = null,
+                        partySlug = null,
                         party = null,
                         priceTypeId = 1,
                         transactionType = AllTransactionTypes.MANUFACTURE.value,
@@ -319,7 +319,7 @@ class AddManufactureViewModel(
                     // 2. Update child Sale transaction (ingredients stock out)
                     val saleTransaction = Transaction(
                         id = oldSaleTransaction?.id ?: 0,
-                        customerSlug = null,
+                        partySlug = null,
                         party = null,
                         priceTypeId = 1,
                         transactionType = AllTransactionTypes.SALE.value,
@@ -353,7 +353,7 @@ class AddManufactureViewModel(
                     // 3. Update child Purchase transaction (recipe stock in)
                     val purchaseTransaction = Transaction(
                         id = oldPurchaseTransaction?.id ?: 0,
-                        customerSlug = null,
+                        partySlug = null,
                         party = null,
                         priceTypeId = 1,
                         transactionType = AllTransactionTypes.PURCHASE.value,
@@ -392,7 +392,7 @@ class AddManufactureViewModel(
                     // 1. Save parent transaction first
                     val parentTransaction = Transaction(
                         id = 0,
-                        customerSlug = null,
+                        partySlug = null,
                         party = null,
                         priceTypeId = 1,
                         transactionType = AllTransactionTypes.MANUFACTURE.value,
@@ -427,7 +427,7 @@ class AddManufactureViewModel(
                         // 2. Create and save child Sale transaction (ingredients stock out)
                         val saleTransaction = Transaction(
                             id = 0,
-                            customerSlug = null,
+                            partySlug = null,
                             party = null,
                             priceTypeId = 1,
                             transactionType = AllTransactionTypes.SALE.value,
@@ -462,7 +462,7 @@ class AddManufactureViewModel(
                             // 3. Create and save child Purchase transaction (recipe stock in)
                             val purchaseTransaction = Transaction(
                                 id = 0,
-                                customerSlug = null,
+                                partySlug = null,
                                 party = null,
                                 priceTypeId = 1,
                                 transactionType = AllTransactionTypes.PURCHASE.value,

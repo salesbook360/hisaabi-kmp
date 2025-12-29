@@ -24,7 +24,7 @@ import com.hisaabi.hisaabi_kmp.database.entity.*
         BusinessEntity::class,
         UserAuthEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = true
 )
 @ConstructedBy(AppDatabaseConstructor::class)

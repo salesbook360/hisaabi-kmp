@@ -132,7 +132,7 @@ class AddRecordViewModel(
                 
                 val transaction = Transaction(
                     slug = currentState.editingTransactionSlug, // Include slug if editing
-                    customerSlug = currentState.selectedParty?.slug,
+                    partySlug = currentState.selectedParty?.slug,
                     party = currentState.selectedParty,
                     transactionType = currentState.recordType.value,
                     stateId = currentState.state.value,

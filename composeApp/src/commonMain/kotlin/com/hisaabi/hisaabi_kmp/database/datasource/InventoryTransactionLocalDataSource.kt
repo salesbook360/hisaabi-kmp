@@ -8,7 +8,7 @@ interface InventoryTransactionLocalDataSource {
     fun getAllTransactions(): Flow<List<InventoryTransactionEntity>>
     suspend fun getTransactionById(id: Int): InventoryTransactionEntity?
     suspend fun getTransactionBySlug(slug: String): InventoryTransactionEntity?
-    fun getTransactionsByCustomer(customerSlug: String): Flow<List<InventoryTransactionEntity>>
+    fun getTransactionsByCustomer(partySlug: String): Flow<List<InventoryTransactionEntity>>
     fun getTransactionsByType(transactionType: Int): Flow<List<InventoryTransactionEntity>>
     fun getTransactionsByBusiness(businessSlug: String): Flow<List<InventoryTransactionEntity>>
     suspend fun getUnsyncedTransactions(businessSlug: String): List<InventoryTransactionEntity>
@@ -32,8 +32,8 @@ class InventoryTransactionLocalDataSourceImpl(
     override suspend fun getTransactionBySlug(slug: String): InventoryTransactionEntity? = 
         transactionDao.getTransactionBySlug(slug)
     
-    override fun getTransactionsByCustomer(customerSlug: String): Flow<List<InventoryTransactionEntity>> = 
-        transactionDao.getTransactionsByCustomer(customerSlug)
+    override fun getTransactionsByCustomer(partySlug: String): Flow<List<InventoryTransactionEntity>> = 
+        transactionDao.getTransactionsByCustomer(partySlug)
     
     override fun getTransactionsByType(transactionType: Int): Flow<List<InventoryTransactionEntity>> = 
         transactionDao.getTransactionsByType(transactionType)

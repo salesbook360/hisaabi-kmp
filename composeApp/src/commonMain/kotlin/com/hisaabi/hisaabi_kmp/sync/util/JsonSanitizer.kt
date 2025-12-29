@@ -91,7 +91,7 @@ object JsonSanitizer {
             createdBy = sanitizeString(transaction.createdBy),
             createdAt = sanitizeString(transaction.createdAt),
             updatedAt = sanitizeString(transaction.updatedAt),
-            customerSlug = sanitizeString(transaction.customerSlug),
+            partySlug = sanitizeString(transaction.partySlug),
             timestamp = sanitizeString(transaction.timestamp),
             paymentMethodTo = sanitizeString(transaction.paymentMethodTo),
             paymentMethodFrom = sanitizeString(transaction.paymentMethodFrom),

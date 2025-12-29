@@ -177,7 +177,7 @@ class PayGetCashViewModel(
                 
                 val transaction = Transaction(
                     slug = currentState.editingTransactionSlug, // Include slug if editing
-                    customerSlug = currentState.selectedParty.slug,
+                    partySlug = currentState.selectedParty.slug,
                     party = currentState.selectedParty,
                     transactionType = transactionType,
                     totalPaid = amountValue,

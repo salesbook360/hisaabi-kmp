@@ -25,8 +25,8 @@ class GetTransactionsUseCase(
         }
     }
     
-    fun byCustomer(customerSlug: String): Flow<List<Transaction>> {
-        return repository.getTransactionsByCustomer(customerSlug)
+    fun byCustomer(partySlug: String): Flow<List<Transaction>> {
+        return repository.getTransactionsByCustomer(partySlug)
     }
     
     fun byType(transactionType: Int): Flow<List<Transaction>> {

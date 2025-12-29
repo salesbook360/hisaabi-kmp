@@ -292,7 +292,7 @@ class TransactionProcessor(
      * Update party (customer/vendor) balance based on transaction type.
      */
     private suspend fun updatePartyBalance(transaction: Transaction, isReverse: Boolean) {
-        val partySlug = transaction.customerSlug ?: return
+        val partySlug = transaction.partySlug ?: return
         
         // Calculate balance adjustment based on transaction type
         val balanceAdjustment = calculatePartyBalanceAdjustment(transaction)

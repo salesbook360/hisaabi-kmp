@@ -933,7 +933,7 @@ class AddTransactionViewModel(
         
         return Transaction(
             slug = state.editingTransactionSlug, // Include slug if editing
-            customerSlug = state.selectedParty?.slug,
+            partySlug = state.selectedParty?.slug,
             party = state.selectedParty,
             totalBill = subtotal,
             totalPaid = state.paidNow,

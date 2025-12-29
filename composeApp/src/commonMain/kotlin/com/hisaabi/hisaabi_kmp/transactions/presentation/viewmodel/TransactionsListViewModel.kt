@@ -163,7 +163,7 @@ class TransactionsListViewModel(
         
         // Filter by party
         state.selectedParty?.let { party ->
-            filtered = filtered.filter { it.customerSlug == party.slug }
+            filtered = filtered.filter { it.partySlug == party.slug }
         }
         
         // Filter by search query

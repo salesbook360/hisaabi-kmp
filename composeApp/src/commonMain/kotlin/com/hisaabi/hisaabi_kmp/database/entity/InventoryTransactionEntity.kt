@@ -11,7 +11,7 @@ import androidx.room.PrimaryKey
 data class InventoryTransactionEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-    val customer_slug: String?,
+    val party_slug: String?,
     val parent_slug: String?,
     val total_bill: Double = 0.0,
     val total_paid: Double = 0.0,

@@ -284,7 +284,7 @@ class AddJournalVoucherViewModel(
                                     val childTransaction = Transaction(
                                         parentSlug = finalParentSlug,
                                         transactionType = transactionType,
-                                        customerSlug = account.party.slug,
+                                        partySlug = account.party.slug,
                                         party = account.party,
                                         totalPaid = amount,
                                         totalBill = 0.0,

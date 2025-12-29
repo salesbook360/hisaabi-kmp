@@ -253,7 +253,7 @@ fun InventoryTransactionEntity.toDto() = TransactionDto(
     createdBy = created_by,
     createdAt = created_at,
     updatedAt = updated_at,
-    customerSlug = customer_slug,
+    partySlug = party_slug,
     totalBill = total_bill,
     totalPaid = total_paid,
     timestamp = timestamp,
@@ -280,7 +280,7 @@ fun InventoryTransactionEntity.toDto() = TransactionDto(
 
 fun TransactionDto.toEntity() = InventoryTransactionEntity(
     id = id,
-    customer_slug = customerSlug,
+    party_slug = partySlug,
     parent_slug = parentSlug,
     total_bill = totalBill,
     total_paid = totalPaid,
