@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -57,6 +58,20 @@ fun TransactionsListScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val sheetState = rememberModalBottomSheetState()
     var showSearchBar by remember { mutableStateOf(false) }
+    
+    // LazyListState for scroll position preservation
+    val listState = rememberLazyListState(
+        initialFirstVisibleItemIndex = state.scrollPosition,
+        initialFirstVisibleItemScrollOffset = state.scrollOffset
+    )
+    
+    // Sync scroll position changes back to ViewModel
+    LaunchedEffect(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset) {
+        viewModel.updateScrollPosition(
+            listState.firstVisibleItemIndex,
+            listState.firstVisibleItemScrollOffset
+        )
+    }
     
     // Currency
     val preferencesManager: PreferencesManager = koinInject()
@@ -168,6 +183,7 @@ fun TransactionsListScreen(
                 }
                 else -> {
                     LazyColumn(
+                        state = listState,
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)

@@ -29,7 +29,10 @@ data class TransactionsListState(
     val startDate: String? = null,
     val endDate: String? = null,
     val showFilters: Boolean = false,
-    val sortBy: TransactionSortOption = TransactionSortOption.TRANSACTION_DATE
+    val sortBy: TransactionSortOption = TransactionSortOption.TRANSACTION_DATE,
+    // Scroll position preservation
+    val scrollPosition: Int = 0,
+    val scrollOffset: Int = 0
 )
 
 class TransactionsListViewModel(
@@ -248,6 +251,15 @@ class TransactionsListViewModel(
     
     fun clearError() {
         _state.update { it.copy(error = null) }
+    }
+    
+    fun updateScrollPosition(firstVisibleItemIndex: Int, firstVisibleItemScrollOffset: Int) {
+        _state.update { 
+            it.copy(
+                scrollPosition = firstVisibleItemIndex,
+                scrollOffset = firstVisibleItemScrollOffset
+            )
+        }
     }
     
     // Convert Sale Order/Quotation to Sale
