@@ -232,8 +232,10 @@ fun TransactionsListScreen(
             FiltersBottomSheetContent(
                 selectedType = state.selectedTransactionType,
                 selectedSortBy = state.sortBy,
+                idOrSlugFilter = state.idOrSlugFilter,
                 onTypeSelected = { viewModel.setTransactionTypeFilter(it) },
                 onSortBySelected = { viewModel.setSortBy(it) },
+                onIdOrSlugFilterChange = { viewModel.setIdOrSlugFilter(it) },
                 onClearFilters = { 
                     viewModel.clearFilters()
                     viewModel.toggleFilters()
@@ -263,8 +265,10 @@ fun TransactionsListScreen(
 private fun FiltersBottomSheetContent(
     selectedType: AllTransactionTypes?,
     selectedSortBy: TransactionSortOption,
+    idOrSlugFilter: String,
     onTypeSelected: (AllTransactionTypes?) -> Unit,
     onSortBySelected: (TransactionSortOption) -> Unit,
+    onIdOrSlugFilterChange: (String) -> Unit,
     onClearFilters: () -> Unit,
     onApplyFilters: () -> Unit
 ) {
@@ -291,7 +295,32 @@ private fun FiltersBottomSheetContent(
         }
         
         HorizontalDivider()
-        
+
+        // ID/Slug filter section
+        Text(
+            "ID/Slug",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+
+        OutlinedTextField(
+            value = idOrSlugFilter,
+            onValueChange = onIdOrSlugFilterChange,
+            label = { Text("ID/Slug") },
+            placeholder = { Text("Enter transaction ID or slug") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            trailingIcon = {
+                if (idOrSlugFilter.isNotEmpty()) {
+                    IconButton(onClick = { onIdOrSlugFilterChange("") }) {
+                        Icon(Icons.Default.Clear, "Clear")
+                    }
+                }
+            }
+        )
+
+        Spacer(Modifier.height(8.dp))
+
         // Transaction type filter
         Text(
             "Transaction Type",
@@ -345,6 +374,8 @@ private fun FiltersBottomSheetContent(
         }
         
         Spacer(Modifier.height(8.dp))
+
+
         
         // Sort by section
         Text(

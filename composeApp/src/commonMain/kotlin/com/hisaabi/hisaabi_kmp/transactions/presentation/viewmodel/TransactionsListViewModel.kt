@@ -26,6 +26,7 @@ data class TransactionsListState(
     val selectedTransactionType: AllTransactionTypes? = null,
     val selectedParty: Party? = null,
     val searchQuery: String = "",
+    val idOrSlugFilter: String = "",
     val startDate: String? = null,
     val endDate: String? = null,
     val showFilters: Boolean = false,
@@ -169,6 +170,15 @@ class TransactionsListViewModel(
             }
         }
         
+        // Filter by id or slug
+        if (state.idOrSlugFilter.isNotBlank()) {
+            filtered = filtered.filter { transaction ->
+                transaction.id.toString() == state.idOrSlugFilter ||
+                transaction.slug?.equals(state.idOrSlugFilter, ignoreCase = true) == true ||
+                transaction.slug?.contains(state.idOrSlugFilter, ignoreCase = true) == true
+            }
+        }
+        
         // Sort by selected option
         return when (state.sortBy) {
             TransactionSortOption.ENTRY_DATE -> {
@@ -195,6 +205,11 @@ class TransactionsListViewModel(
         refreshFilters()
     }
     
+    fun setIdOrSlugFilter(filter: String) {
+        _state.update { it.copy(idOrSlugFilter = filter) }
+        refreshFilters()
+    }
+    
     fun setSortBy(sortBy: TransactionSortOption) {
         _state.update { it.copy(sortBy = sortBy) }
         refreshFilters()
@@ -215,6 +230,7 @@ class TransactionsListViewModel(
                 selectedTransactionType = null,
                 selectedParty = null,
                 searchQuery = "",
+                idOrSlugFilter = "",
                 startDate = null,
                 endDate = null,
                 sortBy = TransactionSortOption.TRANSACTION_DATE
