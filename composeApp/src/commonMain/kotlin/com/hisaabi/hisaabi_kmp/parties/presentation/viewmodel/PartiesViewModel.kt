@@ -199,7 +199,7 @@ class PartiesViewModel(
 
 data class PartiesUiState(
     val parties: List<Party> = emptyList(),
-    val selectedSegment: PartySegment = PartySegment.CUSTOMER,
+    val selectedSegment: PartySegment = PartySegment.ALL,
     val selectedFilter: PartiesFilter = PartiesFilter.ALL_PARTIES,
     val searchQuery: String = "",
     val totalCount: Int = 0,

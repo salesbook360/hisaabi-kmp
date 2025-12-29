@@ -68,6 +68,7 @@ enum class PartiesFilter {
 }
 
 enum class PartySegment {
+    ALL,
     CUSTOMER,
     VENDOR,
     INVESTOR,
@@ -75,6 +76,13 @@ enum class PartySegment {
     EXTRA_INCOME;
     
     fun toPartyTypes(): List<Int> = when (this) {
+        ALL -> listOf(
+            PartyType.CUSTOMER.type,
+            PartyType.WALK_IN_CUSTOMER.type,
+            PartyType.VENDOR.type,
+            PartyType.DEFAULT_VENDOR.type,
+            PartyType.INVESTOR.type
+        )
         CUSTOMER -> listOf(PartyType.CUSTOMER.type, PartyType.WALK_IN_CUSTOMER.type)
         VENDOR -> listOf(PartyType.VENDOR.type, PartyType.DEFAULT_VENDOR.type)
         INVESTOR -> listOf(PartyType.INVESTOR.type)

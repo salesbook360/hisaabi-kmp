@@ -233,7 +233,10 @@ fun PartiesScreen(
                 ) {
                     Column {
                         Text(
-                            text = "Total ${uiState.selectedSegment.name}s",
+                            text = when (uiState.selectedSegment) {
+                                PartySegment.ALL -> "Total Parties"
+                                else -> "Total ${uiState.selectedSegment.name}s"
+                            },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
@@ -306,7 +309,10 @@ fun PartiesScreen(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "No ${uiState.selectedSegment.name.lowercase()}s found",
+                            text = when (uiState.selectedSegment) {
+                                PartySegment.ALL -> "No parties found"
+                                else -> "No ${uiState.selectedSegment.name.lowercase()}s found"
+                            },
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -314,7 +320,12 @@ fun PartiesScreen(
                         Button(onClick = onAddPartyClick) {
                             Icon(Icons.Default.Add, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Add ${uiState.selectedSegment.name}")
+                            Text(
+                                when (uiState.selectedSegment) {
+                                    PartySegment.ALL -> "Add Party"
+                                    else -> "Add ${uiState.selectedSegment.name}"
+                                }
+                            )
                         }
                     }
                 }
@@ -403,7 +414,7 @@ private fun PartySegmentControl(
     val visibleSegments = if (isExpenseIncomeContext) {
         listOf(PartySegment.EXPENSE, PartySegment.EXTRA_INCOME)
     } else {
-        listOf(PartySegment.CUSTOMER, PartySegment.VENDOR, PartySegment.INVESTOR)
+        listOf(PartySegment.ALL, PartySegment.CUSTOMER, PartySegment.VENDOR, PartySegment.INVESTOR)
     }
 
     SegmentedControl(
@@ -413,6 +424,7 @@ private fun PartySegmentControl(
         modifier = modifier,
         itemDisplayName = { segment ->
             when (segment) {
+                PartySegment.ALL -> "All"
                 PartySegment.EXPENSE -> "Expense"
                 PartySegment.EXTRA_INCOME -> "Extra Income"
                 else -> segment.name
