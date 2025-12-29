@@ -1,5 +1,6 @@
 package com.hisaabi.hisaabi_kmp.database.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -11,6 +12,7 @@ import androidx.room.PrimaryKey
 data class InventoryTransactionEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
+    @ColumnInfo(name = "party_slug")
     val party_slug: String?,
     val parent_slug: String?,
     val total_bill: Double = 0.0,

@@ -169,6 +169,7 @@ data class TransactionDto(
     val createdBy: String? = null,
     val createdAt: String? = null,
     val updatedAt: String? = null,
+    @SerialName("customerSlug")
     val partySlug: String? = null,
     val totalBill: Double = 0.0,
     val totalPaid: Double = 0.0,
