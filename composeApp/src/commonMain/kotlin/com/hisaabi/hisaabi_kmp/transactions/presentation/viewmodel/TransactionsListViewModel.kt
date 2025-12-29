@@ -23,7 +23,8 @@ data class ManufactureInfo(
 )
 
 data class TransactionsListState(
-    val transactions: List<Transaction> = emptyList(),
+    val transactions: List<Transaction> = emptyList(), // Filtered transactions (displayed)
+    val allTransactions: List<Transaction> = emptyList(), // Original unfiltered transactions
     val transactionDetailsCounts: Map<String, Int> = emptyMap(),
     val manufactureInfo: Map<String, ManufactureInfo> = emptyMap(),
     val isLoading: Boolean = false,
@@ -134,13 +135,18 @@ class TransactionsListViewModel(
                             }
                         }
                         
-                        _state.update { 
-                            it.copy(
-                                transactions = applyFilters(transactions),
+                        // Store original unfiltered transactions and apply filters
+                        _state.update { currentState ->
+                            val updatedState = currentState.copy(
+                                allTransactions = transactions, // Store original unfiltered list
                                 transactionDetailsCounts = counts,
                                 manufactureInfo = manufactureInfoMap,
                                 isLoading = false,
                                 error = null
+                            )
+                            // Apply filters to the original list
+                            updatedState.copy(
+                                transactions = applyFilters(transactions, updatedState)
                             )
                         }
                     }
@@ -155,8 +161,7 @@ class TransactionsListViewModel(
         }
     }
     
-    private fun applyFilters(transactions: List<Transaction>): List<Transaction> {
-        val state = _state.value
+    private fun applyFilters(transactions: List<Transaction>, state: TransactionsListState = _state.value): List<Transaction> {
         var filtered = transactions
         
         // Filter by transaction types (multiple selection)
@@ -373,8 +378,12 @@ class TransactionsListViewModel(
     }
     
     private fun refreshFilters() {
-        val currentTransactions = _state.value.transactions
-        _state.update { it.copy(transactions = applyFilters(currentTransactions)) }
+        _state.update { currentState ->
+            // Apply filters to the original unfiltered list, not the already-filtered one
+            currentState.copy(
+                transactions = applyFilters(currentState.allTransactions, currentState)
+            )
+        }
     }
     
     fun deleteTransaction(transaction: Transaction) {
