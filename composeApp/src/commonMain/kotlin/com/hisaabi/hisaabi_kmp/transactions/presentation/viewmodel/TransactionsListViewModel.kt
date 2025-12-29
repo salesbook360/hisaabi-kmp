@@ -15,6 +15,7 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
+import com.hisaabi.hisaabi_kmp.database.entity.CategoryEntity
 
 data class ManufactureInfo(
     val recipeName: String,
@@ -29,6 +30,8 @@ data class TransactionsListState(
     val error: String? = null,
     val selectedTransactionType: AllTransactionTypes? = null,
     val selectedParty: Party? = null,
+    val selectedArea: CategoryEntity? = null,
+    val selectedCategory: CategoryEntity? = null,
     val searchQuery: String = "",
     val idOrSlugFilter: String = "",
     val startDate: Long? = null,
@@ -166,6 +169,20 @@ class TransactionsListViewModel(
             filtered = filtered.filter { it.partySlug == party.slug }
         }
         
+        // Filter by party area
+        state.selectedArea?.slug?.let { areaSlug ->
+            filtered = filtered.filter { transaction ->
+                transaction.party?.areaSlug == areaSlug
+            }
+        }
+        
+        // Filter by party category
+        state.selectedCategory?.slug?.let { categorySlug ->
+            filtered = filtered.filter { transaction ->
+                transaction.party?.categorySlug == categorySlug
+            }
+        }
+        
         // Filter by search query
         if (state.searchQuery.isNotBlank()) {
             filtered = filtered.filter { transaction ->
@@ -285,6 +302,16 @@ class TransactionsListViewModel(
         refreshFilters()
     }
     
+    fun setAreaFilter(area: CategoryEntity?) {
+        _state.update { it.copy(selectedArea = area) }
+        refreshFilters()
+    }
+    
+    fun setCategoryFilter(category: CategoryEntity?) {
+        _state.update { it.copy(selectedCategory = category) }
+        refreshFilters()
+    }
+    
     fun setSearchQuery(query: String) {
         _state.update { it.copy(searchQuery = query) }
         refreshFilters()
@@ -319,6 +346,8 @@ class TransactionsListViewModel(
             it.copy(
                 selectedTransactionType = null,
                 selectedParty = null,
+                selectedArea = null,
+                selectedCategory = null,
                 searchQuery = "",
                 idOrSlugFilter = "",
                 startDate = null,

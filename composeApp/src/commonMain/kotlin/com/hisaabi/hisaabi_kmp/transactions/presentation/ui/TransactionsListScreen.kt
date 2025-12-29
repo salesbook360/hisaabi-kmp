@@ -23,6 +23,7 @@ import com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionState
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionSortOption
 import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
+import com.hisaabi.hisaabi_kmp.database.entity.CategoryEntity
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionsListViewModel
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.ManufactureInfo
 import com.hisaabi.hisaabi_kmp.utils.formatTransactionDate
@@ -59,7 +60,9 @@ fun TransactionsListScreen(
     onChangeStateToCompleted: ((Transaction) -> Unit)? ,
     onChangeStateToCanceled: ((Transaction) -> Unit)? ,
     onOutstandingBalanceReminder: ((Transaction) -> Unit)?,
-    onSelectParty: () -> Unit = {}
+    onSelectParty: () -> Unit = {},
+    onSelectArea: () -> Unit = {},
+    onSelectCategory: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -244,6 +247,8 @@ fun TransactionsListScreen(
                 endDate = state.endDate,
                 dateFilterType = state.dateFilterType,
                 selectedParty = state.selectedParty,
+                selectedArea = state.selectedArea,
+                selectedCategory = state.selectedCategory,
                 onTypeSelected = { viewModel.setTransactionTypeFilter(it) },
                 onSortBySelected = { viewModel.setSortBy(it) },
                 onIdOrSlugFilterChange = { viewModel.setIdOrSlugFilter(it) },
@@ -255,6 +260,16 @@ fun TransactionsListScreen(
                     onSelectParty() // Then navigate to parties screen
                 },
                 onClearPartyFilter = { viewModel.setPartyFilter(null) },
+                onSelectArea = {
+                    viewModel.toggleFilters()
+                    onSelectArea()
+                },
+                onClearAreaFilter = { viewModel.setAreaFilter(null) },
+                onSelectCategory = {
+                    viewModel.toggleFilters()
+                    onSelectCategory()
+                },
+                onClearCategoryFilter = { viewModel.setCategoryFilter(null) },
                 onClearFilters = { 
                     viewModel.clearFilters()
                     viewModel.toggleFilters()
@@ -289,6 +304,8 @@ private fun FiltersBottomSheetContent(
     endDate: Long?,
     dateFilterType: TransactionSortOption,
     selectedParty: Party?,
+    selectedArea: CategoryEntity?,
+    selectedCategory: CategoryEntity?,
     onTypeSelected: (AllTransactionTypes?) -> Unit,
     onSortBySelected: (TransactionSortOption) -> Unit,
     onIdOrSlugFilterChange: (String) -> Unit,
@@ -297,6 +314,10 @@ private fun FiltersBottomSheetContent(
     onDateFilterTypeChange: (TransactionSortOption) -> Unit,
     onSelectParty: () -> Unit,
     onClearPartyFilter: () -> Unit,
+    onSelectArea: () -> Unit,
+    onClearAreaFilter: () -> Unit,
+    onSelectCategory: () -> Unit,
+    onClearCategoryFilter: () -> Unit,
     onClearFilters: () -> Unit,
     onApplyFilters: () -> Unit
 ) {
@@ -415,6 +436,146 @@ private fun FiltersBottomSheetContent(
                 }
                 if (selectedParty != null) {
                     IconButton(onClick = onClearPartyFilter) {
+                        Icon(
+                            Icons.Default.Clear,
+                            contentDescription = "Clear",
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                } else {
+                    Icon(
+                        Icons.Default.ArrowForward,
+                        contentDescription = "Select",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+        }
+
+        Spacer(Modifier.height(8.dp))
+
+        // Area filter section
+        Text(
+            "Party Area",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+        
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onSelectArea),
+            colors = CardDefaults.cardColors(
+                containerColor = if (selectedArea == null)
+                    MaterialTheme.colorScheme.surfaceVariant
+                else
+                    MaterialTheme.colorScheme.primaryContainer
+            )
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.LocationOn,
+                        contentDescription = null,
+                        tint = if (selectedArea == null)
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        else
+                            MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Text(
+                        selectedArea?.title ?: "Select Area",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = if (selectedArea != null) FontWeight.Bold else FontWeight.Normal,
+                        color = if (selectedArea == null)
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        else
+                            MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+                if (selectedArea != null) {
+                    IconButton(onClick = onClearAreaFilter) {
+                        Icon(
+                            Icons.Default.Clear,
+                            contentDescription = "Clear",
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                } else {
+                    Icon(
+                        Icons.Default.ArrowForward,
+                        contentDescription = "Select",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+        }
+
+        Spacer(Modifier.height(8.dp))
+
+        // Category filter section
+        Text(
+            "Party Category",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+        
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onSelectCategory),
+            colors = CardDefaults.cardColors(
+                containerColor = if (selectedCategory == null)
+                    MaterialTheme.colorScheme.surfaceVariant
+                else
+                    MaterialTheme.colorScheme.primaryContainer
+            )
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Category,
+                        contentDescription = null,
+                        tint = if (selectedCategory == null)
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        else
+                            MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Text(
+                        selectedCategory?.title ?: "Select Category",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = if (selectedCategory != null) FontWeight.Bold else FontWeight.Normal,
+                        color = if (selectedCategory == null)
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        else
+                            MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+                if (selectedCategory != null) {
+                    IconButton(onClick = onClearCategoryFilter) {
                         Icon(
                             Icons.Default.Clear,
                             contentDescription = "Clear",

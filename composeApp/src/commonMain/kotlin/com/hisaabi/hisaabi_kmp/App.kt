@@ -319,6 +319,10 @@ fun App() {
                 )
             }
             var selectingPartyForFilter by remember { mutableStateOf(false) }
+            var selectingAreaForFilter by remember { mutableStateOf(false) }
+            var selectingCategoryForFilter by remember { mutableStateOf(false) }
+            var selectedAreaForFilter by remember { mutableStateOf<CategoryEntity?>(null) }
+            var selectedCategoryForFilter by remember { mutableStateOf<CategoryEntity?>(null) }
             var selectedPartyForEdit by remember {
                 mutableStateOf<Party?>(
                     null
@@ -1037,8 +1041,46 @@ fun App() {
                                 viewModel = categoriesViewModel,
                                 categoryType = categoryType, // Optional - will default to CUSTOMER_CATEGORY if null
                                 onCategorySelected = { category ->
+                                    // Handle category selection for filter
+                                    if (selectingAreaForFilter && categoryType == CategoryType.AREA) {
+                                        category?.let {
+                                            selectedAreaForFilter = CategoryEntity(
+                                                id = it.id,
+                                                title = it.title,
+                                                description = it.description,
+                                                thumbnail = it.thumbnail,
+                                                type_id = it.typeId,
+                                                slug = it.slug,
+                                                business_slug = it.businessSlug,
+                                                created_by = it.createdBy,
+                                                sync_status = it.syncStatus,
+                                                created_at = it.createdAt,
+                                                updated_at = it.updatedAt
+                                            )
+                                        }
+                                        selectingAreaForFilter = false
+                                        currentScreen = AppScreen.TRANSACTIONS_LIST
+                                    } else if (selectingCategoryForFilter && categoryType == CategoryType.CUSTOMER_CATEGORY) {
+                                        category?.let {
+                                            selectedCategoryForFilter = CategoryEntity(
+                                                id = it.id,
+                                                title = it.title,
+                                                description = it.description,
+                                                thumbnail = it.thumbnail,
+                                                type_id = it.typeId,
+                                                slug = it.slug,
+                                                business_slug = it.businessSlug,
+                                                created_by = it.createdBy,
+                                                sync_status = it.syncStatus,
+                                                created_at = it.createdAt,
+                                                updated_at = it.updatedAt
+                                            )
+                                        }
+                                        selectingCategoryForFilter = false
+                                        currentScreen = AppScreen.TRANSACTIONS_LIST
+                                    }
                                     // Handle category selection for AddProduct flow
-                                    if (returnToAddProduct && categoryType == CategoryType.PRODUCTS) {
+                                    else if (returnToAddProduct && categoryType == CategoryType.PRODUCTS) {
                                         selectedCategoryForProduct = category
                                         currentScreen = AppScreen.ADD_PRODUCT
                                     }
@@ -1095,7 +1137,11 @@ fun App() {
                                     currentScreen = AppScreen.ADD_CATEGORY
                                 },
                                 onNavigateBack = {
-                                    if (returnToAddProduct) {
+                                    if (selectingAreaForFilter || selectingCategoryForFilter) {
+                                        selectingAreaForFilter = false
+                                        selectingCategoryForFilter = false
+                                        currentScreen = AppScreen.TRANSACTIONS_LIST
+                                    } else if (returnToAddProduct) {
                                         currentScreen = AppScreen.ADD_PRODUCT
                                     } else if (returnToAddParty) {
                                         currentScreen = AppScreen.ADD_PARTY
@@ -1565,6 +1611,22 @@ fun App() {
                                         viewModel.setPartyFilter(party)
                                     }
                                 }
+                                
+                                // Set area filter if coming from area selection
+                                LaunchedEffect(selectedAreaForFilter) {
+                                    selectedAreaForFilter?.let { area ->
+                                        viewModel.setAreaFilter(area)
+                                        selectedAreaForFilter = null
+                                    }
+                                }
+                                
+                                // Set category filter if coming from category selection
+                                LaunchedEffect(selectedCategoryForFilter) {
+                                    selectedCategoryForFilter?.let { category ->
+                                        viewModel.setCategoryFilter(category)
+                                        selectedCategoryForFilter = null
+                                    }
+                                }
 
                                 TransactionsListScreen(
                                     viewModel = viewModel,
@@ -1575,6 +1637,16 @@ fun App() {
                                     onSelectParty = {
                                         selectingPartyForFilter = true
                                         navigateTo(AppScreen.PARTIES)
+                                    },
+                                    onSelectArea = {
+                                        selectingAreaForFilter = true
+                                        categoryType = CategoryType.AREA
+                                        navigateTo(AppScreen.CATEGORIES)
+                                    },
+                                    onSelectCategory = {
+                                        selectingCategoryForFilter = true
+                                        categoryType = CategoryType.CUSTOMER_CATEGORY
+                                        navigateTo(AppScreen.CATEGORIES)
                                     },
                                     onTransactionClick = { transaction ->
                                         selectedTransactionSlug = transaction.slug
