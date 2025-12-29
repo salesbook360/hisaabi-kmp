@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -24,6 +26,9 @@ import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionsL
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.ManufactureInfo
 import com.hisaabi.hisaabi_kmp.utils.formatTransactionDate
 import com.hisaabi.hisaabi_kmp.utils.formatEntryDate
+import com.hisaabi.hisaabi_kmp.utils.SimpleDatePickerDialog
+import com.hisaabi.hisaabi_kmp.utils.formatDate
+import kotlinx.datetime.Clock
 import com.hisaabi.hisaabi_kmp.receipt.ReceiptViewModel
 import com.hisaabi.hisaabi_kmp.receipt.ReceiptPreviewDialog
 import com.hisaabi.hisaabi_kmp.core.ui.FilterChipWithColors
@@ -233,9 +238,15 @@ fun TransactionsListScreen(
                 selectedType = state.selectedTransactionType,
                 selectedSortBy = state.sortBy,
                 idOrSlugFilter = state.idOrSlugFilter,
+                startDate = state.startDate,
+                endDate = state.endDate,
+                dateFilterType = state.dateFilterType,
                 onTypeSelected = { viewModel.setTransactionTypeFilter(it) },
                 onSortBySelected = { viewModel.setSortBy(it) },
                 onIdOrSlugFilterChange = { viewModel.setIdOrSlugFilter(it) },
+                onStartDateChange = { viewModel.setDateRange(it, state.endDate) },
+                onEndDateChange = { viewModel.setDateRange(state.startDate, it) },
+                onDateFilterTypeChange = { viewModel.setDateFilterType(it) },
                 onClearFilters = { 
                     viewModel.clearFilters()
                     viewModel.toggleFilters()
@@ -266,15 +277,27 @@ private fun FiltersBottomSheetContent(
     selectedType: AllTransactionTypes?,
     selectedSortBy: TransactionSortOption,
     idOrSlugFilter: String,
+    startDate: Long?,
+    endDate: Long?,
+    dateFilterType: TransactionSortOption,
     onTypeSelected: (AllTransactionTypes?) -> Unit,
     onSortBySelected: (TransactionSortOption) -> Unit,
     onIdOrSlugFilterChange: (String) -> Unit,
+    onStartDateChange: (Long?) -> Unit,
+    onEndDateChange: (Long?) -> Unit,
+    onDateFilterTypeChange: (TransactionSortOption) -> Unit,
     onClearFilters: () -> Unit,
     onApplyFilters: () -> Unit
 ) {
+    var showStartDatePicker by remember { mutableStateOf(false) }
+    var showEndDatePicker by remember { mutableStateOf(false) }
+    val currentTime = Clock.System.now().toEpochMilliseconds()
+    val scrollState = rememberScrollState()
+    
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .verticalScroll(scrollState)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -374,8 +397,98 @@ private fun FiltersBottomSheetContent(
         }
         
         Spacer(Modifier.height(8.dp))
-
-
+        
+        // Date filter section
+        Text(
+            "Date Range",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+        
+        // Date filter type selection
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            FilterChipWithColors(
+                selected = dateFilterType == TransactionSortOption.ENTRY_DATE,
+                onClick = { onDateFilterTypeChange(TransactionSortOption.ENTRY_DATE) },
+                label = "Entry date",
+                modifier = Modifier.weight(1f)
+            )
+            FilterChipWithColors(
+                selected = dateFilterType == TransactionSortOption.TRANSACTION_DATE,
+                onClick = { onDateFilterTypeChange(TransactionSortOption.TRANSACTION_DATE) },
+                label = "Transaction date",
+                modifier = Modifier.weight(1f)
+            )
+        }
+        
+        Spacer(Modifier.height(8.dp))
+        
+        // Start date field
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { showStartDatePicker = true }
+        ) {
+            OutlinedTextField(
+                value = startDate?.let { formatDate(it) } ?: "",
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Start Date") },
+                placeholder = { Text("Select start date") },
+                modifier = Modifier.fillMaxWidth(),
+                leadingIcon = { Icon(Icons.Default.CalendarToday, "Date") },
+                trailingIcon = {
+                    if (startDate != null) {
+                        IconButton(onClick = { onStartDateChange(null) }) {
+                            Icon(Icons.Default.Clear, "Clear")
+                        }
+                    }
+                },
+                enabled = false,
+                colors = OutlinedTextFieldDefaults.colors(
+                    disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                    disabledBorderColor = MaterialTheme.colorScheme.outline,
+                    disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            )
+        }
+        
+        // End date field
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { showEndDatePicker = true }
+        ) {
+            OutlinedTextField(
+                value = endDate?.let { formatDate(it) } ?: "",
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("End Date") },
+                placeholder = { Text("Select end date") },
+                modifier = Modifier.fillMaxWidth(),
+                leadingIcon = { Icon(Icons.Default.CalendarToday, "Date") },
+                trailingIcon = {
+                    if (endDate != null) {
+                        IconButton(onClick = { onEndDateChange(null) }) {
+                            Icon(Icons.Default.Clear, "Clear")
+                        }
+                    }
+                },
+                enabled = false,
+                colors = OutlinedTextFieldDefaults.colors(
+                    disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                    disabledBorderColor = MaterialTheme.colorScheme.outline,
+                    disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            )
+        }
+        
+        Spacer(Modifier.height(8.dp))
         
         // Sort by section
         Text(
@@ -414,6 +527,30 @@ private fun FiltersBottomSheetContent(
         
         // Bottom padding for safe area
         Spacer(Modifier.height(16.dp))
+    }
+    
+    // Start Date Picker Dialog
+    if (showStartDatePicker) {
+        SimpleDatePickerDialog(
+            initialTimestamp = startDate,
+            onConfirm = { timestamp ->
+                onStartDateChange(timestamp)
+                showStartDatePicker = false
+            },
+            onDismiss = { showStartDatePicker = false }
+        )
+    }
+    
+    // End Date Picker Dialog
+    if (showEndDatePicker) {
+        SimpleDatePickerDialog(
+            initialTimestamp = endDate,
+            onConfirm = { timestamp ->
+                onEndDateChange(timestamp)
+                showEndDatePicker = false
+            },
+            onDismiss = { showEndDatePicker = false }
+        )
     }
 }
 

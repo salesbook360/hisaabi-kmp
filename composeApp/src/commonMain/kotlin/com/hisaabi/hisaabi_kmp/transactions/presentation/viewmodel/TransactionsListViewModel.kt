@@ -11,6 +11,10 @@ import com.hisaabi.hisaabi_kmp.transactions.domain.usecase.TransactionUseCases
 import com.hisaabi.hisaabi_kmp.utils.currentTimeMillis
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
 
 data class ManufactureInfo(
     val recipeName: String,
@@ -27,8 +31,9 @@ data class TransactionsListState(
     val selectedParty: Party? = null,
     val searchQuery: String = "",
     val idOrSlugFilter: String = "",
-    val startDate: String? = null,
-    val endDate: String? = null,
+    val startDate: Long? = null,
+    val endDate: Long? = null,
+    val dateFilterType: TransactionSortOption = TransactionSortOption.TRANSACTION_DATE,
     val showFilters: Boolean = false,
     val sortBy: TransactionSortOption = TransactionSortOption.TRANSACTION_DATE,
     // Scroll position preservation
@@ -179,6 +184,86 @@ class TransactionsListViewModel(
             }
         }
         
+        // Filter by date range
+        if (state.startDate != null || state.endDate != null) {
+            filtered = filtered.filter { transaction ->
+                val transactionDateMillis = when (state.dateFilterType) {
+                    TransactionSortOption.ENTRY_DATE -> {
+                        // Use createdAt (ISO format) for entry date
+                        transaction.createdAt?.let { isoDate ->
+                            try {
+                                // Parse ISO format: yyyy-MM-DDTHH:mm:ss.000Z
+                                val parts = isoDate.replace(".000Z", "Z").split("T")
+                                if (parts.size == 2) {
+                                    val dateParts = parts[0].split("-")
+                                    if (dateParts.size == 3) {
+                                        val year = dateParts[0].toIntOrNull()
+                                        val month = dateParts[1].toIntOrNull()
+                                        val day = dateParts[2].toIntOrNull()
+                                        if (year != null && month != null && day != null) {
+                                            val localDateTime = kotlinx.datetime.LocalDateTime(
+                                                year = year,
+                                                monthNumber = month,
+                                                dayOfMonth = day,
+                                                hour = 0,
+                                                minute = 0
+                                            )
+                                            localDateTime.toInstant(TimeZone.UTC).toEpochMilliseconds()
+                                        } else null
+                                    } else null
+                                } else null
+                            } catch (e: Exception) {
+                                null
+                            }
+                        }
+                    }
+                    TransactionSortOption.TRANSACTION_DATE -> {
+                        // Use timestamp (milliseconds) for transaction date
+                        transaction.timestamp?.toLongOrNull()
+                    }
+                }
+                
+                if (transactionDateMillis == null) return@filter false
+                
+                // Get date-only timestamps (start of day) for comparison
+                fun getStartOfDay(millis: Long): Long {
+                    val date = Instant.fromEpochMilliseconds(millis)
+                    val localDate = date.toLocalDateTime(TimeZone.currentSystemDefault())
+                    val startOfDay = kotlinx.datetime.LocalDateTime(
+                        year = localDate.year,
+                        monthNumber = localDate.monthNumber,
+                        dayOfMonth = localDate.dayOfMonth,
+                        hour = 0,
+                        minute = 0
+                    )
+                    return startOfDay.toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+                }
+                
+                fun getEndOfDay(millis: Long): Long {
+                    val date = Instant.fromEpochMilliseconds(millis)
+                    val localDate = date.toLocalDateTime(TimeZone.currentSystemDefault())
+                    val endOfDay = kotlinx.datetime.LocalDateTime(
+                        year = localDate.year,
+                        monthNumber = localDate.monthNumber,
+                        dayOfMonth = localDate.dayOfMonth,
+                        hour = 23,
+                        minute = 59,
+                        second = 59
+                    )
+                    return endOfDay.toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+                }
+                
+                val transactionDateOnly = getStartOfDay(transactionDateMillis)
+                val startOfStartDate = state.startDate?.let { getStartOfDay(it) }
+                val endOfEndDate = state.endDate?.let { getEndOfDay(it) }
+                
+                val afterStart = startOfStartDate == null || transactionDateOnly >= startOfStartDate
+                val beforeEnd = endOfEndDate == null || transactionDateOnly <= endOfEndDate
+                
+                afterStart && beforeEnd
+            }
+        }
+        
         // Sort by selected option
         return when (state.sortBy) {
             TransactionSortOption.ENTRY_DATE -> {
@@ -215,8 +300,13 @@ class TransactionsListViewModel(
         refreshFilters()
     }
     
-    fun setDateRange(startDate: String?, endDate: String?) {
+    fun setDateRange(startDate: Long?, endDate: Long?) {
         _state.update { it.copy(startDate = startDate, endDate = endDate) }
+        refreshFilters()
+    }
+    
+    fun setDateFilterType(dateFilterType: TransactionSortOption) {
+        _state.update { it.copy(dateFilterType = dateFilterType) }
         refreshFilters()
     }
     
@@ -233,6 +323,7 @@ class TransactionsListViewModel(
                 idOrSlugFilter = "",
                 startDate = null,
                 endDate = null,
+                dateFilterType = TransactionSortOption.TRANSACTION_DATE,
                 sortBy = TransactionSortOption.TRANSACTION_DATE
             )
         }

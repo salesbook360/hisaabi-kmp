@@ -44,6 +44,18 @@ fun formatDateTime(timestamp: Long): String {
 }
 
 /**
+ * Formats a timestamp (in milliseconds) to a readable date-only string.
+ * Format: DD/MM/YYYY
+ */
+fun formatDate(timestamp: Long): String {
+    val instant = Instant.fromEpochMilliseconds(timestamp)
+    val dateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
+    return "${dateTime.dayOfMonth.toString().padStart(2, '0')}/" +
+           "${dateTime.monthNumber.toString().padStart(2, '0')}/" +
+           "${dateTime.year}"
+}
+
+/**
  * Formats a transaction date (timestamp in milliseconds) to "dd MMM, yyyy" format.
  * Example: 15 Jan, 2024
  */
@@ -216,6 +228,88 @@ fun SimpleDateTimePickerDialog(
                             minute = minute.toIntOrNull()?.coerceIn(0, 59) ?: localDateTime.minute
                         )
                         val timestamp = selectedDateTime.toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+                        onConfirm(timestamp)
+                    } catch (e: Exception) {
+                        onDismiss()
+                    }
+                }
+            ) {
+                Text("OK")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+/**
+ * A reusable date-only picker dialog for selecting a date (without time).
+ * 
+ * @param initialTimestamp The initial timestamp to display in milliseconds
+ * @param onConfirm Callback when user confirms the selection with the new timestamp (at start of day, 00:00:00)
+ * @param onDismiss Callback when user dismisses the dialog
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SimpleDatePickerDialog(
+    initialTimestamp: Long?,
+    onConfirm: (Long) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val currentTime = Clock.System.now().toEpochMilliseconds()
+    val initialTime = initialTimestamp ?: currentTime
+    val instant = Instant.fromEpochMilliseconds(initialTime)
+    val localDateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
+
+    var day by remember { mutableStateOf(localDateTime.dayOfMonth.toString()) }
+    var month by remember { mutableStateOf(localDateTime.monthNumber.toString()) }
+    var year by remember { mutableStateOf(localDateTime.year.toString()) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Select Date") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = day,
+                        onValueChange = { if (it.length <= 2) day = it },
+                        label = { Text("Day") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true
+                    )
+                    OutlinedTextField(
+                        value = month,
+                        onValueChange = { if (it.length <= 2) month = it },
+                        label = { Text("Month") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true
+                    )
+                    OutlinedTextField(
+                        value = year,
+                        onValueChange = { if (it.length <= 4) year = it },
+                        label = { Text("Year") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    try {
+                        val selectedDate = kotlinx.datetime.LocalDateTime(
+                            year = year.toIntOrNull() ?: localDateTime.year,
+                            monthNumber = month.toIntOrNull()?.coerceIn(1, 12) ?: localDateTime.monthNumber,
+                            dayOfMonth = day.toIntOrNull()?.coerceIn(1, 31) ?: localDateTime.dayOfMonth,
+                            hour = 0,
+                            minute = 0
+                        )
+                        val timestamp = selectedDate.toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
                         onConfirm(timestamp)
                     } catch (e: Exception) {
                         onDismiss()
