@@ -144,6 +144,66 @@ fun formatEntryDate(isoDateString: String?): String {
 }
 
 /**
+ * Formats a transaction date (timestamp in milliseconds) to "dd MMM, yyyy HH:MM" format.
+ * Example: 15 Jan, 2024 14:30
+ */
+fun formatTransactionDateTime(timestampString: String?): String {
+    if (timestampString == null) return ""
+    
+    return try {
+        val timestamp = timestampString.toLongOrNull() ?: return timestampString
+        val instant = Instant.fromEpochMilliseconds(timestamp)
+        val dateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
+        val monthNames = listOf(
+            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+        )
+        val monthName = monthNames.getOrNull(dateTime.monthNumber - 1) ?: ""
+        "${dateTime.dayOfMonth.toString().padStart(2, '0')} $monthName, ${dateTime.year} ${dateTime.hour.toString().padStart(2, '0')}:${dateTime.minute.toString().padStart(2, '0')}"
+    } catch (e: Exception) {
+        timestampString
+    }
+}
+
+/**
+ * Formats an entry date (ISO 8601 string format "yyyy-MM-DDTHH:mm.000Z") to "dd MMM, yyyy HH:MM" format.
+ * Example: 15 Jan, 2024 14:30
+ */
+fun formatEntryDateTime(isoDateString: String?): String {
+    if (isoDateString == null || isoDateString.isEmpty()) return ""
+    
+    return try {
+        // Parse ISO 8601 format: yyyy-MM-DDTHH:mm:ss.000Z or yyyy-MM-DDTHH:mm.000Z
+        val cleanString = isoDateString.replace(".000Z", "Z")
+        val parts = cleanString.split("T")
+        if (parts.size != 2) return isoDateString
+        
+        val dateParts = parts[0].split("-")
+        if (dateParts.size != 3) return isoDateString
+        
+        val timePart = parts[1].replace("Z", "")
+        val timeParts = timePart.split(":")
+        if (timeParts.size < 2) return isoDateString
+        
+        val year = dateParts[0].toIntOrNull() ?: return isoDateString
+        val month = dateParts[1].toIntOrNull() ?: return isoDateString
+        val day = dateParts[2].toIntOrNull() ?: return isoDateString
+        val hour = timeParts[0].toIntOrNull() ?: return isoDateString
+        val minute = timeParts[1].toIntOrNull() ?: return isoDateString
+        
+        val monthNames = listOf(
+            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+        )
+        val monthName = monthNames.getOrNull(month - 1) ?: ""
+        
+        "${day.toString().padStart(2, '0')} $monthName, $year ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}"
+    } catch (e: Exception) {
+        isoDateString
+    }
+}
+
+/**
  * A reusable date-time picker dialog for selecting date and time.
  * 
  * @param initialTimestamp The initial timestamp to display in milliseconds

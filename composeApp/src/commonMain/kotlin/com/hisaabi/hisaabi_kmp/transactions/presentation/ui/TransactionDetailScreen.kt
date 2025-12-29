@@ -18,8 +18,8 @@ import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.*
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionDetailViewModel
 import com.hisaabi.hisaabi_kmp.utils.format
-import com.hisaabi.hisaabi_kmp.utils.formatTransactionDate
-import com.hisaabi.hisaabi_kmp.utils.formatEntryDate
+import com.hisaabi.hisaabi_kmp.utils.formatTransactionDateTime
+import com.hisaabi.hisaabi_kmp.utils.formatEntryDateTime
 import com.hisaabi.hisaabi_kmp.utils.calculateManufacturingCost
 import com.hisaabi.hisaabi_kmp.core.ui.getStatusBadgeColors
 import org.koin.compose.koinInject
@@ -1005,10 +1005,19 @@ private fun MetadataCard(transaction: Transaction) {
                 valueStyle = MaterialTheme.typography.bodySmall
             )
             
+            if (transaction.timestamp != null) {
+                DetailRow(
+                    label = "Transaction date",
+                    value = formatTransactionDateTime(transaction.timestamp),
+                    labelStyle = MaterialTheme.typography.bodySmall,
+                    valueStyle = MaterialTheme.typography.bodySmall
+                )
+            }
+            
             if (transaction.createdAt != null) {
                 DetailRow(
-                    label = "Created At",
-                    value = transaction.createdAt!!,
+                    label = "Entry date",
+                    value = formatEntryDateTime(transaction.createdAt),
                     labelStyle = MaterialTheme.typography.bodySmall,
                     valueStyle = MaterialTheme.typography.bodySmall
                 )
@@ -1017,7 +1026,7 @@ private fun MetadataCard(transaction: Transaction) {
             if (transaction.updatedAt != null) {
                 DetailRow(
                     label = "Last Updated",
-                    value = transaction.updatedAt!!,
+                    value = formatEntryDateTime(transaction.updatedAt),
                     labelStyle = MaterialTheme.typography.bodySmall,
                     valueStyle = MaterialTheme.typography.bodySmall
                 )
