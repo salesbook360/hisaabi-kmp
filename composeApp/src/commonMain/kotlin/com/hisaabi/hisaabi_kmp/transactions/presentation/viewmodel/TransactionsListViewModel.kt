@@ -15,10 +15,12 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Job
 import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import com.hisaabi.hisaabi_kmp.database.entity.CategoryEntity
+import kotlinx.datetime.atTime
 
 data class ManufactureInfo(
     val recipeName: String,
@@ -305,7 +307,18 @@ class TransactionsListViewModel(
     }
     
     fun setDateRange(startDate: Long?, endDate: Long?) {
-        _state.update { it.copy(startDate = startDate, endDate = endDate) }
+        // Adjust end date to end of day (23:59:59) to include all transactions on that day
+        val adjustedEndDate = endDate?.let { timestamp ->
+            val instant = Instant.fromEpochMilliseconds(timestamp)
+            val localDateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
+            val localDate = LocalDate(localDateTime.year, localDateTime.monthNumber, localDateTime.dayOfMonth)
+            localDate
+                .atTime(23, 59, 59)
+                .toInstant(TimeZone.currentSystemDefault())
+                .toEpochMilliseconds()
+        }
+        
+        _state.update { it.copy(startDate = startDate, endDate = adjustedEndDate) }
         loadTransactions()
     }
     
