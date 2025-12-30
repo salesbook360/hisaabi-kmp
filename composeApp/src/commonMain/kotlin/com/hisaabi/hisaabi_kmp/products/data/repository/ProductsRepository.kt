@@ -1,11 +1,15 @@
 package com.hisaabi.hisaabi_kmp.products.data.repository
 
+import com.hisaabi.hisaabi_kmp.common.Status
 import com.hisaabi.hisaabi_kmp.core.domain.model.EntityTypeEnum
+import com.hisaabi.hisaabi_kmp.core.session.AppSessionManager
 import com.hisaabi.hisaabi_kmp.core.util.SlugGenerator
+import com.hisaabi.hisaabi_kmp.database.dao.DeletedRecordsDao
 import com.hisaabi.hisaabi_kmp.database.dao.RecipeIngredientsDao
 import com.hisaabi.hisaabi_kmp.database.dao.QuantityUnitDao
 import com.hisaabi.hisaabi_kmp.database.datasource.ProductLocalDataSource
 import com.hisaabi.hisaabi_kmp.database.datasource.ProductQuantitiesLocalDataSource
+import com.hisaabi.hisaabi_kmp.database.entity.DeletedRecordsEntity
 import com.hisaabi.hisaabi_kmp.database.entity.ProductEntity
 import com.hisaabi.hisaabi_kmp.database.entity.RecipeIngredientsEntity
 import com.hisaabi.hisaabi_kmp.products.domain.model.Product
@@ -32,6 +36,8 @@ interface ProductsRepository {
     ): String
     
     suspend fun updateProduct(product: Product): String
+    
+    suspend fun softDeleteProduct(product: Product): Result<Unit>
     
     suspend fun deleteProduct(productSlug: String)
     
@@ -73,7 +79,9 @@ class ProductsRepositoryImpl(
     private val recipeIngredientsDao: RecipeIngredientsDao,
     private val quantityUnitDao: QuantityUnitDao,
     private val slugGenerator: SlugGenerator,
-    private val productQuantitiesDataSource: ProductQuantitiesLocalDataSource
+    private val productQuantitiesDataSource: ProductQuantitiesLocalDataSource,
+    private val deletedRecordsDao: DeletedRecordsDao,
+    private val appSessionManager: AppSessionManager
 ) : ProductsRepository {
     
     override suspend fun getProducts(
@@ -125,24 +133,60 @@ class ProductsRepositoryImpl(
     }
     
     override suspend fun updateProduct(product: Product): String {
-        // Get existing product to preserve sync_status logic
-        val existingEntity = productDataSource.getProductBySlug(product.slug)
-        
-        // Determine new sync_status: if it was SYNCED, mark as UPDATED
-        val newSyncStatus = if (existingEntity?.sync_status == SyncStatus.SYNCED.value) {
-            SyncStatus.UPDATED.value
-        } else {
-            // Preserve existing sync_status, or use the one from product if entity doesn't exist
-            existingEntity?.sync_status ?: product.syncStatus
-        }
-        
-        // Update only the updated_at timestamp, preserve created_at, and update sync_status
+        // Update sync status to UnSynced and updated_at timestamp, preserve created_at
+        val now = getCurrentTimestamp()
         val entity = product.toEntity().copy(
-            updated_at = getCurrentTimestamp(),
-            sync_status = newSyncStatus
+            sync_status = SyncStatus.UPDATED.value, // UnSynced
+            updated_at = now
         )
         productDataSource.updateProduct(entity)
         return product.slug
+    }
+    
+    override suspend fun softDeleteProduct(product: Product): Result<Unit> {
+        return try {
+            // Get session context for business slug and user slug
+            val sessionContext = appSessionManager.getSessionContext()
+            if (!sessionContext.isValid) {
+                return Result.failure(IllegalStateException("Invalid session context: userSlug or businessSlug is null"))
+            }
+            
+            val businessSlug = sessionContext.businessSlug!!
+            val userSlug = sessionContext.userSlug!!
+            
+            // Soft delete: Update product status to DELETED
+            val now = getCurrentTimestamp()
+            val updatedProduct = product.copy(
+                statusId = Status.DELETED.value,
+                syncStatus = SyncStatus.NONE.value, // UnSynced
+                updatedAt = now
+            )
+            val updatedEntity = updatedProduct.toEntity()
+            productDataSource.updateProduct(updatedEntity)
+            
+            // Add entry to DeletedRecords table
+            val deletedRecordSlug = slugGenerator.generateSlug(EntityTypeEnum.ENTITY_TYPE_DELETED_RECORDS)
+                ?: return Result.failure(IllegalStateException("Failed to generate slug for deleted record: Invalid session context"))
+            
+            val deletedRecord = DeletedRecordsEntity(
+                id = 0,
+                record_slug = product.slug,
+                record_type = "product",
+                deletion_type = "soft",
+                slug = deletedRecordSlug,
+                business_slug = businessSlug,
+                created_by = userSlug,
+                sync_status = SyncStatus.NONE.value, // UnSynced
+                created_at = now,
+                updated_at = now
+            )
+            
+            deletedRecordsDao.insertDeletedRecord(deletedRecord)
+            
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
     
     override suspend fun deleteProduct(productSlug: String) {

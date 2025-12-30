@@ -26,7 +26,9 @@ val productsModule = module {
             recipeIngredientsDao = get(),
             quantityUnitDao = get(),
             slugGenerator = get(),
-            productQuantitiesDataSource = get()
+            productQuantitiesDataSource = get(),
+            deletedRecordsDao = get(),
+            appSessionManager = get()
         )
     }
 

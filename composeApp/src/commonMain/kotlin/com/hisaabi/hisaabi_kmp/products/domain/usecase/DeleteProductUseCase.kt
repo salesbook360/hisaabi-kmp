@@ -1,7 +1,6 @@
 package com.hisaabi.hisaabi_kmp.products.domain.usecase
 
 import com.hisaabi.hisaabi_kmp.products.data.repository.ProductsRepository
-import com.hisaabi.hisaabi_kmp.utils.getCurrentTimestamp
 
 class DeleteProductUseCase(
     private val repository: ProductsRepository
@@ -12,13 +11,8 @@ class DeleteProductUseCase(
             val product = repository.getProductBySlugAnyStatus(productSlug) 
                 ?: return Result.failure(IllegalArgumentException("Product not found"))
             
-            // Perform soft delete by updating status_id to 2
-            val updatedProduct = product.copy(
-                statusId = 2, // 2 = Deleted
-                updatedAt = getCurrentTimestamp()
-            )
-            repository.updateProduct(updatedProduct)
-            Result.success(Unit)
+            // Perform soft delete with deleted record entry
+            repository.softDeleteProduct(product)
         } catch (e: Exception) {
             Result.failure(e)
         }
