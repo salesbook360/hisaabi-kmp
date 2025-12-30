@@ -8,6 +8,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,6 +30,7 @@ fun CategoriesScreen(
     onCategorySelected: (Category?) -> Unit = {},
     onAddCategoryClick: () -> Unit = {},
     onNavigateBack: () -> Unit = {},
+    onEditCategoryClick: (Category) -> Unit = {},
     refreshTrigger: Int = 0
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -174,7 +177,9 @@ fun CategoriesScreen(
                         items(uiState.categories, key = { it.id }) { category ->
                             CategoryItem(
                                 category = category,
-                                onClick = { onCategorySelected(category) }
+                                onClick = { onCategorySelected(category) },
+                                onEditClick = { onEditCategoryClick(category) },
+                                onDeleteClick = { viewModel.deleteCategory(category) }
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                         }
@@ -188,12 +193,14 @@ fun CategoriesScreen(
 @Composable
 private fun CategoryItem(
     category: Category,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit
 ) {
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
+        modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
@@ -206,12 +213,18 @@ private fun CategoryItem(
                 Icons.Default.Category,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(40.dp)
+                modifier = Modifier
+                    .size(40.dp)
+                    .clickable(onClick = onClick)
             )
             
             Spacer(modifier = Modifier.width(16.dp))
             
-            Column(modifier = Modifier.weight(1f)) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable(onClick = onClick)
+            ) {
                 Text(
                     text = category.title,
                     style = MaterialTheme.typography.titleMedium,
@@ -226,7 +239,51 @@ private fun CategoryItem(
                     )
                 }
             }
+            
+            Spacer(modifier = Modifier.width(8.dp))
+            
+            // Edit button
+            IconButton(onClick = onEditClick) {
+                Icon(
+                    Icons.Default.Edit,
+                    contentDescription = "Edit",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+            
+            // Delete button
+            IconButton(onClick = { showDeleteDialog = true }) {
+                Icon(
+                    Icons.Default.Delete,
+                    contentDescription = "Delete",
+                    tint = MaterialTheme.colorScheme.error
+                )
+            }
         }
+    }
+    
+    // Delete confirmation dialog
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Delete Category") },
+            text = { Text("Are you sure you want to delete \"${category.title}\"? This action cannot be undone.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteDialog = false
+                        onDeleteClick()
+                    }
+                ) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 

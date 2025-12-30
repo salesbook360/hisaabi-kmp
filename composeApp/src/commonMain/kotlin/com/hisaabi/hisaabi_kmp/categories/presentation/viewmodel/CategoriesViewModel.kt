@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.hisaabi.hisaabi_kmp.business.data.datasource.BusinessPreferencesDataSource
 import com.hisaabi.hisaabi_kmp.categories.domain.model.Category
 import com.hisaabi.hisaabi_kmp.categories.domain.model.CategoryType
+import com.hisaabi.hisaabi_kmp.categories.domain.usecase.DeleteCategoryUseCase
 import com.hisaabi.hisaabi_kmp.categories.domain.usecase.GetCategoriesUseCase
 import com.hisaabi.hisaabi_kmp.core.session.AppSessionManager
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,19 +15,21 @@ import kotlinx.coroutines.launch
 
 class CategoriesViewModel(
     private val getCategoriesUseCase: GetCategoriesUseCase,
-    private val sessionManager: AppSessionManager,
-
+    private val deleteCategoryUseCase: DeleteCategoryUseCase,
+    private val sessionManager: AppSessionManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CategoriesUiState())
     val uiState: StateFlow<CategoriesUiState> = _uiState.asStateFlow()
     
     private var businessSlug: String? = null
+    private var userSlug: String? = null
     
     init {
         viewModelScope.launch {
-            sessionManager.observeBusinessSlug().collect { newBusinessSlug ->
-                businessSlug = newBusinessSlug
+            sessionManager.observeSessionContext().collect { context ->
+                businessSlug = context.businessSlug
+                userSlug = context.userSlug
                 // Reload categories when business changes
                 if (_uiState.value.selectedCategoryType != null) {
                     loadCategories(_uiState.value.selectedCategoryType!!)
@@ -68,6 +71,35 @@ class CategoriesViewModel(
                         categories = emptyList(),
                         isLoading = false,
                         error = error.message ?: "Failed to load categories"
+                    )
+                }
+            )
+        }
+    }
+    
+    fun deleteCategory(category: Category) {
+        viewModelScope.launch {
+            val bSlug = businessSlug
+            val uSlug = userSlug
+            if (bSlug == null || uSlug == null) {
+                _uiState.value = _uiState.value.copy(
+                    error = "No business or user context available"
+                )
+                return@launch
+            }
+            
+            val result = deleteCategoryUseCase(category.slug, bSlug, uSlug)
+            
+            result.fold(
+                onSuccess = {
+                    // Reload categories after successful deletion
+                    _uiState.value.selectedCategoryType?.let { type ->
+                        loadCategories(type)
+                    }
+                },
+                onFailure = { error ->
+                    _uiState.value = _uiState.value.copy(
+                        error = error.message ?: "Failed to delete category"
                     )
                 }
             )

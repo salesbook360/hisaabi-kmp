@@ -2,8 +2,11 @@ package com.hisaabi.hisaabi_kmp.categories.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hisaabi.hisaabi_kmp.categories.domain.model.Category
 import com.hisaabi.hisaabi_kmp.categories.domain.model.CategoryType
 import com.hisaabi.hisaabi_kmp.categories.domain.usecase.AddCategoryUseCase
+import com.hisaabi.hisaabi_kmp.categories.domain.usecase.UpdateCategoryUseCase
+import com.hisaabi.hisaabi_kmp.categories.data.repository.CategoriesRepository
 import com.hisaabi.hisaabi_kmp.core.session.AppSessionManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -12,6 +15,8 @@ import kotlinx.coroutines.launch
 
 class AddCategoryViewModel(
     private val addCategoryUseCase: AddCategoryUseCase,
+    private val updateCategoryUseCase: UpdateCategoryUseCase,
+    private val categoriesRepository: CategoriesRepository,
     private val sessionManager: AppSessionManager
 ) : ViewModel() {
     
@@ -32,6 +37,69 @@ class AddCategoryViewModel(
     
     fun resetState() {
         _uiState.value = AddCategoryUiState()
+    }
+    
+    fun loadCategoryForEditing(categorySlug: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            
+            try {
+                val category = categoriesRepository.getCategoryBySlug(categorySlug)
+                if (category != null) {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        editingCategory = category,
+                        error = null
+                    )
+                } else {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = "Category not found"
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = e.message ?: "Failed to load category"
+                )
+            }
+        }
+    }
+    
+    fun updateCategory(
+        title: String,
+        description: String?,
+        category: Category
+    ) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            
+            val updatedCategory = category.copy(
+                title = title.trim(),
+                description = description?.trim()
+            )
+            
+            val result = updateCategoryUseCase(updatedCategory)
+            
+            result.fold(
+                onSuccess = { slug ->
+                    println("Category updated successfully with slug: $slug")
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        isSuccess = true,
+                        error = null
+                    )
+                },
+                onFailure = { error ->
+                    println("Failed to update category: ${error.message}")
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        isSuccess = false,
+                        error = error.message ?: "Failed to update category"
+                    )
+                }
+            )
+        }
     }
     
     fun addCategory(
@@ -89,7 +157,8 @@ class AddCategoryViewModel(
 data class AddCategoryUiState(
     val isLoading: Boolean = false,
     val isSuccess: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val editingCategory: Category? = null
 )
 
 

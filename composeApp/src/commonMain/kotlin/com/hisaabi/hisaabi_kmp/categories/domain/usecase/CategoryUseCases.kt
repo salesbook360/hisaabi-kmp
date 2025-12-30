@@ -3,6 +3,7 @@ package com.hisaabi.hisaabi_kmp.categories.domain.usecase
 import com.hisaabi.hisaabi_kmp.categories.data.repository.CategoriesRepository
 import com.hisaabi.hisaabi_kmp.categories.domain.model.Category
 import com.hisaabi.hisaabi_kmp.categories.domain.model.CategoryType
+import com.hisaabi.hisaabi_kmp.sync.domain.model.SyncStatus
 
 class GetCategoriesUseCase(
     private val repository: CategoriesRepository
@@ -53,6 +54,47 @@ class AddCategoryUseCase(
         return try {
             val slug = repository.addCategory(category, businessSlug, userSlug)
             Result.success(slug)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+}
+
+class UpdateCategoryUseCase(
+    private val repository: CategoriesRepository
+) {
+    suspend operator fun invoke(
+        category: Category
+    ): Result<String> {
+        // Validation
+        if (category.title.isBlank()) {
+            return Result.failure(Exception("Title is required"))
+        }
+        
+        return try {
+            // Update sync status to UPDATED so it can be synced again
+            val updatedCategory = category.copy(
+                syncStatus = SyncStatus.UPDATED.value
+            )
+            val slug = repository.updateCategory(updatedCategory)
+            Result.success(slug)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+}
+
+class DeleteCategoryUseCase(
+    private val repository: CategoriesRepository
+) {
+    suspend operator fun invoke(
+        categorySlug: String,
+        businessSlug: String,
+        userSlug: String
+    ): Result<Unit> {
+        return try {
+            repository.deleteCategory(categorySlug, businessSlug, userSlug)
+            Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }

@@ -18,16 +18,30 @@ import com.hisaabi.hisaabi_kmp.categories.presentation.viewmodel.AddCategoryView
 fun AddCategoryScreen(
     viewModel: AddCategoryViewModel,
     categoryType: CategoryType,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    editingCategorySlug: String? = null
 ) {
+    val uiState by viewModel.uiState.collectAsState()
+    
+    // Initialize fields - use editing category if available, otherwise empty
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     
-    val uiState by viewModel.uiState.collectAsState()
+    // Load category for editing if slug is provided
+    LaunchedEffect(editingCategorySlug) {
+        if (editingCategorySlug != null) {
+            viewModel.loadCategoryForEditing(editingCategorySlug)
+        } else {
+            viewModel.resetState()
+        }
+    }
     
-    // Reset state when screen is first opened
-    LaunchedEffect(Unit) {
-        viewModel.resetState()
+    // Prefill fields when editing category is loaded
+    LaunchedEffect(uiState.editingCategory) {
+        uiState.editingCategory?.let { category ->
+            title = category.title
+            description = category.description ?: ""
+        }
     }
     
     // Navigate back on success
@@ -37,10 +51,12 @@ fun AddCategoryScreen(
         }
     }
     
+    val isEditing = uiState.editingCategory != null
+    
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Add New ${categoryType.displayName}") },
+                title = { Text(if (isEditing) "Edit ${categoryType.displayName}" else "Add New ${categoryType.displayName}") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
@@ -56,11 +72,19 @@ fun AddCategoryScreen(
                 containerColor = MaterialTheme.colorScheme.primary,
                 onClick = {
                     if (!uiState.isLoading && title.isNotBlank()) {
-                        viewModel.addCategory(
-                            title = title,
-                            description = description.takeIf { it.isNotBlank() },
-                            categoryType = categoryType
-                        )
+                        if (isEditing && uiState.editingCategory != null) {
+                            viewModel.updateCategory(
+                                title = title,
+                                description = description.takeIf { it.isNotBlank() },
+                                category = uiState.editingCategory!!
+                            )
+                        } else {
+                            viewModel.addCategory(
+                                title = title,
+                                description = description.takeIf { it.isNotBlank() },
+                                categoryType = categoryType
+                            )
+                        }
                     }
                 },
                 modifier = Modifier

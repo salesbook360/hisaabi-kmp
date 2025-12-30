@@ -5,7 +5,10 @@ import com.hisaabi.hisaabi_kmp.categories.domain.model.CategoryType
 import com.hisaabi.hisaabi_kmp.core.domain.model.EntityTypeEnum
 import com.hisaabi.hisaabi_kmp.core.util.SlugGenerator
 import com.hisaabi.hisaabi_kmp.database.dao.CategoryDao
+import com.hisaabi.hisaabi_kmp.database.dao.DeletedRecordsDao
 import com.hisaabi.hisaabi_kmp.database.entity.CategoryEntity
+import com.hisaabi.hisaabi_kmp.database.entity.DeletedRecordsEntity
+import com.hisaabi.hisaabi_kmp.sync.domain.model.SyncStatus
 import com.hisaabi.hisaabi_kmp.utils.getCurrentTimestamp
 
 interface CategoriesRepository {
@@ -24,11 +27,12 @@ interface CategoriesRepository {
     
     suspend fun updateCategory(category: Category): String
     
-    suspend fun deleteCategory(categorySlug: String)
+    suspend fun deleteCategory(categorySlug: String, businessSlug: String, userSlug: String)
 }
 
 class CategoriesRepositoryImpl(
     private val categoryDao: CategoryDao,
+    private val deletedRecordsDao: DeletedRecordsDao,
     private val slugGenerator: SlugGenerator
 ) : CategoriesRepository {
     
@@ -79,10 +83,31 @@ class CategoriesRepositoryImpl(
         return category.slug
     }
     
-    override suspend fun deleteCategory(categorySlug: String) {
+    override suspend fun deleteCategory(categorySlug: String, businessSlug: String, userSlug: String) {
         val category = categoryDao.getCategoryBySlug(categorySlug)
         if (category != null) {
+            // Delete the category locally
             categoryDao.deleteCategory(category)
+            
+            // Add entry to DeletedRecords table
+            val now = getCurrentTimestamp()
+            val deletedRecordSlug = slugGenerator.generateSlug(EntityTypeEnum.ENTITY_TYPE_DELETED_RECORDS)
+                ?: throw IllegalStateException("Failed to generate slug for deleted record: Invalid session context")
+            
+            val deletedRecord = DeletedRecordsEntity(
+                id = 0,
+                record_slug = categorySlug,
+                record_type = "category",  // Always "category" for all category types
+                deletion_type = "hard",
+                slug = deletedRecordSlug,
+                business_slug = businessSlug,
+                created_by = userSlug,
+                sync_status = SyncStatus.NONE.value,  // UnSynced
+                created_at = now,
+                updated_at = now
+            )
+            
+            deletedRecordsDao.insertDeletedRecord(deletedRecord)
         }
     }
 }
