@@ -366,13 +366,14 @@ class TransactionsListViewModel(
         loadTransactions()
     }
     
-    fun deleteTransaction(transaction: Transaction) {
+    fun deleteTransaction(transaction: Transaction, onSuccess: (() -> Unit)? = null) {
         viewModelScope.launch {
             try {
                 transactionUseCases.deleteTransaction(transaction)
                     .onSuccess {
                         // Reload to reflect the change
                         loadTransactions()
+                        onSuccess?.invoke()
                     }
                     .onFailure { e ->
                         _state.update { 

@@ -61,6 +61,7 @@ fun TransactionsListScreen(
     onChangeStateToCompleted: ((Transaction) -> Unit)? ,
     onChangeStateToCanceled: ((Transaction) -> Unit)? ,
     onOutstandingBalanceReminder: ((Transaction) -> Unit)?,
+    onTransactionDeleted: (() -> Unit)? = null,
     onSelectParty: () -> Unit = {},
     onSelectArea: () -> Unit = {},
     onSelectCategory: () -> Unit = {}
@@ -226,7 +227,11 @@ fun TransactionsListScreen(
                                 transaction = transaction,
                                 currencySymbol = currencySymbol,
                                 onClick = { onTransactionClick(transaction) },
-                                onDeleteClick = { viewModel.deleteTransaction(transaction) },
+                                onDeleteClick = { 
+                                    viewModel.deleteTransaction(transaction) {
+                                        onTransactionDeleted?.invoke()
+                                    }
+                                },
                                 onEditClick = { onEditTransaction(transaction) },
                                 transactionDetailsCounts = state.transactionDetailsCounts,
                                 manufactureInfo = state.manufactureInfo,

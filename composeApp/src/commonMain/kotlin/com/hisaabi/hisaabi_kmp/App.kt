@@ -1669,6 +1669,9 @@ fun App() {
                                         transactionType = null
                                         navigateTo(AppScreen.ADD_TRANSACTION_STEP1)
                                     },
+                                    onTransactionDeleted = {
+                                        partiesRefreshTrigger++ // Refresh parties to show updated balances
+                                    },
                                     onEditTransaction = { transaction ->
                                         // Store the slug for loading full transaction details
                                         selectedTransactionSlugForEdit = transaction.slug
@@ -1732,6 +1735,7 @@ fun App() {
                                         viewModel.convertToSale(
                                             transaction = transaction,
                                             onSuccess = {
+                                                partiesRefreshTrigger++ // Refresh parties to show updated balances
                                                 snackbarMessage = "Transaction converted to sale successfully"
                                             },
                                             onError = { error ->
@@ -1750,6 +1754,7 @@ fun App() {
                                         viewModel.convertToPurchase(
                                             transaction = transaction,
                                             onSuccess = {
+                                                partiesRefreshTrigger++ // Refresh parties to show updated balances
                                                 snackbarMessage = "Transaction converted to purchase successfully"
                                             },
                                             onError = { error ->
@@ -1771,6 +1776,7 @@ fun App() {
                                         viewModel.restoreTransaction(
                                             transaction = transaction,
                                             onSuccess = {
+                                                partiesRefreshTrigger++ // Refresh parties to show updated balances
                                                 snackbarMessage = "Transaction restored successfully"
                                             },
                                             onError = { error ->
@@ -1851,6 +1857,7 @@ fun App() {
                                                 transactionsListViewModel?.cancelAndRemove(
                                                     transaction = transaction,
                                                     onSuccess = {
+                                                        partiesRefreshTrigger++ // Refresh parties to show updated balances
                                                         snackbarMessage = "Transaction deleted successfully"
                                                         showDeleteConfirmationDialog = null
                                                     },
