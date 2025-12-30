@@ -224,6 +224,30 @@ enum class AllTransactionTypes(val value: Int, val displayName: String, val cate
                 QUOTATION.value
             )
         }
+        
+        /**
+         * Check if transaction type should generate a receipt
+         * Receipts are generated for: Sale, Purchase, Customer Return, Vendor Return,
+         * Sale Order, Purchase Order, Quotation, and Pay/Get Cash transactions
+         */
+        fun shouldGenerateReceipt(type: Int): Boolean {
+            return type in listOf(
+                SALE.value,
+                PURCHASE.value,
+                CUSTOMER_RETURN.value,
+                VENDOR_RETURN.value,
+                SALE_ORDER.value,
+                PURCHASE_ORDER.value,
+                QUOTATION.value,
+                PAY_TO_VENDOR.value,
+                GET_FROM_VENDOR.value,
+                PAY_TO_CUSTOMER.value,
+                GET_FROM_CUSTOMER.value,
+                INVESTMENT_DEPOSIT.value,
+                INVESTMENT_WITHDRAW.value
+
+            )
+        }
     }
 }
 

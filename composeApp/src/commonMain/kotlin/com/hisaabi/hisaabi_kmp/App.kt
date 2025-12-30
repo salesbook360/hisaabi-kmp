@@ -2162,22 +2162,9 @@ fun App() {
                                     onNavigateBack = { successMessage, transactionSlug ->
                                         isInAddRecordFlow = false
                                         partiesRefreshTrigger++ // Refresh parties to show updated balances
-                                        // Show receipt if enabled and transaction slug is available, otherwise show toast
+                                        // Record types should not generate receipts, just show toast
                                         successMessage?.let {
-                                            if (receiptConfig.isReceiptEnabled && transactionSlug != null) {
-                                                // Show receipt instead of toast
-                                                viewModel.state.value.recordType?.let { recordType ->
-                                                    val transaction =
-                                                        Transaction(
-                                                            slug = transactionSlug,
-                                                            transactionType = recordType.value
-                                                        )
-                                                    receiptViewModel.showPreview(transaction)
-                                                }
-                                            } else {
-                                                // Show toast only if not showing receipt
-                                                toastMessage = it
-                                            }
+                                            toastMessage = it
                                         }
                                         navigateBack()
                                     },
@@ -2232,38 +2219,42 @@ fun App() {
                                     onNavigateBack = { successMessage, transactionSlug ->
                                         isInPayGetCashFlow = false
                                         partiesRefreshTrigger++ // Refresh parties to show updated balances
-                                        // Show receipt if enabled and transaction slug is available, otherwise show toast
+                                        // Show receipt only for Pay/Get Cash transactions
                                         successMessage?.let {
-                                            if (receiptConfig.isReceiptEnabled && transactionSlug != null) {
-                                                // Show receipt instead of toast
-                                                val currentState = viewModel.state.value
-                                                val transactionType =
-                                                    when (currentState.partyType) {
-                                                        PartyType.CUSTOMER -> {
-                                                            if (currentState.payGetCashType == PayGetCashType.PAY_CASH)
-                                                                AllTransactionTypes.PAY_TO_CUSTOMER.value
-                                                            else
-                                                                AllTransactionTypes.GET_FROM_CUSTOMER.value
-                                                        }
-
-                                                        PartyType.VENDOR -> {
-                                                            if (currentState.payGetCashType == PayGetCashType.PAY_CASH)
-                                                                AllTransactionTypes.PAY_TO_VENDOR.value
-                                                            else
-                                                                AllTransactionTypes.GET_FROM_VENDOR.value
-                                                        }
-
-                                                        PartyType.INVESTOR -> {
-                                                            if (currentState.payGetCashType == PayGetCashType.PAY_CASH)
-                                                                AllTransactionTypes.INVESTMENT_WITHDRAW.value
-                                                            else
-                                                                AllTransactionTypes.INVESTMENT_DEPOSIT.value
-                                                        }
-
-                                                        else -> {
+                                            val currentState = viewModel.state.value
+                                            val transactionType =
+                                                when (currentState.partyType) {
+                                                    PartyType.CUSTOMER -> {
+                                                        if (currentState.payGetCashType == PayGetCashType.PAY_CASH)
                                                             AllTransactionTypes.PAY_TO_CUSTOMER.value
-                                                        }
+                                                        else
+                                                            AllTransactionTypes.GET_FROM_CUSTOMER.value
                                                     }
+
+                                                    PartyType.VENDOR -> {
+                                                        if (currentState.payGetCashType == PayGetCashType.PAY_CASH)
+                                                            AllTransactionTypes.PAY_TO_VENDOR.value
+                                                        else
+                                                            AllTransactionTypes.GET_FROM_VENDOR.value
+                                                    }
+
+                                                    PartyType.INVESTOR -> {
+                                                        if (currentState.payGetCashType == PayGetCashType.PAY_CASH)
+                                                            AllTransactionTypes.INVESTMENT_WITHDRAW.value
+                                                        else
+                                                            AllTransactionTypes.INVESTMENT_DEPOSIT.value
+                                                    }
+
+                                                    else -> {
+                                                        AllTransactionTypes.PAY_TO_CUSTOMER.value
+                                                    }
+                                                }
+                                            
+                                            // Only generate receipt for Pay/Get Cash transactions (not Investment)
+                                            if (receiptConfig.isReceiptEnabled && 
+                                                transactionSlug != null && 
+                                                AllTransactionTypes.shouldGenerateReceipt(transactionType)) {
+                                                // Show receipt instead of toast
                                                 val transaction =
                                                     Transaction(
                                                         slug = transactionSlug,
@@ -2891,8 +2882,10 @@ fun App() {
                                         isInTransactionFlow = false
                                         partiesRefreshTrigger++ // Refresh parties to show updated balances
 
-                                        // Show receipt if enabled and transaction slug is available, otherwise show toast
-                                        if (receiptConfig.isReceiptEnabled && transactionSlug != null) {
+                                        // Show receipt only for specific transaction types
+                                        if (receiptConfig.isReceiptEnabled && 
+                                            transactionSlug != null && 
+                                            AllTransactionTypes.shouldGenerateReceipt(transactionType)) {
                                             // Show receipt instead of toast
                                             val transaction =
                                                 Transaction(
