@@ -123,6 +123,7 @@ fun PaymentMethodsScreen(
                             PaymentMethodItem(
                                 paymentMethod = paymentMethod,
                                 onClick = { onPaymentMethodClick(paymentMethod) },
+                                onEditClick = { onPaymentMethodClick(paymentMethod) },
                                 onDeleteClick = { showDeleteDialog = paymentMethod }
                             )
                             Spacer(modifier = Modifier.height(8.dp))
@@ -162,6 +163,7 @@ fun PaymentMethodsScreen(
 private fun PaymentMethodItem(
     paymentMethod: PaymentMethod,
     onClick: () -> Unit,
+    onEditClick: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
     Card(
@@ -232,6 +234,18 @@ private fun PaymentMethodItem(
                 }
             }
             
+            Spacer(modifier = Modifier.width(8.dp))
+            
+            // Edit button
+            IconButton(onClick = onEditClick) {
+                Icon(
+                    Icons.Default.Edit,
+                    contentDescription = "Edit",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+            
+            // Delete button
             IconButton(
                 onClick = { onDeleteClick() }
             ) {

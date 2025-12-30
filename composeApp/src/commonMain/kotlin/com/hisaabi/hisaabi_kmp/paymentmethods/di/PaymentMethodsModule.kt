@@ -13,7 +13,7 @@ val paymentMethodsModule = module {
     single { PaymentMethodLocalDataSource(get()) }
     
     // Repository
-    single { PaymentMethodsRepository(get()) }
+    single { PaymentMethodsRepository(get(), get(), get(), get()) }
     
     // Use Cases
     single { GetPaymentMethodsUseCase(get()) }
