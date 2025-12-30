@@ -20,6 +20,8 @@ data class SyncResponse<T>(
 @Serializable
 data class SyncData<T>(
     val resultCount: String? = null,
+    @SerialName("totalRecords")
+    val totalRecords: Int? = null,
     val list: List<T>? = null
 )
 

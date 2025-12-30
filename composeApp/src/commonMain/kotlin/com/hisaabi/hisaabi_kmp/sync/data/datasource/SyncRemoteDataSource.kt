@@ -62,7 +62,7 @@ interface SyncRemoteDataSource {
     
     // Deleted Records
     suspend fun syncDeletedRecordsDown(lastSyncTime: String): SyncResponse<DeletedRecordsDto>
-    suspend fun deleteRecords(records: List<DeletedRecordsDto>): SyncResponse<Any>
+    suspend fun deleteRecords(records: List<DeletedRecordsDto>): SyncResponse<DeletedRecordsDto>
 }
 
 class SyncRemoteDataSourceImpl(
@@ -283,7 +283,7 @@ class SyncRemoteDataSourceImpl(
         }.body()
     }
     
-    override suspend fun deleteRecords(records: List<DeletedRecordsDto>): SyncResponse<Any> {
+    override suspend fun deleteRecords(records: List<DeletedRecordsDto>): SyncResponse<DeletedRecordsDto> {
         // Sanitize deleted records before sending to prevent JSON parsing errors
         val sanitizedRecords = JsonSanitizer.sanitizeDeletedRecords(records)
         return httpClient.post("$baseUrl/delete-records") {

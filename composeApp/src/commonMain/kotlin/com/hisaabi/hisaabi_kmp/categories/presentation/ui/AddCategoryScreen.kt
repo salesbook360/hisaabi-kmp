@@ -26,14 +26,23 @@ fun AddCategoryScreen(
     // Initialize fields - use editing category if available, otherwise empty
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
+    var hasNavigatedBack by remember(editingCategorySlug) { mutableStateOf(false) }
+    var isInitialized by remember(editingCategorySlug) { mutableStateOf(false) }
     
-    // Load category for editing if slug is provided
+    // Reset state when screen is first opened or when editingCategorySlug changes
     LaunchedEffect(editingCategorySlug) {
+        hasNavigatedBack = false
+        isInitialized = false
+        // Clear isSuccess flag to prevent immediate navigation
+        viewModel.resetState()
+        
         if (editingCategorySlug != null) {
             viewModel.loadCategoryForEditing(editingCategorySlug)
-        } else {
-            viewModel.resetState()
         }
+        
+        // Mark as initialized after a brief delay to ensure state is reset
+        kotlinx.coroutines.delay(50)
+        isInitialized = true
     }
     
     // Prefill fields when editing category is loaded
@@ -44,9 +53,10 @@ fun AddCategoryScreen(
         }
     }
     
-    // Navigate back on success
+    // Navigate back on success (only once, and only after initialization and an operation)
     LaunchedEffect(uiState.isSuccess) {
-        if (uiState.isSuccess) {
+        if (uiState.isSuccess && !hasNavigatedBack && isInitialized) {
+            hasNavigatedBack = true
             onNavigateBack()
         }
     }

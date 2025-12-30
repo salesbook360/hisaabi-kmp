@@ -30,7 +30,7 @@ fun CategoriesScreen(
     onCategorySelected: (Category?) -> Unit = {},
     onAddCategoryClick: () -> Unit = {},
     onNavigateBack: () -> Unit = {},
-    onEditCategoryClick: (Category) -> Unit = {},
+    onEditCategoryClick: (Category) -> Unit ,
     refreshTrigger: Int = 0
 ) {
     val uiState by viewModel.uiState.collectAsState()

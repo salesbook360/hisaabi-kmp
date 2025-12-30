@@ -344,6 +344,9 @@ fun App() {
                     null
                 )
             }
+            var editingCategorySlug by remember {
+                mutableStateOf<String?>(null)
+            }
             var categoriesRefreshTrigger by remember { mutableStateOf(0) }
             var selectedCategoryForParty by remember {
                 mutableStateOf<CategoryEntity?>(
@@ -1149,7 +1152,15 @@ fun App() {
                                         navigateBack()
                                     }
                                 },
-                                refreshTrigger = categoriesRefreshTrigger
+                                refreshTrigger = categoriesRefreshTrigger,
+                                onEditCategoryClick = { category ->
+                                    // Get category type from the category
+                                    val type = CategoryType.fromInt(category.typeId)
+                                        ?: CategoryType.CUSTOMER_CATEGORY
+                                    categoryType = type
+                                    editingCategorySlug = category.slug
+                                    currentScreen = AppScreen.ADD_CATEGORY
+                                }
                             )
                         }
 
@@ -1160,8 +1171,10 @@ fun App() {
                                     categoryType = type,
                                     onNavigateBack = {
                                         categoriesRefreshTrigger++  // Trigger refresh
+                                        editingCategorySlug = null  // Clear editing state
                                         currentScreen = AppScreen.CATEGORIES
-                                    }
+                                    },
+                                    editingCategorySlug = editingCategorySlug
                                 )
                             }
                         }
