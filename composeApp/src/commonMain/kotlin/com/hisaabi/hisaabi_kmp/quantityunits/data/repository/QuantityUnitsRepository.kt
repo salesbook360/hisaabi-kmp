@@ -1,14 +1,25 @@
 package com.hisaabi.hisaabi_kmp.quantityunits.data.repository
 
+import com.hisaabi.hisaabi_kmp.common.Status
+import com.hisaabi.hisaabi_kmp.core.domain.model.EntityTypeEnum
+import com.hisaabi.hisaabi_kmp.core.session.AppSessionManager
+import com.hisaabi.hisaabi_kmp.core.util.SlugGenerator
+import com.hisaabi.hisaabi_kmp.database.dao.DeletedRecordsDao
 import com.hisaabi.hisaabi_kmp.database.datasource.QuantityUnitLocalDataSource
+import com.hisaabi.hisaabi_kmp.database.entity.DeletedRecordsEntity
 import com.hisaabi.hisaabi_kmp.database.entity.QuantityUnitEntity
+import com.hisaabi.hisaabi_kmp.sync.domain.model.SyncStatus
+import com.hisaabi.hisaabi_kmp.utils.getCurrentTimestamp
 import com.hisaabi.hisaabi_kmp.quantityunits.domain.model.QuantityUnit
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.Clock
 
 class QuantityUnitsRepository(
-    private val localDataSource: QuantityUnitLocalDataSource
+    private val localDataSource: QuantityUnitLocalDataSource,
+    private val deletedRecordsDao: DeletedRecordsDao,
+    private val slugGenerator: SlugGenerator,
+    private val appSessionManager: AppSessionManager
 ) {
 
     fun getUnitsByParent(parentSlug: String): Flow<List<QuantityUnit>> {
@@ -54,8 +65,44 @@ class QuantityUnitsRepository(
     
     suspend fun deleteUnit(unit: QuantityUnit): Result<Unit> {
         return try {
-            val entity = unit.toEntity()
-            localDataSource.deleteUnit(entity)
+            // Get session context for business slug and user slug
+            val sessionContext = appSessionManager.getSessionContext()
+            if (!sessionContext.isValid) {
+                return Result.failure(IllegalStateException("Invalid session context: userSlug or businessSlug is null"))
+            }
+            
+            val businessSlug = sessionContext.businessSlug!!
+            val userSlug = sessionContext.userSlug!!
+            
+            // Soft delete: Update quantity unit status to DELETED
+            val now = getCurrentTimestamp()
+            val updatedUnit = unit.copy(
+                statusId = Status.DELETED.value,
+                syncStatus = SyncStatus.NONE.value, // UnSynced
+                updatedAt = now
+            )
+            val updatedEntity = updatedUnit.toEntity()
+            localDataSource.updateUnit(updatedEntity)
+            
+            // Add entry to DeletedRecords table
+            val deletedRecordSlug = slugGenerator.generateSlug(EntityTypeEnum.ENTITY_TYPE_DELETED_RECORDS)
+                ?: return Result.failure(IllegalStateException("Failed to generate slug for deleted record: Invalid session context"))
+            
+            val deletedRecord = DeletedRecordsEntity(
+                id = 0,
+                record_slug = unit.slug,
+                record_type = "quantity_unit",
+                deletion_type = "soft",
+                slug = deletedRecordSlug,
+                business_slug = businessSlug,
+                created_by = userSlug,
+                sync_status = SyncStatus.NONE.value, // UnSynced
+                created_at = now,
+                updated_at = now
+            )
+            
+            deletedRecordsDao.insertDeletedRecord(deletedRecord)
+            
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

@@ -13,7 +13,7 @@ val quantityUnitsModule = module {
     single { QuantityUnitLocalDataSource(get()) }
     
     // Repository
-    single { QuantityUnitsRepository(get()) }
+    single { QuantityUnitsRepository(get(), get(), get(), get()) }
     
     // Use Cases
     single { GetQuantityUnitsUseCase(get()) }

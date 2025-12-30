@@ -192,6 +192,7 @@ fun QuantityUnitsScreen(
                                 unit = unit,
                                 baseUnit = baseUnit,
                                 onClick = { onUnitClick(unit) },
+                                onEditClick = { onUnitClick(unit) },
                                 onDeleteClick = { showDeleteDialog = unit }
                             )
                             Spacer(Modifier.height(8.dp))
@@ -326,6 +327,7 @@ private fun UnitItem(
     unit: QuantityUnit,
     baseUnit: QuantityUnit?,
     onClick: () -> Unit,
+    onEditClick: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
     Card(Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(2.dp)) {
@@ -375,6 +377,19 @@ private fun UnitItem(
                     )
                 }
             }
+            
+            Spacer(Modifier.width(8.dp))
+            
+            // Edit button
+            IconButton(onClick = onEditClick) {
+                Icon(
+                    Icons.Default.Edit,
+                    contentDescription = "Edit",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+            
+            // Delete button
             IconButton(onClick = onDeleteClick) {
                 Icon(Icons.Default.Delete, "Delete", tint = MaterialTheme.colorScheme.error)
             }
