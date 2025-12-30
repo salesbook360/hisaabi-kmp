@@ -45,7 +45,9 @@ val transactionsModule = module {
             productsRepository = get(),
             quantityUnitsRepository = get(),
             slugGenerator = get(),
-            transactionProcessor = get()
+            transactionProcessor = get(),
+            deletedRecordsDao = get(),
+            sessionManager = get()
         ) 
     }
     

@@ -31,7 +31,9 @@ class TransactionsRepository(
     private val productsRepository: ProductsRepository,
     private val quantityUnitsRepository: QuantityUnitsRepository,
     private val slugGenerator: SlugGenerator,
-    private val transactionProcessor: TransactionProcessor
+    private val transactionProcessor: TransactionProcessor,
+    private val deletedRecordsDao: com.hisaabi.hisaabi_kmp.database.dao.DeletedRecordsDao,
+    private val sessionManager: com.hisaabi.hisaabi_kmp.core.session.AppSessionManager
 ) {
     
     fun getAllTransactions(): Flow<List<Transaction>> {
@@ -436,6 +438,7 @@ class TransactionsRepository(
      * 1. Delete child transactions first (for Journal and Manufacture transactions)
      * 2. Reverse transaction effects (party balance, stock, payment method)
      * 3. Set status_id = 2 instead of removing from database
+     * 4. Record deletion in DeletedRecords table for sync
      * 
      * Note: Deleted transactions are filtered out from all queries (status_id != 2)
      * but can be restored by setting status_id = 0 (Active).
@@ -462,6 +465,9 @@ class TransactionsRepository(
                 }
                 // Soft delete: set status_id to 2 instead of hard deleting
                 localDataSource.softDeleteTransactionBySlug(slug)
+                
+                // Record main transaction deletion
+                insertDeletedRecord(slug)
             } ?: run {
                 // If no slug, soft delete by ID
                 localDataSource.softDeleteTransactionById(transaction.id)
@@ -470,6 +476,34 @@ class TransactionsRepository(
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+    
+    /**
+     * Insert a deleted record entry for sync tracking
+     */
+    private suspend fun insertDeletedRecord(recordSlug: String) {
+        val deletedRecordSlug = slugGenerator.generateSlug(
+            com.hisaabi.hisaabi_kmp.core.domain.model.EntityTypeEnum.ENTITY_TYPE_DELETED_RECORDS
+        ) ?: return
+        
+        val businessSlug = sessionManager.getBusinessSlug()
+        val createdBy = sessionManager.getUserSlug()
+        val now = getCurrentTimestamp()
+        
+        val deletedRecord = com.hisaabi.hisaabi_kmp.database.entity.DeletedRecordsEntity(
+            id = 0,
+            record_slug = recordSlug,
+            record_type = "transaction",
+            deletion_type = "soft",
+            slug = deletedRecordSlug,
+            business_slug = businessSlug,
+            created_by = createdBy,
+            sync_status = com.hisaabi.hisaabi_kmp.sync.domain.model.SyncStatus.NONE.value,
+            created_at = now,
+            updated_at = now
+        )
+        
+        deletedRecordsDao.insertDeletedRecord(deletedRecord)
     }
     
     /**
