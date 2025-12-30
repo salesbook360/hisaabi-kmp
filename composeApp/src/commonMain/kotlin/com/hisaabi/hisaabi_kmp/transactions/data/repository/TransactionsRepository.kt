@@ -105,6 +105,8 @@ class TransactionsRepository(
         areaSlug: String?,
         categorySlug: String?,
         sortByEntryDate: Boolean,
+        showActive: Boolean = true,
+        showDeleted: Boolean = false,
         limit: Int,
         offset: Int
     ): List<Transaction> {
@@ -125,6 +127,8 @@ class TransactionsRepository(
                 idOrSlugFilter = idOrSlugFilter,
                 areaSlug = areaSlug,
                 categorySlug = categorySlug,
+                showActive = showActive,
+                showDeleted = showDeleted,
                 limit = limit,
                 offset = offset
             )
@@ -139,6 +143,8 @@ class TransactionsRepository(
                 idOrSlugFilter = idOrSlugFilter,
                 areaSlug = areaSlug,
                 categorySlug = categorySlug,
+                showActive = showActive,
+                showDeleted = showDeleted,
                 limit = limit,
                 offset = offset
             )
@@ -164,7 +170,9 @@ class TransactionsRepository(
         searchQuery: String,
         idOrSlugFilter: String,
         areaSlug: String?,
-        categorySlug: String?
+        categorySlug: String?,
+        showActive: Boolean = true,
+        showDeleted: Boolean = false
     ): Int {
         return localDataSource.getTransactionsCount(
             businessSlug = businessSlug,
@@ -175,7 +183,9 @@ class TransactionsRepository(
             searchQuery = searchQuery,
             idOrSlugFilter = idOrSlugFilter,
             areaSlug = areaSlug,
-            categorySlug = categorySlug
+            categorySlug = categorySlug,
+            showActive = showActive,
+            showDeleted = showDeleted
         )
     }
     
@@ -366,7 +376,9 @@ class TransactionsRepository(
                 return Result.failure(validationResult.exceptionOrNull()!!)
             }
             
-            if (oldTransaction != null) {
+            // Only reverse if the old transaction was not deleted (statusId != 2)
+            // If it was deleted, we're restoring it, so no need to reverse
+            if (oldTransaction != null && oldTransaction.statusId != 2) {
                 // Reverse old transaction
                 transactionProcessor.reverseTransaction(oldTransaction)
             }
@@ -416,17 +428,44 @@ class TransactionsRepository(
         }
     }
     
+    /**
+     * Soft delete a transaction by setting status_id = 2 (DELETED status).
+     * This matches Legacy app behavior where transactions are soft deleted from UI.
+     * 
+     * Soft delete process:
+     * 1. Delete child transactions first (for Journal and Manufacture transactions)
+     * 2. Reverse transaction effects (party balance, stock, payment method)
+     * 3. Set status_id = 2 instead of removing from database
+     * 
+     * Note: Deleted transactions are filtered out from all queries (status_id != 2)
+     * but can be restored by setting status_id = 0 (Active).
+     */
     suspend fun deleteTransaction(transaction: Transaction): Result<Unit> {
         return try {
-            // Reverse transaction effects before deleting
             transaction.slug?.let { slug ->
+                // Delete child transactions first (for Journal and Manufacture transactions)
+                val childTransactions = getChildTransactions(slug)
+                childTransactions.forEach { child ->
+                    child.slug?.let { childSlug ->
+                        val childToDelete = getTransactionWithDetails(childSlug)
+                        if (childToDelete != null) {
+                            transactionProcessor.reverseTransaction(childToDelete)
+                        }
+                        localDataSource.softDeleteTransactionBySlug(childSlug)
+                    }
+                }
+                
+                // Reverse transaction effects before soft deleting
                 val transactionToDelete = getTransactionWithDetails(slug)
                 if (transactionToDelete != null) {
                     transactionProcessor.reverseTransaction(transactionToDelete)
                 }
-                localDataSource.deleteDetailsByTransaction(slug)
+                // Soft delete: set status_id to 2 instead of hard deleting
+                localDataSource.softDeleteTransactionBySlug(slug)
+            } ?: run {
+                // If no slug, soft delete by ID
+                localDataSource.softDeleteTransactionById(transaction.id)
             }
-            localDataSource.deleteTransactionById(transaction.id)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

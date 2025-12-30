@@ -45,6 +45,9 @@ data class TransactionsListState(
     val dateFilterType: TransactionSortOption = TransactionSortOption.TRANSACTION_DATE,
     val showFilters: Boolean = false,
     val sortBy: TransactionSortOption = TransactionSortOption.TRANSACTION_DATE,
+    // Status filters (Active/Deleted)
+    val showActiveTransactions: Boolean = true,
+    val showDeletedTransactions: Boolean = false,
     // Pagination state
     val currentPage: Int = 0,
     val hasMore: Boolean = true,
@@ -188,7 +191,9 @@ class TransactionsListViewModel(
             sortByEntryDate = currentState.sortBy == TransactionSortOption.ENTRY_DATE,
             areaSlug = currentState.selectedArea?.slug,
             categorySlug = currentState.selectedCategory?.slug,
-            idOrSlugFilter = currentState.idOrSlugFilter
+            idOrSlugFilter = currentState.idOrSlugFilter,
+            showActiveTransactions = currentState.showActiveTransactions,
+            showDeletedTransactions = currentState.showDeletedTransactions
         )
     }
     
@@ -331,6 +336,16 @@ class TransactionsListViewModel(
         _state.update { it.copy(showFilters = !it.showFilters) }
     }
     
+    fun toggleShowActiveTransactions() {
+        _state.update { it.copy(showActiveTransactions = !it.showActiveTransactions) }
+        loadTransactions()
+    }
+    
+    fun toggleShowDeletedTransactions() {
+        _state.update { it.copy(showDeletedTransactions = !it.showDeletedTransactions) }
+        loadTransactions()
+    }
+    
     fun clearFilters() {
         _state.update { 
             it.copy(
@@ -343,7 +358,9 @@ class TransactionsListViewModel(
                 startDate = null,
                 endDate = null,
                 dateFilterType = TransactionSortOption.TRANSACTION_DATE,
-                sortBy = TransactionSortOption.TRANSACTION_DATE
+                sortBy = TransactionSortOption.TRANSACTION_DATE,
+                showActiveTransactions = true,
+                showDeletedTransactions = false
             )
         }
         loadTransactions()

@@ -19,7 +19,9 @@ data class TransactionFilterParams(
     val sortByEntryDate: Boolean = false,
     val areaSlug: String? = null,
     val categorySlug: String? = null,
-    val idOrSlugFilter: String = ""
+    val idOrSlugFilter: String = "",
+    val showActiveTransactions: Boolean = true,
+    val showDeletedTransactions: Boolean = false
 )
 
 /**
@@ -79,6 +81,8 @@ class GetTransactionsUseCase(
             areaSlug = params.areaSlug,
             categorySlug = params.categorySlug,
             sortByEntryDate = params.sortByEntryDate,
+            showActive = params.showActiveTransactions,
+            showDeleted = params.showDeletedTransactions,
             limit = pageSize,
             offset = offset
         )
@@ -93,7 +97,9 @@ class GetTransactionsUseCase(
             searchQuery = params.searchQuery,
             idOrSlugFilter = params.idOrSlugFilter,
             areaSlug = params.areaSlug,
-            categorySlug = params.categorySlug
+            categorySlug = params.categorySlug,
+            showActive = params.showActiveTransactions,
+            showDeleted = params.showDeletedTransactions
         )
         
         val hasMore = (offset + transactions.size) < totalCount

@@ -46,6 +46,8 @@ class TransactionLocalDataSource(
         idOrSlugFilter: String,
         areaSlug: String?,
         categorySlug: String?,
+        showActive: Boolean = true,
+        showDeleted: Boolean = false,
         limit: Int,
         offset: Int
     ): List<InventoryTransactionEntity> {
@@ -62,6 +64,8 @@ class TransactionLocalDataSource(
             idOrSlugFilter = idOrSlugFilter,
             areaSlug = areaSlug,
             categorySlug = categorySlug,
+            showActive = showActive,
+            showDeleted = showDeleted,
             limit = limit,
             offset = offset
         )
@@ -79,6 +83,8 @@ class TransactionLocalDataSource(
         idOrSlugFilter: String,
         areaSlug: String?,
         categorySlug: String?,
+        showActive: Boolean = true,
+        showDeleted: Boolean = false,
         limit: Int,
         offset: Int
     ): List<InventoryTransactionEntity> {
@@ -96,6 +102,8 @@ class TransactionLocalDataSource(
             idOrSlugFilter = idOrSlugFilter,
             areaSlug = areaSlug,
             categorySlug = categorySlug,
+            showActive = showActive,
+            showDeleted = showDeleted,
             limit = limit,
             offset = offset
         )
@@ -110,7 +118,9 @@ class TransactionLocalDataSource(
         searchQuery: String,
         idOrSlugFilter: String,
         areaSlug: String?,
-        categorySlug: String?
+        categorySlug: String?,
+        showActive: Boolean = true,
+        showDeleted: Boolean = false
     ): Int {
         val filterByTypes = if (transactionTypes.isNullOrEmpty()) -1 else 1
         return transactionDao.getTransactionsCount(
@@ -123,7 +133,9 @@ class TransactionLocalDataSource(
             searchQuery = searchQuery,
             idOrSlugFilter = idOrSlugFilter,
             areaSlug = areaSlug,
-            categorySlug = categorySlug
+            categorySlug = categorySlug,
+            showActive = showActive,
+            showDeleted = showDeleted
         )
     }
     
@@ -141,6 +153,14 @@ class TransactionLocalDataSource(
     
     suspend fun deleteTransactionById(id: Int) {
         transactionDao.deleteTransactionById(id)
+    }
+    
+    suspend fun softDeleteTransactionBySlug(slug: String) {
+        transactionDao.softDeleteTransactionBySlug(slug)
+    }
+    
+    suspend fun softDeleteTransactionById(id: Int) {
+        transactionDao.softDeleteTransactionById(id)
     }
     
     // Transaction Detail operations

@@ -1,5 +1,6 @@
 package com.hisaabi.hisaabi_kmp.transactions.presentation.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -288,6 +289,8 @@ fun TransactionsListScreen(
                 selectedParty = state.selectedParty,
                 selectedArea = state.selectedArea,
                 selectedCategory = state.selectedCategory,
+                showActiveTransactions = state.showActiveTransactions,
+                showDeletedTransactions = state.showDeletedTransactions,
                 onTypeToggled = { viewModel.toggleTransactionTypeFilter(it) },
                 onClearTransactionTypes = { viewModel.clearTransactionTypeFilters() },
                 onSortBySelected = { viewModel.setSortBy(it) },
@@ -310,6 +313,8 @@ fun TransactionsListScreen(
                     onSelectCategory()
                 },
                 onClearCategoryFilter = { viewModel.setCategoryFilter(null) },
+                onToggleShowActive = { viewModel.toggleShowActiveTransactions() },
+                onToggleShowDeleted = { viewModel.toggleShowDeletedTransactions() },
                 onClearFilters = { 
                     viewModel.clearFilters()
                     viewModel.toggleFilters()
@@ -346,6 +351,8 @@ private fun FiltersBottomSheetContent(
     selectedParty: Party?,
     selectedArea: CategoryEntity?,
     selectedCategory: CategoryEntity?,
+    showActiveTransactions: Boolean,
+    showDeletedTransactions: Boolean,
     onTypeToggled: (AllTransactionTypes) -> Unit,
     onClearTransactionTypes: () -> Unit,
     onSortBySelected: (TransactionSortOption) -> Unit,
@@ -359,6 +366,8 @@ private fun FiltersBottomSheetContent(
     onClearAreaFilter: () -> Unit,
     onSelectCategory: () -> Unit,
     onClearCategoryFilter: () -> Unit,
+    onToggleShowActive: () -> Unit,
+    onToggleShowDeleted: () -> Unit,
     onClearFilters: () -> Unit,
     onApplyFilters: () -> Unit
 ) {
@@ -912,6 +921,59 @@ private fun FiltersBottomSheetContent(
             Spacer(Modifier.height(24.dp))
         }
 
+        // Transaction Status Filter
+        item {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp, bottom = 12.dp),
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.FilterList,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        "Transaction Status",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+        }
+        
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FilterChipWithColors(
+                    selected = showActiveTransactions,
+                    onClick = onToggleShowActive,
+                    label = "Active Transactions",
+                    modifier = Modifier.weight(1f)
+                )
+                FilterChipWithColors(
+                    selected = showDeletedTransactions,
+                    onClick = onToggleShowDeleted,
+                    label = "Deleted Transactions",
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+
+        item {
+            Spacer(Modifier.height(24.dp))
+        }
+
         // Transaction type filter
         item {
             Row(
@@ -1201,48 +1263,65 @@ private fun TransactionCard(
     onChangeStateToCanceled: (() -> Unit)? = null,
     onOutstandingBalanceReminder: (() -> Unit)? = null
 ) {
-    // Determine card type based on transaction type
-    when {
-        AllTransactionTypes.isRecord(transaction.transactionType) -> {
-            RecordTransactionCard(
-                transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel,
-                onRestore, onChangeStateToPending, onChangeStateToInProgress, onChangeStateToCompleted, 
-                onChangeStateToCanceled, onOutstandingBalanceReminder
-            )
+    // Check if transaction is deleted (status_id = 2)
+    val isDeleted = transaction.statusId == 2
+    
+    Box(modifier = Modifier.fillMaxWidth()) {
+        // Determine card type based on transaction type
+        when {
+            AllTransactionTypes.isRecord(transaction.transactionType) -> {
+                RecordTransactionCard(
+                    transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel,
+                    onRestore, onChangeStateToPending, onChangeStateToInProgress, onChangeStateToCompleted, 
+                    onChangeStateToCanceled, onOutstandingBalanceReminder
+                )
+            }
+            AllTransactionTypes.isPayGetCash(transaction.transactionType) -> {
+                PayGetCashCard(transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel, onRestore)
+            }
+            AllTransactionTypes.isExpenseIncome(transaction.transactionType) -> {
+                ExpenseIncomeCard(transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel, onRestore)
+            }
+            transaction.transactionType == AllTransactionTypes.PAYMENT_TRANSFER.value -> {
+                PaymentTransferCard(transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel, onRestore)
+            }
+            transaction.transactionType == AllTransactionTypes.JOURNAL_VOUCHER.value -> {
+                JournalVoucherCard(transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel, onRestore)
+            }
+            AllTransactionTypes.isStockAdjustment(transaction.transactionType) -> {
+                StockAdjustmentCard(transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel, transactionDetailsCounts, onRestore)
+            }
+            transaction.transactionType == AllTransactionTypes.MANUFACTURE.value -> {
+                val info = manufactureInfo[transaction.slug]
+                ManufactureCard(transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel, info, onRestore)
+            }
+            AllTransactionTypes.isOrder(transaction.transactionType) || transaction.transactionType == AllTransactionTypes.QUOTATION.value -> {
+                OrderQuotationCard(
+                    transaction, onClick, onDeleteClick, onEditClick, receiptViewModel, 
+                    transactionDetailsCounts, currencySymbol,
+                    onConvertToSale, onEditAndConvertToSale, 
+                    onConvertToPurchase, onEditAndConvertToPurchase,
+                    onCancelAndRemove, onRestore, onClone
+                )
+            }
+            else -> {
+                // Basic transaction card (Sale, Purchase, Returns)
+                BasicTransactionCard(
+                    transaction, onClick, onDeleteClick, onEditClick, receiptViewModel, 
+                    transactionDetailsCounts, currencySymbol, onRestore, onClone
+                )
+            }
         }
-        AllTransactionTypes.isPayGetCash(transaction.transactionType) -> {
-            PayGetCashCard(transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel, onRestore)
-        }
-        AllTransactionTypes.isExpenseIncome(transaction.transactionType) -> {
-            ExpenseIncomeCard(transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel, onRestore)
-        }
-        transaction.transactionType == AllTransactionTypes.PAYMENT_TRANSFER.value -> {
-            PaymentTransferCard(transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel, onRestore)
-        }
-        transaction.transactionType == AllTransactionTypes.JOURNAL_VOUCHER.value -> {
-            JournalVoucherCard(transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel, onRestore)
-        }
-        AllTransactionTypes.isStockAdjustment(transaction.transactionType) -> {
-            StockAdjustmentCard(transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel, transactionDetailsCounts, onRestore)
-        }
-        transaction.transactionType == AllTransactionTypes.MANUFACTURE.value -> {
-            val info = manufactureInfo[transaction.slug]
-            ManufactureCard(transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel, info, onRestore)
-        }
-        AllTransactionTypes.isOrder(transaction.transactionType) || transaction.transactionType == AllTransactionTypes.QUOTATION.value -> {
-            OrderQuotationCard(
-                transaction, onClick, onDeleteClick, onEditClick, receiptViewModel, 
-                transactionDetailsCounts, currencySymbol,
-                onConvertToSale, onEditAndConvertToSale, 
-                onConvertToPurchase, onEditAndConvertToPurchase,
-                onCancelAndRemove, onRestore, onClone
-            )
-        }
-        else -> {
-            // Basic transaction card (Sale, Purchase, Returns)
-            BasicTransactionCard(
-                transaction, onClick, onDeleteClick, onEditClick, receiptViewModel, 
-                transactionDetailsCounts, currencySymbol, onRestore, onClone
+        
+        // Gray overlay for deleted transactions with rounded corners
+        if (isDeleted) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(
+                        color = Color.Gray.copy(alpha = 0.5f),
+                        shape = RoundedCornerShape(12.dp)
+                    )
             )
         }
     }

@@ -10,7 +10,7 @@ interface InventoryTransactionDao {
     companion object {
         private const val SYNCED_STATUS = SyncStatus.SYNCED_VALUE
     }
-    @Query("SELECT * FROM InventoryTransaction WHERE parent_slug IS NULL OR parent_slug = '' ORDER BY timestamp DESC")
+    @Query("SELECT * FROM InventoryTransaction WHERE (parent_slug IS NULL OR parent_slug = '') AND status_id != 2 ORDER BY timestamp DESC")
     fun getAllTransactions(): Flow<List<InventoryTransactionEntity>>
     
     @Query("SELECT * FROM InventoryTransaction WHERE id = :id")
@@ -19,28 +19,37 @@ interface InventoryTransactionDao {
     @Query("SELECT * FROM InventoryTransaction WHERE slug = :slug")
     suspend fun getTransactionBySlug(slug: String): InventoryTransactionEntity?
     
-    @Query("SELECT * FROM InventoryTransaction WHERE parent_slug = :parentSlug ORDER BY timestamp ASC")
+    @Query("SELECT * FROM InventoryTransaction WHERE parent_slug = :parentSlug AND status_id != 2 ORDER BY timestamp ASC")
     fun getChildTransactions(parentSlug: String): Flow<List<InventoryTransactionEntity>>
     
-    @Query("SELECT * FROM InventoryTransaction WHERE parent_slug = :parentSlug ORDER BY timestamp ASC")
+    @Query("SELECT * FROM InventoryTransaction WHERE parent_slug = :parentSlug AND status_id != 2 ORDER BY timestamp ASC")
     suspend fun getChildTransactionsList(parentSlug: String): List<InventoryTransactionEntity>
     
-    @Query("SELECT * FROM InventoryTransaction WHERE party_slug = :partySlug AND (parent_slug IS NULL OR parent_slug = '') ORDER BY timestamp DESC")
+    @Query("SELECT * FROM InventoryTransaction WHERE party_slug = :partySlug AND (parent_slug IS NULL OR parent_slug = '') AND status_id != 2 ORDER BY timestamp DESC")
     fun getTransactionsByCustomer(partySlug: String): Flow<List<InventoryTransactionEntity>>
     
-    @Query("SELECT * FROM InventoryTransaction WHERE transaction_type = :transactionType AND (parent_slug IS NULL OR parent_slug = '') ORDER BY timestamp DESC")
+    @Query("SELECT * FROM InventoryTransaction WHERE transaction_type = :transactionType AND (parent_slug IS NULL OR parent_slug = '') AND status_id != 2 ORDER BY timestamp DESC")
     fun getTransactionsByType(transactionType: Int): Flow<List<InventoryTransactionEntity>>
     
-    @Query("SELECT * FROM InventoryTransaction WHERE business_slug = :businessSlug AND (parent_slug IS NULL OR parent_slug = '') ORDER BY timestamp DESC")
+    @Query("SELECT * FROM InventoryTransaction WHERE business_slug = :businessSlug AND (parent_slug IS NULL OR parent_slug = '') AND status_id != 2 ORDER BY timestamp DESC")
     fun getTransactionsByBusiness(businessSlug: String): Flow<List<InventoryTransactionEntity>>
     
     // Paginated query - sorted by transaction date (timestamp)
     // All filters are applied at DB level including party area/category via subquery
     // Note: filterByTypes = 1 means apply the transaction type filter, -1 means skip it (using -1 to avoid conflict with SALE type which is 0)
+    // Status filter: showActive=true showDeleted=false -> only active (status_id=0)
+    //                showActive=false showDeleted=true -> only deleted (status_id=2)
+    //                showActive=true showDeleted=true -> both active and deleted
+    //                showActive=false showDeleted=false -> none (empty result)
     @Query("""
         SELECT * FROM InventoryTransaction 
         WHERE business_slug = :businessSlug 
         AND (parent_slug IS NULL OR parent_slug = '')
+        AND (
+            (:showActive = 1 AND :showDeleted = 1) OR
+            (:showActive = 1 AND :showDeleted = 0 AND status_id = 0) OR
+            (:showActive = 0 AND :showDeleted = 1 AND status_id = 2)
+        )
         AND (:partySlug IS NULL OR party_slug = :partySlug)
         AND (:filterByTypes = -1 OR transaction_type IN (:transactionTypes))
         AND (:startDate IS NULL OR CAST(timestamp AS INTEGER) >= :startDate)
@@ -64,6 +73,8 @@ interface InventoryTransactionDao {
         idOrSlugFilter: String,
         areaSlug: String?,
         categorySlug: String?,
+        showActive: Boolean,
+        showDeleted: Boolean,
         limit: Int,
         offset: Int
     ): List<InventoryTransactionEntity>
@@ -73,6 +84,11 @@ interface InventoryTransactionDao {
         SELECT * FROM InventoryTransaction 
         WHERE business_slug = :businessSlug 
         AND (parent_slug IS NULL OR parent_slug = '')
+        AND (
+            (:showActive = 1 AND :showDeleted = 1) OR
+            (:showActive = 1 AND :showDeleted = 0 AND status_id = 0) OR
+            (:showActive = 0 AND :showDeleted = 1 AND status_id = 2)
+        )
         AND (:partySlug IS NULL OR party_slug = :partySlug)
         AND (:filterByTypes = -1 OR transaction_type IN (:transactionTypes))
         AND (:startDate IS NULL OR created_at >= :startDateStr)
@@ -98,6 +114,8 @@ interface InventoryTransactionDao {
         idOrSlugFilter: String,
         areaSlug: String?,
         categorySlug: String?,
+        showActive: Boolean,
+        showDeleted: Boolean,
         limit: Int,
         offset: Int
     ): List<InventoryTransactionEntity>
@@ -107,6 +125,11 @@ interface InventoryTransactionDao {
         SELECT COUNT(*) FROM InventoryTransaction 
         WHERE business_slug = :businessSlug 
         AND (parent_slug IS NULL OR parent_slug = '')
+        AND (
+            (:showActive = 1 AND :showDeleted = 1) OR
+            (:showActive = 1 AND :showDeleted = 0 AND status_id = 0) OR
+            (:showActive = 0 AND :showDeleted = 1 AND status_id = 2)
+        )
         AND (:partySlug IS NULL OR party_slug = :partySlug)
         AND (:filterByTypes = -1 OR transaction_type IN (:transactionTypes))
         AND (:startDate IS NULL OR CAST(timestamp AS INTEGER) >= :startDate)
@@ -127,7 +150,9 @@ interface InventoryTransactionDao {
         searchQuery: String,
         idOrSlugFilter: String,
         areaSlug: String?,
-        categorySlug: String?
+        categorySlug: String?,
+        showActive: Boolean,
+        showDeleted: Boolean
     ): Int
     
     @Query("SELECT * FROM InventoryTransaction WHERE business_slug = :businessSlug AND sync_status != $SYNCED_STATUS")
@@ -147,6 +172,12 @@ interface InventoryTransactionDao {
     
     @Query("DELETE FROM InventoryTransaction WHERE id = :id")
     suspend fun deleteTransactionById(id: Int)
+    
+    @Query("UPDATE InventoryTransaction SET status_id = 2 WHERE slug = :slug")
+    suspend fun softDeleteTransactionBySlug(slug: String)
+    
+    @Query("UPDATE InventoryTransaction SET status_id = 2 WHERE id = :id")
+    suspend fun softDeleteTransactionById(id: Int)
     
     @Query("DELETE FROM InventoryTransaction")
     suspend fun deleteAllTransactions()
