@@ -17,7 +17,9 @@ val partiesModule = module {
     single<PartiesRepository> { 
         PartiesRepositoryImpl(
             partyDao = get(),
-            slugGenerator = get()
+            slugGenerator = get(),
+            deletedRecordsDao = get(),
+            appSessionManager = get()
         ) 
     }
     

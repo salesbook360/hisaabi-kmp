@@ -1,11 +1,16 @@
 package com.hisaabi.hisaabi_kmp.parties.data.repository
 
+import com.hisaabi.hisaabi_kmp.common.Status
 import com.hisaabi.hisaabi_kmp.core.domain.model.EntityTypeEnum
+import com.hisaabi.hisaabi_kmp.core.session.AppSessionManager
 import com.hisaabi.hisaabi_kmp.core.util.SlugGenerator
+import com.hisaabi.hisaabi_kmp.database.dao.DeletedRecordsDao
 import com.hisaabi.hisaabi_kmp.database.dao.PartyDao
+import com.hisaabi.hisaabi_kmp.database.entity.DeletedRecordsEntity
 import com.hisaabi.hisaabi_kmp.database.entity.PartyEntity
 import com.hisaabi.hisaabi_kmp.parties.domain.model.PartiesFilter
 import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
+import com.hisaabi.hisaabi_kmp.sync.domain.model.SyncStatus
 import com.hisaabi.hisaabi_kmp.utils.getCurrentTimestamp
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -39,6 +44,8 @@ interface PartiesRepository {
     
     suspend fun updateParty(party: Party): String
     
+    suspend fun softDeleteParty(party: Party): Result<Unit>
+    
     suspend fun deleteParty(partySlug: String)
     
     suspend fun getPartyBySlug(slug: String): Party?
@@ -46,7 +53,9 @@ interface PartiesRepository {
 
 class PartiesRepositoryImpl(
     private val partyDao: PartyDao,
-    private val slugGenerator: SlugGenerator
+    private val slugGenerator: SlugGenerator,
+    private val deletedRecordsDao: DeletedRecordsDao,
+    private val appSessionManager: AppSessionManager
 ) : PartiesRepository {
     
     override suspend fun searchParties(
@@ -120,12 +129,60 @@ class PartiesRepositoryImpl(
     }
     
     override suspend fun updateParty(party: Party): String {
-        // Update only the updated_at timestamp, preserve created_at
+        // Update sync status to UnSynced and updated_at timestamp, preserve created_at
+        val now = getCurrentTimestamp()
         val entity = party.toEntity().copy(
-            updated_at = getCurrentTimestamp()
+            sync_status = SyncStatus.NONE.value, // UnSynced
+            updated_at = now
         )
         partyDao.updateParty(entity)
         return party.slug
+    }
+    
+    override suspend fun softDeleteParty(party: Party): Result<Unit> {
+        return try {
+            // Get session context for business slug and user slug
+            val sessionContext = appSessionManager.getSessionContext()
+            if (!sessionContext.isValid) {
+                return Result.failure(IllegalStateException("Invalid session context: userSlug or businessSlug is null"))
+            }
+            
+            val businessSlug = sessionContext.businessSlug!!
+            val userSlug = sessionContext.userSlug!!
+            
+            // Soft delete: Update party status to DELETED
+            val now = getCurrentTimestamp()
+            val updatedParty = party.copy(
+                personStatus = Status.DELETED.value,
+                syncStatus = SyncStatus.NONE.value, // UnSynced
+                updatedAt = now
+            )
+            val updatedEntity = updatedParty.toEntity()
+            partyDao.updateParty(updatedEntity)
+            
+            // Add entry to DeletedRecords table
+            val deletedRecordSlug = slugGenerator.generateSlug(EntityTypeEnum.ENTITY_TYPE_DELETED_RECORDS)
+                ?: return Result.failure(IllegalStateException("Failed to generate slug for deleted record: Invalid session context"))
+            
+            val deletedRecord = DeletedRecordsEntity(
+                id = 0,
+                record_slug = party.slug,
+                record_type = "party",
+                deletion_type = "soft",
+                slug = deletedRecordSlug,
+                business_slug = businessSlug,
+                created_by = userSlug,
+                sync_status = SyncStatus.NONE.value, // UnSynced
+                created_at = now,
+                updated_at = now
+            )
+            
+            deletedRecordsDao.insertDeletedRecord(deletedRecord)
+            
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
     
     override suspend fun deleteParty(partySlug: String) {

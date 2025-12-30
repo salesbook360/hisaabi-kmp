@@ -13,7 +13,7 @@ class AppConfigImpl(
 ) : AppConfig {
     override val baseUrl: String by lazy {
         when (environment) {
-            Environment.DEV -> "http://10.68.53.161:3000"
+            Environment.DEV -> "http://10.0.0.12:3000"
             Environment.STAGE -> "http://52.20.167.4:5000"
             Environment.LIVE -> "http://52.20.167.4:5000"
         }
@@ -35,6 +35,6 @@ fun getDefaultEnvironment(): Environment {
     // For example, in Android: BuildConfig.ENVIRONMENT
     // For iOS: Info.plist or build settings
     // For now, defaulting to STAGE (production URL)
-    return Environment.LIVE
+    return Environment.DEV
 }
 
