@@ -13,7 +13,7 @@ val warehousesModule = module {
     single { WareHouseLocalDataSource(get()) }
     
     // Repository
-    single { WarehousesRepository(get()) }
+    single { WarehousesRepository(get(), get(), get(), get()) }
     
     // Use Cases
     single { GetWarehousesUseCase(get()) }

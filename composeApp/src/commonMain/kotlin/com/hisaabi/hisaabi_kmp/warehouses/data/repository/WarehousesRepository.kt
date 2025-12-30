@@ -1,14 +1,25 @@
 package com.hisaabi.hisaabi_kmp.warehouses.data.repository
 
+import com.hisaabi.hisaabi_kmp.common.Status
+import com.hisaabi.hisaabi_kmp.core.domain.model.EntityTypeEnum
+import com.hisaabi.hisaabi_kmp.core.session.AppSessionManager
+import com.hisaabi.hisaabi_kmp.core.util.SlugGenerator
+import com.hisaabi.hisaabi_kmp.database.dao.DeletedRecordsDao
 import com.hisaabi.hisaabi_kmp.database.datasource.WareHouseLocalDataSource
+import com.hisaabi.hisaabi_kmp.database.entity.DeletedRecordsEntity
 import com.hisaabi.hisaabi_kmp.database.entity.WareHouseEntity
+import com.hisaabi.hisaabi_kmp.sync.domain.model.SyncStatus
+import com.hisaabi.hisaabi_kmp.utils.getCurrentTimestamp
 import com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.Clock
 
 class WarehousesRepository(
-    private val localDataSource: WareHouseLocalDataSource
+    private val localDataSource: WareHouseLocalDataSource,
+    private val deletedRecordsDao: DeletedRecordsDao,
+    private val slugGenerator: SlugGenerator,
+    private val appSessionManager: AppSessionManager
 ) {
     fun getAllWarehouses(): Flow<List<Warehouse>> {
         return localDataSource.getAllWareHouses().map { entities ->
@@ -64,8 +75,44 @@ class WarehousesRepository(
     
     suspend fun deleteWarehouse(warehouse: Warehouse): Result<Unit> {
         return try {
-            val entity = warehouse.toEntity()
-            localDataSource.deleteWareHouse(entity)
+            // Get session context for business slug and user slug
+            val sessionContext = appSessionManager.getSessionContext()
+            if (!sessionContext.isValid) {
+                return Result.failure(IllegalStateException("Invalid session context: userSlug or businessSlug is null"))
+            }
+            
+            val businessSlug = sessionContext.businessSlug!!
+            val userSlug = sessionContext.userSlug!!
+            
+            // Soft delete: Update warehouse status to DELETED
+            val now = getCurrentTimestamp()
+            val updatedWarehouse = warehouse.copy(
+                statusId = Status.DELETED.value,
+                syncStatus = SyncStatus.NONE.value, // UnSynced
+                updatedAt = now
+            )
+            val updatedEntity = updatedWarehouse.toEntity()
+            localDataSource.updateWareHouse(updatedEntity)
+            
+            // Add entry to DeletedRecords table
+            val deletedRecordSlug = slugGenerator.generateSlug(EntityTypeEnum.ENTITY_TYPE_DELETED_RECORDS)
+                ?: return Result.failure(IllegalStateException("Failed to generate slug for deleted record: Invalid session context"))
+            
+            val deletedRecord = DeletedRecordsEntity(
+                id = 0,
+                record_slug = warehouse.slug,
+                record_type = "warehouse",
+                deletion_type = "soft",
+                slug = deletedRecordSlug,
+                business_slug = businessSlug,
+                created_by = userSlug,
+                sync_status = SyncStatus.NONE.value, // UnSynced
+                created_at = now,
+                updated_at = now
+            )
+            
+            deletedRecordsDao.insertDeletedRecord(deletedRecord)
+            
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
