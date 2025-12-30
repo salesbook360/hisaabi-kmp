@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Warehouse
 import androidx.compose.material3.*
@@ -122,6 +123,7 @@ fun WarehousesScreen(
                             WarehouseItem(
                                 warehouse = warehouse,
                                 onClick = { onWarehouseClick(warehouse) },
+                                onEditClick = { onWarehouseClick(warehouse) },
                                 onDeleteClick = { showDeleteDialog = warehouse }
                             )
                             Spacer(modifier = Modifier.height(8.dp))
@@ -161,6 +163,7 @@ fun WarehousesScreen(
 private fun WarehouseItem(
     warehouse: Warehouse,
     onClick: () -> Unit,
+    onEditClick: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
     Card(
@@ -246,6 +249,18 @@ private fun WarehouseItem(
                 }
             }
             
+            Spacer(modifier = Modifier.width(8.dp))
+            
+            // Edit button
+            IconButton(onClick = onEditClick) {
+                Icon(
+                    Icons.Default.Edit,
+                    contentDescription = "Edit",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+            
+            // Delete button
             IconButton(
                 onClick = { onDeleteClick() }
             ) {
