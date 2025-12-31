@@ -35,6 +35,6 @@ fun getDefaultEnvironment(): Environment {
     // For example, in Android: BuildConfig.ENVIRONMENT
     // For iOS: Info.plist or build settings
     // For now, defaulting to STAGE (production URL)
-    return Environment.DEV
+    return Environment.LIVE
 }
 
