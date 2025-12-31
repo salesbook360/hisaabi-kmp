@@ -117,6 +117,7 @@ import com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse
 import com.hisaabi.hisaabi_kmp.warehouses.presentation.ui.AddWarehouseScreen
 import com.hisaabi.hisaabi_kmp.warehouses.presentation.ui.WarehousesScreen
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import com.hisaabi.hisaabi_kmp.core.ui.ProvideWindowSizeClass
 import org.koin.compose.KoinContext
 import org.koin.compose.koinInject
 import kotlin.system.exitProcess
@@ -125,7 +126,8 @@ import kotlin.system.exitProcess
 @Preview
 fun App() {
     MaterialTheme {
-        KoinContext {
+        ProvideWindowSizeClass {
+            KoinContext {
             // Check authentication state on app launch
             val authViewModel: AuthViewModel = koinInject()
             val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
@@ -2930,6 +2932,7 @@ fun App() {
                     )
                 }
             }
+        }
         }
     }
 }

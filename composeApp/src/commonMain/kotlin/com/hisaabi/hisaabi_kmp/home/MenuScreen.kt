@@ -17,6 +17,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.hisaabi.hisaabi_kmp.core.ui.LocalWindowSizeClass
+import com.hisaabi.hisaabi_kmp.core.ui.WindowWidthSizeClass
+import com.hisaabi.hisaabi_kmp.core.ui.adaptiveGridCells
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -52,22 +55,51 @@ fun HomeMenuScreen(
             )
         }
     ) { paddingValues ->
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(4),
+        val windowSizeClass = LocalWindowSizeClass.current
+        val gridCells = adaptiveGridCells(
+            compactColumns = 4,
+            mediumColumns = 6,
+            expandedMinItemWidth = 110.dp
+        )
+        
+        // Calculate column count for span
+        val columnCount = when (windowSizeClass.widthSizeClass) {
+            WindowWidthSizeClass.COMPACT -> 4
+            WindowWidthSizeClass.MEDIUM -> 6
+            WindowWidthSizeClass.EXPANDED -> 8 // approximate for adaptive
+        }
+        
+        // Adaptive padding based on screen size
+        val horizontalPadding = when (windowSizeClass.widthSizeClass) {
+            WindowWidthSizeClass.COMPACT -> 12.dp
+            WindowWidthSizeClass.MEDIUM -> 24.dp
+            WindowWidthSizeClass.EXPANDED -> 48.dp
+        }
+        
+        // Center content on large screens
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
-            contentPadding = PaddingValues(
-                start = 12.dp,
-                top = 16.dp,
-                end = 12.dp,
-                bottom = 16.dp
-            ),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            contentAlignment = Alignment.TopCenter
         ) {
+            Box(
+                modifier = Modifier.widthIn(max = windowSizeClass.maxContentWidth)
+            ) {
+                LazyVerticalGrid(
+                    columns = gridCells,
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(
+                        start = horizontalPadding,
+                        top = 16.dp,
+                        end = horizontalPadding,
+                        bottom = 16.dp
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
             // Add New Transaction Section
-            item(span = { GridItemSpan(4) }) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
                 Text(
                     text = "Add New Transaction",
                     style = MaterialTheme.typography.titleMedium,
@@ -105,7 +137,7 @@ fun HomeMenuScreen(
             }
             
             // Other Options Section
-            item(span = { GridItemSpan(4) }) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "Other Options",
@@ -138,6 +170,8 @@ fun HomeMenuScreen(
                     }
                 )
             }
+                }
+            }
         }
     }
 }
@@ -147,29 +181,37 @@ fun HomeGridCell(
     option: MenuOption,
     onClick: () -> Unit
 ) {
+    val windowSizeClass = LocalWindowSizeClass.current
+    val isDesktop = windowSizeClass.widthSizeClass == WindowWidthSizeClass.EXPANDED
+    
+    // Adaptive sizing for desktop
+    val iconSize = if (isDesktop) 36.dp else 30.dp
+    val fontSize = if (isDesktop) 12.sp else 10.sp
+    val padding = if (isDesktop) 12.dp else 8.dp
+    
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
     ) {
         Column(
-            modifier = Modifier.padding(8.dp),
+            modifier = Modifier.padding(padding),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(
                 imageVector = option.icon,
                 contentDescription = option.title,
-                modifier = Modifier.size(30.dp),
+                modifier = Modifier.size(iconSize),
                 tint = MaterialTheme.colorScheme.primary
             )
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(if (isDesktop) 8.dp else 6.dp))
             Text(
                 text = option.title,
                 style = MaterialTheme.typography.bodySmall,
-                fontSize = 10.sp,
+                fontSize = fontSize,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 2,

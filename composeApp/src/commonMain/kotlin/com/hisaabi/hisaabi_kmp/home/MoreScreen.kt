@@ -19,8 +19,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.hisaabi.hisaabi_kmp.core.ui.LocalWindowSizeClass
+import com.hisaabi.hisaabi_kmp.core.ui.WindowWidthSizeClass
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,18 +67,35 @@ fun MoreScreen(
             )
         }
     ) { paddingValues ->
-        LazyColumn(
+        val windowSizeClass = LocalWindowSizeClass.current
+        val isDesktop = windowSizeClass.widthSizeClass == WindowWidthSizeClass.EXPANDED
+        
+        // Horizontal padding for desktop - creates visual margins
+        val horizontalPadding = if (isDesktop) 48.dp else 0.dp
+        
+        // Center content on large screens
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+            contentAlignment = Alignment.TopCenter
         ) {
+            LazyColumn(
+                modifier = Modifier
+                    .widthIn(max = if (isDesktop) 800.dp else Dp.Unspecified)
+                    .fillMaxWidth()
+                    .padding(horizontal = horizontalPadding),
+                contentPadding = PaddingValues(
+                    top = if (isDesktop) 16.dp else 0.dp,
+                    bottom = 16.dp
+                )
+            ) {
             // Profile Section
             item {
                 Card(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    shape = RoundedCornerShape(0.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = if (isDesktop) RoundedCornerShape(12.dp) else RoundedCornerShape(0.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = Color.White
                     )
@@ -147,10 +167,10 @@ fun MoreScreen(
             
             // Contact/Social Buttons
             item {
-                Spacer(modifier = Modifier.height(1.dp))
+                Spacer(modifier = Modifier.height(if (isDesktop) 12.dp else 1.dp))
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(0.dp),
+                    shape = if (isDesktop) RoundedCornerShape(12.dp) else RoundedCornerShape(0.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
                     Row(
@@ -180,7 +200,7 @@ fun MoreScreen(
             
             // Settings Options
             item {
-                Spacer(modifier = Modifier.height(1.dp))
+                Spacer(modifier = Modifier.height(if (isDesktop) 12.dp else 1.dp))
                 SettingsCard {
                     Column {
                         SettingsItem(
@@ -259,7 +279,7 @@ fun MoreScreen(
             
             // Support & Info
             item {
-                Spacer(modifier = Modifier.height(1.dp))
+                Spacer(modifier = Modifier.height(if (isDesktop) 12.dp else 1.dp))
                 SettingsCard {
                     Column {
                         SettingsItem(
@@ -297,7 +317,7 @@ fun MoreScreen(
             
             // Developer Options (Debug)
             item {
-                Spacer(modifier = Modifier.height(1.dp))
+                Spacer(modifier = Modifier.height(if (isDesktop) 12.dp else 1.dp))
                 SettingsCard {
                     Column {
                         SettingsItem(
@@ -323,7 +343,7 @@ fun MoreScreen(
             
             // Logout & Delete Account
             item {
-                Spacer(modifier = Modifier.height(1.dp))
+                Spacer(modifier = Modifier.height(if (isDesktop) 12.dp else 1.dp))
                 SettingsCard {
                     Column {
                         SettingsItem(
@@ -362,6 +382,7 @@ fun MoreScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+            }
             }
         }
     }
@@ -593,10 +614,16 @@ private fun CurrencySelectionDialog(
 // Reusable Components
 
 @Composable
-fun SettingsCard(content: @Composable () -> Unit) {
+fun SettingsCard(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    val windowSizeClass = LocalWindowSizeClass.current
+    val isDesktop = windowSizeClass.widthSizeClass == WindowWidthSizeClass.EXPANDED
+    
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(0.dp),
+        modifier = modifier.fillMaxWidth(),
+        shape = if (isDesktop) RoundedCornerShape(12.dp) else RoundedCornerShape(0.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         content()
