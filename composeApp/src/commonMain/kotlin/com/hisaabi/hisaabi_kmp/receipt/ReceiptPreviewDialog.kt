@@ -1,15 +1,11 @@
 package com.hisaabi.hisaabi_kmp.receipt
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -84,18 +80,15 @@ fun ReceiptPreviewDialog(
                     .fillMaxSize()
                     .padding(paddingValues)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                ) {
-                    ReceiptContent(
-                        transaction = transaction,
-                        config = config,
-                        currencySymbol = currencySymbol,
-                        modifier = Modifier.padding(16.dp)
-                    )
+                // Generate HTML content for preview
+                val htmlContent = remember(transaction, config, currencySymbol) {
+                    ReceiptHtmlGenerator.generateHtmlReceipt(transaction, config, currencySymbol)
                 }
+                
+                HtmlView(
+                    htmlContent = htmlContent,
+                    modifier = Modifier.fillMaxSize()
+                )
             }
         }
     }
