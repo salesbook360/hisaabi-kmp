@@ -3,10 +3,13 @@ package com.hisaabi.hisaabi_kmp.home
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.hisaabi.hisaabi_kmp.core.ui.AdaptiveNavigationScaffold
+import com.hisaabi.hisaabi_kmp.core.ui.NavigationItem
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import com.hisaabi.hisaabi_kmp.reports.presentation.ReportsScreen
 
@@ -42,20 +45,30 @@ fun HomeScreen(
     onNavigateToReports: () -> Unit = {},
     onReportTypeSelected: (com.hisaabi.hisaabi_kmp.reports.domain.model.ReportType) -> Unit = {}
 ) {
+    // Navigation items for adaptive navigation
+    val navigationItems = listOf(
+        NavigationItem(
+            title = "Dashboard",
+            icon = Icons.Outlined.Dashboard,
+            selectedIcon = Icons.Filled.Dashboard
+        ),
+        NavigationItem(
+            title = "Home",
+            icon = Icons.Outlined.Home,
+            selectedIcon = Icons.Filled.Home
+        ),
+        NavigationItem(
+            title = "Settings",
+            icon = Icons.Outlined.Settings,
+            selectedIcon = Icons.Filled.Settings
+        )
+    )
     
-    Scaffold(
-        bottomBar = {
-            NavigationBar {
-                BottomNavigationItem.entries.forEachIndexed { index, item ->
-                    NavigationBarItem(
-                        icon = { Icon(item.icon, contentDescription = item.title) },
-                        label = { Text(item.title) },
-                        selected = selectedTab == index,
-                        onClick = { onTabSelected(index) }
-                    )
-                }
-            }
-        }
+    AdaptiveNavigationScaffold(
+        items = navigationItems,
+        selectedIndex = selectedTab,
+        onItemSelected = onTabSelected,
+        appTitle = "Hisaabi"
     ) { paddingValues ->
         Box(modifier = Modifier.padding(paddingValues)) {
             when (selectedTab) {

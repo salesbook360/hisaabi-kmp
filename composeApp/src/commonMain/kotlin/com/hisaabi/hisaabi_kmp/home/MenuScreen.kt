@@ -22,7 +22,6 @@ import com.hisaabi.hisaabi_kmp.core.ui.WindowWidthSizeClass
 import com.hisaabi.hisaabi_kmp.core.ui.adaptiveGridCells
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeMenuScreen(
     onNavigateToParties: (com.hisaabi.hisaabi_kmp.parties.domain.model.PartySegment) -> Unit = {},
@@ -43,46 +42,32 @@ fun HomeMenuScreen(
     onNavigateToAddTransaction: (AllTransactionTypes) -> Unit = {},
     onNavigateToReports: () -> Unit = {}
 ) {
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Home") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                ),
-                windowInsets = WindowInsets(0)
-            )
-        }
-    ) { paddingValues ->
-        val windowSizeClass = LocalWindowSizeClass.current
-        val gridCells = adaptiveGridCells(
-            compactColumns = 4,
-            mediumColumns = 6,
-            expandedMinItemWidth = 110.dp
-        )
-        
-        // Calculate column count for span
-        val columnCount = when (windowSizeClass.widthSizeClass) {
-            WindowWidthSizeClass.COMPACT -> 4
-            WindowWidthSizeClass.MEDIUM -> 6
-            WindowWidthSizeClass.EXPANDED -> 8 // approximate for adaptive
-        }
-        
-        // Adaptive padding based on screen size
-        val horizontalPadding = when (windowSizeClass.widthSizeClass) {
-            WindowWidthSizeClass.COMPACT -> 12.dp
-            WindowWidthSizeClass.MEDIUM -> 24.dp
-            WindowWidthSizeClass.EXPANDED -> 48.dp
-        }
-        
-        // Center content on large screens
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            contentAlignment = Alignment.TopCenter
-        ) {
+    val windowSizeClass = LocalWindowSizeClass.current
+    val gridCells = adaptiveGridCells(
+        compactColumns = 4,
+        mediumColumns = 6,
+        expandedMinItemWidth = 110.dp
+    )
+    
+    // Calculate column count for span
+    val columnCount = when (windowSizeClass.widthSizeClass) {
+        WindowWidthSizeClass.COMPACT -> 4
+        WindowWidthSizeClass.MEDIUM -> 6
+        WindowWidthSizeClass.EXPANDED -> 8 // approximate for adaptive
+    }
+    
+    // Adaptive padding based on screen size
+    val horizontalPadding = when (windowSizeClass.widthSizeClass) {
+        WindowWidthSizeClass.COMPACT -> 12.dp
+        WindowWidthSizeClass.MEDIUM -> 24.dp
+        WindowWidthSizeClass.EXPANDED -> 48.dp
+    }
+    
+    // Center content on large screens
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.TopCenter
+    ) {
             Box(
                 modifier = Modifier.widthIn(max = windowSizeClass.maxContentWidth)
             ) {
@@ -170,7 +155,6 @@ fun HomeMenuScreen(
                     }
                 )
             }
-                }
             }
         }
     }

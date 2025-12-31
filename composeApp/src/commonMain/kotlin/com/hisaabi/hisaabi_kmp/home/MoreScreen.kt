@@ -25,7 +25,6 @@ import androidx.compose.ui.unit.sp
 import com.hisaabi.hisaabi_kmp.core.ui.LocalWindowSizeClass
 import com.hisaabi.hisaabi_kmp.core.ui.WindowWidthSizeClass
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MoreScreen(
     onNavigateToAuth: () -> Unit = {},
@@ -55,32 +54,20 @@ fun MoreScreen(
     
     var showLanguageDialog by remember { mutableStateOf(false) }
     var showCurrencyDialog by remember { mutableStateOf(false) }
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("More") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                ),
-                windowInsets = WindowInsets(0)
-            )
-        }
-    ) { paddingValues ->
-        val windowSizeClass = LocalWindowSizeClass.current
-        val isDesktop = windowSizeClass.widthSizeClass == WindowWidthSizeClass.EXPANDED
-        
-        // Horizontal padding for desktop - creates visual margins
-        val horizontalPadding = if (isDesktop) 48.dp else 0.dp
-        
-        // Center content on large screens
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .background(MaterialTheme.colorScheme.surfaceVariant),
-            contentAlignment = Alignment.TopCenter
-        ) {
+    
+    val windowSizeClass = LocalWindowSizeClass.current
+    val isDesktop = windowSizeClass.widthSizeClass == WindowWidthSizeClass.EXPANDED
+    
+    // Horizontal padding for desktop - creates visual margins
+    val horizontalPadding = if (isDesktop) 48.dp else 0.dp
+    
+    // Center content on large screens
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surfaceVariant),
+        contentAlignment = Alignment.TopCenter
+    ) {
             LazyColumn(
                 modifier = Modifier
                     .widthIn(max = if (isDesktop) 800.dp else Dp.Unspecified)
@@ -382,7 +369,6 @@ fun MoreScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-            }
             }
         }
     }

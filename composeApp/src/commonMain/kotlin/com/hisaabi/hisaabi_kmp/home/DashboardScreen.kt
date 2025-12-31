@@ -30,7 +30,6 @@ import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
 import com.hisaabi.hisaabi_kmp.sync.presentation.SyncStatusComponent
 import org.koin.compose.koinInject
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen() {
     // Inject DashboardViewModel from Koin
@@ -48,36 +47,14 @@ fun DashboardScreen() {
     val partiesSummary by viewModel.partiesSummary.collectAsState()
     val productsSummary by viewModel.productsSummary.collectAsState()
     
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Dashboard") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                ),
-                windowInsets = WindowInsets(0),
-                actions = {
-                    IconButton(onClick = { viewModel.refresh() }) {
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = "Refresh"
-                        )
-                    }
-                }
-            )
-        }
-    ) { paddingValues ->
-        val windowSizeClass = LocalWindowSizeClass.current
-        val isExpandedLayout = windowSizeClass.widthSizeClass == WindowWidthSizeClass.EXPANDED
-        
-        // Wrap content in a centered container with max width
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            contentAlignment = Alignment.TopCenter
-        ) {
+    val windowSizeClass = LocalWindowSizeClass.current
+    val isExpandedLayout = windowSizeClass.widthSizeClass == WindowWidthSizeClass.EXPANDED
+    
+    // Wrap content in a centered container with max width
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.TopCenter
+    ) {
             Box(
                 modifier = Modifier
                     .widthIn(max = windowSizeClass.maxContentWidth)
@@ -233,6 +210,5 @@ fun DashboardScreen() {
                 }
             }
         }
-    }
 }
 
