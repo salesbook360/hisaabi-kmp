@@ -13,6 +13,8 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.core.content.FileProvider
 import com.hisaabi.hisaabi_kmp.settings.domain.model.ReceiptConfig
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction
+import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
+import com.hisaabi.hisaabi_kmp.utils.formatTransactionDate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -39,8 +41,13 @@ class AndroidReceiptCapture(private val context: Context) : ReceiptCapture {
             // In a production app, you'd render the compose view to bitmap
             val pdfFile = File(receiptDir, "$fileName.pdf")
             
-            // Create PDF from text
-            createPdfFromTransaction(transaction, config, currencySymbol, pdfFile)
+            // Create PDF - check if it's a payment transaction
+            val isPaymentTransaction = AllTransactionTypes.isPayGetCash(transaction.transactionType)
+            if (isPaymentTransaction) {
+                createPaymentPdfFromTransaction(transaction, config, currencySymbol, pdfFile)
+            } else {
+                createPdfFromTransaction(transaction, config, currencySymbol, pdfFile)
+            }
             
             ReceiptResult.PdfFile(pdfFile.absolutePath)
         } catch (e: Exception) {
@@ -558,6 +565,305 @@ class AndroidReceiptCapture(private val context: Context) : ReceiptCapture {
         
         // Bottom red border
         canvas.drawRect(margin, 820f, pageWidth - margin, 826f, redPaint)
+        
+        pdfDocument.finishPage(page)
+        
+        // Write to file
+        try {
+            pdfDocument.writeTo(FileOutputStream(outputFile))
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+        
+        pdfDocument.close()
+    }
+    
+    private fun createPaymentPdfFromTransaction(
+        transaction: Transaction,
+        config: ReceiptConfig,
+        currencySymbol: String,
+        outputFile: File
+    ) {
+        val pdfDocument = PdfDocument()
+        val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create() // A4 size in points
+        val page = pdfDocument.startPage(pageInfo)
+        val canvas = page.canvas
+        
+        val margin = 40f
+        val pageWidth = 595f
+        val contentWidth = pageWidth - (margin * 2)
+        
+        // Setup paint styles
+        val headerPaint = Paint().apply {
+            color = Color.parseColor("#1976D2")
+            textSize = 28f
+            isFakeBoldText = true
+            isAntiAlias = true
+            textAlign = Paint.Align.CENTER
+        }
+        
+        val businessNamePaint = Paint().apply {
+            color = Color.parseColor("#1976D2")
+            textSize = 16f
+            isFakeBoldText = true
+            isAntiAlias = true
+            textAlign = Paint.Align.CENTER
+        }
+        
+        val titlePaint = Paint().apply {
+            color = Color.BLACK
+            textSize = 14f
+            isFakeBoldText = true
+            isAntiAlias = true
+        }
+        
+        val semiBoldPaint = Paint().apply {
+            color = Color.BLACK
+            textSize = 12f
+            isFakeBoldText = true
+            isAntiAlias = true
+        }
+        
+        val normalPaint = Paint().apply {
+            color = Color.BLACK
+            textSize = 11f
+            isAntiAlias = true
+        }
+        
+        val smallPaint = Paint().apply {
+            color = Color.parseColor("#757575")
+            textSize = 9f
+            isAntiAlias = true
+        }
+        
+        val labelPaint = Paint().apply {
+            color = Color.parseColor("#757575")
+            textSize = 10f
+            isFakeBoldText = true
+            isAntiAlias = true
+        }
+        
+        val bluePaint = Paint().apply {
+            color = Color.parseColor("#1976D2")
+        }
+        
+        val grayPaint = Paint().apply {
+            color = Color.parseColor("#F5F5F5")
+        }
+        
+        val lightGrayPaint = Paint().apply {
+            color = Color.parseColor("#FAFAFA")
+        }
+        
+        var yPosition = 40f
+        
+        // Top blue border (6dp thick)
+        canvas.drawRect(margin, yPosition, pageWidth - margin, yPosition + 6f, bluePaint)
+        yPosition += 50f  // Increased gap between top border and title
+        
+        // Header - PAYMENT RECEIPT (centered)
+        canvas.drawText("PAYMENT RECEIPT", pageWidth / 2, yPosition, headerPaint)
+        yPosition += 35f
+        
+        // Business info (centered)
+        if (config.showBusinessName && config.businessName.isNotEmpty()) {
+            canvas.drawText(config.businessName, pageWidth / 2, yPosition, businessNamePaint)
+            yPosition += 18f
+        }
+        
+        val centerSmallPaint = Paint(smallPaint).apply {
+            textAlign = Paint.Align.CENTER
+        }
+        
+        if (config.showBusinessAddress && config.businessAddress.isNotEmpty()) {
+            canvas.drawText(config.businessAddress, pageWidth / 2, yPosition, centerSmallPaint)
+            yPosition += 14f
+        }
+        
+        if (config.showBusinessPhone && config.businessPhone.isNotEmpty()) {
+            canvas.drawText(config.businessPhone, pageWidth / 2, yPosition, centerSmallPaint)
+            yPosition += 14f
+        }
+        
+        if (config.showBusinessEmail && config.businessEmail.isNotEmpty()) {
+            canvas.drawText(config.businessEmail, pageWidth / 2, yPosition, centerSmallPaint)
+            yPosition += 14f
+        }
+        
+        val businessInfoShown = (config.showBusinessName && config.businessName.isNotEmpty()) ||
+                               (config.showBusinessAddress && config.businessAddress.isNotEmpty()) ||
+                               (config.showBusinessPhone && config.businessPhone.isNotEmpty()) ||
+                               (config.showBusinessEmail && config.businessEmail.isNotEmpty())
+        
+        if (businessInfoShown) {
+            yPosition += 10f
+            canvas.drawRect(margin, yPosition, pageWidth - margin, yPosition + 1f, Paint().apply {
+                color = Color.parseColor("#E0E0E0")
+            })
+            yPosition += 16f
+        }
+        
+        // Payment Information Section
+        val showDate = config.showTransactionDate && transaction.timestamp != null
+        val showReceipt = config.showOrderNo && transaction.slug != null
+        val showType = config.showTransactionType
+        val showPayment = config.showPaymentMethod && (transaction.paymentMethodTo != null || transaction.paymentMethodFrom != null)
+        
+        if (showDate || showReceipt || showType || showPayment) {
+            val infoBoxTop = yPosition
+            val boxHeight = (if (showDate) 18f else 0f) + (if (showReceipt) 18f else 0f) +
+                           (if (showType) 18f else 0f) + (if (showPayment) 18f else 0f) + 24f
+            canvas.drawRect(margin, infoBoxTop, pageWidth - margin, yPosition + boxHeight, grayPaint)
+            yPosition += 16f
+            
+            if (showDate) {
+                canvas.drawText("PAYMENT DATE", margin + 16f, yPosition, labelPaint)
+                val dateText = formatTransactionDate(transaction.timestamp!!)
+                canvas.drawText(dateText, pageWidth - margin - 16f, yPosition, Paint(semiBoldPaint).apply {
+                    textAlign = Paint.Align.RIGHT
+                })
+                yPosition += 18f
+            }
+            
+            if (showReceipt) {
+                canvas.drawText("RECEIPT NO.", margin + 16f, yPosition, labelPaint)
+                canvas.drawText(transaction.slug, pageWidth - margin - 16f, yPosition, Paint(semiBoldPaint).apply {
+                    textAlign = Paint.Align.RIGHT
+                })
+                yPosition += 18f
+            }
+            
+            if (showType) {
+                canvas.drawText("TRANSACTION TYPE", margin + 16f, yPosition, labelPaint)
+                canvas.drawText(transaction.getTransactionTypeName(), pageWidth - margin - 16f, yPosition, Paint(semiBoldPaint).apply {
+                    textAlign = Paint.Align.RIGHT
+                })
+                yPosition += 18f
+            }
+            
+            if (showPayment) {
+                canvas.drawText("PAYMENT METHOD", margin + 16f, yPosition, labelPaint)
+                val paymentMethod = transaction.paymentMethodTo?.title ?: transaction.paymentMethodFrom?.title ?: "N/A"
+                canvas.drawText(paymentMethod, pageWidth - margin - 16f, yPosition, Paint(semiBoldPaint).apply {
+                    textAlign = Paint.Align.RIGHT
+                })
+                yPosition += 18f
+            }
+            
+            yPosition += 8f
+        }
+        
+        yPosition += 20f
+        
+        // Party Information Section
+        transaction.party?.let { party ->
+            val showCustomerInfo = config.showCustomerName || 
+                                  (config.showCustomerPhone && party.phone != null) || 
+                                  (config.showCustomerAddress && party.address != null)
+            
+            if (showCustomerInfo) {
+                val boxHeight = (if (config.showCustomerName) 18f else 0f) +
+                               (if (config.showCustomerPhone && party.phone != null) 14f else 0f) +
+                               (if (config.showCustomerAddress && party.address != null) 14f else 0f) + 28f
+                
+                canvas.drawRect(margin, yPosition, pageWidth - margin, yPosition + boxHeight, lightGrayPaint)
+                var boxYPos = yPosition + 16f
+                
+                val paidToLabel = if (AllTransactionTypes.isDealingWithCustomer(transaction.transactionType)) {
+                    "PAID TO"
+                } else {
+                    "PAID FROM"
+                }
+                canvas.drawText(paidToLabel, margin + 16f, boxYPos, labelPaint)
+                boxYPos += 20f
+                
+                if (config.showCustomerName) {
+                    canvas.drawText(party.name, margin + 16f, boxYPos, Paint(semiBoldPaint).apply {
+                        textSize = 16f
+                    })
+                    boxYPos += 20f
+                }
+                
+                if (config.showCustomerPhone && party.phone != null) {
+                    canvas.drawText(party.phone, margin + 16f, boxYPos, normalPaint)
+                    boxYPos += 16f
+                }
+                
+                if (config.showCustomerAddress && party.address != null) {
+                    canvas.drawText(party.address, margin + 16f, boxYPos, normalPaint)
+                }
+                
+                yPosition += boxHeight + 20f
+            }
+        }
+        
+        // Amount Section - Highlighted with blue background
+        val amountBoxTop = yPosition
+        val amountBoxHeight = 100f  // Increased height to prevent overlap
+        canvas.drawRect(margin, amountBoxTop, pageWidth - margin, amountBoxTop + amountBoxHeight, bluePaint)
+        
+        val whiteTextPaint = Paint().apply {
+            color = Color.WHITE
+            textSize = 12f
+            isFakeBoldText = true
+            isAntiAlias = true
+            textAlign = Paint.Align.CENTER
+        }
+        
+        val whiteLargePaint = Paint().apply {
+            color = Color.WHITE
+            textSize = 36f
+            isFakeBoldText = true
+            isAntiAlias = true
+            textAlign = Paint.Align.CENTER
+        }
+        
+        // Draw "AMOUNT PAID" label at the top of the box
+        // yPosition in Canvas is the baseline, so we add text size for proper positioning
+        val labelYPos = amountBoxTop + 20f + 12f  // Top padding + text size
+        canvas.drawText("AMOUNT PAID", pageWidth / 2, labelYPos, whiteTextPaint)
+        
+        // Draw amount below with increased spacing (at least 10px more gap)
+        // The large text (36f) needs more space - position it lower in the box
+        // Increased from 60f to 70f to add more visible gap between label and amount
+        val amountYPos = amountBoxTop + 70f  // Position lower with more spacing from label
+        canvas.drawText("$currencySymbol${String.format("%.2f", transaction.totalPaid)}", pageWidth / 2, amountYPos, whiteLargePaint)
+        
+        yPosition = amountBoxTop + amountBoxHeight + 20f
+        
+        // Remarks
+        if (transaction.description?.isNotEmpty() == true) {
+            val remarksHeight = 60f
+            canvas.drawRect(margin, yPosition, pageWidth - margin, yPosition + remarksHeight, lightGrayPaint)
+            var remarksYPos = yPosition + 16f
+            canvas.drawText("REMARKS", margin + 12f, remarksYPos, labelPaint)
+            remarksYPos += 16f
+            canvas.drawText(transaction.description, margin + 12f, remarksYPos, normalPaint)
+            yPosition += remarksHeight + 20f
+        }
+        
+        // Footer
+        if (config.showInvoiceTerms && config.invoiceTerms.isNotEmpty()) {
+            val centerPaint = Paint(smallPaint).apply {
+                textAlign = Paint.Align.CENTER
+            }
+            canvas.drawText(config.invoiceTerms, pageWidth / 2, yPosition, centerPaint)
+            yPosition += 14f
+        }
+        
+        if (config.showRegardsMessage && config.regardsMessage != null) {
+            val regardsPaint = Paint().apply {
+                color = Color.parseColor("#1976D2")
+                textSize = 12f
+                isFakeBoldText = true
+                isAntiAlias = true
+                textAlign = Paint.Align.CENTER
+            }
+            canvas.drawText(config.regardsMessage, pageWidth / 2, yPosition, regardsPaint)
+        }
+        
+        // Bottom blue border
+        canvas.drawRect(margin, 820f, pageWidth - margin, 826f, bluePaint)
         
         pdfDocument.finishPage(page)
         

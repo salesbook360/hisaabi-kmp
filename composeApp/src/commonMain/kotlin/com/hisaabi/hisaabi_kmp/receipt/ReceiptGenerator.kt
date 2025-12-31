@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hisaabi.hisaabi_kmp.settings.domain.model.ReceiptConfig
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction
+import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import com.hisaabi.hisaabi_kmp.utils.formatTransactionDate
 import kotlin.math.abs
 import com.hisaabi.hisaabi_kmp.utils.format
@@ -24,6 +25,36 @@ import com.hisaabi.hisaabi_kmp.utils.format
  */
 @Composable
 fun ReceiptContent(
+    transaction: Transaction,
+    config: ReceiptConfig,
+    currencySymbol: String,
+    modifier: Modifier = Modifier
+) {
+    // Check if this is a payment transaction
+    val isPaymentTransaction = AllTransactionTypes.isPayGetCash(transaction.transactionType)
+    
+    if (isPaymentTransaction) {
+        PaymentReceiptContent(
+            transaction = transaction,
+            config = config,
+            currencySymbol = currencySymbol,
+            modifier = modifier
+        )
+    } else {
+        RegularReceiptContent(
+            transaction = transaction,
+            config = config,
+            currencySymbol = currencySymbol,
+            modifier = modifier
+        )
+    }
+}
+
+/**
+ * Regular receipt for sale, purchase, and similar transactions with products
+ */
+@Composable
+private fun RegularReceiptContent(
     transaction: Transaction,
     config: ReceiptConfig,
     currencySymbol: String,
@@ -706,6 +737,327 @@ fun ReceiptContent(
                 .fillMaxWidth()
                 .height(6.dp)
                 .background(Color(0xFFB71C1C))
+        )
+    }
+}
+
+/**
+ * Payment receipt for Pay/Get Cash transactions - shows only payment information
+ */
+@Composable
+fun PaymentReceiptContent(
+    transaction: Transaction,
+    config: ReceiptConfig,
+    currencySymbol: String,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(Color.White)
+            .padding(16.dp)
+    ) {
+        // Top border
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(6.dp)
+                .background(Color(0xFF1976D2))
+        )
+        
+        Spacer(Modifier.height(20.dp))
+        
+        // Header - PAYMENT RECEIPT
+        Text(
+            text = "PAYMENT RECEIPT",
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF1976D2),
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center
+        )
+        
+        Spacer(Modifier.height(20.dp))
+        
+        // Business Information
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            if (config.showBusinessName && config.businessName.isNotEmpty()) {
+                Text(
+                    text = config.businessName,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1976D2),
+                    textAlign = TextAlign.Center
+                )
+                Spacer(Modifier.height(4.dp))
+            }
+            
+            if (config.showBusinessAddress && config.businessAddress.isNotEmpty()) {
+                Text(
+                    text = config.businessAddress,
+                    fontSize = 11.sp,
+                    color = Color(0xFF757575),
+                    textAlign = TextAlign.Center
+                )
+                Spacer(Modifier.height(2.dp))
+            }
+            
+            if (config.showBusinessPhone && config.businessPhone.isNotEmpty()) {
+                Text(
+                    text = config.businessPhone,
+                    fontSize = 11.sp,
+                    color = Color(0xFF757575),
+                    textAlign = TextAlign.Center
+                )
+                Spacer(Modifier.height(2.dp))
+            }
+            
+            if (config.showBusinessEmail && config.businessEmail.isNotEmpty()) {
+                Text(
+                    text = config.businessEmail,
+                    fontSize = 11.sp,
+                    color = Color(0xFF757575),
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+        
+        Spacer(Modifier.height(20.dp))
+        
+        // Divider
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(Color(0xFFE0E0E0))
+        )
+        
+        Spacer(Modifier.height(20.dp))
+        
+        // Payment Information Section
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFFF5F5F5))
+                .padding(16.dp)
+        ) {
+            // Payment Date
+            if (config.showTransactionDate && transaction.timestamp != null) {
+                PaymentInfoRow(
+                    label = "PAYMENT DATE",
+                    value = formatTransactionDate(transaction.timestamp!!)
+                )
+                Spacer(Modifier.height(12.dp))
+            }
+            
+            // Receipt Number
+            if (config.showOrderNo && transaction.slug != null) {
+                PaymentInfoRow(
+                    label = "RECEIPT NO.",
+                    value = transaction.slug!!
+                )
+                Spacer(Modifier.height(12.dp))
+            }
+            
+            // Transaction Type
+            if (config.showTransactionType) {
+                PaymentInfoRow(
+                    label = "TRANSACTION TYPE",
+                    value = transaction.getTransactionTypeName()
+                )
+                Spacer(Modifier.height(12.dp))
+            }
+            
+            // Payment Method
+            if (config.showPaymentMethod && (transaction.paymentMethodTo != null || transaction.paymentMethodFrom != null)) {
+                PaymentInfoRow(
+                    label = "PAYMENT METHOD",
+                    value = (transaction.paymentMethodTo?.title ?: transaction.paymentMethodFrom?.title) ?: "N/A"
+                )
+            }
+        }
+        
+        Spacer(Modifier.height(20.dp))
+        
+        // Party Information Section
+        transaction.party?.let { party ->
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFFFAFAFA))
+                    .padding(16.dp)
+            ) {
+                Text(
+                    text = if (AllTransactionTypes.isDealingWithCustomer(transaction.transactionType)) {
+                        "PAID TO"
+                    } else {
+                        "PAID FROM"
+                    },
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF757575),
+                    letterSpacing = 0.5.sp
+                )
+                Spacer(Modifier.height(12.dp))
+                
+                if (config.showCustomerName) {
+                    Text(
+                        text = party.name,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF212121)
+                    )
+                    Spacer(Modifier.height(8.dp))
+                }
+                
+                if (config.showCustomerPhone && party.phone != null) {
+                    Text(
+                        text = party.phone,
+                        fontSize = 12.sp,
+                        color = Color(0xFF616161)
+                    )
+                    Spacer(Modifier.height(4.dp))
+                }
+                
+                if (config.showCustomerAddress && party.address != null) {
+                    Text(
+                        text = party.address,
+                        fontSize = 12.sp,
+                        color = Color(0xFF616161)
+                    )
+                }
+            }
+            
+            Spacer(Modifier.height(20.dp))
+        }
+        
+        // Amount Section - Highlighted
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFF1976D2))
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "AMOUNT PAID",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                letterSpacing = 1.sp
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = "$currencySymbol${"%.2f".format(transaction.totalPaid)}",
+                fontSize = 36.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+        }
+        
+        Spacer(Modifier.height(20.dp))
+        
+        // Remarks
+        if (transaction.description?.isNotEmpty() == true) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFFFAFAFA))
+                    .padding(12.dp)
+            ) {
+                Text(
+                    text = "REMARKS",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF757575),
+                    letterSpacing = 0.5.sp
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = transaction.description,
+                    fontSize = 11.sp,
+                    color = Color(0xFF616161)
+                )
+            }
+            
+            Spacer(Modifier.height(20.dp))
+        }
+        
+        // Invoice Terms
+        if (config.showInvoiceTerms && config.invoiceTerms.isNotEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(Color(0xFFE0E0E0))
+            )
+            Spacer(Modifier.height(16.dp))
+            Text(
+                text = config.invoiceTerms,
+                fontSize = 10.sp,
+                color = Color(0xFF757575),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+        
+        // Regards Message
+        if (config.showRegardsMessage && config.regardsMessage != null) {
+            if (!config.showInvoiceTerms || config.invoiceTerms.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(Color(0xFFE0E0E0))
+                )
+                Spacer(Modifier.height(16.dp))
+            } else {
+                Spacer(Modifier.height(8.dp))
+            }
+            Text(
+                text = config.regardsMessage,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color(0xFF1976D2),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+        
+        Spacer(Modifier.height(20.dp))
+        
+        // Bottom border
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(6.dp)
+                .background(Color(0xFF1976D2))
+        )
+    }
+}
+
+@Composable
+private fun PaymentInfoRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Medium,
+            color = Color(0xFF757575),
+            letterSpacing = 0.5.sp
+        )
+        Text(
+            text = value,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = Color(0xFF212121)
         )
     }
 }
