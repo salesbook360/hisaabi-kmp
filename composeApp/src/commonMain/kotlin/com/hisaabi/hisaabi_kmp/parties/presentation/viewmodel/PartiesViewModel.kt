@@ -2,6 +2,8 @@ package com.hisaabi.hisaabi_kmp.parties.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hisaabi.hisaabi_kmp.categories.data.repository.CategoriesRepository
+import com.hisaabi.hisaabi_kmp.categories.domain.model.Category
 import com.hisaabi.hisaabi_kmp.core.session.AppSessionManager
 import com.hisaabi.hisaabi_kmp.parties.domain.model.PartiesFilter
 import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
@@ -20,6 +22,7 @@ class PartiesViewModel(
     private val getPartiesCountUseCase: GetPartiesCountUseCase,
     private val getTotalBalanceUseCase: GetTotalBalanceUseCase,
     private val deletePartyUseCase: DeletePartyUseCase,
+    private val categoriesRepository: CategoriesRepository,
     private val sessionManager: AppSessionManager
 ) : ViewModel() {
     
@@ -142,8 +145,12 @@ class PartiesViewModel(
                     canLoadMore = newParties.size == pageSize
                     currentPage++
                     
+                    // Load categories and areas for all parties
+                    val categoryMap = loadCategoriesForParties(allParties)
+                    
                     _uiState.value = _uiState.value.copy(
                         parties = allParties,
+                        categoryMap = categoryMap,
                         isLoading = false,
                         isLoadingMore = false,
                         error = null
@@ -195,6 +202,28 @@ class PartiesViewModel(
             }
         }
     }
+    
+    /**
+     * Load categories and areas for parties and return a map of slug to Category
+     */
+    private suspend fun loadCategoriesForParties(parties: List<Party>): Map<String, Category> {
+        val categoryMap = mutableMapOf<String, Category>()
+        
+        // Collect all unique category and area slugs
+        val slugsToLoad = mutableSetOf<String>()
+        parties.forEach { party ->
+            party.categorySlug?.takeIf { it.isNotBlank() }?.let { slugsToLoad.add(it) }
+            party.areaSlug?.takeIf { it.isNotBlank() }?.let { slugsToLoad.add(it) }
+        }
+        
+        // Load each category/area
+        slugsToLoad.forEach { slug ->
+            val category = categoriesRepository.getCategoryBySlug(slug)
+            category?.let { categoryMap[slug] = it }
+        }
+        
+        return categoryMap
+    }
 }
 
 data class PartiesUiState(
@@ -206,6 +235,7 @@ data class PartiesUiState(
     val totalBalance: Double = 0.0,
     val isLoading: Boolean = false,
     val isLoadingMore: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val categoryMap: Map<String, Category> = emptyMap()  // Maps category slug to Category
 )
 

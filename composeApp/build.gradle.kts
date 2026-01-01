@@ -159,6 +159,38 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "com.hisaabi.hisaabi_kmp"
             packageVersion = "1.0.0"
+            
+            // App icon for desktop applications
+            // Place your icon files in composeApp/src/jvmMain/resources/icons/
+            // The icon should be at least 512x512 pixels
+            val iconsRoot = project.layout.projectDirectory.dir("src/jvmMain/resources/icons")
+            val iconPng = iconsRoot.file("icon.png")
+            val iconIco = iconsRoot.file("icon.ico")
+            val iconIcns = iconsRoot.file("icon.icns")
+            
+            if (iconsRoot.asFile.exists()) {
+                
+                macOS {
+                    if (iconIcns.asFile.exists()) {
+                        iconFile.set(iconIcns.asFile)
+                    } else if (iconPng.asFile.exists()) {
+                        // macOS can use PNG, but ICNS is preferred
+                        iconFile.set(iconPng.asFile)
+                    }
+                }
+                windows {
+                    if (iconIco.asFile.exists()) {
+                        iconFile.set(iconIco.asFile)
+                    } else if (iconPng.asFile.exists()) {
+                        iconFile.set(iconPng.asFile)
+                    }
+                }
+                linux {
+                    if (iconPng.asFile.exists()) {
+                        iconFile.set(iconPng.asFile)
+                    }
+                }
+            }
         }
     }
 }

@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
@@ -42,6 +43,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -60,6 +62,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.hisaabi.hisaabi_kmp.categories.domain.model.Category
 import com.hisaabi.hisaabi_kmp.core.ui.LocalWindowSizeClass
 import com.hisaabi.hisaabi_kmp.core.ui.WindowWidthSizeClass
 import com.hisaabi.hisaabi_kmp.core.ui.SegmentedControl
@@ -364,7 +367,8 @@ fun PartiesScreen(
                                 selectedParty = party
                                 onPartyClick(party)
                             },
-                            currencySymbol
+                            currencySymbol = currencySymbol,
+                            categoryMap = uiState.categoryMap
                         )
                     }
 
@@ -459,10 +463,15 @@ private fun PartySegmentControl(
 private fun PartyItem(
     party: Party,
     onClick: () -> Unit,
-    currencySymbol: String
+    currencySymbol: String,
+    categoryMap: Map<String, Category>
 ) {
     // Check if this is an expense/income type (roleId 14 or 15)
     val isExpenseIncomeType = party.roleId in listOf(14, 15)
+    
+    // Get category and area from the map
+    val category = party.categorySlug?.let { categoryMap[it] }
+    val area = party.areaSlug?.let { categoryMap[it] }
 
     Card(
         modifier = Modifier
@@ -521,6 +530,30 @@ private fun PartyItem(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+
+                // Category and Area Badges
+                if (category != null || area != null) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        category?.let { cat ->
+                            Badge(
+                                text = cat.title,
+                                backgroundColor = MaterialTheme.colorScheme.primaryContainer,
+                                textColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                        area?.let { areaCategory ->
+                            Badge(
+                                text = areaCategory.title,
+                                backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
+                                textColor = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
+                    }
+                }
 
                 // Slug
                 if (!party.slug.isBlank()) {
@@ -604,6 +637,29 @@ private fun PartyItem(
 private fun formatBalance(balance: Double, currencySymbol: String): String {
     return "$currencySymbol %.2f".format(balance)
 }
+
+@Composable
+private fun Badge(
+    text: String,
+    backgroundColor: Color,
+    textColor: Color
+) {
+    Surface(
+        color = backgroundColor,
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Medium,
+            color = textColor,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
 
 private fun PartiesFilter.getDisplayName(): String = when (this) {
     PartiesFilter.ALL_PARTIES -> "All Parties"
