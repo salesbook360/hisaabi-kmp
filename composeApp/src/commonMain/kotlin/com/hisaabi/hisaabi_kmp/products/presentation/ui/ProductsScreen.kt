@@ -35,6 +35,10 @@ import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
 import com.hisaabi.hisaabi_kmp.settings.domain.model.TransactionSettings
 import com.hisaabi.hisaabi_kmp.utils.format
 import com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse
+import com.hisaabi.hisaabi_kmp.categories.data.repository.CategoriesRepository
+import com.hisaabi.hisaabi_kmp.categories.domain.model.Category
+import com.hisaabi.hisaabi_kmp.quantityunits.data.repository.QuantityUnitsRepository
+import com.hisaabi.hisaabi_kmp.quantityunits.domain.model.QuantityUnit
 import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -276,9 +280,9 @@ fun ProductsScreen(
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(columns),
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(uiState.products, key = { it.id }) { product ->
                         val currentQuantity = selectedProductQuantities[product.slug] ?: 0
@@ -525,6 +529,20 @@ private fun ProductTypeFilter(
     )
 }
 
+/**
+ * Price type enum for mapping price labels
+ */
+private enum class PriceType(val key: String, val shortLabel: String, val isPrimary: Boolean) {
+    RETAIL("retail", "Retail", true),
+    WHOLESALE("wholesale", "Wholesale", true),
+    PURCHASE("purchase", "Purchase", true),
+    AVG_PURCHASE("avgPurchase", "Avg", false);
+    
+    companion object {
+        fun fromKey(key: String): PriceType? = entries.find { it.key == key }
+    }
+}
+
 @Composable
 private fun ProductItem(
     product: Product,
@@ -538,24 +556,51 @@ private fun ProductItem(
     onIncrementQuantity: () -> Unit = {},
     onResetQuantity: () -> Unit = {}
 ) {
+    val categoriesRepository: CategoriesRepository = koinInject()
+    val quantityUnitsRepository: QuantityUnitsRepository = koinInject()
+    var category by remember(product.categorySlug) { mutableStateOf<Category?>(null) }
+    var quantityUnit by remember(product.defaultUnitSlug, product.baseUnitSlug) { 
+        mutableStateOf<QuantityUnit?>(null) 
+    }
+    
+    // Load category information
+    LaunchedEffect(product.categorySlug) {
+        if (product.categorySlug != null) {
+            category = categoriesRepository.getCategoryBySlug(product.categorySlug!!)
+        } else {
+            category = null
+        }
+    }
+    
+    // Load quantity unit information
+    LaunchedEffect(product.defaultUnitSlug, product.baseUnitSlug) {
+        val unitSlug = product.defaultUnitSlug ?: product.baseUnitSlug
+        if (unitSlug != null) {
+            quantityUnit = quantityUnitsRepository.getUnitBySlug(unitSlug)
+        } else {
+            quantityUnit = null
+        }
+    }
+    
     Box(modifier = Modifier.fillMaxWidth()) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable(onClick = onClick),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+            shape = RoundedCornerShape(8.dp)
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.Top
+                    .padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 // Product Icon/Avatar with count overlay
                 Box {
                     Box(
                         modifier = Modifier
-                            .size(48.dp)
+                            .size(44.dp)
                             .clip(CircleShape)
                             .background(
                                 when (product.productType) {
@@ -574,7 +619,7 @@ private fun ProductItem(
                             },
                             contentDescription = null,
                             tint = Color.White,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(22.dp)
                         )
                     }
                     
@@ -583,18 +628,14 @@ private fun ProductItem(
                         Box(
                             modifier = Modifier
                                 .align(Alignment.TopEnd)
-                                .offset(x = 8.dp, y = (-4).dp)
+                                .offset(x = 4.dp, y = (-4).dp)
                         ) {
-                            // Badge background
-                            Box(
-                                modifier = Modifier
-                                    .background(
-                                        MaterialTheme.colorScheme.primary,
-                                        CircleShape
-                                    )
-                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                            Surface(
+                                color = MaterialTheme.colorScheme.primary,
+                                shape = CircleShape
                             ) {
                                 Row(
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
@@ -603,9 +644,8 @@ private fun ProductItem(
                                         style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.Bold,
                                         color = Color.White,
-                                        fontSize = 12.sp
+                                        fontSize = 11.sp
                                     )
-                                    // Cross button to reset
                                     Icon(
                                         imageVector = Icons.Default.Close,
                                         contentDescription = "Reset",
@@ -627,106 +667,62 @@ private fun ProductItem(
                 Spacer(modifier = Modifier.width(12.dp))
                 
                 // Product Info - takes available space
-                Column(modifier = Modifier.weight(1f)) {
-                    // Title row with prices on right
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.Top
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = product.title,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                        
-                        // Prices on the right side
-                        val prices = buildList {
-                            // Retail Price
-                            if (transactionSettings.showRetailPrice && product.retailPrice > 0) {
-                                add("retail" to product.retailPrice)
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    // Title
+                    Text(
+                        text = product.title,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    
+                    // Category and Quantity in same row
+                    if (category != null || availableQuantity > 0) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Category Badge
+                            if (category != null) {
+                                Surface(
+                                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
+                                    shape = RoundedCornerShape(6.dp)
+                                ) {
+                                    Text(
+                                        text = category!!.title,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Medium,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
                             }
                             
-                            // Wholesale Price
-                            if (transactionSettings.showWholeSalePrice && product.wholesalePrice > 0) {
-                                add("wholesale" to product.wholesalePrice)
-                            }
-                            
-                            // Purchase Price (only for non-service products)
-                            if (transactionSettings.showPurchasePrice && product.purchasePrice > 0 && product.productType != ProductType.SERVICE) {
-                                add("purchase" to product.purchasePrice)
-                            }
-                            
-                            // Average Purchase Price
-                            if (transactionSettings.showAvgPurchasePrice && product.avgPurchasePrice > 0) {
-                                add("avgPurchase" to product.avgPurchasePrice)
-                            }
-                        }
-                        
-                        if (prices.isNotEmpty()) {
-                            Spacer(modifier = Modifier.width(8.dp))
-                            
-                            if (prices.size == 1) {
-                                // Single price - show without label
-                                val (_, price) = prices[0]
-                                Text(
-                                    text = "$currencySymbol ${"%.2f".format(price)}",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    textAlign = TextAlign.End
-                                )
-                            } else {
-                                // Multiple prices - show all horizontally with labels
-                                Column(horizontalAlignment = Alignment.End) {
-                                    Row(
-                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                        verticalAlignment = Alignment.Top
-                                    ) {
-                                        prices.forEachIndexed { index, (type, price) ->
-                                            val (label, isPrimary) = when (type) {
-                                                "retail" -> "Retail" to true
-                                                "wholesale" -> "Wholesale" to true
-                                                "purchase" -> "Purchase" to true
-                                                "avgPurchase" -> "Avg" to false
-                                                else -> "" to false
-                                            }
-                                            
-                                            Column(horizontalAlignment = Alignment.End) {
-                                                if (label.isNotEmpty()) {
-                                                    // Show label for all prices when multiple are displayed
-                                                    Text(
-                                                        text = label,
-                                                        style = MaterialTheme.typography.labelSmall,
-                                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                        fontSize = 9.sp
-                                                    )
-                                                }
-                                                Text(
-                                                    text = "$currencySymbol ${"%.2f".format(price)}",
-                                                    style = if (isPrimary) {
-                                                        MaterialTheme.typography.bodySmall
-                                                    } else {
-                                                        MaterialTheme.typography.bodySmall
-                                                    },
-                                                    fontWeight = if (isPrimary) {
-                                                        FontWeight.Bold
-                                                    } else {
-                                                        FontWeight.Normal
-                                                    },
-                                                    color = if (isPrimary) {
-                                                        MaterialTheme.colorScheme.primary
-                                                    } else {
-                                                        MaterialTheme.colorScheme.onSurfaceVariant
-                                                    }
-                                                )
-                                            }
-                                        }
-                                    }
+                            // Quantity badge
+                            if (availableQuantity > 0) {
+                                Surface(
+                                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                                    shape = RoundedCornerShape(6.dp)
+                                ) {
+                                    Text(
+                                        text = if (quantityUnit != null) {
+                                            "%.2f %s".format(availableQuantity, quantityUnit!!.title)
+                                        } else {
+                                            "%.2f".format(availableQuantity)
+                                        },
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 11.sp,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                    )
                                 }
                             }
                         }
@@ -734,63 +730,79 @@ private fun ProductItem(
                     
                     Spacer(modifier = Modifier.height(4.dp))
                     
-                    // Category and description row
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
+                    // Description
+                    if (!product.description.isNullOrBlank()) {
                         Text(
-                            text = product.productType.displayName,
+                            text = product.description,
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
-                        
-                        if (!product.slug.isBlank()) {
-                            Text(
-                                text = "•",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = "Slug: ${product.slug}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        
-                        if (!product.description.isNullOrBlank()) {
-                            Text(
-                                text = "•",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = product.description,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
                     }
-                    
-                    // Available Quantity
-                    if (availableQuantity > 0) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                Icons.Default.Inventory,
-                                contentDescription = null,
-                                modifier = Modifier.size(14.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = "Qty: %.2f".format(availableQuantity),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.Medium
-                            )
+                }
+                
+                Spacer(modifier = Modifier.width(8.dp))
+                
+                // Prices Column - aligned to right
+                val prices = buildList {
+                    if (transactionSettings.showRetailPrice && product.retailPrice > 0) {
+                        add("retail" to product.retailPrice)
+                    }
+                    if (transactionSettings.showWholeSalePrice && product.wholesalePrice > 0) {
+                        add("wholesale" to product.wholesalePrice)
+                    }
+                    if (transactionSettings.showPurchasePrice && product.purchasePrice > 0 && product.productType != ProductType.SERVICE) {
+                        add("purchase" to product.purchasePrice)
+                    }
+                    if (transactionSettings.showAvgPurchasePrice && product.avgPurchasePrice > 0) {
+                        add("avgPurchase" to product.avgPurchasePrice)
+                    }
+                }
+                
+                if (prices.isNotEmpty()) {
+                    Column(
+                        horizontalAlignment = Alignment.End
+                    ) {
+                        prices.forEachIndexed { index, (typeKey, price) ->
+                            val priceType = PriceType.fromKey(typeKey)
+                            val label = priceType?.shortLabel ?: ""
+                            val isPrimary = priceType?.isPrimary ?: false
+                            
+                            if (index > 0) {
+                                Spacer(modifier = Modifier.height(2.dp))
+                            }
+                            
+                            // Price with label at start
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // Label at start
+                                if (label.isNotEmpty()) {
+                                    Text(
+                                        text = label,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontSize = 10.sp
+                                    )
+                                }
+                                // Price value
+                                Text(
+                                    text = "$currencySymbol ${"%.2f".format(price)}",
+                                    style = if (isPrimary || prices.size == 1) {
+                                        MaterialTheme.typography.bodyMedium
+                                    } else {
+                                        MaterialTheme.typography.bodySmall
+                                    },
+                                    fontWeight = if (isPrimary || prices.size == 1) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (isPrimary || prices.size == 1) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    }
+                                )
+                            }
                         }
                     }
                 }
