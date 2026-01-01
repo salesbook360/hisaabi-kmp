@@ -43,8 +43,29 @@ fun AddTransactionStep1Screen(
     onSelectParty: () -> Unit,
     onSelectProducts: () -> Unit,
     onSelectWarehouse: () -> Unit,
-    onProceedToStep2: () -> Unit
+    onProceedToStep2: () -> Unit,
+    // Desktop-only callbacks (for combined screen)
+    onSelectPaymentMethod: () -> Unit = {},
+    onTransactionSaved: (transactionSlug: String?, transactionType: Int) -> Unit = { _, _ -> }
 ) {
+    val windowSizeClass = LocalWindowSizeClass.current
+    val isDesktop = windowSizeClass.widthSizeClass == WindowWidthSizeClass.EXPANDED
+    
+    // On desktop, show the combined single-screen experience
+    if (isDesktop) {
+        AddTransactionDesktopScreen(
+            viewModel = viewModel,
+            onNavigateBack = onNavigateBack,
+            onSelectParty = onSelectParty,
+            onSelectProducts = onSelectProducts,
+            onSelectWarehouse = onSelectWarehouse,
+            onSelectPaymentMethod = onSelectPaymentMethod,
+            onTransactionSaved = onTransactionSaved
+        )
+        return
+    }
+    
+    // Mobile: Continue with two-step flow
     val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var showDateTimePicker by remember { mutableStateOf(false) }
@@ -113,23 +134,14 @@ fun AddTransactionStep1Screen(
             }
         }
     ) { paddingValues ->
-        val windowSizeClass = LocalWindowSizeClass.current
-        val isDesktop = windowSizeClass.widthSizeClass == WindowWidthSizeClass.EXPANDED
-        val maxFormWidth = if (isDesktop) 900.dp else Dp.Unspecified
-        
-        // Center form content on larger screens
-        Box(
+        // Mobile layout - full width
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
-            contentAlignment = Alignment.TopCenter
+                .padding(paddingValues)
+                .padding(horizontal = 16.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            LazyColumn(
-                modifier = Modifier
-                    .then(if (isDesktop) Modifier.widthIn(max = maxFormWidth) else Modifier.fillMaxWidth())
-                    .padding(horizontal = if (isDesktop) 24.dp else 16.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
             // Party Selection Card
             item {
                 PartySelectionCard(
@@ -281,7 +293,6 @@ fun AddTransactionStep1Screen(
             item {
                 Spacer(Modifier.height(80.dp))
             }
-        }
         }
     }
     

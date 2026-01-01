@@ -654,6 +654,7 @@ fun App() {
 
                     AppScreen.PAYMENT_METHODS -> {
                         when (returnToScreenAfterPartySelection) {
+                            AppScreen.ADD_TRANSACTION_STEP1, // Desktop combined screen
                             AppScreen.ADD_TRANSACTION_STEP2 -> isInTransactionFlow =
                                 previousTransactionFlow
 
@@ -697,13 +698,17 @@ fun App() {
             }
 
             // Create ViewModels for each flow - will be disposed when navigating away from their respective flows
-            // koinInject() must be called at composable scope, not inside remember lambda
-            val transactionViewModel: AddTransactionViewModel? =
-                if (isInTransactionFlow) {
-                    koinInject()
-                } else {
-                    null
-                }
+            // Use rememberSaveable pattern to preserve ViewModel across navigation within the same flow
+            var rememberedTransactionViewModel by remember { mutableStateOf<AddTransactionViewModel?>(null) }
+            
+            // Only create a new ViewModel when entering the flow (not on every recomposition)
+            if (isInTransactionFlow && rememberedTransactionViewModel == null) {
+                rememberedTransactionViewModel = koinInject()
+            } else if (!isInTransactionFlow && rememberedTransactionViewModel != null) {
+                rememberedTransactionViewModel = null
+            }
+            
+            val transactionViewModel = rememberedTransactionViewModel
 
             val payGetCashViewModel: PayGetCashViewModel? =
                 if (isInPayGetCashFlow) {
@@ -2816,6 +2821,18 @@ fun App() {
                                         returnToScreenAfterProductSelection = null
                                     }
                                 }
+                                
+                                // Handle payment method selection for desktop combined screen
+                                LaunchedEffect(selectedPaymentMethodForTransaction) {
+                                    selectedPaymentMethodForTransaction?.let { paymentMethod ->
+                                        if (selectingPaymentMethodForTransaction && returnToScreenAfterPartySelection == AppScreen.ADD_TRANSACTION_STEP1) {
+                                            viewModel.selectPaymentMethod(paymentMethod)
+                                            selectedPaymentMethodForTransaction = null
+                                            selectingPaymentMethodForTransaction = false
+                                            returnToScreenAfterPartySelection = null
+                                        }
+                                    }
+                                }
 
                                 AddTransactionStep1Screen(
                                     viewModel = viewModel,
@@ -2849,7 +2866,36 @@ fun App() {
                                             AppScreen.ADD_TRANSACTION_STEP1
                                         currentScreen = AppScreen.WAREHOUSES
                                     },
-                                    onProceedToStep2 = { navigateTo(AppScreen.ADD_TRANSACTION_STEP2) }
+                                    onProceedToStep2 = { navigateTo(AppScreen.ADD_TRANSACTION_STEP2) },
+                                    // Desktop-only callbacks for combined single-screen experience
+                                    onSelectPaymentMethod = {
+                                        selectingPaymentMethodForTransaction = true
+                                        returnToScreenAfterPartySelection =
+                                            AppScreen.ADD_TRANSACTION_STEP1
+                                        currentScreen = AppScreen.PAYMENT_METHODS
+                                    },
+                                    onTransactionSaved = { transactionSlug, transactionType ->
+                                        // Exit transaction flow and navigate to home
+                                        isInTransactionFlow = false
+                                        partiesRefreshTrigger++ // Refresh parties to show updated balances
+
+                                        // Show receipt only for specific transaction types
+                                        if (receiptConfig.isReceiptEnabled && 
+                                            transactionSlug != null && 
+                                            AllTransactionTypes.shouldGenerateReceipt(transactionType)) {
+                                            // Show receipt instead of toast
+                                            val transaction = Transaction(
+                                                slug = transactionSlug,
+                                                transactionType = transactionType
+                                            )
+                                            receiptViewModel.showPreview(transaction)
+                                        } else {
+                                            // Show toast only if not showing receipt
+                                            toastMessage = "Transaction saved successfully!"
+                                        }
+
+                                        currentScreen = AppScreen.HOME
+                                    }
                                 )
                             }
                         }
