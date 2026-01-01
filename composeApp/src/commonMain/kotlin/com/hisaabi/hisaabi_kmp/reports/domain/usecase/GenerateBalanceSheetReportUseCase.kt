@@ -41,12 +41,17 @@ class GenerateBalanceSheetReportUseCase(
 
         // 1. Receivables (from parties with negative balance - customers, vendors, investors)
         val receivables = calculateReceivables(businessSlug)
+        val receivableBreakdown = calculateReceivableBreakdown(businessSlug)
 
         // 2. Available Stock (current quantity * avg_purchase_price)
         val availableStock = calculateAvailableStock(businessSlug)
+        val availableStockBreakdown = com.hisaabi.hisaabi_kmp.reports.domain.model.AvailableStockBreakdown(
+            totalAvailableStock = availableStock
+        )
 
         // 3. Cash in Hand (total amount from payment methods)
         val cashInHand = paymentMethodDao.getTotalCashInHand(businessSlug) ?: 0.0
+        val cashInHandBreakdown = calculateCashInHandBreakdown(businessSlug)
 
         val totalAssets = receivables + availableStock + cashInHand
 
@@ -54,12 +59,15 @@ class GenerateBalanceSheetReportUseCase(
 
         // 1. Capital Investment
         val capitalInvestment = calculateCapitalInvestment(businessSlug)
+        val capitalInvestmentBreakdown = calculateCapitalInvestmentBreakdown(businessSlug)
 
         // 2. Payables (parties with positive balance)
         val payables = calculatePayables(businessSlug)
+        val payablesBreakdown = calculatePayablesBreakdown(businessSlug)
 
         // 3. Current Profit/Loss
         val currentProfitLoss = calculateCurrentProfitLoss(businessSlug)
+        val profitLossBreakdown = calculateProfitLossBreakdown(businessSlug)
 
         val totalLiabilities = capitalInvestment + payables + currentProfitLoss
 
@@ -108,11 +116,22 @@ class GenerateBalanceSheetReportUseCase(
             filters = defaultFilters, // Use default filters (no filtering)
             columns = columns,
             rows = rows,
-            summary = null // No summary for balance sheet
+            summary = null, // No summary for balance sheet
+            profitLossBreakdown = profitLossBreakdown,
+            receivableBreakdown = receivableBreakdown,
+            payablesBreakdown = payablesBreakdown,
+            cashInHandBreakdown = cashInHandBreakdown,
+            capitalInvestmentBreakdown = capitalInvestmentBreakdown,
+            availableStockBreakdown = availableStockBreakdown
         )
     }
 
     private suspend fun calculateReceivables(businessSlug: String): Double {
+        val breakdown = calculateReceivableBreakdown(businessSlug)
+        return breakdown.totalReceivables
+    }
+
+    private suspend fun calculateReceivableBreakdown(businessSlug: String): com.hisaabi.hisaabi_kmp.reports.domain.model.ReceivableBreakdown {
         // Receivables from customers (negative balance)
         val customerBalance = partyDao.getTotalBalance(
             listOf(PartyType.CUSTOMER.type, PartyType.WALK_IN_CUSTOMER.type),
@@ -134,7 +153,14 @@ class GenerateBalanceSheetReportUseCase(
         ) ?: 0.0
         val investorReceivables = if (investorBalance < 0) -investorBalance else 0.0
 
-        return customerReceivables + vendorReceivables + investorReceivables
+        val totalReceivables = customerReceivables + vendorReceivables + investorReceivables
+
+        return com.hisaabi.hisaabi_kmp.reports.domain.model.ReceivableBreakdown(
+            customerReceivables = customerReceivables,
+            vendorReceivables = vendorReceivables,
+            investorReceivables = investorReceivables,
+            totalReceivables = totalReceivables
+        )
     }
 
     private suspend fun calculateAvailableStock(businessSlug: String): Double {
@@ -163,6 +189,11 @@ class GenerateBalanceSheetReportUseCase(
     }
 
     private suspend fun calculateCapitalInvestment(businessSlug: String): Double {
+        val breakdown = calculateCapitalInvestmentBreakdown(businessSlug)
+        return breakdown.totalCapitalInvestment
+    }
+
+    private suspend fun calculateCapitalInvestmentBreakdown(businessSlug: String): com.hisaabi.hisaabi_kmp.reports.domain.model.CapitalInvestmentBreakdown {
         // 1. Opening Stock Worth (opening_quantity * opening_quantity_purchase_price)
         val openingStockWorth = calculateOpeningStockWorth(businessSlug)
 
@@ -185,7 +216,14 @@ class GenerateBalanceSheetReportUseCase(
         // 3. Opening Payment Method amounts (sum of opening_amount)
         val openingPaymentAmounts = paymentMethodDao.getTotalOpeningAmount(businessSlug) ?: 0.0
 
-        return openingStockWorth + openingPartyBalances + openingPaymentAmounts
+        val totalCapitalInvestment = openingStockWorth + openingPartyBalances + openingPaymentAmounts
+
+        return com.hisaabi.hisaabi_kmp.reports.domain.model.CapitalInvestmentBreakdown(
+            openingStockWorth = openingStockWorth,
+            openingPartyBalances = openingPartyBalances,
+            openingPaymentAmounts = openingPaymentAmounts,
+            totalCapitalInvestment = totalCapitalInvestment
+        )
     }
 
     private suspend fun calculateOpeningStockWorth(businessSlug: String): Double {
@@ -214,6 +252,11 @@ class GenerateBalanceSheetReportUseCase(
     }
 
     private suspend fun calculatePayables(businessSlug: String): Double {
+        val breakdown = calculatePayablesBreakdown(businessSlug)
+        return breakdown.totalPayables
+    }
+
+    private suspend fun calculatePayablesBreakdown(businessSlug: String): com.hisaabi.hisaabi_kmp.reports.domain.model.PayableBreakdown {
         // Payables to customers (positive balance)
         val customerBalance = partyDao.getTotalBalance(
             listOf(PartyType.CUSTOMER.type, PartyType.WALK_IN_CUSTOMER.type),
@@ -235,10 +278,22 @@ class GenerateBalanceSheetReportUseCase(
         ) ?: 0.0
         val investorPayables = if (investorBalance > 0) investorBalance else 0.0
 
-        return customerPayables + vendorPayables + investorPayables
+        val totalPayables = customerPayables + vendorPayables + investorPayables
+
+        return com.hisaabi.hisaabi_kmp.reports.domain.model.PayableBreakdown(
+            customerPayables = customerPayables,
+            vendorPayables = vendorPayables,
+            investorPayables = investorPayables,
+            totalPayables = totalPayables
+        )
     }
 
     private suspend fun calculateCurrentProfitLoss(businessSlug: String): Double {
+        val breakdown = calculateProfitLossBreakdown(businessSlug)
+        return breakdown.totalProfitLoss
+    }
+
+    private suspend fun calculateProfitLossBreakdown(businessSlug: String): com.hisaabi.hisaabi_kmp.reports.domain.model.ProfitLossBreakdown {
         // Get all transactions for this business
         val transactions = inventoryTransactionDao.getAllTransactionsByBusiness(businessSlug)
 
@@ -307,6 +362,9 @@ class GenerateBalanceSheetReportUseCase(
             }
         }
 
+        // Profit or Loss (Sale amount - cost of sold products)
+        val profitOrLoss = totalSaleAmount - costOfSoldProducts
+
         // Current Profit/Loss = Total Sale - Cost of Sold Products + Discount Taken - Discount Given
         //                      - Expenses + Extra Income - Additional Charges Received + Additional Charges Paid
         //                      - Tax Paid + Tax Received
@@ -321,6 +379,36 @@ class GenerateBalanceSheetReportUseCase(
         -taxPaid
         +taxReceived
 
-        return currentProfitLoss
+        return com.hisaabi.hisaabi_kmp.reports.domain.model.ProfitLossBreakdown(
+            saleAmount = totalSaleAmount,
+            costOfSoldProducts = costOfSoldProducts,
+            profitOrLoss = profitOrLoss,
+            discountTaken = discountTaken,
+            discountGiven = discountGiven,
+            totalExpenses = totalExpenses,
+            totalIncome = totalExtraIncome,
+            additionalChargesReceived = additionalChargesReceived,
+            additionalChargesPaid = additionalChargesPaid,
+            taxPaid = taxPaid,
+            taxReceived = taxReceived,
+            totalProfitLoss = currentProfitLoss
+        )
+    }
+
+    private suspend fun calculateCashInHandBreakdown(businessSlug: String): com.hisaabi.hisaabi_kmp.reports.domain.model.CashInHandBreakdown {
+        // Get all payment methods for this business
+        val paymentMethods = paymentMethodDao.getPaymentMethodsByBusiness(businessSlug).first()
+        
+        // Create a map of payment method name to amount (only active ones)
+        val breakdownMap = paymentMethods
+            .filter { it.status_id != 2 } // Exclude deleted
+            .associate { it.title to it.amount }
+        
+        val totalCashInHand = breakdownMap.values.sum()
+
+        return com.hisaabi.hisaabi_kmp.reports.domain.model.CashInHandBreakdown(
+            paymentMethodBreakdowns = breakdownMap,
+            totalCashInHand = totalCashInHand
+        )
     }
 }

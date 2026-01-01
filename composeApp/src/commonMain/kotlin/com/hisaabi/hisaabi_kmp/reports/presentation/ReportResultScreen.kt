@@ -1,6 +1,7 @@
 package com.hisaabi.hisaabi_kmp.reports.presentation
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -20,6 +21,14 @@ import com.hisaabi.hisaabi_kmp.core.ui.LocalWindowSizeClass
 import com.hisaabi.hisaabi_kmp.core.ui.WindowWidthSizeClass
 import com.hisaabi.hisaabi_kmp.reports.domain.model.ReportResult
 import com.hisaabi.hisaabi_kmp.reports.domain.model.ReportType
+import com.hisaabi.hisaabi_kmp.reports.domain.model.ProfitLossBreakdown
+import com.hisaabi.hisaabi_kmp.reports.domain.model.ReceivableBreakdown
+import com.hisaabi.hisaabi_kmp.reports.domain.model.PayableBreakdown
+import com.hisaabi.hisaabi_kmp.reports.domain.model.CashInHandBreakdown
+import com.hisaabi.hisaabi_kmp.reports.domain.model.CapitalInvestmentBreakdown
+import com.hisaabi.hisaabi_kmp.reports.domain.model.AvailableStockBreakdown
+import com.hisaabi.hisaabi_kmp.reports.domain.model.ReportRow
+import com.hisaabi.hisaabi_kmp.reports.domain.model.ReportSummary
 import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
@@ -185,9 +194,16 @@ fun ReportResultScreen(
                 if (isBalanceSheet) {
                     item {
                         Column(modifier = Modifier.fillMaxWidth()) {
-                            BalanceSheetTable(
+                            BalanceSheetTableWithDialog(
                                 rows = reportResult.rows,
-                                columns = reportResult.columns
+                                columns = reportResult.columns,
+                                profitLossBreakdown = reportResult.profitLossBreakdown,
+                                currencySymbol = currencySymbol,
+                                receivableBreakdown = reportResult.receivableBreakdown,
+                                payablesBreakdown = reportResult.payablesBreakdown,
+                                cashInHandBreakdown = reportResult.cashInHandBreakdown,
+                                capitalInvestmentBreakdown = reportResult.capitalInvestmentBreakdown,
+                                availableStockBreakdown = reportResult.availableStockBreakdown
                             )
                             // Add bottom spacing to ensure card shadow is visible
                             Spacer(modifier = Modifier.height(12.dp))
@@ -227,7 +243,7 @@ fun ReportResultScreen(
 }
 
 @Composable
-private fun SummaryCard(summary: com.hisaabi.hisaabi_kmp.reports.domain.model.ReportSummary, currencySymbol:String) {
+private fun SummaryCard(summary: ReportSummary, currencySymbol:String) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -339,9 +355,274 @@ private fun BalanceSheetHeader() {
 }
 
 @Composable
+private fun BalanceSheetTableWithDialog(
+    rows: List<ReportRow>,
+    columns: List<String>,
+    profitLossBreakdown: ProfitLossBreakdown?,
+    receivableBreakdown: ReceivableBreakdown?,
+    payablesBreakdown: PayableBreakdown?,
+    cashInHandBreakdown: CashInHandBreakdown?,
+    capitalInvestmentBreakdown: CapitalInvestmentBreakdown?,
+    availableStockBreakdown: AvailableStockBreakdown?,
+    currencySymbol: String
+) {
+    var showDialog by remember { mutableStateOf(false) }
+    var dialogTitle by remember { mutableStateOf("") }
+    var dialogType by remember { mutableStateOf<BreakdownType?>(null) }
+
+    BalanceSheetTable(
+        rows = rows,
+        columns = columns,
+        onCellClick = { label, value ->
+            dialogType = when {
+                label.equals("Receivable", ignoreCase = true) && receivableBreakdown != null -> {
+                    dialogTitle = "Receivables Breakdown"
+                    BreakdownType.RECEIVABLE
+                }
+                label.equals("Available Stock", ignoreCase = true) && availableStockBreakdown != null -> {
+                    dialogTitle = "Available Stock Breakdown"
+                    BreakdownType.AVAILABLE_STOCK
+                }
+                label.equals("Cash in Hand", ignoreCase = true) && cashInHandBreakdown != null -> {
+                    dialogTitle = "Cash in Hand Breakdown"
+                    BreakdownType.CASH_IN_HAND
+                }
+                label.equals("Capital Investment", ignoreCase = true) && capitalInvestmentBreakdown != null -> {
+                    dialogTitle = "Capital Investment Breakdown"
+                    BreakdownType.CAPITAL_INVESTMENT
+                }
+                label.equals("Payables", ignoreCase = true) && payablesBreakdown != null -> {
+                    dialogTitle = "Payables Breakdown"
+                    BreakdownType.PAYABLES
+                }
+                label.equals("Current Profit/Loss", ignoreCase = true) && profitLossBreakdown != null -> {
+                    dialogTitle = "Current Profit/Loss Calculation"
+                    BreakdownType.PROFIT_LOSS
+                }
+                else -> null
+            }
+            if (dialogType != null) {
+                showDialog = true
+            }
+        }
+    )
+
+    // Dialog for showing breakdown details
+    if (showDialog && dialogType != null) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = {
+                Text(dialogTitle)
+            },
+            text = {
+                when (dialogType) {
+                    BreakdownType.RECEIVABLE -> receivableBreakdown?.let {
+                        ReceivableBreakdownContent(it, currencySymbol)
+                    }
+                    BreakdownType.AVAILABLE_STOCK -> availableStockBreakdown?.let {
+                        AvailableStockBreakdownContent(it, currencySymbol)
+                    }
+                    BreakdownType.CASH_IN_HAND -> cashInHandBreakdown?.let {
+                        CashInHandBreakdownContent(it, currencySymbol)
+                    }
+                    BreakdownType.CAPITAL_INVESTMENT -> capitalInvestmentBreakdown?.let {
+                        CapitalInvestmentBreakdownContent(it, currencySymbol)
+                    }
+                    BreakdownType.PAYABLES -> payablesBreakdown?.let {
+                        PayablesBreakdownContent(it, currencySymbol)
+                    }
+                    BreakdownType.PROFIT_LOSS -> profitLossBreakdown?.let {
+                        ProfitLossBreakdownContent(it, currencySymbol)
+                    }
+                    null -> {}
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showDialog = false }) {
+                    Text("Close")
+                }
+            }
+        )
+    }
+}
+
+private enum class BreakdownType {
+    RECEIVABLE,
+    AVAILABLE_STOCK,
+    CASH_IN_HAND,
+    CAPITAL_INVESTMENT,
+    PAYABLES,
+    PROFIT_LOSS
+}
+
+@Composable
+private fun ReceivableBreakdownContent(
+    breakdown: ReceivableBreakdown,
+    currencySymbol: String
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        BreakdownRow("Customers", breakdown.customerReceivables, currencySymbol)
+        BreakdownRow("Vendors", breakdown.vendorReceivables, currencySymbol)
+        BreakdownRow("Investors", breakdown.investorReceivables, currencySymbol)
+        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+        BreakdownRow("Total Receivables", breakdown.totalReceivables, currencySymbol, isTotal = true)
+    }
+}
+
+@Composable
+private fun PayablesBreakdownContent(
+    breakdown: PayableBreakdown,
+    currencySymbol: String
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        BreakdownRow("Customers", breakdown.customerPayables, currencySymbol)
+        BreakdownRow("Vendors", breakdown.vendorPayables, currencySymbol)
+        BreakdownRow("Investors", breakdown.investorPayables, currencySymbol)
+        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+        BreakdownRow("Total Payables", breakdown.totalPayables, currencySymbol, isTotal = true)
+    }
+}
+
+@Composable
+private fun CashInHandBreakdownContent(
+    breakdown: CashInHandBreakdown,
+    currencySymbol: String
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        breakdown.paymentMethodBreakdowns.forEach { (name, amount) ->
+            BreakdownRow(name, amount, currencySymbol)
+        }
+        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+        BreakdownRow("Total Cash in Hand", breakdown.totalCashInHand, currencySymbol, isTotal = true)
+    }
+}
+
+@Composable
+private fun CapitalInvestmentBreakdownContent(
+    breakdown: CapitalInvestmentBreakdown,
+    currencySymbol: String
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        BreakdownRow("Opening Stock Worth", breakdown.openingStockWorth, currencySymbol)
+        BreakdownRow("Opening Party Balances", breakdown.openingPartyBalances, currencySymbol)
+        BreakdownRow("Opening Payment Methods", breakdown.openingPaymentAmounts, currencySymbol)
+        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+        BreakdownRow("Total Capital Investment", breakdown.totalCapitalInvestment, currencySymbol, isTotal = true)
+    }
+}
+
+@Composable
+private fun AvailableStockBreakdownContent(
+    breakdown: AvailableStockBreakdown,
+    currencySymbol: String
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        BreakdownRow("Total Available Stock", breakdown.totalAvailableStock, currencySymbol, isTotal = true)
+    }
+}
+
+@Composable
+private fun ProfitLossBreakdownContent(
+    breakdown: ProfitLossBreakdown,
+    currencySymbol: String
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        BreakdownRow("Sale Amount", breakdown.saleAmount, currencySymbol)
+        BreakdownRow("Cost of Sold Products", breakdown.costOfSoldProducts, currencySymbol)
+        BreakdownRow("Profit/Loss", breakdown.profitOrLoss, currencySymbol, isSubItem = true)
+        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+        BreakdownRow("Discount Taken", breakdown.discountTaken, currencySymbol)
+        BreakdownRow("Discount Given", breakdown.discountGiven, currencySymbol)
+        BreakdownRow("Total Expenses", breakdown.totalExpenses, currencySymbol)
+        BreakdownRow("Total Income", breakdown.totalIncome, currencySymbol)
+        BreakdownRow("Additional Charges Received", breakdown.additionalChargesReceived, currencySymbol)
+        BreakdownRow("Additional Charges Paid", breakdown.additionalChargesPaid, currencySymbol)
+        BreakdownRow("Tax Paid", breakdown.taxPaid, currencySymbol)
+        BreakdownRow("Tax Received", breakdown.taxReceived, currencySymbol)
+        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+        BreakdownRow("Total Profit/Loss", breakdown.totalProfitLoss, currencySymbol, isTotal = true)
+    }
+}
+
+@Composable
+private fun BreakdownRow(
+    label: String,
+    value: Double,
+    currencySymbol: String,
+    isSubItem: Boolean = false,
+    isTotal: Boolean = false
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = if (isSubItem) "  $label" else label,
+            style = if (isTotal) {
+                MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+            } else {
+                MaterialTheme.typography.bodyMedium
+            },
+            color = if (isTotal) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            },
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            text = "$currencySymbol ${String.format("%,.2f", value)}",
+            style = if (isTotal) {
+                MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+            } else {
+                MaterialTheme.typography.bodyMedium
+            },
+            color = if (isTotal) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            },
+            textAlign = TextAlign.End
+        )
+    }
+}
+
+@Composable
 private fun BalanceSheetTable(
-    rows: List<com.hisaabi.hisaabi_kmp.reports.domain.model.ReportRow>,
-    columns: List<String>
+    rows: List<ReportRow>,
+    columns: List<String>,
+    onCellClick: (String, String) -> Unit = { _, _ -> }
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -386,80 +667,108 @@ private fun BalanceSheetTable(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         // Column 1: Assets Label
-                        Text(
-                            text = assetLabel,
-                            style = if (isTotalRow) {
-                                MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.Bold
-                                )
-                            } else {
-                                MaterialTheme.typography.bodyMedium
-                            },
-                            color = if (isTotalRow) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurface
-                            },
-                            modifier = Modifier.weight(1f),
-                            textAlign = TextAlign.Start
-                        )
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable(enabled = assetLabel.isNotEmpty() && !isTotalRow) {
+                                    onCellClick(assetLabel, assetValue)
+                                }
+                        ) {
+                            Text(
+                                text = assetLabel,
+                                style = if (isTotalRow) {
+                                    MaterialTheme.typography.titleMedium.copy(
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                } else {
+                                    MaterialTheme.typography.bodyMedium
+                                },
+                                color = if (isTotalRow) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                },
+                                textAlign = TextAlign.Start
+                            )
+                        }
                         
                         // Column 2: Assets Value
-                        Text(
-                            text = assetValue,
-                            style = if (isTotalRow) {
-                                MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.Bold
-                                )
-                            } else {
-                                MaterialTheme.typography.bodyMedium
-                            },
-                            color = if (isTotalRow) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurface
-                            },
-                            modifier = Modifier.weight(1f),
-                            textAlign = TextAlign.Start
-                        )
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable(enabled = assetValue.isNotEmpty() && !isTotalRow) {
+                                    onCellClick(assetLabel, assetValue)
+                                }
+                        ) {
+                            Text(
+                                text = assetValue,
+                                style = if (isTotalRow) {
+                                    MaterialTheme.typography.titleMedium.copy(
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                } else {
+                                    MaterialTheme.typography.bodyMedium
+                                },
+                                color = if (isTotalRow) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                },
+                                textAlign = TextAlign.Start
+                            )
+                        }
                         
                         // Column 3: Liabilities Label
-                        Text(
-                            text = liabilityLabel,
-                            style = if (isTotalRow) {
-                                MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.Bold
-                                )
-                            } else {
-                                MaterialTheme.typography.bodyMedium
-                            },
-                            color = if (isTotalRow) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurface
-                            },
-                            modifier = Modifier.weight(1f),
-                            textAlign = TextAlign.Start
-                        )
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable(enabled = liabilityLabel.isNotEmpty() && !isTotalRow) {
+                                    onCellClick(liabilityLabel, liabilityValue)
+                                }
+                        ) {
+                            Text(
+                                text = liabilityLabel,
+                                style = if (isTotalRow) {
+                                    MaterialTheme.typography.titleMedium.copy(
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                } else {
+                                    MaterialTheme.typography.bodyMedium
+                                },
+                                color = if (isTotalRow) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                },
+                                textAlign = TextAlign.Start
+                            )
+                        }
                         
                         // Column 4: Liabilities Value
-                        Text(
-                            text = liabilityValue,
-                            style = if (isTotalRow) {
-                                MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.Bold
-                                )
-                            } else {
-                                MaterialTheme.typography.bodyMedium
-                            },
-                            color = if (isTotalRow) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurface
-                            },
-                            modifier = Modifier.weight(1f),
-                            textAlign = TextAlign.Start
-                        )
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable(enabled = liabilityValue.isNotEmpty() && !isTotalRow) {
+                                    onCellClick(liabilityLabel, liabilityValue)
+                                }
+                        ) {
+                            Text(
+                                text = liabilityValue,
+                                style = if (isTotalRow) {
+                                    MaterialTheme.typography.titleMedium.copy(
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                } else {
+                                    MaterialTheme.typography.bodyMedium
+                                },
+                                color = if (isTotalRow) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                },
+                                textAlign = TextAlign.Start
+                            )
+                        }
                     }
                     
                     // Add divider after each row (except last)

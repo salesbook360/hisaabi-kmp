@@ -6,7 +6,13 @@ data class ReportResult(
     val generatedAt: Long = System.currentTimeMillis(),
     val columns: List<String>,
     val rows: List<ReportRow>,
-    val summary: ReportSummary? = null
+    val summary: ReportSummary? = null,
+    val profitLossBreakdown: ProfitLossBreakdown? = null, // Detailed breakdown for profit/loss calculation
+    val receivableBreakdown: ReceivableBreakdown? = null,
+    val payablesBreakdown: PayableBreakdown? = null,
+    val cashInHandBreakdown: CashInHandBreakdown? = null,
+    val capitalInvestmentBreakdown: CapitalInvestmentBreakdown? = null,
+    val availableStockBreakdown: AvailableStockBreakdown? = null
 )
 
 data class ReportRow(
