@@ -64,45 +64,43 @@ class GenerateBalanceSheetReportUseCase(
         val totalLiabilities = capitalInvestment + payables + currentProfitLoss
 
         // ========== GENERATE REPORT ROWS ==========
-        val columns = listOf("Assets", "Liabilities")
+        // 4 columns: Assets Label | Assets Value | Liabilities Label | Liabilities Value
+        val columns = listOf("Assets", "", "Liabilities", "")
         val rows = mutableListOf<ReportRow>()
-
-        // Build rows - showing Assets and Liabilities side by side
-        val assetsRows = mutableListOf<String>()
-        val liabilitiesRows = mutableListOf<String>()
-
-        // Assets column
-        assetsRows.add("Receivable")
-        assetsRows.add("  $currencySymbol ${String.format("%,.0f", receivables)}")
-        assetsRows.add("")
-        assetsRows.add("Available Stock")
-        assetsRows.add("  $currencySymbol ${String.format("%,.0f", availableStock)}")
-        assetsRows.add("")
-        assetsRows.add("Cash in Hand")
-        assetsRows.add("  $currencySymbol ${String.format("%,.0f", cashInHand)}")
-        assetsRows.add("")
-        assetsRows.add("Total Assets")
-        assetsRows.add("  $currencySymbol ${String.format("%,.0f", totalAssets)}")
-
-        // Liabilities column
-        liabilitiesRows.add("Capital Investment")
-        liabilitiesRows.add("  $currencySymbol ${String.format("%,.0f", capitalInvestment)}")
-        liabilitiesRows.add("")
-        liabilitiesRows.add("Payables")
-        liabilitiesRows.add("  $currencySymbol ${String.format("%,.0f", payables)}")
-        liabilitiesRows.add("")
-        liabilitiesRows.add("Current Profit/Loss")
-        liabilitiesRows.add("  $currencySymbol ${String.format("%,.0f", currentProfitLoss)}")
-        liabilitiesRows.add("")
-        liabilitiesRows.add("Total Liabilities")
-        liabilitiesRows.add("  $currencySymbol ${String.format("%,.0f", totalLiabilities)}")
-
+        
+        // Assets items
+        val assetsItems = listOf(
+            "Receivable" to receivables,
+            "Available Stock" to availableStock,
+            "Cash in Hand" to cashInHand,
+            "Total Assets" to totalAssets
+        )
+        
+        // Liabilities items
+        val liabilitiesItems = listOf(
+            "Capital Investment" to capitalInvestment,
+            "Payables" to payables,
+            "Current Profit/Loss" to currentProfitLoss,
+            "Total Liabilities" to totalLiabilities
+        )
+        
         // Combine into rows - pad the shorter list
-        val maxRows = maxOf(assetsRows.size, liabilitiesRows.size)
+        val maxRows = maxOf(assetsItems.size, liabilitiesItems.size)
         for (i in 0 until maxRows) {
-            val assetValue = if (i < assetsRows.size) assetsRows[i] else ""
-            val liabilityValue = if (i < liabilitiesRows.size) liabilitiesRows[i] else ""
-            rows.add(ReportRow("row_$i", listOf(assetValue, liabilityValue)))
+            val assetItem = if (i < assetsItems.size) assetsItems[i] else null
+            val liabilityItem = if (i < liabilitiesItems.size) liabilitiesItems[i] else null
+            
+            val assetLabel = assetItem?.first ?: ""
+            val assetValue = assetItem?.let { 
+                "$currencySymbol ${String.format("%,.0f", it.second)}" 
+            } ?: ""
+            
+            val liabilityLabel = liabilityItem?.first ?: ""
+            val liabilityValue = liabilityItem?.let { 
+                "$currencySymbol ${String.format("%,.0f", it.second)}" 
+            } ?: ""
+            
+            rows.add(ReportRow("row_$i", listOf(assetLabel, assetValue, liabilityLabel, liabilityValue)))
         }
 
         return ReportResult(

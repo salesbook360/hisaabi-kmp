@@ -124,29 +124,33 @@ fun ReportResultScreen(
                     }
                 }
             
-            // Table Header
+            // Table Header - Special handling for balance sheet (4 columns with merged headers)
             item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                if (isBalanceSheet) {
+                    BalanceSheetHeader()
+                } else {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        )
                     ) {
-                        reportResult.columns.forEach { column ->
-                            Text(
-                                text = column,
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.weight(1f),
-                                textAlign = TextAlign.Start
-                            )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            reportResult.columns.forEach { column ->
+                                Text(
+                                    text = column,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.weight(1f),
+                                    textAlign = TextAlign.Start
+                                )
+                            }
                         }
                     }
                 }
@@ -180,10 +184,14 @@ fun ReportResultScreen(
                 // Use professional table layout for balance sheet, regular cards for other reports
                 if (isBalanceSheet) {
                     item {
-                        BalanceSheetTable(
-                            rows = reportResult.rows,
-                            columns = reportResult.columns
-                        )
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            BalanceSheetTable(
+                                rows = reportResult.rows,
+                                columns = reportResult.columns
+                            )
+                            // Add bottom spacing to ensure card shadow is visible
+                            Spacer(modifier = Modifier.height(12.dp))
+                        }
                     }
                 } else {
                     items(reportResult.rows) { row ->
@@ -296,6 +304,41 @@ private fun SummaryItem(label: String, value: String) {
 }
 
 @Composable
+private fun BalanceSheetHeader() {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp)
+        ) {
+            // Assets header (spans 2 columns)
+            Text(
+                text = "Assets",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.weight(2f),
+                textAlign = TextAlign.Center
+            )
+            // Liabilities header (spans 2 columns)
+            Text(
+                text = "Liabilities",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.weight(2f),
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+@Composable
 private fun BalanceSheetTable(
     rows: List<com.hisaabi.hisaabi_kmp.reports.domain.model.ReportRow>,
     columns: List<String>
@@ -311,76 +354,124 @@ private fun BalanceSheetTable(
             modifier = Modifier.fillMaxWidth()
         ) {
             rows.forEachIndexed { index, row ->
-                val firstValue = row.values.firstOrNull()?.trim() ?: ""
-                val secondValue = row.values.getOrNull(1)?.trim() ?: ""
-                val isAmountRow = firstValue.startsWith("  ") || secondValue.startsWith("  ")
-                val isTotalRow = firstValue.contains("Total", ignoreCase = true) || 
-                                 secondValue.contains("Total", ignoreCase = true)
+                // 4 columns: Assets Label | Assets Value | Liabilities Label | Liabilities Value
+                val assetLabel = row.values.getOrNull(0)?.trim() ?: ""
+                val assetValue = row.values.getOrNull(1)?.trim() ?: ""
+                val liabilityLabel = row.values.getOrNull(2)?.trim() ?: ""
+                val liabilityValue = row.values.getOrNull(3)?.trim() ?: ""
+                
+                val isTotalRow = assetLabel.contains("Total", ignoreCase = true) || 
+                                 liabilityLabel.contains("Total", ignoreCase = true)
                 val isEmptyRow = row.values.all { it.trim().isEmpty() }
-                val isCategoryRow = !isEmptyRow && !isAmountRow && !isTotalRow
                 
-                // Determine background color
-                val backgroundColor = when {
-                    isTotalRow -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
-                    isCategoryRow -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                    else -> MaterialTheme.colorScheme.surface
-                }
-                
-                // Skip empty rows (they're just spacing)
+                // Skip empty rows
                 if (!isEmptyRow) {
-                    // Row content
+                    // Determine background color
+                    val backgroundColor = if (isTotalRow) {
+                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
+                    } else {
+                        MaterialTheme.colorScheme.surface
+                    }
+                    
+                    // Row content - 4 columns (all left-aligned)
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(backgroundColor)
                             .padding(
                                 horizontal = 16.dp,
-                                vertical = when {
-                                    isTotalRow -> 14.dp
-                                    isCategoryRow -> 11.dp
-                                    else -> 9.dp
-                                }
+                                vertical = if (isTotalRow) 14.dp else 11.dp
                             ),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                        horizontalArrangement = Arrangement.Start,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        row.values.forEachIndexed { colIndex, value ->
-                            val trimmedValue = value.trim()
-                            Text(
-                                text = trimmedValue,
-                                style = when {
-                                    isTotalRow -> MaterialTheme.typography.titleMedium.copy(
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    isCategoryRow -> MaterialTheme.typography.titleSmall.copy(
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                    else -> MaterialTheme.typography.bodyMedium
-                                },
-                                color = when {
-                                    isTotalRow -> MaterialTheme.colorScheme.primary
-                                    isCategoryRow -> MaterialTheme.colorScheme.onSurfaceVariant
-                                    else -> MaterialTheme.colorScheme.onSurface
-                                },
-                                modifier = Modifier.weight(1f),
-                                textAlign = if (colIndex == 0) TextAlign.Start else TextAlign.End
-                            )
-                        }
+                        // Column 1: Assets Label
+                        Text(
+                            text = assetLabel,
+                            style = if (isTotalRow) {
+                                MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold
+                                )
+                            } else {
+                                MaterialTheme.typography.bodyMedium
+                            },
+                            color = if (isTotalRow) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            },
+                            modifier = Modifier.weight(1f),
+                            textAlign = TextAlign.Start
+                        )
+                        
+                        // Column 2: Assets Value
+                        Text(
+                            text = assetValue,
+                            style = if (isTotalRow) {
+                                MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold
+                                )
+                            } else {
+                                MaterialTheme.typography.bodyMedium
+                            },
+                            color = if (isTotalRow) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            },
+                            modifier = Modifier.weight(1f),
+                            textAlign = TextAlign.Start
+                        )
+                        
+                        // Column 3: Liabilities Label
+                        Text(
+                            text = liabilityLabel,
+                            style = if (isTotalRow) {
+                                MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold
+                                )
+                            } else {
+                                MaterialTheme.typography.bodyMedium
+                            },
+                            color = if (isTotalRow) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            },
+                            modifier = Modifier.weight(1f),
+                            textAlign = TextAlign.Start
+                        )
+                        
+                        // Column 4: Liabilities Value
+                        Text(
+                            text = liabilityValue,
+                            style = if (isTotalRow) {
+                                MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold
+                                )
+                            } else {
+                                MaterialTheme.typography.bodyMedium
+                            },
+                            color = if (isTotalRow) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            },
+                            modifier = Modifier.weight(1f),
+                            textAlign = TextAlign.Start
+                        )
                     }
                     
                     // Add divider after each row (except last)
                     if (index < rows.size - 1) {
                         val nextRow = rows.getOrNull(index + 1)
-                        val nextFirstValue = nextRow?.values?.firstOrNull()?.trim() ?: ""
-                        val nextIsTotal = nextFirstValue.contains("Total", ignoreCase = true)
-                        val nextIsCategory = !nextFirstValue.isEmpty() && 
-                                             !nextFirstValue.startsWith("  ") && 
-                                             !nextIsTotal
+                        val nextAssetLabel = nextRow?.values?.getOrNull(0)?.trim() ?: ""
+                        val nextIsTotal = nextAssetLabel.contains("Total", ignoreCase = true)
                         
                         HorizontalDivider(
                             modifier = Modifier.padding(horizontal = 16.dp),
-                            thickness = if (isTotalRow || nextIsTotal || nextIsCategory) 1.5.dp else 0.5.dp,
-                            color = if (isTotalRow || nextIsTotal || nextIsCategory) {
+                            thickness = if (isTotalRow || nextIsTotal) 1.5.dp else 0.5.dp,
+                            color = if (isTotalRow || nextIsTotal) {
                                 MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
                             } else {
                                 MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
