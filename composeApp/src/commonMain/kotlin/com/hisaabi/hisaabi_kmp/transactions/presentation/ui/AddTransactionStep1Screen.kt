@@ -14,8 +14,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.hisaabi.hisaabi_kmp.core.ui.FilterChipWithColors
+import com.hisaabi.hisaabi_kmp.core.ui.LocalWindowSizeClass
+import com.hisaabi.hisaabi_kmp.core.ui.WindowWidthSizeClass
 import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
 import com.hisaabi.hisaabi_kmp.quantityunits.domain.model.QuantityUnit
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
@@ -110,13 +113,23 @@ fun AddTransactionStep1Screen(
             }
         }
     ) { paddingValues ->
-        LazyColumn(
+        val windowSizeClass = LocalWindowSizeClass.current
+        val isDesktop = windowSizeClass.widthSizeClass == WindowWidthSizeClass.EXPANDED
+        val maxFormWidth = if (isDesktop) 900.dp else Dp.Unspecified
+        
+        // Center form content on larger screens
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(paddingValues),
+            contentAlignment = Alignment.TopCenter
         ) {
+            LazyColumn(
+                modifier = Modifier
+                    .then(if (isDesktop) Modifier.widthIn(max = maxFormWidth) else Modifier.fillMaxWidth())
+                    .padding(horizontal = if (isDesktop) 24.dp else 16.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
             // Party Selection Card
             item {
                 PartySelectionCard(
@@ -268,6 +281,7 @@ fun AddTransactionStep1Screen(
             item {
                 Spacer(Modifier.height(80.dp))
             }
+        }
         }
     }
     

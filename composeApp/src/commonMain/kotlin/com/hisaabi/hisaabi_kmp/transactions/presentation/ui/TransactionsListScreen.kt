@@ -36,6 +36,13 @@ import com.hisaabi.hisaabi_kmp.receipt.ReceiptViewModel
 import com.hisaabi.hisaabi_kmp.receipt.ReceiptPreviewDialog
 import com.hisaabi.hisaabi_kmp.core.ui.FilterChipWithColors
 import com.hisaabi.hisaabi_kmp.core.ui.getStatusBadgeColors
+import com.hisaabi.hisaabi_kmp.core.ui.LocalWindowSizeClass
+import com.hisaabi.hisaabi_kmp.core.ui.WindowWidthSizeClass
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.ui.unit.Dp
 import com.hisaabi.hisaabi_kmp.sync.domain.model.SyncStatus
 import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
 import org.koin.compose.koinInject
@@ -176,11 +183,24 @@ fun TransactionsListScreen(
             )
         }
     ) { paddingValues ->
-        Column(
+        val windowSizeClass = LocalWindowSizeClass.current
+        val isDesktop = windowSizeClass.widthSizeClass == WindowWidthSizeClass.EXPANDED
+        
+        // Center content on larger screens with max width
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(paddingValues),
+            contentAlignment = Alignment.TopCenter
         ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .then(
+                        if (isDesktop) Modifier.padding(horizontal = 24.dp)
+                        else Modifier
+                    )
+            ) {
             // Search bar
             if (showSearchBar || state.searchQuery.isNotEmpty()) {
                 OutlinedTextField(
@@ -216,13 +236,25 @@ fun TransactionsListScreen(
                     EmptyTransactionsView(onAddClick = onAddTransactionClick)
                 }
                 else -> {
-                    LazyColumn(
-                        state = listState,
+                    // Use 2-column grid on desktop, single column on mobile
+                    val gridColumns = if (isDesktop) 2 else 1
+                    val horizontalPadding = if (isDesktop) 24.dp else 16.dp
+                    val cardSpacing = if (isDesktop) 16.dp else 12.dp
+                    
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(gridColumns),
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        contentPadding = PaddingValues(
+                            horizontal = horizontalPadding,
+                            vertical = 16.dp
+                        ),
+                        verticalArrangement = Arrangement.spacedBy(cardSpacing),
+                        horizontalArrangement = Arrangement.spacedBy(cardSpacing)
                     ) {
-                        items(state.transactions) { transaction ->
+                        items(
+                            items = state.transactions,
+                            key = { it.slug ?: it.id.toString() }
+                        ) { transaction ->
                             TransactionCard(
                                 transaction = transaction,
                                 currencySymbol = currencySymbol,
@@ -251,9 +283,9 @@ fun TransactionsListScreen(
                             )
                         }
                         
-                        // Loading more indicator
+                        // Loading more indicator - spans full width
                         if (state.isLoadingMore) {
-                            item {
+                            item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(gridColumns) }) {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -268,13 +300,14 @@ fun TransactionsListScreen(
                             }
                         }
                         
-                        // Bottom padding for FAB
-                        item {
+                        // Bottom padding for FAB - spans full width
+                        item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(gridColumns) }) {
                             Spacer(Modifier.height(80.dp))
                         }
                     }
                 }
             }
+        }
         }
     }
     

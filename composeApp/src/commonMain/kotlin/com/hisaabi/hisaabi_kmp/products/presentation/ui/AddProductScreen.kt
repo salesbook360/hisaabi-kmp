@@ -15,9 +15,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.Alignment
+import com.hisaabi.hisaabi_kmp.core.ui.LocalWindowSizeClass
+import com.hisaabi.hisaabi_kmp.core.ui.WindowWidthSizeClass
 import com.hisaabi.hisaabi_kmp.categories.domain.model.Category
 import com.hisaabi.hisaabi_kmp.products.domain.model.Product
 import com.hisaabi.hisaabi_kmp.products.domain.model.ProductType
@@ -133,15 +136,25 @@ fun AddProductScreen(
             }
         }
     ) { paddingValues ->
-        Column(
+        val windowSizeClass = LocalWindowSizeClass.current
+        val isDesktop = windowSizeClass.widthSizeClass == WindowWidthSizeClass.EXPANDED
+        val maxContentWidth = if (isDesktop) 800.dp else Dp.Unspecified
+        val horizontalPadding = if (isDesktop) 24.dp else 16.dp
+        
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState())
+                .padding(paddingValues),
+            contentAlignment = Alignment.TopCenter
         ) {
-            // Product Type Info Card
-            Card(
+            Column(
+                modifier = Modifier
+                    .then(if (isDesktop) Modifier.widthIn(max = maxContentWidth) else Modifier.fillMaxWidth())
+                    .padding(horizontal = horizontalPadding, vertical = 16.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                // Product Type Info Card
+                Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
                     containerColor = when (productType) {
@@ -206,8 +219,8 @@ fun AddProductScreen(
                     Icon(Icons.Default.Description, contentDescription = "Description")
                 },
                 modifier = Modifier.fillMaxWidth(),
-                minLines = 3,
-                maxLines = 5
+                minLines = if (isDesktop) 2 else 3,
+                maxLines = if (isDesktop) 3 else 5
             )
             
             Spacer(modifier = Modifier.height(24.dp))
@@ -221,44 +234,43 @@ fun AddProductScreen(
             
             Spacer(modifier = Modifier.height(8.dp))
             
-            // Retail Price
-            OutlinedTextField(
-                value = uiState.retailPrice,
-                onValueChange = { viewModel.updateRetailPrice(it) },
-                label = { Text("Retail Price") },
-                leadingIcon = {
-                    Icon(Icons.Default.AttachMoney, contentDescription = "Retail Price")
-                },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Wholesale Price
-            OutlinedTextField(
-                value = uiState.wholesalePrice,
-                onValueChange = { viewModel.updateWholesalePrice(it) },
-                label = { Text("Wholesale Price") },
-                leadingIcon = {
-                    Icon(Icons.Default.Money, contentDescription = "Wholesale Price")
-                },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Purchase Price (Hidden for Services)
-            if (productType != ProductType.SERVICE) {
+            // Row 1: Retail Price | Wholesale Price
+            if (isDesktop) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    OutlinedTextField(
+                        value = uiState.retailPrice,
+                        onValueChange = { viewModel.updateRetailPrice(it) },
+                        label = { Text("Retail Price") },
+                        leadingIcon = {
+                            Icon(Icons.Default.AttachMoney, contentDescription = "Retail Price")
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        modifier = Modifier.weight(1f),
+                        singleLine = true
+                    )
+                    OutlinedTextField(
+                        value = uiState.wholesalePrice,
+                        onValueChange = { viewModel.updateWholesalePrice(it) },
+                        label = { Text("Wholesale Price") },
+                        leadingIcon = {
+                            Icon(Icons.Default.Money, contentDescription = "Wholesale Price")
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        modifier = Modifier.weight(1f),
+                        singleLine = true
+                    )
+                }
+            } else {
+                // Mobile: Stack vertically
                 OutlinedTextField(
-                    value = uiState.purchasePrice,
-                    onValueChange = { viewModel.updatePurchasePrice(it) },
-                    label = { Text("Purchase Price") },
+                    value = uiState.retailPrice,
+                    onValueChange = { viewModel.updateRetailPrice(it) },
+                    label = { Text("Retail Price") },
                     leadingIcon = {
-                        Icon(Icons.Default.ShoppingCart, contentDescription = "Purchase Price")
+                        Icon(Icons.Default.AttachMoney, contentDescription = "Retail Price")
                     },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.fillMaxWidth(),
@@ -266,35 +278,174 @@ fun AddProductScreen(
                 )
                 
                 Spacer(modifier = Modifier.height(16.dp))
+                
+                OutlinedTextField(
+                    value = uiState.wholesalePrice,
+                    onValueChange = { viewModel.updateWholesalePrice(it) },
+                    label = { Text("Wholesale Price") },
+                    leadingIcon = {
+                        Icon(Icons.Default.Money, contentDescription = "Wholesale Price")
+                    },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
             }
-            
-            // Tax Percentage
-            OutlinedTextField(
-                value = uiState.taxPercentage,
-                onValueChange = { viewModel.updateTaxPercentage(it) },
-                label = { Text("Tax %") },
-                leadingIcon = {
-                    Icon(Icons.Default.Percent, contentDescription = "Tax")
-                },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Discount Percentage
-            OutlinedTextField(
-                value = uiState.discountPercentage,
-                onValueChange = { viewModel.updateDiscountPercentage(it) },
-                label = { Text("Discount %") },
-                leadingIcon = {
-                    Icon(Icons.Default.Discount, contentDescription = "Discount")
-                },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
+            // Row 2: Purchase Price | Tax % (for products) or Tax % | Discount % (for services)
+            if (productType != ProductType.SERVICE) {
+                if (isDesktop) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = uiState.purchasePrice,
+                            onValueChange = { viewModel.updatePurchasePrice(it) },
+                            label = { Text("Purchase Price") },
+                            leadingIcon = {
+                                Icon(Icons.Default.ShoppingCart, contentDescription = "Purchase Price")
+                            },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            modifier = Modifier.weight(1f),
+                            singleLine = true
+                        )
+                        OutlinedTextField(
+                            value = uiState.taxPercentage,
+                            onValueChange = { viewModel.updateTaxPercentage(it) },
+                            label = { Text("Tax %") },
+                            leadingIcon = {
+                                Icon(Icons.Default.Percent, contentDescription = "Tax")
+                            },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            modifier = Modifier.weight(1f),
+                            singleLine = true
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Discount on its own row for products on desktop (half width)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = uiState.discountPercentage,
+                            onValueChange = { viewModel.updateDiscountPercentage(it) },
+                            label = { Text("Discount %") },
+                            leadingIcon = {
+                                Icon(Icons.Default.Discount, contentDescription = "Discount")
+                            },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            modifier = Modifier.weight(1f),
+                            singleLine = true
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                } else {
+                    // Mobile: Stack vertically
+                    OutlinedTextField(
+                        value = uiState.purchasePrice,
+                        onValueChange = { viewModel.updatePurchasePrice(it) },
+                        label = { Text("Purchase Price") },
+                        leadingIcon = {
+                            Icon(Icons.Default.ShoppingCart, contentDescription = "Purchase Price")
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    OutlinedTextField(
+                        value = uiState.taxPercentage,
+                        onValueChange = { viewModel.updateTaxPercentage(it) },
+                        label = { Text("Tax %") },
+                        leadingIcon = {
+                            Icon(Icons.Default.Percent, contentDescription = "Tax")
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    OutlinedTextField(
+                        value = uiState.discountPercentage,
+                        onValueChange = { viewModel.updateDiscountPercentage(it) },
+                        label = { Text("Discount %") },
+                        leadingIcon = {
+                            Icon(Icons.Default.Discount, contentDescription = "Discount")
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                }
+            } else {
+                // Service: Tax % | Discount %
+                if (isDesktop) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = uiState.taxPercentage,
+                            onValueChange = { viewModel.updateTaxPercentage(it) },
+                            label = { Text("Tax %") },
+                            leadingIcon = {
+                                Icon(Icons.Default.Percent, contentDescription = "Tax")
+                            },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            modifier = Modifier.weight(1f),
+                            singleLine = true
+                        )
+                        OutlinedTextField(
+                            value = uiState.discountPercentage,
+                            onValueChange = { viewModel.updateDiscountPercentage(it) },
+                            label = { Text("Discount %") },
+                            leadingIcon = {
+                                Icon(Icons.Default.Discount, contentDescription = "Discount")
+                            },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            modifier = Modifier.weight(1f),
+                            singleLine = true
+                        )
+                    }
+                } else {
+                    // Mobile: Stack vertically
+                    OutlinedTextField(
+                        value = uiState.taxPercentage,
+                        onValueChange = { viewModel.updateTaxPercentage(it) },
+                        label = { Text("Tax %") },
+                        leadingIcon = {
+                            Icon(Icons.Default.Percent, contentDescription = "Tax")
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    OutlinedTextField(
+                        value = uiState.discountPercentage,
+                        onValueChange = { viewModel.updateDiscountPercentage(it) },
+                        label = { Text("Discount %") },
+                        leadingIcon = {
+                            Icon(Icons.Default.Discount, contentDescription = "Discount")
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                }
+            }
             
             Spacer(modifier = Modifier.height(24.dp))
             
@@ -307,27 +458,57 @@ fun AddProductScreen(
             
             Spacer(modifier = Modifier.height(8.dp))
             
-            // Manufacturer (for Simple Products and Recipes)
+            // Manufacturer and Category - side by side on desktop for products
             if (productType != ProductType.SERVICE) {
-                OutlinedTextField(
-                    value = uiState.manufacturer,
-                    onValueChange = { viewModel.updateManufacturer(it) },
-                    label = { Text("Manufacturer") },
-                    leadingIcon = {
-                        Icon(Icons.Default.Factory, contentDescription = "Manufacturer")
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                if (isDesktop) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = uiState.manufacturer,
+                            onValueChange = { viewModel.updateManufacturer(it) },
+                            label = { Text("Manufacturer") },
+                            leadingIcon = {
+                                Icon(Icons.Default.Factory, contentDescription = "Manufacturer")
+                            },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true
+                        )
+                        Box(modifier = Modifier.weight(1f)) {
+                            CategorySelectionCard(
+                                selectedCategory = uiState.selectedCategory,
+                                onSelectCategory = onNavigateToCategories
+                            )
+                        }
+                    }
+                } else {
+                    // Mobile: Stack vertically
+                    OutlinedTextField(
+                        value = uiState.manufacturer,
+                        onValueChange = { viewModel.updateManufacturer(it) },
+                        label = { Text("Manufacturer") },
+                        leadingIcon = {
+                            Icon(Icons.Default.Factory, contentDescription = "Manufacturer")
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    CategorySelectionCard(
+                        selectedCategory = uiState.selectedCategory,
+                        onSelectCategory = onNavigateToCategories
+                    )
+                }
+            } else {
+                // Service: Just show category
+                CategorySelectionCard(
+                    selectedCategory = uiState.selectedCategory,
+                    onSelectCategory = onNavigateToCategories
                 )
-                
-                Spacer(modifier = Modifier.height(16.dp))
             }
-            
-            // Category Selection
-            CategorySelectionCard(
-                selectedCategory = uiState.selectedCategory,
-                onSelectCategory = onNavigateToCategories
-            )
             
             Spacer(modifier = Modifier.height(24.dp))
             
@@ -351,64 +532,123 @@ fun AddProductScreen(
                 
                 // Opening Quantity (only shown when warehouse is selected)
                 if (uiState.selectedWarehouse != null) {
-                    // Opening Quantity with Unit
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = uiState.openingQuantity,
-                            onValueChange = { viewModel.setOpeningQuantity(it) },
-                            label = { Text("Opening Quantity") },
-                            leadingIcon = {
-                                Icon(Icons.Default.Inventory, contentDescription = "Opening Quantity")
-                            },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            modifier = Modifier.weight(1f),
-                            singleLine = true
-                        )
+                    if (isDesktop) {
+                        // Desktop: Both quantity fields side by side
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            // Opening Quantity with Unit
+                            Row(
+                                modifier = Modifier.weight(1f),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                OutlinedTextField(
+                                    value = uiState.openingQuantity,
+                                    onValueChange = { viewModel.setOpeningQuantity(it) },
+                                    label = { Text("Opening Qty") },
+                                    leadingIcon = {
+                                        Icon(Icons.Default.Inventory, contentDescription = "Opening Quantity")
+                                    },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true
+                                )
+                                QuantityUnitChip(
+                                    selectedUnit = uiState.selectedOpeningQuantityUnit,
+                                    onClick = { 
+                                        if (uiState.selectedBaseUnit != null) {
+                                            viewModel.showOpeningQuantityUnitSheet()
+                                        }
+                                    },
+                                    enabled = uiState.selectedBaseUnit != null
+                                )
+                            }
+                            
+                            // Minimum Quantity with Unit
+                            Row(
+                                modifier = Modifier.weight(1f),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                OutlinedTextField(
+                                    value = uiState.minimumQuantity,
+                                    onValueChange = { viewModel.setMinimumQuantity(it) },
+                                    label = { Text("Minimum Qty") },
+                                    leadingIcon = {
+                                        Icon(Icons.Default.Warning, contentDescription = "Minimum Quantity")
+                                    },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true
+                                )
+                                QuantityUnitChip(
+                                    selectedUnit = uiState.selectedMinimumQuantityUnit,
+                                    onClick = { 
+                                        if (uiState.selectedBaseUnit != null) {
+                                            viewModel.showMinimumQuantityUnitSheet()
+                                        }
+                                    },
+                                    enabled = uiState.selectedBaseUnit != null
+                                )
+                            }
+                        }
+                    } else {
+                        // Mobile: Stack vertically
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = uiState.openingQuantity,
+                                onValueChange = { viewModel.setOpeningQuantity(it) },
+                                label = { Text("Opening Quantity") },
+                                leadingIcon = {
+                                    Icon(Icons.Default.Inventory, contentDescription = "Opening Quantity")
+                                },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                modifier = Modifier.weight(1f),
+                                singleLine = true
+                            )
+                            QuantityUnitChip(
+                                selectedUnit = uiState.selectedOpeningQuantityUnit,
+                                onClick = { 
+                                    if (uiState.selectedBaseUnit != null) {
+                                        viewModel.showOpeningQuantityUnitSheet()
+                                    }
+                                },
+                                enabled = uiState.selectedBaseUnit != null
+                            )
+                        }
                         
-                        // Opening Quantity Unit Selection
-                        QuantityUnitChip(
-                            selectedUnit = uiState.selectedOpeningQuantityUnit,
-                            onClick = { 
-                                if (uiState.selectedBaseUnit != null) {
-                                    viewModel.showOpeningQuantityUnitSheet()
-                                }
-                            },
-                            enabled = uiState.selectedBaseUnit != null
-                        )
-                    }
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    // Minimum Quantity with Unit
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = uiState.minimumQuantity,
-                            onValueChange = { viewModel.setMinimumQuantity(it) },
-                            label = { Text("Minimum Quantity") },
-                            leadingIcon = {
-                                Icon(Icons.Default.Warning, contentDescription = "Minimum Quantity")
-                            },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            modifier = Modifier.weight(1f),
-                            singleLine = true
-                        )
+                        Spacer(modifier = Modifier.height(16.dp))
                         
-                        // Minimum Quantity Unit Selection
-                        QuantityUnitChip(
-                            selectedUnit = uiState.selectedMinimumQuantityUnit,
-                            onClick = { 
-                                if (uiState.selectedBaseUnit != null) {
-                                    viewModel.showMinimumQuantityUnitSheet()
-                                }
-                            },
-                            enabled = uiState.selectedBaseUnit != null
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = uiState.minimumQuantity,
+                                onValueChange = { viewModel.setMinimumQuantity(it) },
+                                label = { Text("Minimum Quantity") },
+                                leadingIcon = {
+                                    Icon(Icons.Default.Warning, contentDescription = "Minimum Quantity")
+                                },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                modifier = Modifier.weight(1f),
+                                singleLine = true
+                            )
+                            QuantityUnitChip(
+                                selectedUnit = uiState.selectedMinimumQuantityUnit,
+                                onClick = { 
+                                    if (uiState.selectedBaseUnit != null) {
+                                        viewModel.showMinimumQuantityUnitSheet()
+                                    }
+                                },
+                                enabled = uiState.selectedBaseUnit != null
+                            )
+                        }
                     }
                     
                     Spacer(modifier = Modifier.height(16.dp))
@@ -474,6 +714,7 @@ fun AddProductScreen(
                     )
                 }
                 Spacer(modifier = Modifier.height(16.dp))
+            }
             }
         }
     }

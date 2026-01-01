@@ -13,7 +13,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.hisaabi.hisaabi_kmp.core.ui.LocalWindowSizeClass
+import com.hisaabi.hisaabi_kmp.core.ui.WindowWidthSizeClass
 import com.hisaabi.hisaabi_kmp.quantityunits.domain.model.QuantityUnit
 import com.hisaabi.hisaabi_kmp.quantityunits.presentation.viewmodel.AddQuantityUnitViewModel
 
@@ -87,14 +90,24 @@ fun AddQuantityUnitScreen(
             }
         }
     ) { paddingValues ->
-        Column(
-            Modifier
+        val windowSizeClass = LocalWindowSizeClass.current
+        val isDesktop = windowSizeClass.widthSizeClass == WindowWidthSizeClass.EXPANDED
+        val maxContentWidth = if (isDesktop) 700.dp else Dp.Unspecified
+        val horizontalPadding = if (isDesktop) 24.dp else 16.dp
+        
+        Box(
+            modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState())
+                .padding(paddingValues),
+            contentAlignment = Alignment.TopCenter
         ) {
-            // Show info card based on what we're adding
+            Column(
+                Modifier
+                    .then(if (isDesktop) Modifier.widthIn(max = maxContentWidth) else Modifier.fillMaxWidth())
+                    .padding(horizontal = horizontalPadding, vertical = 16.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                // Show info card based on what we're adding
             if (!state.isEditMode) {
                 InfoCard(
                     isAddingParentUnitType = state.isAddingParentUnitType,
@@ -257,6 +270,7 @@ fun AddQuantityUnitScreen(
                     }
                 }
                 Spacer(Modifier.height(16.dp))
+            }
             }
         }
     }

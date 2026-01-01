@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -55,8 +56,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.hisaabi.hisaabi_kmp.core.ui.FilterChipWithColors
+import com.hisaabi.hisaabi_kmp.core.ui.LocalWindowSizeClass
+import com.hisaabi.hisaabi_kmp.core.ui.WindowWidthSizeClass
 import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
 import com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
@@ -138,14 +142,24 @@ fun AddExpenseIncomeScreen(
             )
         }
     ) { paddingValues ->
-        Column(
+        val windowSizeClass = LocalWindowSizeClass.current
+        val isDesktop = windowSizeClass.widthSizeClass == WindowWidthSizeClass.EXPANDED
+        val maxContentWidth = if (isDesktop) 800.dp else Dp.Unspecified
+        val horizontalPadding = if (isDesktop) 24.dp else 0.dp
+        
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(paddingValues),
+            contentAlignment = Alignment.TopCenter
         ) {
+            Column(
+                modifier = Modifier
+                    .then(if (isDesktop) Modifier.widthIn(max = maxContentWidth) else Modifier.fillMaxWidth())
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = horizontalPadding.coerceAtLeast(16.dp), vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
             // Transaction Type Selector (Expense or Extra Income)
             TransactionTypeSelector(
                 selectedType = state.transactionType,
@@ -197,17 +211,16 @@ fun AddExpenseIncomeScreen(
             )
 
             Spacer(Modifier.height(80.dp))
-        }
+            }
 
-        // Loading overlay
-        if (state.isLoading) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
+            // Loading overlay
+            if (state.isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
             }
         }
     }

@@ -15,7 +15,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.hisaabi.hisaabi_kmp.core.ui.LocalWindowSizeClass
+import com.hisaabi.hisaabi_kmp.core.ui.WindowWidthSizeClass
 import com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.FlatOrPercent
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddTransactionViewModel
@@ -88,16 +91,26 @@ fun AddTransactionStep2Screen(
             )
         }
     ) { paddingValues ->
-        LazyColumn(
+        val windowSizeClass = LocalWindowSizeClass.current
+        val isDesktop = windowSizeClass.widthSizeClass == WindowWidthSizeClass.EXPANDED
+        val maxContentWidth = if (isDesktop) 900.dp else Dp.Unspecified
+        val horizontalPadding = if (isDesktop) 24.dp else 16.dp
+        
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(paddingValues),
+            contentAlignment = Alignment.TopCenter
         ) {
-            // Previous Balance Card
-            item {
-                PreviousBalanceCard(
+            LazyColumn(
+                modifier = Modifier
+                    .then(if (isDesktop) Modifier.widthIn(max = maxContentWidth) else Modifier.fillMaxWidth())
+                    .padding(horizontal = horizontalPadding, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Previous Balance Card
+                item {
+                    PreviousBalanceCard(
                     partyName = state.selectedParty?.name ?: "",
                     balance = state.previousBalance,
                     currencySymbol
@@ -209,6 +222,7 @@ fun AddTransactionStep2Screen(
             // Bottom padding for FAB
             item {
                 Spacer(Modifier.height(80.dp))
+            }
             }
         }
     }

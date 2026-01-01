@@ -22,8 +22,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.hisaabi.hisaabi_kmp.core.ui.LocalWindowSizeClass
+import com.hisaabi.hisaabi_kmp.core.ui.WindowWidthSizeClass
 import com.hisaabi.hisaabi_kmp.auth.presentation.viewmodel.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -66,17 +69,26 @@ fun RegisterScreen(
             )
         }
     ) { paddingValues ->
-        Column(
+        val windowSizeClass = LocalWindowSizeClass.current
+        val isDesktop = windowSizeClass.widthSizeClass == WindowWidthSizeClass.EXPANDED
+        val maxContentWidth = if (isDesktop) 500.dp else Dp.Unspecified
+        
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(24.dp)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .padding(paddingValues),
+            contentAlignment = Alignment.Center
         ) {
-        // Title
-        Text(
+            Column(
+                modifier = Modifier
+                    .then(if (isDesktop) Modifier.widthIn(max = maxContentWidth) else Modifier.fillMaxWidth())
+                    .padding(24.dp)
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                // Title
+                Text(
             text = "Create Account",
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
@@ -268,7 +280,8 @@ fun RegisterScreen(
             TextButton(onClick = onNavigateToLogin) {
                 Text("Sign In")
             }
-        }
+            }
+            }
         }
     }
 }

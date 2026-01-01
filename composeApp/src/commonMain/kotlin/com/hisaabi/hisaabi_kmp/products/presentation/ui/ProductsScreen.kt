@@ -4,8 +4,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -20,8 +22,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
+import com.hisaabi.hisaabi_kmp.core.ui.LocalWindowSizeClass
 import com.hisaabi.hisaabi_kmp.core.ui.SegmentedControl
+import com.hisaabi.hisaabi_kmp.core.ui.WindowWidthSizeClass
 import com.hisaabi.hisaabi_kmp.products.domain.model.Product
 import com.hisaabi.hisaabi_kmp.products.domain.model.ProductType
 import com.hisaabi.hisaabi_kmp.products.presentation.viewmodel.ProductsViewModel
@@ -163,13 +168,24 @@ fun ProductsScreen(
             }
         }
     ) { paddingValues ->
-        Column(
+        val windowSizeClass = LocalWindowSizeClass.current
+        val isDesktop = windowSizeClass.widthSizeClass == WindowWidthSizeClass.EXPANDED
+        val maxContentWidth = if (isDesktop) 1000.dp else Dp.Unspecified
+        val horizontalPadding = if (isDesktop) 24.dp else 0.dp
+        
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(paddingValues),
+            contentAlignment = Alignment.TopCenter
         ) {
-            // Warehouse Selector
-            WarehouseSelectorCard(
+            Column(
+                modifier = Modifier
+                    .then(if (isDesktop) Modifier.widthIn(max = maxContentWidth) else Modifier.fillMaxWidth())
+                    .padding(horizontal = horizontalPadding)
+            ) {
+                // Warehouse Selector
+                WarehouseSelectorCard(
                 selectedWarehouse = uiState.selectedWarehouse,
                 availableWarehouses = uiState.availableWarehouses,
                 onSelectWarehouse = onNavigateToWarehouses,
@@ -254,9 +270,15 @@ fun ProductsScreen(
                     }
                 }
             } else {
-                LazyColumn(
+                // Use 2-column grid on desktop, 1 column on mobile
+                val columns = if (isDesktop) 2 else 1
+                
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(columns),
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(uiState.products, key = { it.id }) { product ->
                         val currentQuantity = selectedProductQuantities[product.slug] ?: 0
@@ -298,9 +320,9 @@ fun ProductsScreen(
                                 onSelectionChanged(selectedProductQuantities.toMap())
                             }
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
                     }
                 }
+            }
             }
         }
     }

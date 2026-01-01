@@ -13,9 +13,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hisaabi.hisaabi_kmp.core.ui.FilterChipWithColors
+import com.hisaabi.hisaabi_kmp.core.ui.LocalWindowSizeClass
+import com.hisaabi.hisaabi_kmp.core.ui.WindowWidthSizeClass
+import androidx.compose.ui.Alignment
 import com.hisaabi.hisaabi_kmp.reports.domain.model.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -63,13 +67,23 @@ fun ReportFiltersScreen(
             }
         }
     ) { paddingValues ->
-        LazyColumn(
+        val windowSizeClass = LocalWindowSizeClass.current
+        val isDesktop = windowSizeClass.widthSizeClass == WindowWidthSizeClass.EXPANDED
+        val maxContentWidth = if (isDesktop) 900.dp else Dp.Unspecified
+        val horizontalPadding = if (isDesktop) 24.dp else 16.dp
+        
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(paddingValues),
+            contentAlignment = Alignment.TopCenter
         ) {
+            LazyColumn(
+                modifier = Modifier
+                    .then(if (isDesktop) Modifier.widthIn(max = maxContentWidth) else Modifier.fillMaxWidth())
+                    .padding(horizontal = horizontalPadding, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
             // Additional Filters Section
             if (additionalFilters.isNotEmpty()) {
                 item {
@@ -191,6 +205,7 @@ fun ReportFiltersScreen(
                         }
                     }
                 }
+            }
             }
         }
     }

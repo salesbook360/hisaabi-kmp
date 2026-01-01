@@ -14,7 +14,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.hisaabi.hisaabi_kmp.core.ui.LocalWindowSizeClass
+import com.hisaabi.hisaabi_kmp.core.ui.WindowWidthSizeClass
 import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
 import com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.JournalAccount
@@ -84,14 +87,25 @@ fun AddJournalVoucherScreen(
             )
         }
     ) { paddingValues ->
-        Column(
+        val windowSizeClass = LocalWindowSizeClass.current
+        val isDesktop = windowSizeClass.widthSizeClass == WindowWidthSizeClass.EXPANDED
+        val maxContentWidth = if (isDesktop) 900.dp else Dp.Unspecified
+        val horizontalPadding = if (isDesktop) 24.dp else 0.dp
+        
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
+                .padding(paddingValues),
+            contentAlignment = Alignment.TopCenter
         ) {
-            // Header Section with Date and Totals
-            Card(
+            Column(
+                modifier = Modifier
+                    .then(if (isDesktop) Modifier.widthIn(max = maxContentWidth) else Modifier.fillMaxWidth())
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = horizontalPadding)
+            ) {
+                // Header Section with Date and Totals
+                Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
@@ -283,17 +297,16 @@ fun AddJournalVoucherScreen(
 
                 Spacer(Modifier.height(60.dp))
             }
-        }
+            }
 
-        // Loading overlay
-        if (state.isLoading) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
+            // Loading overlay
+            if (state.isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
             }
         }
     }

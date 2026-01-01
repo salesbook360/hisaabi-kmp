@@ -14,9 +14,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -59,6 +60,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.hisaabi.hisaabi_kmp.core.ui.LocalWindowSizeClass
+import com.hisaabi.hisaabi_kmp.core.ui.WindowWidthSizeClass
 import com.hisaabi.hisaabi_kmp.core.ui.SegmentedControl
 import com.hisaabi.hisaabi_kmp.parties.domain.model.BalanceStatus
 import com.hisaabi.hisaabi_kmp.parties.domain.model.PartiesFilter
@@ -90,7 +93,7 @@ fun PartiesScreen(
     onNewTransaction: (Party, Int) -> Unit = { _, _ -> }  // Party and transaction type
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val listState = rememberLazyListState()
+    val gridState = rememberLazyGridState()
     var showFilterMenu by remember { mutableStateOf(false) }
     var selectedParty by remember { mutableStateOf<Party?>(null) }
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -114,8 +117,8 @@ fun PartiesScreen(
     }
 
     // Detect scroll to bottom for pagination
-    LaunchedEffect(listState.canScrollForward) {
-        if (!listState.canScrollForward && !uiState.isLoadingMore) {
+    LaunchedEffect(gridState.canScrollForward) {
+        if (!gridState.canScrollForward && !uiState.isLoadingMore) {
             viewModel.loadMoreParties()
         }
     }
@@ -176,11 +179,24 @@ fun PartiesScreen(
             }
         }
     ) { paddingValues ->
-        Column(
+        val windowSizeClass = LocalWindowSizeClass.current
+        val isDesktop = windowSizeClass.widthSizeClass == WindowWidthSizeClass.EXPANDED
+        
+        // Center content on larger screens with max width
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(paddingValues),
+            contentAlignment = Alignment.TopCenter
         ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .then(
+                        if (isDesktop) Modifier.padding(horizontal = 24.dp)
+                        else Modifier
+                    )
+            ) {
             // Search bar
             if (showSearchBar || uiState.searchQuery.isNotEmpty()) {
                 OutlinedTextField(
@@ -330,10 +346,16 @@ fun PartiesScreen(
                     }
                 }
             } else {
-                LazyColumn(
-                    state = listState,
+                // Use 2-column grid on desktop, single column on mobile
+                val gridColumns = if (isDesktop) 2 else 1
+                
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(gridColumns),
+                    state = gridState,
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(uiState.parties, key = { it.id }) { party ->
                         PartyItem(
@@ -344,12 +366,11 @@ fun PartiesScreen(
                             },
                             currencySymbol
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
                     }
 
-                    // Loading more indicator
+                    // Loading more indicator - spans full width
                     if (uiState.isLoadingMore) {
-                        item {
+                        item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(gridColumns) }) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -364,6 +385,7 @@ fun PartiesScreen(
                     }
                 }
             }
+        }
         }
 
         // Bottom Sheet for Party Actions

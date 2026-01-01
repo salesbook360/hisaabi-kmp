@@ -11,7 +11,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.hisaabi.hisaabi_kmp.core.ui.LocalWindowSizeClass
+import com.hisaabi.hisaabi_kmp.core.ui.WindowWidthSizeClass
 import com.hisaabi.hisaabi_kmp.settings.domain.model.*
 import com.hisaabi.hisaabi_kmp.settings.presentation.viewmodel.DashboardSettingsViewModel
 
@@ -78,14 +81,24 @@ fun DashboardSettingsScreen(
             )
         }
     ) { paddingValues ->
-        Column(
-            Modifier
+        val windowSizeClass = LocalWindowSizeClass.current
+        val isDesktop = windowSizeClass.widthSizeClass == WindowWidthSizeClass.EXPANDED
+        val maxContentWidth = if (isDesktop) 900.dp else Dp.Unspecified
+        val horizontalPadding = if (isDesktop) 24.dp else 16.dp
+        
+        Box(
+            modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp)
+                .padding(paddingValues),
+            contentAlignment = Alignment.TopCenter
         ) {
-            Text(
+            Column(
+                Modifier
+                    .then(if (isDesktop) Modifier.widthIn(max = maxContentWidth) else Modifier.fillMaxWidth())
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = horizontalPadding, vertical = 16.dp)
+            ) {
+                Text(
                 "Configure dashboard sections",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
@@ -314,6 +327,7 @@ fun DashboardSettingsScreen(
             
             // Bottom padding for FAB
             Spacer(Modifier.height(80.dp))
+            }
         }
     }
 }

@@ -12,7 +12,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.hisaabi.hisaabi_kmp.core.ui.LocalWindowSizeClass
+import com.hisaabi.hisaabi_kmp.core.ui.WindowWidthSizeClass
 import com.hisaabi.hisaabi_kmp.business.domain.model.Business
 import com.hisaabi.hisaabi_kmp.business.presentation.viewmodel.MyBusinessViewModel
 
@@ -71,12 +74,23 @@ fun MyBusinessScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
-        Column(
+        val windowSizeClass = LocalWindowSizeClass.current
+        val isDesktop = windowSizeClass.widthSizeClass == WindowWidthSizeClass.EXPANDED
+        val maxContentWidth = if (isDesktop) 900.dp else Dp.Unspecified
+        val horizontalPadding = if (isDesktop) 24.dp else 0.dp
+        
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(paddingValues),
+            contentAlignment = Alignment.TopCenter
         ) {
-            when {
+            Column(
+                modifier = Modifier
+                    .then(if (isDesktop) Modifier.widthIn(max = maxContentWidth) else Modifier.fillMaxWidth())
+                    .padding(horizontal = horizontalPadding)
+            ) {
+                when {
                 state.isLoading && state.businesses.isEmpty() -> {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -137,6 +151,7 @@ fun MyBusinessScreen(
                         }
                     }
                 }
+            }
             }
         }
     }

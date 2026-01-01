@@ -11,7 +11,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.Alignment
+import com.hisaabi.hisaabi_kmp.core.ui.LocalWindowSizeClass
+import com.hisaabi.hisaabi_kmp.core.ui.WindowWidthSizeClass
 import com.hisaabi.hisaabi_kmp.business.domain.model.Business
 import com.hisaabi.hisaabi_kmp.business.presentation.viewmodel.AddBusinessViewModel
 
@@ -57,14 +61,24 @@ fun AddBusinessScreen(
             )
         }
     ) { paddingValues ->
-        Column(
+        val windowSizeClass = LocalWindowSizeClass.current
+        val isDesktop = windowSizeClass.widthSizeClass == WindowWidthSizeClass.EXPANDED
+        val maxContentWidth = if (isDesktop) 700.dp else Dp.Unspecified
+        val horizontalPadding = if (isDesktop) 24.dp else 16.dp
+        
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState())
+                .padding(paddingValues),
+            contentAlignment = Alignment.TopCenter
         ) {
-            // Business Name Field (Required)
+            Column(
+                modifier = Modifier
+                    .then(if (isDesktop) Modifier.widthIn(max = maxContentWidth) else Modifier.fillMaxWidth())
+                    .padding(horizontal = horizontalPadding, vertical = 16.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                // Business Name Field (Required)
             OutlinedTextField(
                 value = state.title,
                 onValueChange = { viewModel.onTitleChanged(it) },
@@ -159,6 +173,7 @@ fun AddBusinessScreen(
                 } else {
                     Text(if (state.isEditMode) "Update Business" else "Add Business")
                 }
+            }
             }
         }
     }

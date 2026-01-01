@@ -12,8 +12,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.hisaabi.hisaabi_kmp.core.ui.LocalWindowSizeClass
+import com.hisaabi.hisaabi_kmp.core.ui.WindowWidthSizeClass
 import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.*
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionDetailViewModel
@@ -65,35 +68,43 @@ fun TransactionDetailScreen(
             )
         }
     ) { paddingValues ->
-        when {
-            state.isLoading -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
+        val windowSizeClass = LocalWindowSizeClass.current
+        val isDesktop = windowSizeClass.widthSizeClass == WindowWidthSizeClass.EXPANDED
+        val maxContentWidth = if (isDesktop) 900.dp else Dp.Unspecified
+        val horizontalPadding = if (isDesktop) 24.dp else 0.dp
+        
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
+            contentAlignment = Alignment.TopCenter
+        ) {
+            when {
+                state.isLoading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
                 }
-            }
-            state.transaction != null -> {
-                TransactionDetailContent(
-                    transaction = state.transaction!!,
-                    childTransactions = state.childTransactions,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues),
-                    currencySymbol
-                )
-            }
-            else -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("Transaction not found")
+                state.transaction != null -> {
+                    TransactionDetailContent(
+                        transaction = state.transaction!!,
+                        childTransactions = state.childTransactions,
+                        modifier = Modifier
+                            .then(if (isDesktop) Modifier.widthIn(max = maxContentWidth) else Modifier.fillMaxWidth())
+                            .padding(horizontal = horizontalPadding),
+                        currencySymbol
+                    )
+                }
+                else -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("Transaction not found")
+                    }
                 }
             }
         }

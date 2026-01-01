@@ -2,8 +2,9 @@ package com.hisaabi.hisaabi_kmp.categories.presentation.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -16,11 +17,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.hisaabi.hisaabi_kmp.categories.domain.model.Category
 import com.hisaabi.hisaabi_kmp.categories.domain.model.CategoryType
 import com.hisaabi.hisaabi_kmp.categories.presentation.viewmodel.CategoriesViewModel
+import com.hisaabi.hisaabi_kmp.core.ui.LocalWindowSizeClass
 import com.hisaabi.hisaabi_kmp.core.ui.SegmentedControl
+import com.hisaabi.hisaabi_kmp.core.ui.WindowWidthSizeClass
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -96,92 +100,108 @@ fun CategoriesScreen(
             }
         }
     ) { paddingValues ->
-        Column(
+        val windowSizeClass = LocalWindowSizeClass.current
+        val isDesktop = windowSizeClass.widthSizeClass == WindowWidthSizeClass.EXPANDED
+        val maxContentWidth = if (isDesktop) 1000.dp else Dp.Unspecified
+        val horizontalPadding = if (isDesktop) 24.dp else 16.dp
+        val gridColumns = if (isDesktop) 2 else 1
+        
+        // Center content on desktop
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(paddingValues),
+            contentAlignment = Alignment.TopCenter
         ) {
-            // Category Type Filter - Segmented Control
-            CategoryTypeFilter(
-                selected = selectedCategoryType,
-                onTypeSelected = { type ->
-                    selectedCategoryType = type
-                    viewModel.onCategoryTypeChanged(type)
-                },
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-            )
-            when {
-                uiState.isLoading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
+                    .then(if (isDesktop) Modifier.widthIn(max = maxContentWidth) else Modifier.fillMaxWidth())
+                    .padding(horizontal = horizontalPadding)
+            ) {
+                // Category Type Filter - Segmented Control
+                CategoryTypeFilter(
+                    selected = selectedCategoryType,
+                    onTypeSelected = { type ->
+                        selectedCategoryType = type
+                        viewModel.onCategoryTypeChanged(type)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                )
+                when {
+                    uiState.isLoading -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
                     }
-                }
-                
-                uiState.error != null -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = uiState.error ?: "An error occurred",
-                                color = MaterialTheme.colorScheme.error,
-                                textAlign = TextAlign.Center
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Button(onClick = { viewModel.onCategoryTypeChanged(selectedCategoryType) }) {
-                                Text("Retry")
+                    
+                    uiState.error != null -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = uiState.error ?: "An error occurred",
+                                    color = MaterialTheme.colorScheme.error,
+                                    textAlign = TextAlign.Center
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Button(onClick = { viewModel.onCategoryTypeChanged(selectedCategoryType) }) {
+                                    Text("Retry")
+                                }
                             }
                         }
                     }
-                }
-                
-                uiState.categories.isEmpty() -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(
-                                Icons.Default.Category,
-                                contentDescription = null,
-                                modifier = Modifier.size(64.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                text = "No ${selectedCategoryType.displayName.lowercase()}s found",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Button(onClick = onAddCategoryClick) {
-                                Icon(Icons.Default.Add, contentDescription = null)
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Add ${selectedCategoryType.displayName}")
+                    
+                    uiState.categories.isEmpty() -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(
+                                    Icons.Default.Category,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(64.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text(
+                                    text = "No ${selectedCategoryType.displayName.lowercase()}s found",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Button(onClick = onAddCategoryClick) {
+                                    Icon(Icons.Default.Add, contentDescription = null)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Add ${selectedCategoryType.displayName}")
+                                }
                             }
                         }
                     }
-                }
-                
-                else -> {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(16.dp)
-                    ) {
-                        items(uiState.categories, key = { it.id }) { category ->
-                            CategoryItem(
-                                category = category,
-                                onClick = { onCategorySelected(category) },
-                                onEditClick = { onEditCategoryClick(category) },
-                                onDeleteClick = { viewModel.deleteCategory(category) }
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
+                    
+                    else -> {
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(gridColumns),
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(vertical = 16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            items(uiState.categories, key = { it.id }) { category ->
+                                CategoryItem(
+                                    category = category,
+                                    onClick = { onCategorySelected(category) },
+                                    onEditClick = { onEditCategoryClick(category) },
+                                    onDeleteClick = { viewModel.deleteCategory(category) }
+                                )
+                            }
                         }
                     }
                 }

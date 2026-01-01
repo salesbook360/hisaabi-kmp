@@ -17,7 +17,10 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.hisaabi.hisaabi_kmp.core.ui.LocalWindowSizeClass
+import com.hisaabi.hisaabi_kmp.core.ui.WindowWidthSizeClass
 import com.hisaabi.hisaabi_kmp.products.domain.model.Product
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionDetail
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddManufactureViewModel
@@ -85,31 +88,45 @@ fun AddManufactureScreen(
             }
         }
     ) { paddingValues ->
-        if (state.isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(paddingValues),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
+        val windowSizeClass = LocalWindowSizeClass.current
+        val isDesktop = windowSizeClass.widthSizeClass == WindowWidthSizeClass.EXPANDED
+        val maxContentWidth = if (isDesktop) 1000.dp else Dp.Unspecified
+        val horizontalPadding = if (isDesktop) 24.dp else 0.dp
+        
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
+            contentAlignment = Alignment.TopCenter
+        ) {
+            if (state.isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                AddManufactureContent(
+                    state = state,
+                    onRecipeSelected = { viewModel.selectRecipe(it) },
+                    onRecipeQuantityChanged = { viewModel.updateRecipeQuantity(it) },
+                    onIngredientQuantityChanged = { slug, qty ->
+                        viewModel.updateIngredientQuantity(slug, qty)
+                    },
+                    onIngredientPriceChanged = { slug, price ->
+                        viewModel.updateIngredientPrice(slug, price)
+                    },
+                    onAdditionalChargesChanged = { viewModel.updateAdditionalCharges(it) },
+                    onAdditionalChargesDescChanged = { viewModel.updateAdditionalChargesDescription(it) },
+                    onSelectWarehouse = onSelectWarehouse,
+                    onDateChanged = { viewModel.updateTransactionDate(it) },
+                    modifier = Modifier
+                        .then(if (isDesktop) Modifier.widthIn(max = maxContentWidth) else Modifier.fillMaxWidth())
+                        .padding(horizontal = horizontalPadding),
+                    currencySymbol
+                )
             }
-        } else {
-            AddManufactureContent(
-                state = state,
-                onRecipeSelected = { viewModel.selectRecipe(it) },
-                onRecipeQuantityChanged = { viewModel.updateRecipeQuantity(it) },
-                onIngredientQuantityChanged = { slug, qty ->
-                    viewModel.updateIngredientQuantity(slug, qty)
-                },
-                onIngredientPriceChanged = { slug, price ->
-                    viewModel.updateIngredientPrice(slug, price)
-                },
-                onAdditionalChargesChanged = { viewModel.updateAdditionalCharges(it) },
-                onAdditionalChargesDescChanged = { viewModel.updateAdditionalChargesDescription(it) },
-                onSelectWarehouse = onSelectWarehouse,
-                onDateChanged = { viewModel.updateTransactionDate(it) },
-                modifier = Modifier.fillMaxSize().padding(paddingValues),
-                currencySymbol
-            )
         }
     }
 

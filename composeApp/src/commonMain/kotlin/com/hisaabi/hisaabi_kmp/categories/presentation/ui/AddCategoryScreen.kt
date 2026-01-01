@@ -8,10 +8,14 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.hisaabi.hisaabi_kmp.categories.domain.model.CategoryType
 import com.hisaabi.hisaabi_kmp.categories.presentation.viewmodel.AddCategoryViewModel
+import com.hisaabi.hisaabi_kmp.core.ui.LocalWindowSizeClass
+import com.hisaabi.hisaabi_kmp.core.ui.WindowWidthSizeClass
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -113,58 +117,70 @@ fun AddCategoryScreen(
             }
         }
     ) { paddingValues ->
-        Column(
+        val windowSizeClass = LocalWindowSizeClass.current
+        val isDesktop = windowSizeClass.widthSizeClass == WindowWidthSizeClass.EXPANDED
+        val maxFormWidth = if (isDesktop) 600.dp else Dp.Unspecified
+        val horizontalPadding = if (isDesktop) 24.dp else 16.dp
+        
+        // Center form on larger screens
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState())
+                .padding(paddingValues),
+            contentAlignment = Alignment.TopCenter
         ) {
-            // Title Field (Required)
-            OutlinedTextField(
-                value = title,
-                onValueChange = { title = it },
-                label = { Text("Title *") },
-                leadingIcon = {
-                    Icon(Icons.Default.Title, contentDescription = "Title")
-                },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                isError = title.isBlank() && uiState.error != null
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Description Field
-            OutlinedTextField(
-                value = description,
-                onValueChange = { description = it },
-                label = { Text("Description") },
-                leadingIcon = {
-                    Icon(Icons.Default.Description, contentDescription = "Description")
-                },
-                modifier = Modifier.fillMaxWidth(),
-                minLines = 3,
-                maxLines = 5
-            )
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // Error Message
-            uiState.error?.let { error ->
-                Card(
+            Column(
+                modifier = Modifier
+                    .then(if (isDesktop) Modifier.widthIn(max = maxFormWidth) else Modifier.fillMaxWidth())
+                    .padding(horizontal = horizontalPadding, vertical = 16.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                // Title Field (Required)
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("Title *") },
+                    leadingIcon = {
+                        Icon(Icons.Default.Title, contentDescription = "Title")
+                    },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    )
-                ) {
-                    Text(
-                        text = error,
-                        modifier = Modifier.padding(16.dp),
-                        color = MaterialTheme.colorScheme.onErrorContainer
-                    )
-                }
+                    singleLine = true,
+                    isError = title.isBlank() && uiState.error != null
+                )
+                
                 Spacer(modifier = Modifier.height(16.dp))
+                
+                // Description Field
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Description") },
+                    leadingIcon = {
+                        Icon(Icons.Default.Description, contentDescription = "Description")
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = if (isDesktop) 2 else 3,
+                    maxLines = if (isDesktop) 4 else 5
+                )
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                // Error Message
+                uiState.error?.let { error ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
+                        )
+                    ) {
+                        Text(
+                            text = error,
+                            modifier = Modifier.padding(16.dp),
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
             }
         }
     }
