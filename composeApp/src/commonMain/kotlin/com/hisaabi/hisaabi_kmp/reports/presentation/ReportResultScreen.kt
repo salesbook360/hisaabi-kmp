@@ -1,5 +1,6 @@
 package com.hisaabi.hisaabi_kmp.reports.presentation
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -18,6 +19,7 @@ import androidx.compose.ui.unit.sp
 import com.hisaabi.hisaabi_kmp.core.ui.LocalWindowSizeClass
 import com.hisaabi.hisaabi_kmp.core.ui.WindowWidthSizeClass
 import com.hisaabi.hisaabi_kmp.reports.domain.model.ReportResult
+import com.hisaabi.hisaabi_kmp.reports.domain.model.ReportType
 import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
@@ -88,32 +90,37 @@ fun ReportResultScreen(
                     .padding(horizontal = horizontalPadding, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(if (isDesktop) 20.dp else 16.dp)
             ) {
-                // Summary and Filter Info - Side by side on desktop
-                if (isDesktop && reportResult.summary != null) {
-                    item {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            Box(modifier = Modifier.weight(1f)) {
-                                SummaryCard(reportResult.summary!!, currencySymbol)
-                            }
-                            Box(modifier = Modifier.weight(1f)) {
-                                FilterInfoCard(reportResult)
-                            }
-                        }
-                    }
-                } else {
-                    // Summary Card (if available)
-                    reportResult.summary?.let { summary ->
+                // Hide summary and filter info for balance sheet
+                val isBalanceSheet = reportResult.reportType == ReportType.BALANCE_SHEET
+                
+                // Summary and Filter Info - Side by side on desktop (skip for balance sheet)
+                if (!isBalanceSheet) {
+                    if (isDesktop && reportResult.summary != null) {
                         item {
-                            SummaryCard(summary, currencySymbol)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                Box(modifier = Modifier.weight(1f)) {
+                                    SummaryCard(reportResult.summary!!, currencySymbol)
+                                }
+                                Box(modifier = Modifier.weight(1f)) {
+                                    FilterInfoCard(reportResult)
+                                }
+                            }
                         }
-                    }
-                    
-                    // Filter Info Card
-                    item {
-                        FilterInfoCard(reportResult)
+                    } else {
+                        // Summary Card (if available)
+                        reportResult.summary?.let { summary ->
+                            item {
+                                SummaryCard(summary, currencySymbol)
+                            }
+                        }
+                        
+                        // Filter Info Card
+                        item {
+                            FilterInfoCard(reportResult)
+                        }
                     }
                 }
             
@@ -170,27 +177,37 @@ fun ReportResultScreen(
                     }
                 }
             } else {
-                items(reportResult.rows) { row ->
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surface
-                        ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                // Use professional table layout for balance sheet, regular cards for other reports
+                if (isBalanceSheet) {
+                    item {
+                        BalanceSheetTable(
+                            rows = reportResult.rows,
+                            columns = reportResult.columns
+                        )
+                    }
+                } else {
+                    items(reportResult.rows) { row ->
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surface
+                            ),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                         ) {
-                            row.values.forEach { value ->
-                                Text(
-                                    text = value,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    modifier = Modifier.weight(1f),
-                                    textAlign = TextAlign.Start
-                                )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                row.values.forEach { value ->
+                                    Text(
+                                        text = value,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        modifier = Modifier.weight(1f),
+                                        textAlign = TextAlign.Start
+                                    )
+                                }
                             }
                         }
                     }
@@ -275,6 +292,104 @@ private fun SummaryItem(label: String, value: String) {
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onTertiaryContainer
         )
+    }
+}
+
+@Composable
+private fun BalanceSheetTable(
+    rows: List<com.hisaabi.hisaabi_kmp.reports.domain.model.ReportRow>,
+    columns: List<String>
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            rows.forEachIndexed { index, row ->
+                val firstValue = row.values.firstOrNull()?.trim() ?: ""
+                val secondValue = row.values.getOrNull(1)?.trim() ?: ""
+                val isAmountRow = firstValue.startsWith("  ") || secondValue.startsWith("  ")
+                val isTotalRow = firstValue.contains("Total", ignoreCase = true) || 
+                                 secondValue.contains("Total", ignoreCase = true)
+                val isEmptyRow = row.values.all { it.trim().isEmpty() }
+                val isCategoryRow = !isEmptyRow && !isAmountRow && !isTotalRow
+                
+                // Determine background color
+                val backgroundColor = when {
+                    isTotalRow -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
+                    isCategoryRow -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                    else -> MaterialTheme.colorScheme.surface
+                }
+                
+                // Skip empty rows (they're just spacing)
+                if (!isEmptyRow) {
+                    // Row content
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(backgroundColor)
+                            .padding(
+                                horizontal = 16.dp,
+                                vertical = when {
+                                    isTotalRow -> 14.dp
+                                    isCategoryRow -> 11.dp
+                                    else -> 9.dp
+                                }
+                            ),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        row.values.forEachIndexed { colIndex, value ->
+                            val trimmedValue = value.trim()
+                            Text(
+                                text = trimmedValue,
+                                style = when {
+                                    isTotalRow -> MaterialTheme.typography.titleMedium.copy(
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    isCategoryRow -> MaterialTheme.typography.titleSmall.copy(
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    else -> MaterialTheme.typography.bodyMedium
+                                },
+                                color = when {
+                                    isTotalRow -> MaterialTheme.colorScheme.primary
+                                    isCategoryRow -> MaterialTheme.colorScheme.onSurfaceVariant
+                                    else -> MaterialTheme.colorScheme.onSurface
+                                },
+                                modifier = Modifier.weight(1f),
+                                textAlign = if (colIndex == 0) TextAlign.Start else TextAlign.End
+                            )
+                        }
+                    }
+                    
+                    // Add divider after each row (except last)
+                    if (index < rows.size - 1) {
+                        val nextRow = rows.getOrNull(index + 1)
+                        val nextFirstValue = nextRow?.values?.firstOrNull()?.trim() ?: ""
+                        val nextIsTotal = nextFirstValue.contains("Total", ignoreCase = true)
+                        val nextIsCategory = !nextFirstValue.isEmpty() && 
+                                             !nextFirstValue.startsWith("  ") && 
+                                             !nextIsTotal
+                        
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            thickness = if (isTotalRow || nextIsTotal || nextIsCategory) 1.5.dp else 0.5.dp,
+                            color = if (isTotalRow || nextIsTotal || nextIsCategory) {
+                                MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                            } else {
+                                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
+                            }
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 

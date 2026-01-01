@@ -8,6 +8,7 @@ import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
  */
 class GenerateReportUseCase(
     private val generateSalesReportUseCase: GenerateSalesReportUseCase,
+    private val generateBalanceSheetReportUseCase: GenerateBalanceSheetReportUseCase,
     private val preferencesManager: PreferencesManager
 ) {
     
@@ -30,7 +31,7 @@ class GenerateReportUseCase(
             ReportType.CASH_IN_HAND -> generateCashInHandReport(filters, currencySymbol)
             ReportType.BALANCE_REPORT -> generateBalanceReport(filters, currencySymbol)
             ReportType.PROFIT_LOSS_BY_PURCHASE -> generateProfitLossByPurchaseReport(filters, currencySymbol)
-            ReportType.BALANCE_SHEET -> generateBalanceSheetReport(filters, currencySymbol)
+            ReportType.BALANCE_SHEET -> generateBalanceSheetReportUseCase.execute(filters)
             ReportType.INVESTOR_REPORT -> generateInvestorReport(filters, currencySymbol)
             ReportType.WAREHOUSE_REPORT -> generateWarehouseReport(filters, currencySymbol)
         }
@@ -301,31 +302,6 @@ class GenerateReportUseCase(
         )
     }
     
-    private fun generateBalanceSheetReport(filters: ReportFilters, currencySymbol: String): ReportResult {
-        val columns = listOf("Category", "Amount")
-        val rows = listOf(
-            ReportRow("1", listOf("Assets", "")),
-            ReportRow("2", listOf("  Cash & Bank", "$currencySymbol 250,000")),
-            ReportRow("3", listOf("  Inventory", "$currencySymbol 400,000")),
-            ReportRow("4", listOf("  Receivables", "$currencySymbol 150,000")),
-            ReportRow("5", listOf("Total Assets", "$currencySymbol 800,000")),
-            ReportRow("6", listOf("Liabilities", "")),
-            ReportRow("7", listOf("  Payables", "$currencySymbol 200,000")),
-            ReportRow("8", listOf("Total Liabilities", "$currencySymbol 200,000")),
-            ReportRow("9", listOf("Net Worth", "$currencySymbol 600,000"))
-        )
-        
-        return ReportResult(
-            reportType = ReportType.BALANCE_SHEET,
-            filters = filters,
-            columns = columns,
-            rows = rows,
-            summary = ReportSummary(
-                totalAmount = 600000.0,
-                recordCount = 9
-            )
-        )
-    }
     
     private fun generateInvestorReport(filters: ReportFilters, currencySymbol: String): ReportResult {
         val columns = listOf("Date", "Transaction", "Type", "Amount", "Balance")

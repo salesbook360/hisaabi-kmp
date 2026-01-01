@@ -54,6 +54,13 @@ interface PaymentMethodDao {
     """)
     suspend fun getTotalCashInHand(businessSlug: String): Double?
     
+    @Query("""
+        SELECT SUM(opening_amount) FROM PaymentMethod 
+        WHERE status_id != 2 
+        AND business_slug = :businessSlug
+    """)
+    suspend fun getTotalOpeningAmount(businessSlug: String): Double?
+    
     @Query("SELECT MAX(id) FROM PaymentMethod")
     suspend fun getMaxId(): Int?
 }

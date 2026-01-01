@@ -75,6 +75,7 @@ import com.hisaabi.hisaabi_kmp.quantityunits.presentation.ui.AddQuantityUnitScre
 import com.hisaabi.hisaabi_kmp.quantityunits.presentation.ui.QuantityUnitsScreen
 import com.hisaabi.hisaabi_kmp.receipt.ReceiptPreviewDialog
 import com.hisaabi.hisaabi_kmp.receipt.ReceiptViewModel
+import com.hisaabi.hisaabi_kmp.reports.domain.model.ReportFilters
 import com.hisaabi.hisaabi_kmp.reports.domain.model.ReportType
 import com.hisaabi.hisaabi_kmp.reports.presentation.ReportFiltersScreen
 import com.hisaabi.hisaabi_kmp.reports.presentation.ReportResultScreen
@@ -2049,7 +2050,14 @@ fun App() {
                                 },
                                 onReportSelected = { reportType ->
                                     selectedReportType = reportType
-                                    navigateTo(AppScreen.REPORT_FILTERS)
+                                    // Skip filters screen for balance sheet - generate directly
+                                    if (reportType == ReportType.BALANCE_SHEET) {
+                                        val defaultFilters = ReportFilters(reportType = reportType)
+                                        reportViewModel.generateReport(defaultFilters)
+                                        navigateTo(AppScreen.REPORT_RESULT)
+                                    } else {
+                                        navigateTo(AppScreen.REPORT_FILTERS)
+                                    }
                                 }
                             )
                         }

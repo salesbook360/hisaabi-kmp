@@ -63,6 +63,14 @@ interface PartyDao {
     """)
     suspend fun getTotalBalance(roleIds: List<Int>, businessSlug: String): Double?
     
+    @Query("""
+        SELECT SUM(opening_balance) FROM Party 
+        WHERE role_id IN (:roleIds) 
+        AND person_status NOT IN (2, 3)
+        AND business_slug = :businessSlug
+    """)
+    suspend fun getTotalOpeningBalance(roleIds: List<Int>, businessSlug: String): Double?
+    
     @Query("SELECT MAX(id) FROM Party")
     suspend fun getMaxId(): Int?
     

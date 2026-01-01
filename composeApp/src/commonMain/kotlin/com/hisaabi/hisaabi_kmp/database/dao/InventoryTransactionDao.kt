@@ -34,6 +34,9 @@ interface InventoryTransactionDao {
     @Query("SELECT * FROM InventoryTransaction WHERE business_slug = :businessSlug AND (parent_slug IS NULL OR parent_slug = '') AND status_id != 2 ORDER BY timestamp DESC")
     fun getTransactionsByBusiness(businessSlug: String): Flow<List<InventoryTransactionEntity>>
     
+    @Query("SELECT * FROM InventoryTransaction WHERE business_slug = :businessSlug AND (parent_slug IS NULL OR parent_slug = '') AND status_id != 2")
+    suspend fun getAllTransactionsByBusiness(businessSlug: String): List<InventoryTransactionEntity>
+    
     // Paginated query - sorted by transaction date (timestamp)
     // All filters are applied at DB level including party area/category via subquery
     // Note: filterByTypes = 1 means apply the transaction type filter, -1 means skip it (using -1 to avoid conflict with SALE type which is 0)
