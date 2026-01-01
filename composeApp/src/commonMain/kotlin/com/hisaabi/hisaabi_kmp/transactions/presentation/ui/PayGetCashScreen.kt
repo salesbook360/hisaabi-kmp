@@ -127,7 +127,7 @@ fun PayGetCashScreen(
     ) { paddingValues ->
         val windowSizeClass = LocalWindowSizeClass.current
         val isDesktop = windowSizeClass.widthSizeClass == WindowWidthSizeClass.EXPANDED
-        val maxContentWidth = if (isDesktop) 800.dp else Dp.Unspecified
+        val maxContentWidth = if (isDesktop) 700.dp else Dp.Unspecified
         val horizontalPadding = if (isDesktop) 24.dp else 16.dp
         
         Box(
@@ -189,7 +189,7 @@ fun PayGetCashScreen(
                 }
             }
 
-            // Party Type Selection
+            // Party Type Selection - Two columns on desktop/tablet
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
@@ -209,27 +209,97 @@ fun PayGetCashScreen(
                         modifier = Modifier.padding(bottom = 12.dp)
                     )
 
-                    PartyType.values().forEach { type ->
+                    if (isDesktop || windowSizeClass.widthSizeClass == WindowWidthSizeClass.MEDIUM) {
+                        // Two-column layout on desktop/tablet
+                        val partyTypes = PartyType.values()
+                        val halfSize = (partyTypes.size + 1) / 2 // Round up division
+                        
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .selectable(
-                                    selected = state.partyType == type,
-                                    onClick = { viewModel.setPartyType(type) },
-                                    role = Role.RadioButton
-                                )
-                                .padding(vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            RadioButton(
-                                selected = state.partyType == type,
-                                onClick = null
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text(
-                                "${if (state.payGetCashType == PayGetCashType.GET_CASH) "From" else "To"} ${type.displayName}",
-                                style = MaterialTheme.typography.bodyLarge
-                            )
+                            // Left column
+                            Column(
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                partyTypes.take(halfSize).forEach { type ->
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .selectable(
+                                                selected = state.partyType == type,
+                                                onClick = { viewModel.setPartyType(type) },
+                                                role = Role.RadioButton
+                                            )
+                                            .padding(vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        RadioButton(
+                                            selected = state.partyType == type,
+                                            onClick = null
+                                        )
+                                        Spacer(Modifier.width(8.dp))
+                                        Text(
+                                            type.displayName,
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                    }
+                                }
+                            }
+                            
+                            // Right column
+                            Column(
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                partyTypes.drop(halfSize).forEach { type ->
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .selectable(
+                                                selected = state.partyType == type,
+                                                onClick = { viewModel.setPartyType(type) },
+                                                role = Role.RadioButton
+                                            )
+                                            .padding(vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        RadioButton(
+                                            selected = state.partyType == type,
+                                            onClick = null
+                                        )
+                                        Spacer(Modifier.width(8.dp))
+                                        Text(
+                                            type.displayName,
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        // Single column layout on mobile
+                        PartyType.values().forEach { type ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .selectable(
+                                        selected = state.partyType == type,
+                                        onClick = { viewModel.setPartyType(type) },
+                                        role = Role.RadioButton
+                                    )
+                                    .padding(vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
+                                    selected = state.partyType == type,
+                                    onClick = null
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    "${if (state.payGetCashType == PayGetCashType.GET_CASH) "From" else "To"} ${type.displayName}",
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                            }
                         }
                     }
                 }
@@ -244,18 +314,85 @@ fun PayGetCashScreen(
                 currencySymbol
             )
 
-            // Amount
-            OutlinedTextField(
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                value = state.amount,
-                onValueChange = { viewModel.setAmount(it) },
-                label = { Text("Amount *") },
-                modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(Icons.Default.Money, "Amount") },
-                prefix = { Text("$currencySymbol ") },
-                singleLine = true,
-                placeholder = { Text("0.00") }
-            )
+            // Amount and Date/Time - Side by side on desktop
+            if (isDesktop) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // Amount
+                    OutlinedTextField(
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        value = state.amount,
+                        onValueChange = { viewModel.setAmount(it) },
+                        label = { Text("Amount *") },
+                        modifier = Modifier.weight(1f),
+                        leadingIcon = { Icon(Icons.Default.Money, "Amount") },
+                        prefix = { Text("$currencySymbol ") },
+                        singleLine = true,
+                        placeholder = { Text("0.00") }
+                    )
+
+                    // Date & Time
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { showDateTimePicker = true }
+                    ) {
+                        OutlinedTextField(
+                            value = formatDateTime(state.dateTime),
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Date & Time") },
+                            modifier = Modifier.fillMaxWidth(),
+                            leadingIcon = { Icon(Icons.Default.CalendarToday, "Date") },
+                            enabled = false,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                                disabledBorderColor = MaterialTheme.colorScheme.outline,
+                                disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        )
+                    }
+                }
+            } else {
+                // Amount - Full width on mobile
+                OutlinedTextField(
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    value = state.amount,
+                    onValueChange = { viewModel.setAmount(it) },
+                    label = { Text("Amount *") },
+                    modifier = Modifier.fillMaxWidth(),
+                    leadingIcon = { Icon(Icons.Default.Money, "Amount") },
+                    prefix = { Text("$currencySymbol ") },
+                    singleLine = true,
+                    placeholder = { Text("0.00") }
+                )
+
+                // Date & Time - Full width on mobile
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showDateTimePicker = true }
+                ) {
+                    OutlinedTextField(
+                        value = formatDateTime(state.dateTime),
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Date & Time") },
+                        modifier = Modifier.fillMaxWidth(),
+                        leadingIcon = { Icon(Icons.Default.CalendarToday, "Date") },
+                        enabled = false,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                            disabledBorderColor = MaterialTheme.colorScheme.outline,
+                            disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    )
+                }
+            }
 
             // Payment Method
             PaymentMethodCard(
@@ -264,37 +401,14 @@ fun PayGetCashScreen(
                 onRemovePaymentMethod = { viewModel.selectPaymentMethod(null) }
             )
 
-            // Date & Time
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { showDateTimePicker = true }
-            ) {
-                OutlinedTextField(
-                    value = formatDateTime(state.dateTime),
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Date & Time") },
-                    modifier = Modifier.fillMaxWidth(),
-                    leadingIcon = { Icon(Icons.Default.CalendarToday, "Date") },
-                    enabled = false,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                        disabledBorderColor = MaterialTheme.colorScheme.outline,
-                        disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                )
-            }
-
-            // Description/Remarks
+            // Description/Remarks - More compact on desktop
             OutlinedTextField(
                 value = state.description,
                 onValueChange = { viewModel.setDescription(it) },
                 label = { Text("Remarks (Optional)") },
                 modifier = Modifier.fillMaxWidth(),
-                minLines = 3,
-                maxLines = 6
+                minLines = if (isDesktop) 2 else 3,
+                maxLines = if (isDesktop) 4 else 6
             )
 
             // Bottom padding for FAB
