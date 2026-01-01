@@ -44,8 +44,16 @@ fun ReportsScreen(
     ) { paddingValues ->
         val windowSizeClass = LocalWindowSizeClass.current
         val isDesktop = windowSizeClass.widthSizeClass == WindowWidthSizeClass.EXPANDED
-        val maxContentWidth = if (isDesktop) 1000.dp else Dp.Unspecified
+        val isMedium = windowSizeClass.widthSizeClass == WindowWidthSizeClass.MEDIUM
+        val maxContentWidth = if (isDesktop) 900.dp else Dp.Unspecified
         val horizontalPadding = if (isDesktop) 24.dp else 16.dp
+        
+        // Adaptive columns: 3 on mobile, 4 on tablet, 5 on desktop
+        val gridColumns = when {
+            isDesktop -> 5
+            isMedium -> 4
+            else -> 3
+        }
         
         Box(
             modifier = Modifier
@@ -59,25 +67,26 @@ fun ReportsScreen(
                     .padding(horizontal = horizontalPadding, vertical = 16.dp)
             ) {
                 Text(
-                text = "Select Report Type",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-            
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(3),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                items(ReportType.entries) { reportType ->
-                    ReportTypeCard(
-                        reportType = reportType,
-                        onClick = { onReportSelected(reportType) }
-                    )
+                    text = "Select Report Type",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(gridColumns),
+                    horizontalArrangement = Arrangement.spacedBy(if (isDesktop) 16.dp else 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(if (isDesktop) 16.dp else 12.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(ReportType.entries) { reportType ->
+                        ReportTypeCard(
+                            reportType = reportType,
+                            onClick = { onReportSelected(reportType) },
+                            isDesktop = isDesktop
+                        )
+                    }
                 }
-            }
             }
         }
     }
@@ -86,7 +95,8 @@ fun ReportsScreen(
 @Composable
 private fun ReportTypeCard(
     reportType: ReportType,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    isDesktop: Boolean = false
 ) {
     Card(
         onClick = onClick,
@@ -105,26 +115,26 @@ private fun ReportTypeCard(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(8.dp),
+                .padding(if (isDesktop) 12.dp else 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             Icon(
                 imageVector = reportType.icon,
                 contentDescription = reportType.title,
-                modifier = Modifier.size(32.dp),
+                modifier = Modifier.size(if (isDesktop) 36.dp else 32.dp),
                 tint = MaterialTheme.colorScheme.primary
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = reportType.title,
                 style = MaterialTheme.typography.bodySmall,
-                fontSize = 11.sp,
+                fontSize = if (isDesktop) 12.sp else 11.sp,
                 fontWeight = FontWeight.Medium,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 2,
-                lineHeight = 14.sp,
+                lineHeight = if (isDesktop) 16.sp else 14.sp,
                 modifier = Modifier.fillMaxWidth()
             )
         }

@@ -86,19 +86,36 @@ fun ReportResultScreen(
                 modifier = Modifier
                     .then(if (isDesktop) Modifier.widthIn(max = maxContentWidth) else Modifier.fillMaxWidth())
                     .padding(horizontal = horizontalPadding, vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(if (isDesktop) 20.dp else 16.dp)
             ) {
-            // Summary Card (if available)
-            reportResult.summary?.let { summary ->
-                item {
-                    SummaryCard(summary, currencySymbol)
+                // Summary and Filter Info - Side by side on desktop
+                if (isDesktop && reportResult.summary != null) {
+                    item {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Box(modifier = Modifier.weight(1f)) {
+                                SummaryCard(reportResult.summary!!, currencySymbol)
+                            }
+                            Box(modifier = Modifier.weight(1f)) {
+                                FilterInfoCard(reportResult)
+                            }
+                        }
+                    }
+                } else {
+                    // Summary Card (if available)
+                    reportResult.summary?.let { summary ->
+                        item {
+                            SummaryCard(summary, currencySymbol)
+                        }
+                    }
+                    
+                    // Filter Info Card
+                    item {
+                        FilterInfoCard(reportResult)
+                    }
                 }
-            }
-            
-            // Filter Info Card
-            item {
-                FilterInfoCard(reportResult)
-            }
             
             // Table Header
             item {

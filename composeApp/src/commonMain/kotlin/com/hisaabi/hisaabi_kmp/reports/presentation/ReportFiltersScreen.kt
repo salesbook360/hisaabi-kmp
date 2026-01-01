@@ -69,8 +69,16 @@ fun ReportFiltersScreen(
     ) { paddingValues ->
         val windowSizeClass = LocalWindowSizeClass.current
         val isDesktop = windowSizeClass.widthSizeClass == WindowWidthSizeClass.EXPANDED
-        val maxContentWidth = if (isDesktop) 900.dp else Dp.Unspecified
+        val isMedium = windowSizeClass.widthSizeClass == WindowWidthSizeClass.MEDIUM
+        val maxContentWidth = if (isDesktop) 800.dp else Dp.Unspecified
         val horizontalPadding = if (isDesktop) 24.dp else 16.dp
+        
+        // Adaptive columns for filter chips: 3 on mobile, 4 on tablet, 5 on desktop
+        val filterColumns = when {
+            isDesktop -> 5
+            isMedium -> 4
+            else -> 3
+        }
         
         Box(
             modifier = Modifier
@@ -95,7 +103,8 @@ fun ReportFiltersScreen(
                             currentFilters = currentFilters.copy(additionalFilter = filter)
                             onFiltersChanged(currentFilters)
                         },
-                        itemLabel = { it.title }
+                        itemLabel = { it.title },
+                        columns = filterColumns
                     )
                 }
             }
@@ -110,7 +119,8 @@ fun ReportFiltersScreen(
                         currentFilters = currentFilters.copy(dateFilter = dateFilter)
                         onFiltersChanged(currentFilters)
                     },
-                    itemLabel = { it.title }
+                    itemLabel = { it.title },
+                    columns = filterColumns
                 )
             }
             
@@ -127,7 +137,8 @@ fun ReportFiltersScreen(
                         onEndDateChanged = { date ->
                             currentFilters = currentFilters.copy(customEndDate = date)
                             onFiltersChanged(currentFilters)
-                        }
+                        },
+                        isDesktop = isDesktop
                     )
                 }
             }
@@ -144,7 +155,8 @@ fun ReportFiltersScreen(
                             onFiltersChanged(currentFilters)
                         },
                         itemLabel = { it.title },
-                        optional = true
+                        optional = true,
+                        columns = filterColumns
                     )
                 }
             }
@@ -160,7 +172,8 @@ fun ReportFiltersScreen(
                             currentFilters = currentFilters.copy(sortBy = sortBy)
                             onFiltersChanged(currentFilters)
                         },
-                        itemLabel = { it.title }
+                        itemLabel = { it.title },
+                        columns = filterColumns
                     )
                 }
             }
@@ -218,7 +231,8 @@ private fun <T> FilterSection(
     selectedItem: T?,
     onItemSelected: (T) -> Unit,
     itemLabel: (T) -> String,
-    optional: Boolean = false
+    optional: Boolean = false,
+    columns: Int = 3
 ) {
     Column {
         Text(
@@ -229,7 +243,7 @@ private fun <T> FilterSection(
         )
         
         LazyVerticalGrid(
-            columns = GridCells.Fixed(3),
+            columns = GridCells.Fixed(columns),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.heightIn(max = 400.dp)
@@ -252,7 +266,8 @@ private fun CustomDateRangeSection(
     startDate: String?,
     endDate: String?,
     onStartDateChanged: (String) -> Unit,
-    onEndDateChanged: (String) -> Unit
+    onEndDateChanged: (String) -> Unit,
+    isDesktop: Boolean = false
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -268,23 +283,48 @@ private fun CustomDateRangeSection(
                 modifier = Modifier.padding(bottom = 8.dp)
             )
             
-            OutlinedTextField(
-                value = startDate ?: "",
-                onValueChange = onStartDateChanged,
-                label = { Text("Start Date (YYYY-MM-DD)") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            OutlinedTextField(
-                value = endDate ?: "",
-                onValueChange = onEndDateChanged,
-                label = { Text("End Date (YYYY-MM-DD)") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
+            if (isDesktop) {
+                // Side by side on desktop
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    OutlinedTextField(
+                        value = startDate ?: "",
+                        onValueChange = onStartDateChanged,
+                        label = { Text("Start Date (YYYY-MM-DD)") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true
+                    )
+                    
+                    OutlinedTextField(
+                        value = endDate ?: "",
+                        onValueChange = onEndDateChanged,
+                        label = { Text("End Date (YYYY-MM-DD)") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true
+                    )
+                }
+            } else {
+                // Stacked on mobile
+                OutlinedTextField(
+                    value = startDate ?: "",
+                    onValueChange = onStartDateChanged,
+                    label = { Text("Start Date (YYYY-MM-DD)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                OutlinedTextField(
+                    value = endDate ?: "",
+                    onValueChange = onEndDateChanged,
+                    label = { Text("End Date (YYYY-MM-DD)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+            }
         }
     }
 }
