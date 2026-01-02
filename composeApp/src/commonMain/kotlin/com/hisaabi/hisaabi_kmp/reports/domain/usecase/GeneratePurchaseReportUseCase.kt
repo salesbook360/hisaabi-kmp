@@ -50,35 +50,44 @@ class GeneratePurchaseReportUseCase(
         val transactionSlugs = transactions.mapNotNull { it.slug }
         val allDetails = transactionDetailDao.getDetailsByTransactionSlugs(transactionSlugs)
         
-        // Get products, parties, and categories for mapping
-        val products = productDao.getProductsByBusiness(businessSlug).first()
-        val productMap = products.associateBy { it.slug ?: "" }
-        
-        val parties = partyDao.getPartiesByBusiness(businessSlug).first()
-        val partyMap = parties.associateBy { it.slug ?: "" }
-        
-        val allCategories = categoryDao.getCategoriesByBusiness(businessSlug).first()
-        val categoryMap = allCategories.associateBy { it.slug ?: "" }
-        
-        // Group transactions by the specified grouping
-        val groupBy = filters.groupBy ?: ReportGroupBy.PRODUCT
-        
-        val (columns, rows, summary) = when (groupBy) {
-            ReportGroupBy.PRODUCT -> generateProductGroupedReport(
-                transactions, allDetails, productMap, currencySymbol
-            )
-            ReportGroupBy.PRODUCT_CATEGORY -> generateProductCategoryGroupedReport(
-                transactions, allDetails, productMap, categoryMap, currencySymbol
-            )
-            ReportGroupBy.PARTY -> generatePartyGroupedReport(
-                transactions, allDetails, partyMap, currencySymbol
-            )
-            ReportGroupBy.PARTY_AREA -> generatePartyAreaGroupedReport(
-                transactions, allDetails, partyMap, categoryMap, currencySymbol
-            )
-            ReportGroupBy.PARTY_CATEGORY -> generatePartyCategoryGroupedReport(
-                transactions, allDetails, partyMap, categoryMap, currencySymbol
-            )
+        // Check if it's a time-based report (Daily, Weekly, Monthly, Yearly)
+        val additionalFilter = filters.additionalFilter
+        val (columns, rows, summary) = when (additionalFilter) {
+            ReportAdditionalFilter.DAILY -> generateDailyReport(transactions, allDetails, currencySymbol)
+            ReportAdditionalFilter.WEEKLY -> generateWeeklyReport(transactions, allDetails, currencySymbol)
+            ReportAdditionalFilter.MONTHLY -> generateMonthlyReport(transactions, allDetails, currencySymbol)
+            ReportAdditionalFilter.YEARLY -> generateYearlyReport(transactions, allDetails, currencySymbol)
+            else -> {
+                // Group transactions by the specified grouping (OVERALL)
+                val products = productDao.getProductsByBusiness(businessSlug).first()
+                val productMap = products.associateBy { it.slug ?: "" }
+                
+                val parties = partyDao.getPartiesByBusiness(businessSlug).first()
+                val partyMap = parties.associateBy { it.slug ?: "" }
+                
+                val allCategories = categoryDao.getCategoriesByBusiness(businessSlug).first()
+                val categoryMap = allCategories.associateBy { it.slug ?: "" }
+                
+                val groupBy = filters.groupBy ?: ReportGroupBy.PRODUCT
+                
+                when (groupBy) {
+                    ReportGroupBy.PRODUCT -> generateProductGroupedReport(
+                        transactions, allDetails, productMap, currencySymbol
+                    )
+                    ReportGroupBy.PRODUCT_CATEGORY -> generateProductCategoryGroupedReport(
+                        transactions, allDetails, productMap, categoryMap, currencySymbol
+                    )
+                    ReportGroupBy.PARTY -> generatePartyGroupedReport(
+                        transactions, allDetails, partyMap, currencySymbol
+                    )
+                    ReportGroupBy.PARTY_AREA -> generatePartyAreaGroupedReport(
+                        transactions, allDetails, partyMap, categoryMap, currencySymbol
+                    )
+                    ReportGroupBy.PARTY_CATEGORY -> generatePartyCategoryGroupedReport(
+                        transactions, allDetails, partyMap, categoryMap, currencySymbol
+                    )
+                }
+            }
         }
         
         return ReportResult(
@@ -537,6 +546,350 @@ class GeneratePurchaseReportUseCase(
         val endMillis = endDateTime.toInstant(timezone).toEpochMilliseconds()
         
         return startMillis to endMillis
+    }
+    
+    private fun generateDailyReport(
+        transactions: List<com.hisaabi.hisaabi_kmp.database.entity.InventoryTransactionEntity>,
+        allDetails: List<com.hisaabi.hisaabi_kmp.database.entity.TransactionDetailEntity>,
+        currencySymbol: String
+    ): Triple<List<String>, List<ReportRow>, ReportSummary> {
+        val columns = listOf("Date", "Quantity", "Amount", "Paid")
+        val rows = mutableListOf<ReportRow>()
+        
+        // Group transactions by date (day)
+        val groupedByDate = transactions.groupBy { transaction ->
+            val timestamp = transaction.timestamp?.toLongOrNull() ?: return@groupBy ""
+            val instant = Instant.fromEpochMilliseconds(timestamp)
+            val dateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
+            // Use date as key (YYYY-MM-DD format for grouping)
+            "${dateTime.year}-${dateTime.monthNumber.toString().padStart(2, '0')}-${dateTime.dayOfMonth.toString().padStart(2, '0')}"
+        }.filterKeys { it.isNotEmpty() }
+        
+        var totalQuantity = 0.0
+        var totalAmount = 0.0
+        var totalPaid = 0.0
+        
+        // Sort by date (ascending)
+        val sortedEntries = groupedByDate.toList().sortedBy { it.first }
+        
+        sortedEntries.forEach { (dateKey, dayTransactions) ->
+            var dayQuantity = 0.0
+            var dayAmount = 0.0
+            var dayPaid = 0.0
+            
+            dayTransactions.forEach { transaction ->
+                val details = allDetails.filter { it.transaction_slug == transaction.slug }
+                when (transaction.transaction_type) {
+                    AllTransactionTypes.PURCHASE.value -> {
+                        val qty = details.sumOf { it.quantity }
+                        dayQuantity += qty
+                        val amount = transaction.total_bill + transaction.additional_charges + transaction.flat_tax - transaction.flat_discount
+                        dayAmount += amount
+                        dayPaid += transaction.total_paid
+                    }
+                    AllTransactionTypes.VENDOR_RETURN.value -> {
+                        val qty = details.sumOf { it.quantity }
+                        dayQuantity -= qty
+                        val amount = transaction.total_bill + transaction.additional_charges + transaction.flat_tax - transaction.flat_discount
+                        dayAmount -= amount
+                        dayPaid -= transaction.total_paid
+                    }
+                }
+            }
+            
+            totalQuantity += dayQuantity
+            totalAmount += dayAmount
+            totalPaid += dayPaid
+            
+            // Format date as "1 Jan", "2 Jan", etc.
+            val dateParts = dateKey.split("-")
+            val year = dateParts[0].toInt()
+            val month = dateParts[1].toInt()
+            val day = dateParts[2].toInt()
+            val monthNames = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+            val monthName = monthNames.getOrNull(month - 1) ?: ""
+            val formattedDate = "$day $monthName"
+            
+            rows.add(
+                ReportRow(
+                    id = dateKey,
+                    values = listOf(
+                        formattedDate,
+                        String.format("%.2f", dayQuantity),
+                        "$currencySymbol ${String.format("%,.2f", dayAmount)}",
+                        "$currencySymbol ${String.format("%,.2f", dayPaid)}"
+                    )
+                )
+            )
+        }
+        
+        val summary = ReportSummary(
+            totalAmount = totalAmount,
+            totalQuantity = totalQuantity,
+            recordCount = rows.size
+        )
+        
+        return Triple(columns, rows, summary)
+    }
+    
+    private fun generateWeeklyReport(
+        transactions: List<com.hisaabi.hisaabi_kmp.database.entity.InventoryTransactionEntity>,
+        allDetails: List<com.hisaabi.hisaabi_kmp.database.entity.TransactionDetailEntity>,
+        currencySymbol: String
+    ): Triple<List<String>, List<ReportRow>, ReportSummary> {
+        val columns = listOf("Date", "Quantity", "Amount", "Paid")
+        val rows = mutableListOf<ReportRow>()
+        
+        // Group transactions by calendar month week (1-7, 8-14, 15-21, 22-28, etc.)
+        val groupedByWeek = transactions.groupBy { transaction ->
+            val timestamp = transaction.timestamp?.toLongOrNull() ?: return@groupBy ""
+            val instant = Instant.fromEpochMilliseconds(timestamp)
+            val dateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
+            val date = dateTime.date
+            
+            // Calculate week start (first day of the week in calendar month: 1, 8, 15, 22)
+            val dayOfMonth = date.dayOfMonth
+            val weekStartDay = ((dayOfMonth - 1) / 7 * 7) + 1
+            val weekStart = LocalDate(date.year, date.month, weekStartDay)
+            
+            // Use week start date as key
+            "${weekStart.year}-${weekStart.monthNumber.toString().padStart(2, '0')}-${weekStart.dayOfMonth.toString().padStart(2, '0')}"
+        }.filterKeys { it.isNotEmpty() }
+        
+        var totalQuantity = 0.0
+        var totalAmount = 0.0
+        var totalPaid = 0.0
+        
+        // Sort by week start date (ascending)
+        val sortedEntries = groupedByWeek.toList().sortedBy { it.first }
+        
+        sortedEntries.forEach { (weekStartKey, weekTransactions) ->
+            var weekQuantity = 0.0
+            var weekAmount = 0.0
+            var weekPaid = 0.0
+            
+            weekTransactions.forEach { transaction ->
+                val details = allDetails.filter { it.transaction_slug == transaction.slug }
+                when (transaction.transaction_type) {
+                    AllTransactionTypes.PURCHASE.value -> {
+                        val qty = details.sumOf { it.quantity }
+                        weekQuantity += qty
+                        val amount = transaction.total_bill + transaction.additional_charges + transaction.flat_tax - transaction.flat_discount
+                        weekAmount += amount
+                        weekPaid += transaction.total_paid
+                    }
+                    AllTransactionTypes.VENDOR_RETURN.value -> {
+                        val qty = details.sumOf { it.quantity }
+                        weekQuantity -= qty
+                        val amount = transaction.total_bill + transaction.additional_charges + transaction.flat_tax - transaction.flat_discount
+                        weekAmount -= amount
+                        weekPaid -= transaction.total_paid
+                    }
+                }
+            }
+            
+            totalQuantity += weekQuantity
+            totalAmount += weekAmount
+            totalPaid += weekPaid
+            
+            // Format date range as "1 Jan - 7 Jan"
+            val dateParts = weekStartKey.split("-")
+            val year = dateParts[0].toInt()
+            val month = dateParts[1].toInt()
+            val day = dateParts[2].toInt()
+            val weekStartDate = LocalDate(year, month, day)
+            // Calculate week end (7 days from start, but cap at end of month)
+            val monthEndDay = weekStartDate.dayOfMonth + 6
+            val lastDayOfMonth = LocalDate(year, month, 1).plus(1, DateTimeUnit.MONTH).minus(1, DateTimeUnit.DAY).dayOfMonth
+            val weekEndDay = minOf(monthEndDay, lastDayOfMonth)
+            val weekEndDate = LocalDate(year, month, weekEndDay)
+            
+            val monthNames = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+            val startMonthName = monthNames.getOrNull(month - 1) ?: ""
+            val endMonthName = monthNames.getOrNull(weekEndDate.monthNumber - 1) ?: ""
+            
+            val formattedDate = if (weekStartDate.month == weekEndDate.month) {
+                "${weekStartDate.dayOfMonth} $startMonthName - ${weekEndDate.dayOfMonth} $endMonthName"
+            } else {
+                "${weekStartDate.dayOfMonth} $startMonthName - ${weekEndDate.dayOfMonth} $endMonthName"
+            }
+            
+            rows.add(
+                ReportRow(
+                    id = weekStartKey,
+                    values = listOf(
+                        formattedDate,
+                        String.format("%.2f", weekQuantity),
+                        "$currencySymbol ${String.format("%,.2f", weekAmount)}",
+                        "$currencySymbol ${String.format("%,.2f", weekPaid)}"
+                    )
+                )
+            )
+        }
+        
+        val summary = ReportSummary(
+            totalAmount = totalAmount,
+            totalQuantity = totalQuantity,
+            recordCount = rows.size
+        )
+        
+        return Triple(columns, rows, summary)
+    }
+    
+    private fun generateMonthlyReport(
+        transactions: List<com.hisaabi.hisaabi_kmp.database.entity.InventoryTransactionEntity>,
+        allDetails: List<com.hisaabi.hisaabi_kmp.database.entity.TransactionDetailEntity>,
+        currencySymbol: String
+    ): Triple<List<String>, List<ReportRow>, ReportSummary> {
+        val columns = listOf("Date", "Quantity", "Amount", "Paid")
+        val rows = mutableListOf<ReportRow>()
+        
+        // Group transactions by month
+        val groupedByMonth = transactions.groupBy { transaction ->
+            val timestamp = transaction.timestamp?.toLongOrNull() ?: return@groupBy ""
+            val instant = Instant.fromEpochMilliseconds(timestamp)
+            val dateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
+            // Use year-month as key (YYYY-MM format)
+            "${dateTime.year}-${dateTime.monthNumber.toString().padStart(2, '0')}"
+        }.filterKeys { it.isNotEmpty() }
+        
+        var totalQuantity = 0.0
+        var totalAmount = 0.0
+        var totalPaid = 0.0
+        
+        // Sort by month (ascending)
+        val sortedEntries = groupedByMonth.toList().sortedBy { it.first }
+        
+        sortedEntries.forEach { (monthKey, monthTransactions) ->
+            var monthQuantity = 0.0
+            var monthAmount = 0.0
+            var monthPaid = 0.0
+            
+            monthTransactions.forEach { transaction ->
+                val details = allDetails.filter { it.transaction_slug == transaction.slug }
+                when (transaction.transaction_type) {
+                    AllTransactionTypes.PURCHASE.value -> {
+                        val qty = details.sumOf { it.quantity }
+                        monthQuantity += qty
+                        val amount = transaction.total_bill + transaction.additional_charges + transaction.flat_tax - transaction.flat_discount
+                        monthAmount += amount
+                        monthPaid += transaction.total_paid
+                    }
+                    AllTransactionTypes.VENDOR_RETURN.value -> {
+                        val qty = details.sumOf { it.quantity }
+                        monthQuantity -= qty
+                        val amount = transaction.total_bill + transaction.additional_charges + transaction.flat_tax - transaction.flat_discount
+                        monthAmount -= amount
+                        monthPaid -= transaction.total_paid
+                    }
+                }
+            }
+            
+            totalQuantity += monthQuantity
+            totalAmount += monthAmount
+            totalPaid += monthPaid
+            
+            // Format date as "Jan", "Feb", etc.
+            val dateParts = monthKey.split("-")
+            val month = dateParts[1].toInt()
+            val monthNames = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+            val monthName = monthNames.getOrNull(month - 1) ?: ""
+            
+            rows.add(
+                ReportRow(
+                    id = monthKey,
+                    values = listOf(
+                        monthName,
+                        String.format("%.2f", monthQuantity),
+                        "$currencySymbol ${String.format("%,.2f", monthAmount)}",
+                        "$currencySymbol ${String.format("%,.2f", monthPaid)}"
+                    )
+                )
+            )
+        }
+        
+        val summary = ReportSummary(
+            totalAmount = totalAmount,
+            totalQuantity = totalQuantity,
+            recordCount = rows.size
+        )
+        
+        return Triple(columns, rows, summary)
+    }
+    
+    private fun generateYearlyReport(
+        transactions: List<com.hisaabi.hisaabi_kmp.database.entity.InventoryTransactionEntity>,
+        allDetails: List<com.hisaabi.hisaabi_kmp.database.entity.TransactionDetailEntity>,
+        currencySymbol: String
+    ): Triple<List<String>, List<ReportRow>, ReportSummary> {
+        val columns = listOf("Date", "Quantity", "Amount", "Paid")
+        val rows = mutableListOf<ReportRow>()
+        
+        // Group transactions by year
+        val groupedByYear = transactions.groupBy { transaction ->
+            val timestamp = transaction.timestamp?.toLongOrNull() ?: return@groupBy ""
+            val instant = Instant.fromEpochMilliseconds(timestamp)
+            val dateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
+            // Use year as key
+            dateTime.year.toString()
+        }.filterKeys { it.isNotEmpty() }
+        
+        var totalQuantity = 0.0
+        var totalAmount = 0.0
+        var totalPaid = 0.0
+        
+        // Sort by year (ascending)
+        val sortedEntries = groupedByYear.toList().sortedBy { it.first.toIntOrNull() ?: 0 }
+        
+        sortedEntries.forEach { (yearKey, yearTransactions) ->
+            var yearQuantity = 0.0
+            var yearAmount = 0.0
+            var yearPaid = 0.0
+            
+            yearTransactions.forEach { transaction ->
+                val details = allDetails.filter { it.transaction_slug == transaction.slug }
+                when (transaction.transaction_type) {
+                    AllTransactionTypes.PURCHASE.value -> {
+                        val qty = details.sumOf { it.quantity }
+                        yearQuantity += qty
+                        val amount = transaction.total_bill + transaction.additional_charges + transaction.flat_tax - transaction.flat_discount
+                        yearAmount += amount
+                        yearPaid += transaction.total_paid
+                    }
+                    AllTransactionTypes.VENDOR_RETURN.value -> {
+                        val qty = details.sumOf { it.quantity }
+                        yearQuantity -= qty
+                        val amount = transaction.total_bill + transaction.additional_charges + transaction.flat_tax - transaction.flat_discount
+                        yearAmount -= amount
+                        yearPaid -= transaction.total_paid
+                    }
+                }
+            }
+            
+            totalQuantity += yearQuantity
+            totalAmount += yearAmount
+            totalPaid += yearPaid
+            
+            rows.add(
+                ReportRow(
+                    id = yearKey,
+                    values = listOf(
+                        yearKey,
+                        String.format("%.2f", yearQuantity),
+                        "$currencySymbol ${String.format("%,.2f", yearAmount)}",
+                        "$currencySymbol ${String.format("%,.2f", yearPaid)}"
+                    )
+                )
+            )
+        }
+        
+        val summary = ReportSummary(
+            totalAmount = totalAmount,
+            totalQuantity = totalQuantity,
+            recordCount = rows.size
+        )
+        
+        return Triple(columns, rows, summary)
     }
 }
 
