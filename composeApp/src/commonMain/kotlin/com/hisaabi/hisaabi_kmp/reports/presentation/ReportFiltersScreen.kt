@@ -19,6 +19,8 @@ import androidx.compose.ui.unit.sp
 import com.hisaabi.hisaabi_kmp.core.ui.FilterChipWithColors
 import com.hisaabi.hisaabi_kmp.core.ui.LocalWindowSizeClass
 import com.hisaabi.hisaabi_kmp.core.ui.WindowWidthSizeClass
+import com.hisaabi.hisaabi_kmp.core.ui.DateRangePickerDialog
+import com.hisaabi.hisaabi_kmp.core.ui.DateRangeField
 import androidx.compose.ui.Alignment
 import com.hisaabi.hisaabi_kmp.reports.domain.model.*
 
@@ -269,6 +271,8 @@ private fun CustomDateRangeSection(
     onEndDateChanged: (String) -> Unit,
     isDesktop: Boolean = false
 ) {
+    var showDateRangePicker by remember { mutableStateOf(false) }
+    
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -289,43 +293,53 @@ private fun CustomDateRangeSection(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    OutlinedTextField(
-                        value = startDate ?: "",
-                        onValueChange = onStartDateChanged,
-                        label = { Text("Start Date (YYYY-MM-DD)") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
+                    DateRangeField(
+                        label = "Start Date",
+                        dateString = startDate,
+                        onClick = { showDateRangePicker = true },
+                        modifier = Modifier.weight(1f)
                     )
                     
-                    OutlinedTextField(
-                        value = endDate ?: "",
-                        onValueChange = onEndDateChanged,
-                        label = { Text("End Date (YYYY-MM-DD)") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
+                    DateRangeField(
+                        label = "End Date",
+                        dateString = endDate,
+                        onClick = { showDateRangePicker = true },
+                        modifier = Modifier.weight(1f)
                     )
                 }
             } else {
                 // Stacked on mobile
-                OutlinedTextField(
-                    value = startDate ?: "",
-                    onValueChange = onStartDateChanged,
-                    label = { Text("Start Date (YYYY-MM-DD)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                DateRangeField(
+                    label = "Start Date",
+                    dateString = startDate,
+                    onClick = { showDateRangePicker = true },
+                    modifier = Modifier.fillMaxWidth()
                 )
                 
                 Spacer(modifier = Modifier.height(8.dp))
                 
-                OutlinedTextField(
-                    value = endDate ?: "",
-                    onValueChange = onEndDateChanged,
-                    label = { Text("End Date (YYYY-MM-DD)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                DateRangeField(
+                    label = "End Date",
+                    dateString = endDate,
+                    onClick = { showDateRangePicker = true },
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }
+    }
+    
+    // Date Range Picker Dialog
+    if (showDateRangePicker) {
+        DateRangePickerDialog(
+            initialStartDate = startDate,
+            initialEndDate = endDate,
+            onConfirm = { newStartDate, newEndDate ->
+                onStartDateChanged(newStartDate)
+                onEndDateChanged(newEndDate)
+                showDateRangePicker = false
+            },
+            onDismiss = { showDateRangePicker = false }
+        )
     }
 }
 
