@@ -34,7 +34,24 @@ fun ReportFiltersScreen(
     onGenerateReport: (ReportFilters) -> Unit = {}
 ) {
     var currentFilters by remember { mutableStateOf(filters) }
-    val additionalFilters = ReportAdditionalFilter.getFiltersForReportType(reportType)
+    
+    // Get report types (Overall, Daily, Weekly, etc.) using the factory
+    val reportTypes = ReportFiltersFactory.getReportTypes(reportType)
+    
+    // Get date filters based on report and selected report type - updates when report type changes
+    val dateFilters = remember(reportType, currentFilters.additionalFilter) {
+        ReportFiltersFactory.getDateFilters(reportType, currentFilters.additionalFilter)
+    }
+    
+    // Get sort options based on report and selected report type - updates when report type changes
+    val sortOptions = remember(reportType, currentFilters.additionalFilter) {
+        ReportFiltersFactory.getSortOptions(reportType, currentFilters.additionalFilter)
+    }
+    
+    // Get group by options based on report and selected report type - updates when report type changes
+    val groupByOptions = remember(reportType, currentFilters.additionalFilter) {
+        ReportFiltersFactory.getGroupByOptions(reportType, currentFilters.additionalFilter)
+    }
     
     Scaffold(
         topBar = {
@@ -94,15 +111,40 @@ fun ReportFiltersScreen(
                     .padding(horizontal = horizontalPadding, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-            // Additional Filters Section
-            if (additionalFilters.isNotEmpty()) {
+            // Additional Filters Section (Report Types: Overall, Daily, Weekly, etc.)
+            if (reportTypes.isNotEmpty()) {
                 item {
                     FilterSection(
                         title = "Report Type",
-                        items = additionalFilters,
+                        items = reportTypes,
                         selectedItem = currentFilters.additionalFilter,
                         onItemSelected = { filter ->
                             currentFilters = currentFilters.copy(additionalFilter = filter)
+                            // Reset date filter and sort options when report type changes
+                            // as they may have different options now
+                            val newDateFilters = ReportFiltersFactory.getDateFilters(reportType, filter)
+                            val newSortOptions = ReportFiltersFactory.getSortOptions(reportType, filter)
+                            
+                            // Reset to first available option if current selection is not available
+                            val updatedDateFilter = if (newDateFilters.isNotEmpty() && 
+                                currentFilters.dateFilter !in newDateFilters) {
+                                newDateFilters.first()
+                            } else {
+                                currentFilters.dateFilter
+                            }
+                            
+                            val updatedSortBy = if (newSortOptions.isNotEmpty() && 
+                                currentFilters.sortBy !in newSortOptions) {
+                                newSortOptions.first()
+                            } else {
+                                currentFilters.sortBy
+                            }
+                            
+                            currentFilters = currentFilters.copy(
+                                additionalFilter = filter,
+                                dateFilter = updatedDateFilter,
+                                sortBy = updatedSortBy
+                            )
                             onFiltersChanged(currentFilters)
                         },
                         itemLabel = { it.title },
@@ -111,19 +153,21 @@ fun ReportFiltersScreen(
                 }
             }
             
-            // Date Filter Section
-            item {
-                FilterSection(
-                    title = "Date Range",
-                    items = ReportDateFilter.entries,
-                    selectedItem = currentFilters.dateFilter,
-                    onItemSelected = { dateFilter ->
-                        currentFilters = currentFilters.copy(dateFilter = dateFilter)
-                        onFiltersChanged(currentFilters)
-                    },
-                    itemLabel = { it.title },
-                    columns = filterColumns
-                )
+            // Date Filter Section - dynamically updates based on selected report type
+            if (dateFilters.isNotEmpty()) {
+                item {
+                    FilterSection(
+                        title = "Date Range",
+                        items = dateFilters,
+                        selectedItem = currentFilters.dateFilter,
+                        onItemSelected = { dateFilter ->
+                            currentFilters = currentFilters.copy(dateFilter = dateFilter)
+                            onFiltersChanged(currentFilters)
+                        },
+                        itemLabel = { it.title },
+                        columns = filterColumns
+                    )
+                }
             }
             
             // Custom Date Range (if selected)
@@ -145,12 +189,12 @@ fun ReportFiltersScreen(
                 }
             }
             
-            // Group By Section (for applicable reports)
-            if (shouldShowGroupBy(reportType)) {
+            // Group By Section - dynamically updates based on selected report type
+            if (groupByOptions.isNotEmpty()) {
                 item {
                     FilterSection(
                         title = "Group By",
-                        items = ReportGroupBy.entries,
+                        items = groupByOptions,
                         selectedItem = currentFilters.groupBy,
                         onItemSelected = { groupBy ->
                             currentFilters = currentFilters.copy(groupBy = groupBy)
@@ -163,12 +207,12 @@ fun ReportFiltersScreen(
                 }
             }
             
-            // Sort By Section
-            if (shouldShowSortBy(reportType)) {
+            // Sort By Section - dynamically updates based on selected report type
+            if (sortOptions.isNotEmpty()) {
                 item {
                     FilterSection(
                         title = "Sort By",
-                        items = getSortOptionsForReportType(reportType),
+                        items = sortOptions,
                         selectedItem = currentFilters.sortBy,
                         onItemSelected = { sortBy ->
                             currentFilters = currentFilters.copy(sortBy = sortBy)
@@ -343,43 +387,8 @@ private fun CustomDateRangeSection(
     }
 }
 
-private fun shouldShowGroupBy(reportType: ReportType): Boolean {
-    return reportType in listOf(
-        ReportType.SALE_REPORT,
-        ReportType.PURCHASE_REPORT,
-        ReportType.TOP_PRODUCTS,
-        ReportType.TOP_CUSTOMERS,
-        ReportType.STOCK_REPORT
-    )
-}
-
-private fun shouldShowSortBy(reportType: ReportType): Boolean {
-    return reportType !in listOf(
-        ReportType.BALANCE_SHEET,
-        ReportType.CASH_IN_HAND
-    )
-}
-
-private fun getSortOptionsForReportType(reportType: ReportType): List<ReportSortBy> {
-    return when (reportType) {
-        ReportType.SALE_REPORT, ReportType.PURCHASE_REPORT -> listOf(
-            ReportSortBy.DATE_ASC, ReportSortBy.DATE_DESC,
-            ReportSortBy.SALE_AMOUNT_ASC, ReportSortBy.SALE_AMOUNT_DESC,
-            ReportSortBy.PROFIT_ASC, ReportSortBy.PROFIT_DESC
-        )
-        ReportType.TOP_PRODUCTS, ReportType.TOP_CUSTOMERS -> listOf(
-            ReportSortBy.TITLE_ASC, ReportSortBy.TITLE_DESC,
-            ReportSortBy.PROFIT_ASC, ReportSortBy.PROFIT_DESC,
-            ReportSortBy.SALE_AMOUNT_ASC, ReportSortBy.SALE_AMOUNT_DESC
-        )
-        ReportType.CUSTOMER_REPORT, ReportType.VENDOR_REPORT, ReportType.BALANCE_REPORT -> listOf(
-            ReportSortBy.TITLE_ASC, ReportSortBy.TITLE_DESC,
-            ReportSortBy.BALANCE_ASC, ReportSortBy.BALANCE_DESC
-        )
-        else -> listOf(
-            ReportSortBy.TITLE_ASC, ReportSortBy.TITLE_DESC,
-            ReportSortBy.DATE_ASC, ReportSortBy.DATE_DESC
-        )
-    }
-}
+// Note: shouldShowGroupBy, shouldShowSortBy, and getSortOptionsForReportType are no longer needed
+// as they are now handled by ReportFiltersFactory methods:
+// - getGroupByOptions() for group by options
+// - getSortOptions() for sort options
 
