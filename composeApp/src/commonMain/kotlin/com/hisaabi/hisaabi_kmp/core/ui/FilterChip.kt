@@ -1,11 +1,14 @@
 package com.hisaabi.hisaabi_kmp.core.ui
 
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 
 /**
  * A styled FilterChip with custom colors matching the design system.
@@ -25,14 +28,19 @@ fun FilterChipWithColors(
     FilterChip(
         selected = selected,
         onClick = onClick,
-        label = { Text(label) },
-        modifier = modifier,
+        label = { 
+            Text(
+                text = label,
+                modifier = Modifier.padding(vertical = 6.dp)
+            )
+        },
+        modifier = modifier.heightIn(min = 60.dp),
         leadingIcon = leadingIcon,
         colors = FilterChipDefaults.filterChipColors(
             containerColor = if (selected) 
                 MaterialTheme.colorScheme.primary 
             else 
-                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
             selectedContainerColor = MaterialTheme.colorScheme.primary,
             labelColor = if (selected)
                 MaterialTheme.colorScheme.onPrimary
