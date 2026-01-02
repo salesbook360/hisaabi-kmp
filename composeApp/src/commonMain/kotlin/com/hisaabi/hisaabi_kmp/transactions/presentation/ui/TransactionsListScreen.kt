@@ -91,6 +91,7 @@ import androidx.compose.ui.unit.dp
 import com.hisaabi.hisaabi_kmp.core.ui.FilterChipWithColors
 import com.hisaabi.hisaabi_kmp.core.ui.LocalWindowSizeClass
 import com.hisaabi.hisaabi_kmp.core.ui.SingleDatePickerDialog
+import com.hisaabi.hisaabi_kmp.core.ui.DateRangePickerDialog
 import com.hisaabi.hisaabi_kmp.core.ui.WindowWidthSizeClass
 import com.hisaabi.hisaabi_kmp.core.ui.getStatusBadgeColors
 import com.hisaabi.hisaabi_kmp.database.entity.CategoryEntity
@@ -110,6 +111,11 @@ import com.hisaabi.hisaabi_kmp.utils.format
 import com.hisaabi.hisaabi_kmp.utils.formatDate
 import com.hisaabi.hisaabi_kmp.utils.formatTransactionDate
 import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -456,8 +462,15 @@ fun TransactionsListScreen(
                 onClearTransactionTypes = { viewModel.clearTransactionTypeFilters() },
                 onSortBySelected = { viewModel.setSortBy(it) },
                 onIdOrSlugFilterChange = { viewModel.setIdOrSlugFilter(it) },
-                onStartDateChange = { viewModel.setDateRange(it, state.endDate) },
-                onEndDateChange = { viewModel.setDateRange(state.startDate, it) },
+                onStartDateChange = { newStartDate ->
+                    viewModel.setDateRange(newStartDate, state.endDate)
+                },
+                onEndDateChange = { newEndDate ->
+                    viewModel.setDateRange(state.startDate, newEndDate)
+                },
+                onDateRangeChange = { newStartDate, newEndDate ->
+                    viewModel.setDateRange(newStartDate, newEndDate)
+                },
                 onDateFilterTypeChange = { viewModel.setDateFilterType(it) },
                 onSelectParty = {
                     viewModel.toggleFilters() // Close filter sheet first
@@ -520,6 +533,7 @@ private fun FiltersBottomSheetContent(
     onIdOrSlugFilterChange: (String) -> Unit,
     onStartDateChange: (Long?) -> Unit,
     onEndDateChange: (Long?) -> Unit,
+    onDateRangeChange: ((Long?, Long?) -> Unit)? = null,
     onDateFilterTypeChange: (TransactionSortOption) -> Unit,
     onSelectParty: () -> Unit,
     onClearPartyFilter: () -> Unit,
@@ -532,8 +546,7 @@ private fun FiltersBottomSheetContent(
     onClearFilters: () -> Unit,
     onApplyFilters: () -> Unit
 ) {
-    var showStartDatePicker by remember { mutableStateOf(false) }
-    var showEndDatePicker by remember { mutableStateOf(false) }
+    var showDateRangePicker by remember { mutableStateOf(false) }
     val currentTime = Clock.System.now().toEpochMilliseconds()
     val listState = rememberLazyListState()
 
@@ -958,63 +971,38 @@ private fun FiltersBottomSheetContent(
             Spacer(Modifier.height(12.dp))
         }
 
-        // Start date field
+        // Date range field
         item {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { showStartDatePicker = true }
-            ) {
-                OutlinedTextField(
-                    value = startDate?.let { formatDate(it) } ?: "",
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Start Date") },
-                    placeholder = { Text("Select start date") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    leadingIcon = { Icon(Icons.Default.CalendarToday, "Date") },
-                    trailingIcon = {
-                        if (startDate != null) {
-                            IconButton(onClick = { onStartDateChange(null) }) {
-                                Icon(Icons.Default.Clear, "Clear")
-                            }
-                        }
-                    },
-                    enabled = false,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                        disabledBorderColor = MaterialTheme.colorScheme.outline,
-                        disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                )
+            val dateRangeText = remember(startDate, endDate) {
+                when {
+                    startDate != null && endDate != null -> {
+                        "${formatDate(startDate)} - ${formatDate(endDate)}"
+                    }
+                    startDate != null -> formatDate(startDate)
+                    else -> ""
+                }
             }
-        }
-
-        item {
-            Spacer(Modifier.height(12.dp))
-        }
-
-        // End date field
-        item {
+            
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { showEndDatePicker = true }
+                    .clickable { showDateRangePicker = true }
             ) {
                 OutlinedTextField(
-                    value = endDate?.let { formatDate(it) } ?: "",
+                    value = dateRangeText,
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text("End Date") },
-                    placeholder = { Text("Select end date") },
+                    label = { Text("Date Range") },
+                    placeholder = { Text("Select date range") },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     leadingIcon = { Icon(Icons.Default.CalendarToday, "Date") },
                     trailingIcon = {
-                        if (endDate != null) {
-                            IconButton(onClick = { onEndDateChange(null) }) {
+                        if (startDate != null || endDate != null) {
+                            IconButton(onClick = {
+                                onStartDateChange(null)
+                                onEndDateChange(null)
+                            }) {
                                 Icon(Icons.Default.Clear, "Clear")
                             }
                         }
@@ -1344,28 +1332,57 @@ private fun FiltersBottomSheetContent(
         }
     }
 
-    // Start Date Picker Dialog
-    if (showStartDatePicker) {
-        SingleDatePickerDialog(
-            initialDate = startDate,
-            onConfirm = { timestamp ->
-                onStartDateChange(timestamp)
-                showStartDatePicker = false
+    // Date Range Picker Dialog
+    if (showDateRangePicker) {
+        DateRangePickerDialog(
+            initialStartDate = startDate?.let { timestampToDateString(it) },
+            initialEndDate = endDate?.let { timestampToDateString(it) },
+            onConfirm = { startDateStr, endDateStr ->
+                val startTimestamp = dateStringToTimestamp(startDateStr)
+                val endTimestamp = dateStringToTimestamp(endDateStr)
+                // Update both dates together in a single call if callback is provided, otherwise use separate callbacks
+                if (onDateRangeChange != null) {
+                    onDateRangeChange(startTimestamp, endTimestamp)
+                } else {
+                    onStartDateChange(startTimestamp)
+                    onEndDateChange(endTimestamp)
+                }
+                showDateRangePicker = false
             },
-            onDismiss = { showStartDatePicker = false }
+            onDismiss = { showDateRangePicker = false }
         )
     }
+}
 
-    // End Date Picker Dialog
-    if (showEndDatePicker) {
-        SingleDatePickerDialog(
-            initialDate = endDate,
-            onConfirm = { timestamp ->
-                onEndDateChange(timestamp)
-                showEndDatePicker = false
-            },
-            onDismiss = { showEndDatePicker = false }
-        )
+/**
+ * Converts a Long timestamp (milliseconds) to YYYY-MM-DD string format.
+ */
+private fun timestampToDateString(timestamp: Long): String {
+    val instant = Instant.fromEpochMilliseconds(timestamp)
+    val localDateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
+    return "${localDateTime.year}-${localDateTime.monthNumber.toString().padStart(2, '0')}-${localDateTime.dayOfMonth.toString().padStart(2, '0')}"
+}
+
+/**
+ * Converts a YYYY-MM-DD string to Long timestamp (milliseconds) at start of day.
+ */
+private fun dateStringToTimestamp(dateStr: String): Long? {
+    if (dateStr.isEmpty()) return null
+    
+    return try {
+        val parts = dateStr.split("-")
+        if (parts.size == 3) {
+            val year = parts[0].toIntOrNull() ?: return null
+            val month = parts[1].toIntOrNull()?.coerceIn(1, 12) ?: return null
+            val day = parts[2].toIntOrNull()?.coerceIn(1, 31) ?: return null
+            val date = LocalDate(year, month, day)
+            val dateTime = date.atStartOfDayIn(TimeZone.currentSystemDefault())
+            dateTime.toEpochMilliseconds()
+        } else {
+            null
+        }
+    } catch (e: Exception) {
+        null
     }
 }
 
