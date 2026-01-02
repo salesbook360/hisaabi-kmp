@@ -5,7 +5,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -215,6 +217,20 @@ private fun YearPickerDialog(
         (currentYear - 50..currentYear + 50).toList()
     }
     
+    // Calculate the index of the current year (should be 50, since it's in the middle of the range)
+    val currentYearIndex = remember(currentYear) {
+        years.indexOf(currentYear).coerceAtLeast(0)
+    }
+    
+    // Create LazyGridState
+    val gridState = rememberLazyGridState()
+    
+    // Scroll to current year when dialog opens
+    LaunchedEffect(currentYearIndex) {
+        if (currentYearIndex >= 0) {
+            gridState.animateScrollToItem(currentYearIndex)
+        }
+    }
     
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -228,6 +244,7 @@ private fun YearPickerDialog(
                     .heightIn(max = 400.dp)
             ) {
                 LazyVerticalGrid(
+                    state = gridState,
                     columns = GridCells.Fixed(3),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
