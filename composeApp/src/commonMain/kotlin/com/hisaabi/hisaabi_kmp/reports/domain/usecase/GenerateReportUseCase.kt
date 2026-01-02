@@ -9,6 +9,7 @@ import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
 class GenerateReportUseCase(
     private val generateSalesReportUseCase: GenerateSalesReportUseCase,
     private val generateBalanceSheetReportUseCase: GenerateBalanceSheetReportUseCase,
+    private val generatePurchaseReportUseCase: GeneratePurchaseReportUseCase,
     private val preferencesManager: PreferencesManager
 ) {
     
@@ -18,7 +19,7 @@ class GenerateReportUseCase(
         
         return when (reportType) {
             ReportType.SALE_REPORT -> generateSalesReportUseCase.execute(filters)
-            ReportType.PURCHASE_REPORT -> generatePurchaseReport(filters, currencySymbol)
+            ReportType.PURCHASE_REPORT -> generatePurchaseReport(filters)
             ReportType.EXPENSE_REPORT -> generateExpenseReport(filters, currencySymbol)
             ReportType.EXTRA_INCOME_REPORT -> generateExtraIncomeReport(filters, currencySymbol)
             ReportType.TOP_PRODUCTS -> generateTopProductsReport(filters, currencySymbol)
@@ -60,25 +61,8 @@ class GenerateReportUseCase(
         )
     }
     
-    private fun generatePurchaseReport(filters: ReportFilters, currencySymbol: String): ReportResult {
-        val columns = listOf("Date", "Bill #", "Vendor", "Amount", "Items")
-        val rows = listOf(
-            ReportRow("1", listOf("2024-01-15", "BILL-001", "ABC Suppliers", "$currencySymbol 50,000", "25")),
-            ReportRow("2", listOf("2024-01-16", "BILL-002", "XYZ Traders", "$currencySymbol 75,000", "40")),
-            ReportRow("3", listOf("2024-01-18", "BILL-003", "Global Imports", "$currencySymbol 120,000", "60"))
-        )
-        
-        return ReportResult(
-            reportType = ReportType.PURCHASE_REPORT,
-            filters = filters,
-            columns = columns,
-            rows = rows,
-            summary = ReportSummary(
-                totalAmount = 245000.0,
-                totalQuantity = 125.0,
-                recordCount = 3
-            )
-        )
+    private suspend fun generatePurchaseReport(filters: ReportFilters): ReportResult {
+        return generatePurchaseReportUseCase.execute(filters)
     }
     
     private fun generateExpenseReport(filters: ReportFilters, currencySymbol: String): ReportResult {

@@ -25,7 +25,7 @@ class GenerateSalesReportUseCase(
             ?: throw IllegalStateException("No business selected")
         
         // Calculate date range based on filters
-        val dateRange = calculateDateRange(filters.dateFilter)
+        val (fromDateMillis, toDateMillis) = calculateDateRange(filters.dateFilter)
         
         // Get sale and customer return transactions
         val transactionTypes = listOf(
@@ -36,8 +36,8 @@ class GenerateSalesReportUseCase(
         val transactions = transactionDao.getTransactionsForReport(
             businessSlug = businessSlug,
             transactionTypes = transactionTypes,
-            fromDate = dateRange.first,
-            toDate = dateRange.second
+            fromDate = fromDateMillis,
+            toDate = toDateMillis
         )
         
         // Get transaction details for all transactions
@@ -112,7 +112,7 @@ class GenerateSalesReportUseCase(
         )
     }
     
-    private fun calculateDateRange(dateFilter: ReportDateFilter): Pair<String, String> {
+    private fun calculateDateRange(dateFilter: ReportDateFilter): Pair<Long, Long> {
         val now = Clock.System.now()
         val timezone = TimeZone.currentSystemDefault()
         val today = now.toLocalDateTime(timezone).date
@@ -156,11 +156,14 @@ class GenerateSalesReportUseCase(
             }
         }
         
-        // Convert to timestamp strings (ISO format)
+        // Convert to milliseconds
         val startDateTime = LocalDateTime(startDate, LocalTime(0, 0, 0))
         val endDateTime = LocalDateTime(endDate, LocalTime(23, 59, 59))
         
-        return startDateTime.toString() to endDateTime.toString()
+        val startMillis = startDateTime.toInstant(timezone).toEpochMilliseconds()
+        val endMillis = endDateTime.toInstant(timezone).toEpochMilliseconds()
+        
+        return startMillis to endMillis
     }
     
     private fun formatTimestamp(timestamp: String?): String {
