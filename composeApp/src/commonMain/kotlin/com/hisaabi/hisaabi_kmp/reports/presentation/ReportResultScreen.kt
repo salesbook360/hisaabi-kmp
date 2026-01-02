@@ -814,11 +814,19 @@ private fun FilterInfoCard(reportResult: ReportResult) {
                 color = MaterialTheme.colorScheme.onSecondaryContainer
             )
             
-            Text(
-                text = "Date: ${reportResult.filters.dateFilter.title}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSecondaryContainer
+            // Only show date filter if it's applicable (not for STOCK_WORTH or OUT_OF_STOCK)
+            val shouldShowDateFilter = reportResult.filters.additionalFilter !in listOf(
+                com.hisaabi.hisaabi_kmp.reports.domain.model.ReportAdditionalFilter.STOCK_WORTH,
+                com.hisaabi.hisaabi_kmp.reports.domain.model.ReportAdditionalFilter.OUT_OF_STOCK
             )
+            
+            if (shouldShowDateFilter) {
+                Text(
+                    text = "Date: ${reportResult.filters.dateFilter.title}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            }
             
             reportResult.filters.additionalFilter?.let {
                 Text(

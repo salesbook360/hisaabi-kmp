@@ -75,7 +75,9 @@ import com.hisaabi.hisaabi_kmp.quantityunits.presentation.ui.AddQuantityUnitScre
 import com.hisaabi.hisaabi_kmp.quantityunits.presentation.ui.QuantityUnitsScreen
 import com.hisaabi.hisaabi_kmp.receipt.ReceiptPreviewDialog
 import com.hisaabi.hisaabi_kmp.receipt.ReceiptViewModel
+import com.hisaabi.hisaabi_kmp.reports.domain.model.ReportAdditionalFilter
 import com.hisaabi.hisaabi_kmp.reports.domain.model.ReportFilters
+import com.hisaabi.hisaabi_kmp.reports.domain.model.ReportFiltersFactory
 import com.hisaabi.hisaabi_kmp.reports.domain.model.ReportType
 import com.hisaabi.hisaabi_kmp.reports.domain.model.RequiredEntityType
 import com.hisaabi.hisaabi_kmp.reports.presentation.ReportFiltersScreen
@@ -2121,7 +2123,18 @@ fun App() {
                                 },
                                 onReportSelected = { reportType ->
                                     selectedReportType = reportType
-                                    val defaultFilters = ReportFilters(reportType = reportType)
+                                    // Create default filters with OVERALL as default if available
+                                    val reportTypes = ReportFiltersFactory.getReportTypes(reportType)
+                                    val defaultAdditionalFilter = if (reportTypes.isNotEmpty()) {
+                                        // Set OVERALL as default if it's available in report types
+                                        reportTypes.firstOrNull { it == ReportAdditionalFilter.OVERALL } ?: reportTypes.firstOrNull()
+                                    } else {
+                                        null
+                                    }
+                                    val defaultFilters = ReportFilters(
+                                        reportType = reportType,
+                                        additionalFilter = defaultAdditionalFilter
+                                    )
                                     
                                     // Skip filters screen for balance sheet - generate directly
                                     if (reportType == ReportType.BALANCE_SHEET) {

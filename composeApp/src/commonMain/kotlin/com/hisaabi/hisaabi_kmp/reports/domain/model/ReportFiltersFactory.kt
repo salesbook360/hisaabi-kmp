@@ -162,19 +162,29 @@ object ReportFiltersFactory {
                 }
             }
             ReportType.STOCK_REPORT -> {
-                if(selectedReportType == ReportAdditionalFilter.OVERALL) {
-                    listOf(
-                        ReportDateFilter.TODAY,
-                        ReportDateFilter.YESTERDAY,
-                        ReportDateFilter.LAST_7_DAYS,
-                        ReportDateFilter.THIS_MONTH,
-                        ReportDateFilter.LAST_MONTH,
-                        ReportDateFilter.THIS_YEAR,
-                        ReportDateFilter.LAST_YEAR,
-                        ReportDateFilter.ALL_TIME,
-                        ReportDateFilter.CUSTOM_DATE
-                    )
-                } else emptyList()
+                // Stock In/Out Report (default, when no additional filter) needs date filters
+                // Stock Worth and Out of Stock reports don't need date filters
+                when (selectedReportType) {
+                    ReportAdditionalFilter.STOCK_WORTH,
+                    ReportAdditionalFilter.OUT_OF_STOCK -> {
+                        // Stock Worth and Out of Stock don't use date filters
+                        emptyList()
+                    }
+                    else -> {
+                        // Default Stock In/Out Report (null or any other value) uses date filters
+                        listOf(
+                            ReportDateFilter.TODAY,
+                            ReportDateFilter.YESTERDAY,
+                            ReportDateFilter.LAST_7_DAYS,
+                            ReportDateFilter.THIS_MONTH,
+                            ReportDateFilter.LAST_MONTH,
+                            ReportDateFilter.THIS_YEAR,
+                            ReportDateFilter.LAST_YEAR,
+                            ReportDateFilter.ALL_TIME,
+                            ReportDateFilter.CUSTOM_DATE
+                        )
+                    }
+                }
             }
 
             ReportType.BALANCE_SHEET -> {

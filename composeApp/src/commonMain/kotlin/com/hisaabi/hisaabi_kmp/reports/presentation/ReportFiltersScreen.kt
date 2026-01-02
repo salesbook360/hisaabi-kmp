@@ -38,10 +38,25 @@ fun ReportFiltersScreen(
     onFiltersChanged: (ReportFilters) -> Unit = {},
     onGenerateReport: (ReportFilters) -> Unit = {}
 ) {
-    var currentFilters by remember { mutableStateOf(filters) }
-    
     // Get report types (Overall, Daily, Weekly, etc.) using the factory
     val reportTypes = ReportFiltersFactory.getReportTypes(reportType)
+    
+    // Initialize filters with default OVERALL report type if available and not already set
+    var currentFilters by remember(reportType, filters) {
+        val defaultAdditionalFilter = if (reportTypes.isNotEmpty() && filters.additionalFilter == null) {
+            // Set OVERALL as default if it's available in report types
+            reportTypes.firstOrNull { it == ReportAdditionalFilter.OVERALL } ?: reportTypes.firstOrNull()
+        } else {
+            filters.additionalFilter
+        }
+        mutableStateOf(
+            if (defaultAdditionalFilter != null && filters.additionalFilter == null) {
+                filters.copy(additionalFilter = defaultAdditionalFilter)
+            } else {
+                filters
+            }
+        )
+    }
     
     // Get date filters based on report and selected report type - updates when report type changes
     val dateFilters = remember(reportType, currentFilters.additionalFilter) {
