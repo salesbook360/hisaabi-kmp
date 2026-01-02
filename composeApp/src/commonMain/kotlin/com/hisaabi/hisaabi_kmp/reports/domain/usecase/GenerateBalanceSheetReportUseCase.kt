@@ -45,9 +45,10 @@ class GenerateBalanceSheetReportUseCase(
 
         // 2. Available Stock (current quantity * avg_purchase_price)
         val availableStock = calculateAvailableStock(businessSlug)
-        val availableStockBreakdown = com.hisaabi.hisaabi_kmp.reports.domain.model.AvailableStockBreakdown(
-            totalAvailableStock = availableStock
-        )
+        val availableStockBreakdown =
+            com.hisaabi.hisaabi_kmp.reports.domain.model.AvailableStockBreakdown(
+                totalAvailableStock = availableStock
+            )
 
         // 3. Cash in Hand (total amount from payment methods)
         val cashInHand = paymentMethodDao.getTotalCashInHand(businessSlug) ?: 0.0
@@ -75,7 +76,7 @@ class GenerateBalanceSheetReportUseCase(
         // 4 columns: Assets Label | Assets Value | Liabilities Label | Liabilities Value
         val columns = listOf("Assets", "", "Liabilities", "")
         val rows = mutableListOf<ReportRow>()
-        
+
         // Assets items
         val assetsItems = listOf(
             "Receivable" to receivables,
@@ -83,7 +84,7 @@ class GenerateBalanceSheetReportUseCase(
             "Cash in Hand" to cashInHand,
             "Total Assets" to totalAssets
         )
-        
+
         // Liabilities items
         val liabilitiesItems = listOf(
             "Capital Investment" to capitalInvestment,
@@ -91,24 +92,29 @@ class GenerateBalanceSheetReportUseCase(
             "Current Profit/Loss" to currentProfitLoss,
             "Total Liabilities" to totalLiabilities
         )
-        
+
         // Combine into rows - pad the shorter list
         val maxRows = maxOf(assetsItems.size, liabilitiesItems.size)
         for (i in 0 until maxRows) {
             val assetItem = if (i < assetsItems.size) assetsItems[i] else null
             val liabilityItem = if (i < liabilitiesItems.size) liabilitiesItems[i] else null
-            
+
             val assetLabel = assetItem?.first ?: ""
-            val assetValue = assetItem?.let { 
-                "$currencySymbol ${String.format("%,.0f", it.second)}" 
+            val assetValue = assetItem?.let {
+                "$currencySymbol ${String.format("%,.0f", it.second)}"
             } ?: ""
-            
+
             val liabilityLabel = liabilityItem?.first ?: ""
-            val liabilityValue = liabilityItem?.let { 
-                "$currencySymbol ${String.format("%,.0f", it.second)}" 
+            val liabilityValue = liabilityItem?.let {
+                "$currencySymbol ${String.format("%,.0f", it.second)}"
             } ?: ""
-            
-            rows.add(ReportRow("row_$i", listOf(assetLabel, assetValue, liabilityLabel, liabilityValue)))
+
+            rows.add(
+                ReportRow(
+                    "row_$i",
+                    listOf(assetLabel, assetValue, liabilityLabel, liabilityValue)
+                )
+            )
         }
 
         return ReportResult(
@@ -216,7 +222,8 @@ class GenerateBalanceSheetReportUseCase(
         // 3. Opening Payment Method amounts (sum of opening_amount)
         val openingPaymentAmounts = paymentMethodDao.getTotalOpeningAmount(businessSlug) ?: 0.0
 
-        val totalCapitalInvestment = openingStockWorth + openingPartyBalances + openingPaymentAmounts
+        val totalCapitalInvestment =
+            openingStockWorth + openingPartyBalances + openingPaymentAmounts
 
         return com.hisaabi.hisaabi_kmp.reports.domain.model.CapitalInvestmentBreakdown(
             openingStockWorth = openingStockWorth,
@@ -368,8 +375,8 @@ class GenerateBalanceSheetReportUseCase(
         // Current Profit/Loss = Total Sale - Cost of Sold Products + Discount Taken - Discount Given
         //                      - Expenses + Extra Income - Additional Charges Received + Additional Charges Paid
         //                      - Tax Paid + Tax Received
-        val currentProfitLoss = totalSaleAmount
-        -costOfSoldProducts
+        val currentProfitLoss =
+            profitOrLoss
         +discountTaken
         -discountGiven
         -totalExpenses
@@ -379,7 +386,7 @@ class GenerateBalanceSheetReportUseCase(
         -taxPaid
         +taxReceived
 
-        return com.hisaabi.hisaabi_kmp.reports.domain.model.ProfitLossBreakdown(
+        return ProfitLossBreakdown(
             saleAmount = totalSaleAmount,
             costOfSoldProducts = costOfSoldProducts,
             profitOrLoss = profitOrLoss,
@@ -398,12 +405,12 @@ class GenerateBalanceSheetReportUseCase(
     private suspend fun calculateCashInHandBreakdown(businessSlug: String): com.hisaabi.hisaabi_kmp.reports.domain.model.CashInHandBreakdown {
         // Get all payment methods for this business
         val paymentMethods = paymentMethodDao.getPaymentMethodsByBusiness(businessSlug).first()
-        
+
         // Create a map of payment method name to amount (only active ones)
         val breakdownMap = paymentMethods
             .filter { it.status_id != 2 } // Exclude deleted
             .associate { it.title to it.amount }
-        
+
         val totalCashInHand = breakdownMap.values.sum()
 
         return com.hisaabi.hisaabi_kmp.reports.domain.model.CashInHandBreakdown(

@@ -34,7 +34,7 @@ fun FilterChipWithColors(
                 modifier = Modifier.padding(vertical = 6.dp)
             )
         },
-        modifier = modifier.heightIn(min = 60.dp),
+        modifier = modifier.heightIn(min = 50.dp),
         leadingIcon = leadingIcon,
         colors = FilterChipDefaults.filterChipColors(
             containerColor = if (selected) 

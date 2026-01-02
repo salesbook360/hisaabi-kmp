@@ -11,7 +11,17 @@ import org.koin.dsl.module
 
 val reportsModule = module {
     // Use Cases
-    single { GenerateSalesReportUseCase(get(), get(), get(), get()) }
+    single {
+        GenerateSalesReportUseCase(
+            transactionDao = get(),
+            transactionDetailDao = get(),
+            productDao = get(),
+            partyDao = get(),
+            categoryDao = get(),
+            businessPreferences = get(),
+            preferencesManager = get()
+        )
+    }
     single { GenerateBalanceSheetReportUseCase(get(), get(), get(), get(), get(), get(), get(), get()) }
     single {
         GeneratePurchaseReportUseCase(
