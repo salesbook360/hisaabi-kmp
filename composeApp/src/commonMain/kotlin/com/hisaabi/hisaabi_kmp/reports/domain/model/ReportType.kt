@@ -12,21 +12,21 @@ enum class ReportType(
 ) {
     SALE_REPORT(1, "Sale Report", Icons.Default.ShoppingCart, "View sales analytics"),
     PURCHASE_REPORT(2, "Purchase Report", Icons.Default.ShoppingBag, "View purchase analytics"),
-    EXPENSE_REPORT(3, "Expense Report", Icons.Default.MoneyOff, "View expense details"),
-    EXTRA_INCOME_REPORT(4, "Extra Income Report", Icons.Default.AttachMoney, "View additional income"),
-    TOP_PRODUCTS(5, "Top Products", Icons.Default.Star, "Best performing products"),
-    TOP_CUSTOMERS(6, "Top Customers", Icons.Default.People, "Best customers"),
-    STOCK_REPORT(7, "Stock Report", Icons.Default.Inventory, "Current stock levels"),
-    PRODUCT_REPORT(8, "Product Report", Icons.Default.Inventory2, "Product analytics"),
-    CUSTOMER_REPORT(9, "Customer Report", Icons.Default.PersonSearch, "Customer analytics"),
-    VENDOR_REPORT(10, "Vendor Report", Icons.Default.Store, "Vendor analytics"),
-    PROFIT_LOSS_REPORT(11, "Profit & Loss", Icons.Default.TrendingUp, "P&L statement"),
-    CASH_IN_HAND(12, "Cash in Hand", Icons.Default.AccountBalance, "Current cash position"),
+    STOCK_REPORT(3, "Stock Report", Icons.Default.Inventory, "Current stock levels"),
+    WAREHOUSE_REPORT(4, "Warehouse Report", Icons.Default.Warehouse, "Warehouse analytics"),
+    PROFIT_LOSS_REPORT(5, "Profit & Loss", Icons.Default.TrendingUp, "P&L statement"),
+    PROFIT_LOSS_BY_PURCHASE(6, "P&L by Purchase Cost", Icons.Default.Calculate, "P&L based on purchase cost"),
+    TOP_PRODUCTS(7, "Top Products", Icons.Default.Star, "Best performing products"),
+    TOP_CUSTOMERS(8, "Top Customers", Icons.Default.People, "Best customers"),
+    PRODUCT_REPORT(9, "Product Report", Icons.Default.Inventory2, "Product analytics"),
+    CUSTOMER_REPORT(10, "Customer Report", Icons.Default.PersonSearch, "Customer analytics"),
+    VENDOR_REPORT(11, "Vendor Report", Icons.Default.Store, "Vendor analytics"),
+    INVESTOR_REPORT(12, "Investor Report", Icons.Default.TrendingUp, "Investor analytics"),
     BALANCE_REPORT(13, "Balance Report", Icons.Default.AccountBalanceWallet, "Account balances"),
-    PROFIT_LOSS_BY_PURCHASE(17, "P&L by Purchase Cost", Icons.Default.Calculate, "P&L based on purchase cost"),
-    BALANCE_SHEET(18, "Balance Sheet", Icons.Default.Description, "Financial position"),
-    INVESTOR_REPORT(19, "Investor Report", Icons.Default.TrendingUp, "Investor analytics"),
-    WAREHOUSE_REPORT(20, "Warehouse Report", Icons.Default.Warehouse, "Warehouse analytics");
+    EXPENSE_REPORT(14, "Expense Report", Icons.Default.MoneyOff, "View expense details"),
+    EXTRA_INCOME_REPORT(15, "Extra Income Report", Icons.Default.AttachMoney, "View additional income"),
+    CASH_IN_HAND(16, "Cash in Hand", Icons.Default.AccountBalance, "Current cash position"),
+    BALANCE_SHEET(17, "Balance Sheet", Icons.Default.Description, "Financial position");
 
     companion object {
         fun fromId(id: Int): ReportType? = entries.find { it.id == id }

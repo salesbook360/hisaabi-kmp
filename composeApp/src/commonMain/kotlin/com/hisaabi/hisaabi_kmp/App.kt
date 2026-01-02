@@ -77,6 +77,7 @@ import com.hisaabi.hisaabi_kmp.receipt.ReceiptPreviewDialog
 import com.hisaabi.hisaabi_kmp.receipt.ReceiptViewModel
 import com.hisaabi.hisaabi_kmp.reports.domain.model.ReportFilters
 import com.hisaabi.hisaabi_kmp.reports.domain.model.ReportType
+import com.hisaabi.hisaabi_kmp.reports.domain.model.RequiredEntityType
 import com.hisaabi.hisaabi_kmp.reports.presentation.ReportFiltersScreen
 import com.hisaabi.hisaabi_kmp.reports.presentation.ReportResultScreen
 import com.hisaabi.hisaabi_kmp.reports.presentation.ReportsScreen
@@ -337,6 +338,13 @@ fun App() {
                 mutableStateOf<ReportType?>(
                     null
                 )
+            }
+            var selectingEntityForReport by remember { mutableStateOf(false) }
+            var selectedEntityForReport by remember {
+                mutableStateOf<Any?>(null) // Can be Party, Product, Warehouse
+            }
+            var selectedReportFilters by remember {
+                mutableStateOf<ReportFilters?>(null)
             }
             val reportViewModel: ReportViewModel =
                 koinInject()
@@ -884,10 +892,32 @@ fun App() {
                         }
 
                         AppScreen.PARTIES -> {
+                            // Set initial segment for report entity selection
+                            if (selectingEntityForReport) {
+                                val entityType = selectedReportFilters?.getRequiredEntityType()
+                                when (entityType) {
+                                    RequiredEntityType.CUSTOMER -> selectedPartySegment = PartySegment.CUSTOMER
+                                    RequiredEntityType.VENDOR -> selectedPartySegment = PartySegment.VENDOR
+                                    RequiredEntityType.INVESTOR -> selectedPartySegment = PartySegment.INVESTOR
+                                    else -> {}
+                                }
+                            }
+                            
                             PartiesScreen(
                                 viewModel = koinInject(),
                                 onPartyClick = { party ->
-                                    if (selectingPartyForTransaction) {
+                                    if (selectingEntityForReport) {
+                                        // Store selected entity for report and navigate to filters
+                                        selectedEntityForReport = party
+                                        selectingEntityForReport = false
+                                        // Update filters with selected entity
+                                        val filters = selectedReportFilters?.copy(
+                                            selectedPartyId = party.slug,
+                                            selectedInvestorId = if (party.roleId == PartyType.INVESTOR.type) party.slug else null
+                                        ) ?: ReportFilters(reportType = selectedReportType)
+                                        selectedReportFilters = filters
+                                        navigateTo(AppScreen.REPORT_FILTERS)
+                                    } else if (selectingPartyForTransaction) {
                                         // Store selected party and return to transaction or record
                                         selectedPartyForTransaction = party
                                         // Don't reset flags here - let the target screen handle it
@@ -927,7 +957,14 @@ fun App() {
                                     currentScreen = AppScreen.ADD_PARTY
                                 },
                                 onNavigateBack = {
-                                    if (selectingPartyForTransaction) {
+                                    if (selectingEntityForReport) {
+                                        // User cancelled entity selection - go back to reports
+                                        selectingEntityForReport = false
+                                        selectedEntityForReport = null
+                                        selectedReportFilters = null
+                                        selectedReportType = null
+                                        currentScreen = AppScreen.REPORTS
+                                    } else if (selectingPartyForTransaction) {
                                         // User cancelled party selection - navigate back to the screen they came from
                                         val targetScreen =
                                             returnToScreenAfterPartySelection ?: AppScreen.HOME
@@ -1236,9 +1273,19 @@ fun App() {
 
                             ProductsScreen(
                                 viewModel = productsViewModel,
+                                isSingleSelectionMode = selectingEntityForReport, // Enable single selection mode for report entity selection
                                 onProductClick = { product ->
-                                    // This is no longer used in selection mode - handled via onSelectionChanged
-                                    if (!selectingProductsForTransaction) {
+                                    if (selectingEntityForReport) {
+                                        // Store selected product for report and navigate to filters
+                                        selectedEntityForReport = product
+                                        selectingEntityForReport = false
+                                        // Update filters with selected product
+                                        val filters = selectedReportFilters?.copy(
+                                            selectedProductId = product.slug
+                                        ) ?: ReportFilters(reportType = selectedReportType)
+                                        selectedReportFilters = filters
+                                        navigateTo(AppScreen.REPORT_FILTERS)
+                                    } else if (!selectingProductsForTransaction) {
                                         // Navigate to edit product screen (reuse ADD_PRODUCT with edit mode)
                                         selectedProductForEdit = product
                                         addProductType = product.productType
@@ -1267,7 +1314,14 @@ fun App() {
                                     currentScreen = AppScreen.MANAGE_RECIPE_INGREDIENTS
                                 },
                                 onNavigateBack = {
-                                    if (selectingProductsForTransaction) {
+                                    if (selectingEntityForReport) {
+                                        // User cancelled entity selection - go back to reports
+                                        selectingEntityForReport = false
+                                        selectedEntityForReport = null
+                                        selectedReportFilters = null
+                                        selectedReportType = null
+                                        currentScreen = AppScreen.REPORTS
+                                    } else if (selectingProductsForTransaction) {
                                         // Navigate back without selecting - clear the selection state
                                         selectingProductsForTransaction = false
                                         selectedProductQuantitiesForTransaction = emptyMap()
@@ -1438,7 +1492,17 @@ fun App() {
                             WarehousesScreen(
                                 viewModel = koinInject(),
                                 onWarehouseClick = { warehouse ->
-                                    if (selectingWarehouseForTransaction) {
+                                    if (selectingEntityForReport) {
+                                        // Store selected warehouse for report and navigate to filters
+                                        selectedEntityForReport = warehouse
+                                        selectingEntityForReport = false
+                                        // Update filters with selected warehouse
+                                        val filters = selectedReportFilters?.copy(
+                                            selectedWarehouseId = warehouse.slug
+                                        ) ?: ReportFilters(reportType = selectedReportType)
+                                        selectedReportFilters = filters
+                                        navigateTo(AppScreen.REPORT_FILTERS)
+                                    } else if (selectingWarehouseForTransaction) {
                                         // Store selected warehouse and return to the appropriate screen
                                         selectedWarehouseForTransaction = warehouse
                                         // Don't reset flags here - let the target screen handle it
@@ -1454,7 +1518,14 @@ fun App() {
                                     currentScreen = AppScreen.ADD_WAREHOUSE
                                 },
                                 onNavigateBack = {
-                                    if (selectingWarehouseForTransaction) {
+                                    if (selectingEntityForReport) {
+                                        // User cancelled entity selection - go back to reports
+                                        selectingEntityForReport = false
+                                        selectedEntityForReport = null
+                                        selectedReportFilters = null
+                                        selectedReportType = null
+                                        currentScreen = AppScreen.REPORTS
+                                    } else if (selectingWarehouseForTransaction) {
                                         // Navigate back without selecting - clear the selection state
                                         val targetScreen = returnToScreenAfterPartySelection
                                             ?: AppScreen.ADD_TRANSACTION_STEP1
@@ -2050,12 +2121,27 @@ fun App() {
                                 },
                                 onReportSelected = { reportType ->
                                     selectedReportType = reportType
+                                    val defaultFilters = ReportFilters(reportType = reportType)
+                                    
                                     // Skip filters screen for balance sheet - generate directly
                                     if (reportType == ReportType.BALANCE_SHEET) {
-                                        val defaultFilters = ReportFilters(reportType = reportType)
                                         reportViewModel.generateReport(defaultFilters)
                                         navigateTo(AppScreen.REPORT_RESULT)
+                                    } else if (defaultFilters.requiresEntitySelection()) {
+                                        // Need to select entity first
+                                        selectingEntityForReport = true
+                                        selectedEntityForReport = null
+                                        selectedReportFilters = defaultFilters
+                                        // Navigate to appropriate entity selection screen
+                                        when (defaultFilters.getRequiredEntityType()) {
+                                            RequiredEntityType.WAREHOUSE -> navigateTo(AppScreen.WAREHOUSES)
+                                            RequiredEntityType.PRODUCT -> navigateTo(AppScreen.PRODUCTS)
+                                            RequiredEntityType.CUSTOMER, RequiredEntityType.VENDOR, RequiredEntityType.INVESTOR -> navigateTo(AppScreen.PARTIES)
+                                            null -> navigateTo(AppScreen.REPORT_FILTERS)
+                                        }
                                     } else {
+                                        // No entity selection needed, go directly to filters
+                                        selectedReportFilters = defaultFilters
                                         navigateTo(AppScreen.REPORT_FILTERS)
                                     }
                                 }
@@ -2064,11 +2150,14 @@ fun App() {
 
                         AppScreen.REPORT_FILTERS -> {
                             selectedReportType?.let { reportType ->
+                                val initialFilters = selectedReportFilters ?: ReportFilters(reportType = reportType)
                                 ReportFiltersScreen(
                                     reportType = reportType,
+                                    filters = initialFilters,
+                                    selectedEntity = selectedEntityForReport,
                                     onBackClick = { navigateBack() },
                                     onFiltersChanged = { filters ->
-                                        //selectedReportFilters = filters
+                                        selectedReportFilters = filters
                                     },
                                     onGenerateReport = { filters ->
                                         // Generate report and navigate to result screen

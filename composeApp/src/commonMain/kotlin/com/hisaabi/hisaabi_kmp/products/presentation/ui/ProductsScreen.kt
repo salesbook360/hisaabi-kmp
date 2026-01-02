@@ -53,6 +53,7 @@ fun ProductsScreen(
     refreshTrigger: Int = 0,
     initialProductType: ProductType? = null,
     isSelectionMode: Boolean = false,
+    isSingleSelectionMode: Boolean = false, // For single selection (e.g., report entity selection)
     selectedProducts: Map<String, Int> = emptyMap(),
     onSelectionChanged: (Map<String, Int>) -> Unit = {},
     onSelectionDone: () -> Unit = {},
@@ -293,7 +294,10 @@ fun ProductsScreen(
                             availableQuantity = availableQuantity,
                             currencySymbol = currencySymbol,
                             onClick = { 
-                                if (selectionMode) {
+                                if (isSingleSelectionMode) {
+                                    // Single selection mode - directly call onProductClick (e.g., for report entity selection)
+                                    onProductClick(product)
+                                } else if (selectionMode) {
                                     // Increment quantity on tap
                                     val newQuantities = selectedProductQuantities.toMutableMap()
                                     val newQuantity = currentQuantity + 1

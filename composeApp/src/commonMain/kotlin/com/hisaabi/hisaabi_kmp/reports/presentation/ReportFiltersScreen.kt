@@ -23,12 +23,17 @@ import com.hisaabi.hisaabi_kmp.core.ui.DateRangePickerDialog
 import com.hisaabi.hisaabi_kmp.core.ui.DateRangeField
 import androidx.compose.ui.Alignment
 import com.hisaabi.hisaabi_kmp.reports.domain.model.*
+import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
+import com.hisaabi.hisaabi_kmp.parties.domain.model.PartyType
+import com.hisaabi.hisaabi_kmp.products.domain.model.Product
+import com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReportFiltersScreen(
     reportType: ReportType,
     filters: ReportFilters = ReportFilters(reportType = reportType),
+    selectedEntity: Any? = null, // Can be Party, Product, or Warehouse
     onBackClick: () -> Unit = {},
     onFiltersChanged: (ReportFilters) -> Unit = {},
     onGenerateReport: (ReportFilters) -> Unit = {}
@@ -111,6 +116,17 @@ fun ReportFiltersScreen(
                     .padding(horizontal = horizontalPadding, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+            // Selected Entity Section
+            if (selectedEntity != null) {
+                item {
+                    SelectedEntityCard(
+                        entity = selectedEntity,
+                        reportType = reportType,
+                        isDesktop = isDesktop
+                    )
+                }
+            }
+            
             // Additional Filters Section (Report Types: Overall, Daily, Weekly, etc.)
             if (reportTypes.isNotEmpty()) {
                 item {
@@ -391,4 +407,62 @@ private fun CustomDateRangeSection(
 // as they are now handled by ReportFiltersFactory methods:
 // - getGroupByOptions() for group by options
 // - getSortOptions() for sort options
+
+@Composable
+private fun SelectedEntityCard(
+    entity: Any,
+    reportType: ReportType,
+    isDesktop: Boolean
+) {
+    val entityName = when (entity) {
+        is Party -> entity.displayName
+        is Product -> entity.displayName
+        is Warehouse -> entity.displayName
+        else -> "Unknown"
+    }
+    
+    val entityType = when (entity) {
+        is Party -> {
+            when (entity.roleId) {
+                PartyType.CUSTOMER.type -> "Customer"
+                PartyType.VENDOR.type -> "Vendor"
+                PartyType.INVESTOR.type -> "Investor"
+                else -> "Party"
+            }
+        }
+        is Product -> "Product"
+        is Warehouse -> "Warehouse"
+        else -> "Entity"
+    }
+    
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Selected $entityType",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = entityName,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            }
+        }
+    }
+}
 
