@@ -21,7 +21,7 @@ import com.hisaabi.hisaabi_kmp.core.ui.WindowWidthSizeClass
 import com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.PaymentTransferViewModel
 import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
-import com.hisaabi.hisaabi_kmp.utils.SimpleDateTimePickerDialog
+import com.hisaabi.hisaabi_kmp.core.ui.SingleDatePickerDialog
 import com.hisaabi.hisaabi_kmp.utils.formatDateTime
 import org.koin.compose.koinInject
 
@@ -161,8 +161,8 @@ fun PaymentTransferScreen(
 
     // Date Time Picker Dialog
     if (showDateTimePicker) {
-        SimpleDateTimePickerDialog(
-            initialTimestamp = state.dateTime,
+        SingleDatePickerDialog(
+            initialDate = state.dateTime,
             onConfirm = { timestamp ->
                 viewModel.setDateTime(timestamp)
                 showDateTimePicker = false

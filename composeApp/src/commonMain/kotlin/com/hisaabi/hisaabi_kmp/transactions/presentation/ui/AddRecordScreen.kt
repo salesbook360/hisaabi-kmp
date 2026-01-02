@@ -21,7 +21,7 @@ import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionState
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddRecordViewModel
 import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
-import com.hisaabi.hisaabi_kmp.utils.SimpleDateTimePickerDialog
+import com.hisaabi.hisaabi_kmp.core.ui.SingleDatePickerDialog
 import com.hisaabi.hisaabi_kmp.utils.formatDateTime
 import kotlinx.datetime.Clock
 import org.koin.compose.koinInject
@@ -182,8 +182,8 @@ fun AddRecordScreen(
     
     // Date Time Picker Dialog
     if (showDateTimePicker) {
-        SimpleDateTimePickerDialog(
-            initialTimestamp = state.dateTime,
+        SingleDatePickerDialog(
+            initialDate = state.dateTime,
             onConfirm = { timestamp ->
                 viewModel.setDateTime(timestamp)
                 showDateTimePicker = false
@@ -194,8 +194,8 @@ fun AddRecordScreen(
     
     // Remind Date Time Picker Dialog
     if (showRemindDateTimePicker) {
-        SimpleDateTimePickerDialog(
-            initialTimestamp = state.remindDateTime ?: Clock.System.now().toEpochMilliseconds(),
+        SingleDatePickerDialog(
+            initialDate = state.remindDateTime ?: Clock.System.now().toEpochMilliseconds(),
             onConfirm = { timestamp ->
                 viewModel.setRemindDateTime(timestamp)
                 showRemindDateTimePicker = false

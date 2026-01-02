@@ -2,51 +2,115 @@ package com.hisaabi.hisaabi_kmp.transactions.presentation.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.shape.RoundedCornerShape
-import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
-import com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction
-import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionState
-import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionSortOption
-import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionCategory
-import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
-import com.hisaabi.hisaabi_kmp.database.entity.CategoryEntity
-import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionsListViewModel
-import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.ManufactureInfo
-import com.hisaabi.hisaabi_kmp.utils.formatTransactionDate
-import com.hisaabi.hisaabi_kmp.utils.formatEntryDate
-import com.hisaabi.hisaabi_kmp.utils.SimpleDatePickerDialog
-import com.hisaabi.hisaabi_kmp.utils.formatDate
-import kotlinx.datetime.Clock
-import com.hisaabi.hisaabi_kmp.receipt.ReceiptViewModel
-import com.hisaabi.hisaabi_kmp.receipt.ReceiptPreviewDialog
-import com.hisaabi.hisaabi_kmp.core.ui.FilterChipWithColors
-import com.hisaabi.hisaabi_kmp.core.ui.getStatusBadgeColors
-import com.hisaabi.hisaabi_kmp.core.ui.LocalWindowSizeClass
-import com.hisaabi.hisaabi_kmp.core.ui.WindowWidthSizeClass
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.ui.unit.Dp
-import com.hisaabi.hisaabi_kmp.sync.domain.model.SyncStatus
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.CloudDone
+import androidx.compose.material.icons.filled.CloudSync
+import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Sort
+import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.filled.Undo
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.VerticalDivider
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.hisaabi.hisaabi_kmp.core.ui.FilterChipWithColors
+import com.hisaabi.hisaabi_kmp.core.ui.LocalWindowSizeClass
+import com.hisaabi.hisaabi_kmp.core.ui.SingleDatePickerDialog
+import com.hisaabi.hisaabi_kmp.core.ui.WindowWidthSizeClass
+import com.hisaabi.hisaabi_kmp.core.ui.getStatusBadgeColors
+import com.hisaabi.hisaabi_kmp.database.entity.CategoryEntity
+import com.hisaabi.hisaabi_kmp.parties.domain.model.Party
+import com.hisaabi.hisaabi_kmp.receipt.ReceiptPreviewDialog
+import com.hisaabi.hisaabi_kmp.receipt.ReceiptViewModel
 import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
-import org.koin.compose.koinInject
+import com.hisaabi.hisaabi_kmp.sync.domain.model.SyncStatus
+import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
+import com.hisaabi.hisaabi_kmp.transactions.domain.model.Transaction
+import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionCategory
+import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionSortOption
+import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionState
+import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.ManufactureInfo
+import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionsListViewModel
 import com.hisaabi.hisaabi_kmp.utils.format
+import com.hisaabi.hisaabi_kmp.utils.formatDate
+import com.hisaabi.hisaabi_kmp.utils.formatTransactionDate
+import kotlinx.datetime.Clock
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,17 +120,17 @@ fun TransactionsListScreen(
     onTransactionClick: (Transaction) -> Unit,
     onAddTransactionClick: () -> Unit,
     onEditTransaction: (Transaction) -> Unit,
-    onConvertToSale: ((Transaction) -> Unit)? ,
-    onEditAndConvertToSale: ((Transaction) -> Unit)? ,
-    onConvertToPurchase: ((Transaction) -> Unit)? ,
-    onEditAndConvertToPurchase: ((Transaction) -> Unit)? ,
-    onCancelAndRemove: ((Transaction) -> Unit)? ,
-    onRestore: ((Transaction) -> Unit)? ,
-    onClone: ((Transaction) -> Unit)? ,
-    onChangeStateToPending: ((Transaction) -> Unit)? ,
-    onChangeStateToInProgress: ((Transaction) -> Unit)? ,
-    onChangeStateToCompleted: ((Transaction) -> Unit)? ,
-    onChangeStateToCanceled: ((Transaction) -> Unit)? ,
+    onConvertToSale: ((Transaction) -> Unit)?,
+    onEditAndConvertToSale: ((Transaction) -> Unit)?,
+    onConvertToPurchase: ((Transaction) -> Unit)?,
+    onEditAndConvertToPurchase: ((Transaction) -> Unit)?,
+    onCancelAndRemove: ((Transaction) -> Unit)?,
+    onRestore: ((Transaction) -> Unit)?,
+    onClone: ((Transaction) -> Unit)?,
+    onChangeStateToPending: ((Transaction) -> Unit)?,
+    onChangeStateToInProgress: ((Transaction) -> Unit)?,
+    onChangeStateToCompleted: ((Transaction) -> Unit)?,
+    onChangeStateToCanceled: ((Transaction) -> Unit)?,
     onOutstandingBalanceReminder: ((Transaction) -> Unit)?,
     onTransactionDeleted: (() -> Unit)? = null,
     onSelectParty: () -> Unit = {},
@@ -77,13 +141,13 @@ fun TransactionsListScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val sheetState = rememberModalBottomSheetState()
     var showSearchBar by remember { mutableStateOf(false) }
-    
+
     // LazyListState for scroll position preservation
     val listState = rememberLazyListState(
         initialFirstVisibleItemIndex = state.scrollPosition,
         initialFirstVisibleItemScrollOffset = state.scrollOffset
     )
-    
+
     // Sync scroll position changes back to ViewModel
     LaunchedEffect(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset) {
         viewModel.updateScrollPosition(
@@ -91,7 +155,7 @@ fun TransactionsListScreen(
             listState.firstVisibleItemScrollOffset
         )
     }
-    
+
     // Infinite scroll - load more when near the end
     val shouldLoadMore = remember {
         derivedStateOf {
@@ -101,29 +165,29 @@ fun TransactionsListScreen(
             lastVisibleItem >= totalItems - 5 && totalItems > 0
         }
     }
-    
+
     LaunchedEffect(shouldLoadMore.value) {
         if (shouldLoadMore.value && state.hasMore && !state.isLoadingMore && !state.isLoading) {
             viewModel.loadMore()
         }
     }
-    
+
     // Currency
     val preferencesManager: PreferencesManager = koinInject()
     val selectedCurrency by preferencesManager.selectedCurrency.collectAsState(null)
     val currencySymbol = selectedCurrency?.symbol ?: ""
-    
+
     // Receipt functionality
     val receiptViewModel: ReceiptViewModel = koinInject()
     val receiptState by receiptViewModel.state.collectAsState()
-    
+
     LaunchedEffect(state.error) {
         state.error?.let { error ->
             snackbarHostState.showSnackbar(error)
             viewModel.clearError()
         }
     }
-    
+
     // Handle receipt state
     LaunchedEffect(receiptState.error) {
         receiptState.error?.let { error ->
@@ -131,14 +195,14 @@ fun TransactionsListScreen(
             receiptViewModel.clearError()
         }
     }
-    
+
     LaunchedEffect(receiptState.successMessage) {
         receiptState.successMessage?.let { message ->
             snackbarHostState.showSnackbar(message)
             receiptViewModel.clearSuccess()
         }
     }
-    
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
@@ -155,19 +219,20 @@ fun TransactionsListScreen(
                         Icon(
                             Icons.Default.FilterList,
                             "Filters",
-                            tint = if (state.selectedTransactionTypes.isNotEmpty() || 
-                                state.selectedParty != null || 
-                                state.selectedArea != null || 
+                            tint = if (state.selectedTransactionTypes.isNotEmpty() ||
+                                state.selectedParty != null ||
+                                state.selectedArea != null ||
                                 state.selectedCategory != null ||
                                 state.idOrSlugFilter.isNotEmpty() ||
                                 state.startDate != null ||
-                                state.endDate != null) 
-                                MaterialTheme.colorScheme.primary 
-                            else 
+                                state.endDate != null
+                            )
+                                MaterialTheme.colorScheme.primary
+                            else
                                 MaterialTheme.colorScheme.onSurface
                         )
                     }
-                    
+
                     // Search button
                     IconButton(onClick = { showSearchBar = !showSearchBar }) {
                         Icon(Icons.Default.Search, "Search")
@@ -185,7 +250,7 @@ fun TransactionsListScreen(
     ) { paddingValues ->
         val windowSizeClass = LocalWindowSizeClass.current
         val isDesktop = windowSizeClass.widthSizeClass == WindowWidthSizeClass.EXPANDED
-        
+
         // Center content on larger screens with max width
         Box(
             modifier = Modifier
@@ -201,116 +266,174 @@ fun TransactionsListScreen(
                         else Modifier
                     )
             ) {
-            // Search bar
-            if (showSearchBar || state.searchQuery.isNotEmpty()) {
-                OutlinedTextField(
-                    value = state.searchQuery,
-                    onValueChange = { viewModel.setSearchQuery(it) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    placeholder = { Text("Search transactions...") },
-                    leadingIcon = { Icon(Icons.Default.Search, "Search") },
-                    trailingIcon = {
-                        if (state.searchQuery.isNotEmpty()) {
-                            IconButton(onClick = { viewModel.setSearchQuery("") }) {
-                                Icon(Icons.Default.Clear, "Clear")
-                            }
-                        }
-                    },
-                    singleLine = true
-                )
-            }
-            
-            // Transactions list
-            when {
-                state.isLoading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
-                }
-                state.transactions.isEmpty() -> {
-                    EmptyTransactionsView(onAddClick = onAddTransactionClick)
-                }
-                else -> {
-                    // Use 2-column grid on desktop, single column on mobile
-                    val gridColumns = if (isDesktop) 2 else 1
-                    val horizontalPadding = if (isDesktop) 24.dp else 16.dp
-                    val cardSpacing = if (isDesktop) 16.dp else 12.dp
-                    
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(gridColumns),
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(
-                            horizontal = horizontalPadding,
-                            vertical = 16.dp
-                        ),
-                        verticalArrangement = Arrangement.spacedBy(cardSpacing),
-                        horizontalArrangement = Arrangement.spacedBy(cardSpacing)
-                    ) {
-                        items(
-                            items = state.transactions,
-                            key = { it.slug ?: it.id.toString() }
-                        ) { transaction ->
-                            TransactionCard(
-                                transaction = transaction,
-                                currencySymbol = currencySymbol,
-                                onClick = { onTransactionClick(transaction) },
-                                onDeleteClick = { 
-                                    viewModel.deleteTransaction(transaction) {
-                                        onTransactionDeleted?.invoke()
-                                    }
-                                },
-                                onEditClick = { onEditTransaction(transaction) },
-                                transactionDetailsCounts = state.transactionDetailsCounts,
-                                manufactureInfo = state.manufactureInfo,
-                                receiptViewModel = receiptViewModel,
-                                onConvertToSale = onConvertToSale?.let { { it(transaction) } },
-                                onEditAndConvertToSale = onEditAndConvertToSale?.let { { it(transaction) } },
-                                onConvertToPurchase = onConvertToPurchase?.let { { it(transaction) } },
-                                onEditAndConvertToPurchase = onEditAndConvertToPurchase?.let { { it(transaction) } },
-                                onCancelAndRemove = onCancelAndRemove?.let { { it(transaction) } },
-                                onRestore = onRestore?.let { { it(transaction) } },
-                                onClone = onClone?.let { { it(transaction) } },
-                                onChangeStateToPending = onChangeStateToPending?.let { { it(transaction) } },
-                                onChangeStateToInProgress = onChangeStateToInProgress?.let { { it(transaction) } },
-                                onChangeStateToCompleted = onChangeStateToCompleted?.let { { it(transaction) } },
-                                onChangeStateToCanceled = onChangeStateToCanceled?.let { { it(transaction) } },
-                                onOutstandingBalanceReminder = onOutstandingBalanceReminder?.let { { it(transaction) } }
-                            )
-                        }
-                        
-                        // Loading more indicator - spans full width
-                        if (state.isLoadingMore) {
-                            item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(gridColumns) }) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(32.dp),
-                                        strokeWidth = 2.dp
-                                    )
+                // Search bar
+                if (showSearchBar || state.searchQuery.isNotEmpty()) {
+                    OutlinedTextField(
+                        value = state.searchQuery,
+                        onValueChange = { viewModel.setSearchQuery(it) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        placeholder = { Text("Search transactions...") },
+                        leadingIcon = { Icon(Icons.Default.Search, "Search") },
+                        trailingIcon = {
+                            if (state.searchQuery.isNotEmpty()) {
+                                IconButton(onClick = { viewModel.setSearchQuery("") }) {
+                                    Icon(Icons.Default.Clear, "Clear")
                                 }
                             }
+                        },
+                        singleLine = true
+                    )
+                }
+
+                // Transactions list
+                when {
+                    state.isLoading -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
                         }
-                        
-                        // Bottom padding for FAB - spans full width
-                        item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(gridColumns) }) {
-                            Spacer(Modifier.height(80.dp))
+                    }
+
+                    state.transactions.isEmpty() -> {
+                        EmptyTransactionsView(onAddClick = onAddTransactionClick)
+                    }
+
+                    else -> {
+                        // Use 2-column grid on desktop, single column on mobile
+                        val gridColumns = if (isDesktop) 2 else 1
+                        val horizontalPadding = if (isDesktop) 24.dp else 16.dp
+                        val cardSpacing = if (isDesktop) 16.dp else 12.dp
+
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(gridColumns),
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(
+                                horizontal = horizontalPadding,
+                                vertical = 16.dp
+                            ),
+                            verticalArrangement = Arrangement.spacedBy(cardSpacing),
+                            horizontalArrangement = Arrangement.spacedBy(cardSpacing)
+                        ) {
+                            items(
+                                items = state.transactions,
+                                key = { it.slug ?: it.id.toString() }
+                            ) { transaction ->
+                                TransactionCard(
+                                    transaction = transaction,
+                                    currencySymbol = currencySymbol,
+                                    onClick = { onTransactionClick(transaction) },
+                                    onDeleteClick = {
+                                        viewModel.deleteTransaction(transaction) {
+                                            onTransactionDeleted?.invoke()
+                                        }
+                                    },
+                                    onEditClick = { onEditTransaction(transaction) },
+                                    transactionDetailsCounts = state.transactionDetailsCounts,
+                                    manufactureInfo = state.manufactureInfo,
+                                    receiptViewModel = receiptViewModel,
+                                    onConvertToSale = onConvertToSale?.let { { it(transaction) } },
+                                    onEditAndConvertToSale = onEditAndConvertToSale?.let {
+                                        {
+                                            it(
+                                                transaction
+                                            )
+                                        }
+                                    },
+                                    onConvertToPurchase = onConvertToPurchase?.let {
+                                        {
+                                            it(
+                                                transaction
+                                            )
+                                        }
+                                    },
+                                    onEditAndConvertToPurchase = onEditAndConvertToPurchase?.let {
+                                        {
+                                            it(
+                                                transaction
+                                            )
+                                        }
+                                    },
+                                    onCancelAndRemove = onCancelAndRemove?.let { { it(transaction) } },
+                                    onRestore = onRestore?.let { { it(transaction) } },
+                                    onClone = onClone?.let { { it(transaction) } },
+                                    onChangeStateToPending = onChangeStateToPending?.let {
+                                        {
+                                            it(
+                                                transaction
+                                            )
+                                        }
+                                    },
+                                    onChangeStateToInProgress = onChangeStateToInProgress?.let {
+                                        {
+                                            it(
+                                                transaction
+                                            )
+                                        }
+                                    },
+                                    onChangeStateToCompleted = onChangeStateToCompleted?.let {
+                                        {
+                                            it(
+                                                transaction
+                                            )
+                                        }
+                                    },
+                                    onChangeStateToCanceled = onChangeStateToCanceled?.let {
+                                        {
+                                            it(
+                                                transaction
+                                            )
+                                        }
+                                    },
+                                    onOutstandingBalanceReminder = onOutstandingBalanceReminder?.let {
+                                        {
+                                            it(
+                                                transaction
+                                            )
+                                        }
+                                    }
+                                )
+                            }
+
+                            // Loading more indicator - spans full width
+                            if (state.isLoadingMore) {
+                                item(span = {
+                                    androidx.compose.foundation.lazy.grid.GridItemSpan(
+                                        gridColumns
+                                    )
+                                }) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(32.dp),
+                                            strokeWidth = 2.dp
+                                        )
+                                    }
+                                }
+                            }
+
+                            // Bottom padding for FAB - spans full width
+                            item(span = {
+                                androidx.compose.foundation.lazy.grid.GridItemSpan(
+                                    gridColumns
+                                )
+                            }) {
+                                Spacer(Modifier.height(80.dp))
+                            }
                         }
                     }
                 }
             }
         }
-        }
     }
-    
+
     // Filter Bottom Sheet
     if (state.showFilters) {
         ModalBottomSheet(
@@ -353,7 +476,7 @@ fun TransactionsListScreen(
                 onClearCategoryFilter = { viewModel.setCategoryFilter(null) },
                 onToggleShowActive = { viewModel.toggleShowActiveTransactions() },
                 onToggleShowDeleted = { viewModel.toggleShowDeletedTransactions() },
-                onClearFilters = { 
+                onClearFilters = {
                     viewModel.clearFilters()
                     viewModel.toggleFilters()
                 },
@@ -361,7 +484,7 @@ fun TransactionsListScreen(
             )
         }
     }
-    
+
     // Receipt Preview Dialog
     if (receiptState.showPreview && receiptState.currentTransaction != null) {
         ReceiptPreviewDialog(
@@ -369,7 +492,7 @@ fun TransactionsListScreen(
             config = receiptState.receiptConfig,
             isGenerating = receiptState.isGenerating,
             onDismiss = { receiptViewModel.hidePreview() },
-            onShare = { 
+            onShare = {
                 receiptState.currentTransaction?.let { transaction ->
                     receiptViewModel.generateAndShareReceipt(transaction)
                 }
@@ -413,7 +536,7 @@ private fun FiltersBottomSheetContent(
     var showEndDatePicker by remember { mutableStateOf(false) }
     val currentTime = Clock.System.now().toEpochMilliseconds()
     val listState = rememberLazyListState()
-    
+
     LazyColumn(
         modifier = Modifier
             .fillMaxWidth()
@@ -448,7 +571,7 @@ private fun FiltersBottomSheetContent(
                 }
             }
         }
-        
+
         item {
             HorizontalDivider(
                 modifier = Modifier.padding(vertical = 16.dp),
@@ -527,7 +650,7 @@ private fun FiltersBottomSheetContent(
                 )
             }
         }
-        
+
         item {
             Card(
                 modifier = Modifier
@@ -627,7 +750,7 @@ private fun FiltersBottomSheetContent(
                 )
             }
         }
-        
+
         item {
             Card(
                 modifier = Modifier
@@ -718,7 +841,7 @@ private fun FiltersBottomSheetContent(
                 )
             }
         }
-        
+
         item {
             Card(
                 modifier = Modifier
@@ -987,7 +1110,7 @@ private fun FiltersBottomSheetContent(
                 }
             }
         }
-        
+
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -1052,15 +1175,21 @@ private fun FiltersBottomSheetContent(
                 }
             }
         }
-        
+
         // Group transaction types by category for better organization
-        val basicTypes = AllTransactionTypes.entries.filter { it.category == TransactionCategory.BASIC }
-        val cashPaymentTypes = AllTransactionTypes.entries.filter { it.category == TransactionCategory.CASH_PAYMENT }
-        val expenseIncomeTypes = AllTransactionTypes.entries.filter { it.category == TransactionCategory.EXPENSE_INCOME }
-        val stockAdjustmentTypes = AllTransactionTypes.entries.filter { it.category == TransactionCategory.STOCK_ADJUSTMENT }
-        val recordTypes = AllTransactionTypes.entries.filter { it.category == TransactionCategory.RECORD }
-        val otherTypes = AllTransactionTypes.entries.filter { it.category == TransactionCategory.OTHER }
-        
+        val basicTypes =
+            AllTransactionTypes.entries.filter { it.category == TransactionCategory.BASIC }
+        val cashPaymentTypes =
+            AllTransactionTypes.entries.filter { it.category == TransactionCategory.CASH_PAYMENT }
+        val expenseIncomeTypes =
+            AllTransactionTypes.entries.filter { it.category == TransactionCategory.EXPENSE_INCOME }
+        val stockAdjustmentTypes =
+            AllTransactionTypes.entries.filter { it.category == TransactionCategory.STOCK_ADJUSTMENT }
+        val recordTypes =
+            AllTransactionTypes.entries.filter { it.category == TransactionCategory.RECORD }
+        val otherTypes =
+            AllTransactionTypes.entries.filter { it.category == TransactionCategory.OTHER }
+
         // Helper function to render chips in rows (3 per row) using items
         fun renderTypeChipsItems(types: List<AllTransactionTypes>) {
             types.chunked(3).forEachIndexed { index, rowTypes ->
@@ -1087,7 +1216,7 @@ private fun FiltersBottomSheetContent(
                 }
             }
         }
-        
+
         // Basic Transaction Types
         if (basicTypes.isNotEmpty()) {
             item {
@@ -1104,7 +1233,7 @@ private fun FiltersBottomSheetContent(
                 Spacer(Modifier.height(12.dp))
             }
         }
-        
+
         // Cash Payment Types
         if (cashPaymentTypes.isNotEmpty()) {
             item {
@@ -1121,7 +1250,7 @@ private fun FiltersBottomSheetContent(
                 Spacer(Modifier.height(12.dp))
             }
         }
-        
+
         // Expense & Income Types
         if (expenseIncomeTypes.isNotEmpty()) {
             item {
@@ -1138,7 +1267,7 @@ private fun FiltersBottomSheetContent(
                 Spacer(Modifier.height(12.dp))
             }
         }
-        
+
         // Stock Adjustment Types
         if (stockAdjustmentTypes.isNotEmpty()) {
             item {
@@ -1155,7 +1284,7 @@ private fun FiltersBottomSheetContent(
                 Spacer(Modifier.height(12.dp))
             }
         }
-        
+
         // Record Types
         if (recordTypes.isNotEmpty()) {
             item {
@@ -1172,7 +1301,7 @@ private fun FiltersBottomSheetContent(
                 Spacer(Modifier.height(12.dp))
             }
         }
-        
+
         // Other Types
         if (otherTypes.isNotEmpty()) {
             item {
@@ -1189,8 +1318,8 @@ private fun FiltersBottomSheetContent(
                 Spacer(Modifier.height(12.dp))
             }
         }
-        
-   
+
+
         // Apply button
         item {
             Button(
@@ -1208,17 +1337,17 @@ private fun FiltersBottomSheetContent(
                 )
             }
         }
-        
+
         // Bottom padding for safe area
         item {
             Spacer(Modifier.height(24.dp))
         }
     }
-    
+
     // Start Date Picker Dialog
     if (showStartDatePicker) {
-        SimpleDatePickerDialog(
-            initialTimestamp = startDate,
+        SingleDatePickerDialog(
+            initialDate = startDate,
             onConfirm = { timestamp ->
                 onStartDateChange(timestamp)
                 showStartDatePicker = false
@@ -1226,11 +1355,11 @@ private fun FiltersBottomSheetContent(
             onDismiss = { showStartDatePicker = false }
         )
     }
-    
+
     // End Date Picker Dialog
     if (showEndDatePicker) {
-        SimpleDatePickerDialog(
-            initialTimestamp = endDate,
+        SingleDatePickerDialog(
+            initialDate = endDate,
             onConfirm = { timestamp ->
                 onEndDateChange(timestamp)
                 showEndDatePicker = false
@@ -1303,54 +1432,121 @@ private fun TransactionCard(
 ) {
     // Check if transaction is deleted (status_id = 2)
     val isDeleted = transaction.statusId == 2
-    
+
     Box(modifier = Modifier.fillMaxWidth()) {
         // Determine card type based on transaction type
         when {
             AllTransactionTypes.isRecord(transaction.transactionType) -> {
                 RecordTransactionCard(
-                    transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel,
-                    onRestore, onChangeStateToPending, onChangeStateToInProgress, onChangeStateToCompleted, 
-                    onChangeStateToCanceled, onOutstandingBalanceReminder
+                    transaction,
+                    currencySymbol,
+                    onClick,
+                    onDeleteClick,
+                    onEditClick,
+                    receiptViewModel,
+                    onRestore,
+                    onChangeStateToPending,
+                    onChangeStateToInProgress,
+                    onChangeStateToCompleted,
+                    onChangeStateToCanceled,
+                    onOutstandingBalanceReminder
                 )
             }
+
             AllTransactionTypes.isPayGetCash(transaction.transactionType) -> {
-                PayGetCashCard(transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel, onRestore)
+                PayGetCashCard(
+                    transaction,
+                    currencySymbol,
+                    onClick,
+                    onDeleteClick,
+                    onEditClick,
+                    receiptViewModel,
+                    onRestore
+                )
             }
+
             AllTransactionTypes.isExpenseIncome(transaction.transactionType) -> {
-                ExpenseIncomeCard(transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel, onRestore)
+                ExpenseIncomeCard(
+                    transaction,
+                    currencySymbol,
+                    onClick,
+                    onDeleteClick,
+                    onEditClick,
+                    receiptViewModel,
+                    onRestore
+                )
             }
+
             transaction.transactionType == AllTransactionTypes.PAYMENT_TRANSFER.value -> {
-                PaymentTransferCard(transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel, onRestore)
+                PaymentTransferCard(
+                    transaction,
+                    currencySymbol,
+                    onClick,
+                    onDeleteClick,
+                    onEditClick,
+                    receiptViewModel,
+                    onRestore
+                )
             }
+
             transaction.transactionType == AllTransactionTypes.JOURNAL_VOUCHER.value -> {
-                JournalVoucherCard(transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel, onRestore)
+                JournalVoucherCard(
+                    transaction,
+                    currencySymbol,
+                    onClick,
+                    onDeleteClick,
+                    onEditClick,
+                    receiptViewModel,
+                    onRestore
+                )
             }
+
             AllTransactionTypes.isStockAdjustment(transaction.transactionType) -> {
-                StockAdjustmentCard(transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel, transactionDetailsCounts, onRestore)
+                StockAdjustmentCard(
+                    transaction,
+                    currencySymbol,
+                    onClick,
+                    onDeleteClick,
+                    onEditClick,
+                    receiptViewModel,
+                    transactionDetailsCounts,
+                    onRestore
+                )
             }
+
             transaction.transactionType == AllTransactionTypes.MANUFACTURE.value -> {
                 val info = manufactureInfo[transaction.slug]
-                ManufactureCard(transaction, currencySymbol, onClick, onDeleteClick, onEditClick, receiptViewModel, info, onRestore)
+                ManufactureCard(
+                    transaction,
+                    currencySymbol,
+                    onClick,
+                    onDeleteClick,
+                    onEditClick,
+                    receiptViewModel,
+                    info,
+                    onRestore
+                )
             }
+
             AllTransactionTypes.isOrder(transaction.transactionType) || transaction.transactionType == AllTransactionTypes.QUOTATION.value -> {
                 OrderQuotationCard(
-                    transaction, onClick, onDeleteClick, onEditClick, receiptViewModel, 
+                    transaction, onClick, onDeleteClick, onEditClick, receiptViewModel,
                     transactionDetailsCounts, currencySymbol,
-                    onConvertToSale, onEditAndConvertToSale, 
+                    onConvertToSale, onEditAndConvertToSale,
                     onConvertToPurchase, onEditAndConvertToPurchase,
                     onCancelAndRemove, onRestore, onClone
                 )
             }
+
             else -> {
                 // Basic transaction card (Sale, Purchase, Returns)
                 BasicTransactionCard(
-                    transaction, onClick, onDeleteClick, onEditClick, receiptViewModel, 
+                    transaction, onClick, onDeleteClick, onEditClick, receiptViewModel,
                     transactionDetailsCounts, currencySymbol, onRestore, onClone
                 )
             }
         }
-        
+
         // Gray overlay for deleted transactions with rounded corners
         if (isDeleted) {
             Box(
@@ -1381,129 +1577,143 @@ private fun getBadgeColors(transactionType: Int): BadgeColors {
             backgroundColor = Color(0xFF2196F3), // Bright Blue
             textColor = Color.White
         )
+
         AllTransactionTypes.SALE_ORDER -> BadgeColors(
             backgroundColor = Color(0xFF42A5F5), // Light Blue
             textColor = Color.White
         )
-        
+
         // Purchases - Green tones
         AllTransactionTypes.PURCHASE -> BadgeColors(
             backgroundColor = Color(0xFF4CAF50), // Green
             textColor = Color.White
         )
+
         AllTransactionTypes.PURCHASE_ORDER -> BadgeColors(
             backgroundColor = Color(0xFF66BB6A), // Light Green
             textColor = Color.White
         )
-        
+
         // Returns - Red/Orange tones
         AllTransactionTypes.CUSTOMER_RETURN -> BadgeColors(
             backgroundColor = Color(0xFFF44336), // Red
             textColor = Color.White
         )
+
         AllTransactionTypes.VENDOR_RETURN -> BadgeColors(
             backgroundColor = Color(0xFFFF5722), // Deep Orange
             textColor = Color.White
         )
-        
+
         // Money Incoming - Teal/Cyan tones
         AllTransactionTypes.GET_FROM_CUSTOMER -> BadgeColors(
             backgroundColor = Color(0xFF00BCD4), // Cyan
             textColor = Color.White
         )
+
         AllTransactionTypes.GET_FROM_VENDOR -> BadgeColors(
             backgroundColor = Color(0xFF00ACC1), // Teal
             textColor = Color.White
         )
+
         AllTransactionTypes.INVESTMENT_WITHDRAW -> BadgeColors(
             backgroundColor = Color(0xFF0097A7), // Dark Cyan
             textColor = Color.White
         )
+
         AllTransactionTypes.EXTRA_INCOME -> BadgeColors(
             backgroundColor = Color(0xFF26A69A), // Teal Green
             textColor = Color.White
         )
-        
+
         // Money Outgoing - Purple/Pink tones
         AllTransactionTypes.PAY_TO_CUSTOMER -> BadgeColors(
             backgroundColor = Color(0xFF9C27B0), // Purple
             textColor = Color.White
         )
+
         AllTransactionTypes.PAY_TO_VENDOR -> BadgeColors(
             backgroundColor = Color(0xFFAB47BC), // Light Purple
             textColor = Color.White
         )
+
         AllTransactionTypes.INVESTMENT_DEPOSIT -> BadgeColors(
             backgroundColor = Color(0xFF7B1FA2), // Dark Purple
             textColor = Color.White
         )
-        
+
         // Expenses - Deep Red/Orange
         AllTransactionTypes.EXPENSE -> BadgeColors(
             backgroundColor = Color(0xFFE91E63), // Pink/Red
             textColor = Color.White
         )
-        
+
         // Transfers - Indigo
         AllTransactionTypes.PAYMENT_TRANSFER -> BadgeColors(
             backgroundColor = Color(0xFF3F51B5), // Indigo
             textColor = Color.White
         )
-        
+
         // Journal - Deep Blue
         AllTransactionTypes.JOURNAL_VOUCHER -> BadgeColors(
             backgroundColor = Color(0xFF1976D2), // Deep Blue
             textColor = Color.White
         )
-        
+
         // Stock Operations - Teal/Green tones
         AllTransactionTypes.STOCK_TRANSFER -> BadgeColors(
             backgroundColor = Color(0xFF00897B), // Teal
             textColor = Color.White
         )
+
         AllTransactionTypes.STOCK_INCREASE -> BadgeColors(
             backgroundColor = Color(0xFF43A047), // Green
             textColor = Color.White
         )
+
         AllTransactionTypes.STOCK_REDUCE -> BadgeColors(
             backgroundColor = Color(0xFFE53935), // Red
             textColor = Color.White
         )
-        
+
         // Manufacture - Orange/Amber
         AllTransactionTypes.MANUFACTURE -> BadgeColors(
             backgroundColor = Color(0xFFFF9800), // Orange
             textColor = Color.White
         )
-        
+
         // Quotations - Amber/Yellow
         AllTransactionTypes.QUOTATION -> BadgeColors(
             backgroundColor = Color(0xFFFFC107), // Amber
             textColor = Color(0xFF424242) // Dark text for contrast
         )
-        
+
         // Records/Notes - Various pastel colors
         AllTransactionTypes.MEETING -> BadgeColors(
             backgroundColor = Color(0xFF9575CD), // Light Purple
             textColor = Color.White
         )
+
         AllTransactionTypes.TASK -> BadgeColors(
             backgroundColor = Color(0xFF5C6BC0), // Indigo
             textColor = Color.White
         )
+
         AllTransactionTypes.CLIENT_NOTE -> BadgeColors(
             backgroundColor = Color(0xFF7986CB), // Light Indigo
             textColor = Color.White
         )
+
         AllTransactionTypes.SELF_NOTE -> BadgeColors(
             backgroundColor = Color(0xFFBDBDBD), // Grey
             textColor = Color(0xFF212121) // Dark text
         )
+
         AllTransactionTypes.CASH_REMINDER -> BadgeColors(
             backgroundColor = Color(0xFFFF6B6B), // Light Red
             textColor = Color.White
         )
-        
+
         // Default
         else -> BadgeColors(
             backgroundColor = Color(0xFF757575), // Grey
@@ -1518,7 +1728,7 @@ private fun CardHeader(
     onOptionsClick: () -> Unit
 ) {
     val badgeColors = getBadgeColors(transaction.transactionType)
-    
+
     Box(modifier = Modifier.fillMaxWidth()) {
         // Transaction type badge - positioned at top-start with negative offset to align with parent
         // Shape that only rounds the top-start corner to match parent Card (Material3 medium corner radius is 12.dp)
@@ -1540,7 +1750,7 @@ private fun CardHeader(
                 color = badgeColors.textColor
             )
         }
-        
+
         // Dates and options - positioned at top-end
         Row(
             modifier = Modifier.align(Alignment.TopEnd),
@@ -1574,7 +1784,11 @@ private fun CardHeader(
                 }
             }
             IconButton(onClick = onOptionsClick) {
-                Icon(Icons.Default.MoreVert, "Options", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Icon(
+                    Icons.Default.MoreVert,
+                    "Options",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
@@ -1583,25 +1797,27 @@ private fun CardHeader(
 @Composable
 private fun SyncStatusIndicator(syncStatus: Int) {
     val status = SyncStatus.fromValue(syncStatus)
-    
+
     val (icon, tint, description) = when (status) {
         SyncStatus.SYNCED -> Triple(
             Icons.Default.CloudDone,
             Color(0xFF4CAF50), // Green
             "Synced"
         )
+
         SyncStatus.NONE -> Triple(
             Icons.Default.CloudUpload,
             Color(0xFFFF9800), // Orange
             "Pending sync"
         )
+
         SyncStatus.UPDATED -> Triple(
             Icons.Default.CloudSync,
             Color(0xFF2196F3), // Blue
             "Updated, pending sync"
         )
     }
-    
+
     Icon(
         imageVector = icon,
         contentDescription = description,
@@ -1675,11 +1891,11 @@ private fun TransactionOptionsMenu(
     val isCashTransfer = transaction.transactionType == AllTransactionTypes.PAYMENT_TRANSFER.value
     val isJournal = transaction.transactionType == AllTransactionTypes.JOURNAL_VOUCHER.value
     val currentState = TransactionState.fromValue(transaction.stateId)
-    
+
     // Determine if we should show Generate Receipt and Clone options
     val showGenerateReceipt = !isDeleted && !isCashTransfer && !isJournal && !isRecordType
     val showClone = !isDeleted && !isCashTransfer && !isJournal && !isRecordType
-    
+
     DropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismiss
@@ -1718,7 +1934,7 @@ private fun TransactionOptionsMenu(
             }
         } else {
             // For active transactions
-            
+
             // Generate Receipt (if applicable)
             if (showGenerateReceipt) {
                 DropdownMenuItem(
@@ -1730,7 +1946,7 @@ private fun TransactionOptionsMenu(
                     leadingIcon = { Icon(Icons.Default.Receipt, null) }
                 )
             }
-            
+
             // View Details
             DropdownMenuItem(
                 text = { Text("View Details") },
@@ -1740,7 +1956,7 @@ private fun TransactionOptionsMenu(
                 },
                 leadingIcon = { Icon(Icons.Default.Visibility, null) }
             )
-            
+
             // Edit
             DropdownMenuItem(
                 text = { Text("Edit") },
@@ -1750,7 +1966,7 @@ private fun TransactionOptionsMenu(
                 },
                 leadingIcon = { Icon(Icons.Default.Edit, null) }
             )
-            
+
             // Delete
             DropdownMenuItem(
                 text = { Text("Delete") },
@@ -1758,9 +1974,15 @@ private fun TransactionOptionsMenu(
                     onDismiss()
                     onDeleteClick()
                 },
-                leadingIcon = { Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error) }
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.Delete,
+                        null,
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
             )
-            
+
             // Clone Transaction (if applicable)
             if (showClone) {
                 onClone?.let {
@@ -1774,7 +1996,7 @@ private fun TransactionOptionsMenu(
                     )
                 }
             }
-            
+
             // Transaction type-specific options
             when (transactionType) {
                 AllTransactionTypes.SALE_ORDER, AllTransactionTypes.QUOTATION -> {
@@ -1806,11 +2028,17 @@ private fun TransactionOptionsMenu(
                                 onDismiss()
                                 it()
                             },
-                            leadingIcon = { Icon(Icons.Default.Close, null, tint = MaterialTheme.colorScheme.error) }
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Close,
+                                    null,
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
                         )
                     }
                 }
-                
+
                 AllTransactionTypes.PURCHASE_ORDER -> {
                     HorizontalDivider()
                     onConvertToPurchase?.let {
@@ -1840,14 +2068,20 @@ private fun TransactionOptionsMenu(
                                 onDismiss()
                                 it()
                             },
-                            leadingIcon = { Icon(Icons.Default.Close, null, tint = MaterialTheme.colorScheme.error) }
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Close,
+                                    null,
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
                         )
                     }
                 }
-                
+
                 AllTransactionTypes.MEETING, AllTransactionTypes.TASK, AllTransactionTypes.CASH_REMINDER -> {
                     HorizontalDivider()
-                    
+
                     // Outstanding Balance Reminder (only for CASH_REMINDER)
                     if (transactionType == AllTransactionTypes.CASH_REMINDER) {
                         onOutstandingBalanceReminder?.let {
@@ -1861,7 +2095,7 @@ private fun TransactionOptionsMenu(
                             )
                         }
                     }
-                    
+
                     // State management options (only show if not already in that state)
                     if (currentState != TransactionState.PENDING) {
                         onChangeStateToPending?.let {
@@ -1875,7 +2109,7 @@ private fun TransactionOptionsMenu(
                             )
                         }
                     }
-                    
+
                     if (currentState != TransactionState.IN_PROGRESS) {
                         onChangeStateToInProgress?.let {
                             DropdownMenuItem(
@@ -1888,7 +2122,7 @@ private fun TransactionOptionsMenu(
                             )
                         }
                     }
-                    
+
                     if (currentState != TransactionState.COMPLETED) {
                         onChangeStateToCompleted?.let {
                             DropdownMenuItem(
@@ -1901,7 +2135,7 @@ private fun TransactionOptionsMenu(
                             )
                         }
                     }
-                    
+
                     if (currentState != TransactionState.CANCELLED) {
                         onChangeStateToCanceled?.let {
                             DropdownMenuItem(
@@ -1915,7 +2149,7 @@ private fun TransactionOptionsMenu(
                         }
                     }
                 }
-                
+
                 else -> {
                     // No additional options for other types
                 }
@@ -1939,7 +2173,7 @@ private fun BasicTransactionCard(
     onClone: (() -> Unit)? = null
 ) {
     var showOptions by remember { mutableStateOf(false) }
-    
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -2018,13 +2252,22 @@ private fun BasicTransactionCard(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         if (transaction.flatDiscount > 0) {
-                            DetailChip("−$currencySymbol${"%.0f".format(transaction.flatDiscount)}", MaterialTheme.colorScheme.errorContainer)
+                            DetailChip(
+                                "−$currencySymbol${"%.0f".format(transaction.flatDiscount)}",
+                                MaterialTheme.colorScheme.errorContainer
+                            )
                         }
                         if (transaction.flatTax > 0) {
-                            DetailChip("+$currencySymbol${"%.0f".format(transaction.flatTax)}", MaterialTheme.colorScheme.tertiaryContainer)
+                            DetailChip(
+                                "+$currencySymbol${"%.0f".format(transaction.flatTax)}",
+                                MaterialTheme.colorScheme.tertiaryContainer
+                            )
                         }
                         if (transaction.additionalCharges > 0) {
-                            DetailChip("+$currencySymbol${"%.0f".format(transaction.additionalCharges)}", MaterialTheme.colorScheme.secondaryContainer)
+                            DetailChip(
+                                "+$currencySymbol${"%.0f".format(transaction.additionalCharges)}",
+                                MaterialTheme.colorScheme.secondaryContainer
+                            )
                         }
                     }
                 }
@@ -2043,7 +2286,7 @@ private fun BasicTransactionCard(
             }
         }
 
-        
+
         TransactionOptionsMenu(
             transaction = transaction,
             expanded = showOptions,
@@ -2071,13 +2314,13 @@ private fun PayGetCashCard(
     onRestore: (() -> Unit)? = null
 ) {
     var showOptions by remember { mutableStateOf(false) }
-    
+
     val isReceiving = transaction.transactionType in listOf(
         AllTransactionTypes.GET_FROM_CUSTOMER.value,
         AllTransactionTypes.GET_FROM_VENDOR.value,
         AllTransactionTypes.INVESTMENT_WITHDRAW.value
     )
-    
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -2164,7 +2407,7 @@ private fun PayGetCashCard(
         }
 
 
-        
+
         TransactionOptionsMenu(
             transaction = transaction,
             expanded = showOptions,
@@ -2191,9 +2434,9 @@ private fun ExpenseIncomeCard(
     onRestore: (() -> Unit)? = null
 ) {
     var showOptions by remember { mutableStateOf(false) }
-    
+
     val isExpense = transaction.transactionType == AllTransactionTypes.EXPENSE.value
-    
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -2266,7 +2509,7 @@ private fun ExpenseIncomeCard(
             }
         }
 
-        
+
         TransactionOptionsMenu(
             transaction = transaction,
             expanded = showOptions,
@@ -2293,7 +2536,7 @@ private fun PaymentTransferCard(
     onRestore: (() -> Unit)? = null
 ) {
     var showOptions by remember { mutableStateOf(false) }
-    
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -2386,7 +2629,7 @@ private fun PaymentTransferCard(
             }
         }
 
-        
+
         TransactionOptionsMenu(
             transaction = transaction,
             expanded = showOptions,
@@ -2413,7 +2656,7 @@ private fun JournalVoucherCard(
     onRestore: (() -> Unit)? = null
 ) {
     var showOptions by remember { mutableStateOf(false) }
-    
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -2486,7 +2729,7 @@ private fun JournalVoucherCard(
             }
         }
 
-        
+
         TransactionOptionsMenu(
             transaction = transaction,
             expanded = showOptions,
@@ -2514,7 +2757,7 @@ private fun StockAdjustmentCard(
     onRestore: (() -> Unit)? = null
 ) {
     var showOptions by remember { mutableStateOf(false) }
-    
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -2636,7 +2879,7 @@ private fun StockAdjustmentCard(
             }
         }
 
-        
+
         TransactionOptionsMenu(
             transaction = transaction,
             expanded = showOptions,
@@ -2664,7 +2907,7 @@ private fun ManufactureCard(
     onRestore: (() -> Unit)? = null
 ) {
     var showOptions by remember { mutableStateOf(false) }
-    
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -2745,7 +2988,7 @@ private fun ManufactureCard(
             }
         }
 
-        
+
         TransactionOptionsMenu(
             transaction = transaction,
             expanded = showOptions,
@@ -2778,7 +3021,7 @@ private fun OrderQuotationCard(
     onClone: (() -> Unit)? = null
 ) {
     var showOptions by remember { mutableStateOf(false) }
-    
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -2847,7 +3090,7 @@ private fun OrderQuotationCard(
             }
         }
 
-        
+
         TransactionOptionsMenu(
             transaction = transaction,
             expanded = showOptions,
@@ -2885,7 +3128,7 @@ private fun RecordTransactionCard(
     onOutstandingBalanceReminder: (() -> Unit)? = null
 ) {
     var showOptions by remember { mutableStateOf(false) }
-    
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -2971,7 +3214,7 @@ private fun RecordTransactionCard(
             }
         }
 
-        
+
         TransactionOptionsMenu(
             transaction = transaction,
             expanded = showOptions,

@@ -29,7 +29,7 @@ import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddTransactio
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.TransactionDetailItem
 import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
 import com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse
-import com.hisaabi.hisaabi_kmp.utils.SimpleDateTimePickerDialog
+import com.hisaabi.hisaabi_kmp.core.ui.SingleDatePickerDialog
 import com.hisaabi.hisaabi_kmp.utils.formatDateTime
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -692,8 +692,8 @@ fun AddTransactionDesktopScreen(
     
     // Date Time Picker Dialog
     if (showDateTimePicker) {
-        SimpleDateTimePickerDialog(
-            initialTimestamp = state.transactionDateTime,
+        SingleDatePickerDialog(
+            initialDate = state.transactionDateTime,
             onConfirm = { timestamp ->
                 viewModel.setTransactionDateTime(timestamp)
                 showDateTimePicker = false

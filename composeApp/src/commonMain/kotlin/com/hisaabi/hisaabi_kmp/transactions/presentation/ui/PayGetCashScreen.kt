@@ -68,7 +68,7 @@ import com.hisaabi.hisaabi_kmp.paymentmethods.domain.model.PaymentMethod
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.PayGetCashType
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.PayGetCashViewModel
 import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
-import com.hisaabi.hisaabi_kmp.utils.SimpleDateTimePickerDialog
+import com.hisaabi.hisaabi_kmp.core.ui.SingleDatePickerDialog
 import com.hisaabi.hisaabi_kmp.utils.format
 import com.hisaabi.hisaabi_kmp.utils.formatDateTime
 import org.koin.compose.koinInject
@@ -429,8 +429,8 @@ fun PayGetCashScreen(
 
     // Date Time Picker Dialog
     if (showDateTimePicker) {
-        SimpleDateTimePickerDialog(
-            initialTimestamp = state.dateTime,
+        SingleDatePickerDialog(
+            initialDate = state.dateTime,
             onConfirm = { timestamp ->
                 viewModel.setDateTime(timestamp)
                 showDateTimePicker = false

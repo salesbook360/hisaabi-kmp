@@ -2,7 +2,6 @@ package com.hisaabi.hisaabi_kmp.sync.data.repository
 
 import com.hisaabi.hisaabi_kmp.core.session.AppSessionManager
 import com.hisaabi.hisaabi_kmp.database.dao.*
-import com.hisaabi.hisaabi_kmp.database.entity.*
 import com.hisaabi.hisaabi_kmp.sync.data.datasource.SyncPreferencesDataSource
 import com.hisaabi.hisaabi_kmp.sync.data.datasource.SyncRemoteDataSource
 import com.hisaabi.hisaabi_kmp.sync.data.mapper.*
@@ -10,11 +9,9 @@ import com.hisaabi.hisaabi_kmp.sync.domain.model.SyncProgress
 import com.hisaabi.hisaabi_kmp.sync.domain.model.SyncStatus
 import com.hisaabi.hisaabi_kmp.sync.domain.model.SyncType
 import com.hisaabi.hisaabi_kmp.utils.getCurrentTimestamp
-import com.hisaabi.hisaabi_kmp.utils.timestampStringToIso
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.datetime.Clock
 
 /**
  * Repository for handling all sync operations

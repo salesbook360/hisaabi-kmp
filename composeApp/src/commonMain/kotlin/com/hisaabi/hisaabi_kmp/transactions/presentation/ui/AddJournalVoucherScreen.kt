@@ -24,7 +24,7 @@ import com.hisaabi.hisaabi_kmp.transactions.domain.model.JournalAccount
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.JournalAccountType
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.AddJournalVoucherViewModel
 import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
-import com.hisaabi.hisaabi_kmp.utils.SimpleDateTimePickerDialog
+import com.hisaabi.hisaabi_kmp.core.ui.SingleDatePickerDialog
 import com.hisaabi.hisaabi_kmp.utils.formatDateTime
 import com.hisaabi.hisaabi_kmp.core.ui.FilterChipWithColors
 import com.hisaabi.hisaabi_kmp.utils.format
@@ -313,8 +313,8 @@ fun AddJournalVoucherScreen(
 
     // Date Time Picker Dialog
     if (showDateTimePicker) {
-        SimpleDateTimePickerDialog(
-            initialTimestamp = state.dateTime,
+        SingleDatePickerDialog(
+            initialDate = state.dateTime,
             onConfirm = { timestamp ->
                 viewModel.setDateTime(timestamp)
                 showDateTimePicker = false

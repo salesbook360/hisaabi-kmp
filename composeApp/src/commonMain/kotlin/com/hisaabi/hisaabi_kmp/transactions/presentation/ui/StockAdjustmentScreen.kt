@@ -21,7 +21,7 @@ import com.hisaabi.hisaabi_kmp.core.ui.WindowWidthSizeClass
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.AllTransactionTypes
 import com.hisaabi.hisaabi_kmp.transactions.domain.model.TransactionDetail
 import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.StockAdjustmentViewModel
-import com.hisaabi.hisaabi_kmp.utils.SimpleDateTimePickerDialog
+import com.hisaabi.hisaabi_kmp.core.ui.SingleDatePickerDialog
 import com.hisaabi.hisaabi_kmp.utils.formatDateTime
 import com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse
 import com.hisaabi.hisaabi_kmp.core.ui.FilterChipWithColors
@@ -256,8 +256,8 @@ fun StockAdjustmentScreen(
 
     // Date Time Picker Dialog
     if (showDateTimePicker) {
-        SimpleDateTimePickerDialog(
-            initialTimestamp = state.dateTime,
+        SingleDatePickerDialog(
+            initialDate = state.dateTime,
             onConfirm = { timestamp ->
                 viewModel.setDateTime(timestamp)
                 showDateTimePicker = false

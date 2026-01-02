@@ -28,7 +28,7 @@ import com.hisaabi.hisaabi_kmp.transactions.presentation.viewmodel.ManufactureSt
 import com.hisaabi.hisaabi_kmp.utils.format
 import com.hisaabi.hisaabi_kmp.settings.data.PreferencesManager
 import com.hisaabi.hisaabi_kmp.utils.formatDateTime
-import com.hisaabi.hisaabi_kmp.utils.SimpleDateTimePickerDialog
+import com.hisaabi.hisaabi_kmp.core.ui.SingleDatePickerDialog
 import com.hisaabi.hisaabi_kmp.warehouses.domain.model.Warehouse
 import org.koin.compose.koinInject
 
@@ -389,8 +389,8 @@ private fun AddManufactureContent(
 
     // Date Time Picker Dialog
     if (showDateTimePicker) {
-        SimpleDateTimePickerDialog(
-            initialTimestamp = state.transactionTimestamp,
+        SingleDatePickerDialog(
+            initialDate = state.transactionTimestamp,
             onConfirm = { timestamp ->
                 onDateChanged(timestamp)
                 showDateTimePicker = false

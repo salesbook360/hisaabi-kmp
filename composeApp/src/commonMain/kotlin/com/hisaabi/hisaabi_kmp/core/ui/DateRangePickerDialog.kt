@@ -28,10 +28,19 @@ import androidx.compose.ui.unit.dp
 import kotlinx.datetime.*
 
 /**
+ * Selection mode for the date picker dialog
+ */
+enum class DatePickerMode {
+    SINGLE_DATE,    // Single date selection - dismisses on click
+    DATE_RANGE      // Range selection - requires OK button
+}
+
+/**
  * A reusable date range picker dialog for selecting start and end dates using a calendar view.
  * 
  * @param initialStartDate The initial start date in YYYY-MM-DD format (string)
  * @param initialEndDate The initial end date in YYYY-MM-DD format (string)
+ * @param mode The selection mode - SINGLE_DATE or DATE_RANGE
  * @param onConfirm Callback when user confirms the selection with start and end dates (YYYY-MM-DD format)
  * @param onDismiss Callback when user dismisses the dialog
  */
@@ -40,6 +49,7 @@ import kotlinx.datetime.*
 fun DateRangePickerDialog(
     initialStartDate: String? = null,
     initialEndDate: String? = null,
+    mode: DatePickerMode = DatePickerMode.DATE_RANGE,
     onConfirm: (startDate: String, endDate: String) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -73,7 +83,7 @@ fun DateRangePickerDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { 
-            Text("Select Date Range")
+            Text(if (mode == DatePickerMode.SINGLE_DATE) "Select Date" else "Select Date Range")
         },
         text = {
             Column(
@@ -101,31 +111,39 @@ fun DateRangePickerDialog(
                     selectedStartDate = selectedStartDate,
                     selectedEndDate = selectedEndDate,
                     onDateClick = { date ->
-                        when {
-                            selectedStartDate == null || (selectedStartDate != null && selectedEndDate != null) -> {
-                                // Start new selection
-                                selectedStartDate = date
-                                selectedEndDate = null
-                                selectionState = 1
-                            }
-                            selectedStartDate != null && selectedEndDate == null -> {
-                                // Complete the range
-                                if (date >= selectedStartDate!!) {
-                                    selectedEndDate = date
-                                    selectionState = 2
-                                } else {
-                                    // If clicked date is before start, make it the new start
-                                    selectedEndDate = selectedStartDate
+                        if (mode == DatePickerMode.SINGLE_DATE) {
+                            // Single date mode: select and dismiss immediately
+                            selectedStartDate = date
+                            val dateStr = formatLocalDateToString(date)
+                            onConfirm(dateStr, dateStr)
+                        } else {
+                            // Range mode: handle range selection
+                            when {
+                                selectedStartDate == null || (selectedStartDate != null && selectedEndDate != null) -> {
+                                    // Start new selection
                                     selectedStartDate = date
-                                    selectionState = 2
+                                    selectedEndDate = null
+                                    selectionState = 1
+                                }
+                                selectedStartDate != null && selectedEndDate == null -> {
+                                    // Complete the range
+                                    if (date >= selectedStartDate!!) {
+                                        selectedEndDate = date
+                                        selectionState = 2
+                                    } else {
+                                        // If clicked date is before start, make it the new start
+                                        selectedEndDate = selectedStartDate
+                                        selectedStartDate = date
+                                        selectionState = 2
+                                    }
                                 }
                             }
                         }
                     }
                 )
                 
-                // Selected dates display
-                if (selectedStartDate != null || selectedEndDate != null) {
+                // Selected dates display (only for range mode)
+                if (mode == DatePickerMode.DATE_RANGE && (selectedStartDate != null || selectedEndDate != null)) {
                     Text(
                         text = buildString {
                             append("From: ${formatLocalDate(selectedStartDate)}")
@@ -138,20 +156,34 @@ fun DateRangePickerDialog(
                         fontWeight = FontWeight.Medium
                     )
                 }
+                
+                // Single date display
+                if (mode == DatePickerMode.SINGLE_DATE && selectedStartDate != null) {
+                    Text(
+                        text = "Selected: ${formatLocalDate(selectedStartDate)}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
         },
         confirmButton = {
-            TextButton(
-                onClick = {
-                    if (selectedStartDate != null && selectedEndDate != null) {
-                        val startStr = formatLocalDateToString(selectedStartDate!!)
-                        val endStr = formatLocalDateToString(selectedEndDate!!)
-                        onConfirm(startStr, endStr)
-                    }
-                },
-                enabled = selectedStartDate != null && selectedEndDate != null
-            ) {
-                Text("OK")
+            if (mode == DatePickerMode.DATE_RANGE) {
+                TextButton(
+                    onClick = {
+                        if (selectedStartDate != null && selectedEndDate != null) {
+                            val startStr = formatLocalDateToString(selectedStartDate!!)
+                            val endStr = formatLocalDateToString(selectedEndDate!!)
+                            onConfirm(startStr, endStr)
+                        }
+                    },
+                    enabled = selectedStartDate != null && selectedEndDate != null
+                ) {
+                    Text("OK")
+                }
+            } else {
+                // No OK button for single date mode
             }
         },
         dismissButton = {
@@ -506,6 +538,44 @@ fun formatDateString(dateStr: String?): String {
     
     val date = parseDateStringToLocalDate(dateStr) ?: return dateStr
     return formatLocalDate(date)
+}
+
+/**
+ * A reusable single date picker dialog for selecting a date using a calendar view.
+ * Dismisses automatically when a date is clicked.
+ * 
+ * @param initialDate The initial date as timestamp in milliseconds (optional)
+ * @param onConfirm Callback when user selects a date - returns timestamp in milliseconds
+ * @param onDismiss Callback when user dismisses the dialog
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SingleDatePickerDialog(
+    initialDate: Long? = null,
+    onConfirm: (Long) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val currentTime = Clock.System.now().toEpochMilliseconds()
+    val initialTime = initialDate ?: currentTime
+    val instant = Instant.fromEpochMilliseconds(initialTime)
+    val localDateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
+    val initialDateStr = formatLocalDateToString(localDateTime.date)
+    
+    DateRangePickerDialog(
+        initialStartDate = initialDateStr,
+        initialEndDate = null,
+        mode = DatePickerMode.SINGLE_DATE,
+        onConfirm = { startDate, _ ->
+            // Convert YYYY-MM-DD to timestamp (start of day)
+            val date = parseDateStringToLocalDate(startDate)
+            if (date != null) {
+                val dateTime = date.atStartOfDayIn(TimeZone.currentSystemDefault())
+                val timestamp = dateTime.toEpochMilliseconds()
+                onConfirm(timestamp)
+            }
+        },
+        onDismiss = onDismiss
+    )
 }
 
 /**
