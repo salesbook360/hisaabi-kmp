@@ -1,6 +1,7 @@
 package com.hisaabi.hisaabi_kmp.reports.di
 
 import com.hisaabi.hisaabi_kmp.reports.domain.usecase.GenerateBalanceSheetReportUseCase
+import com.hisaabi.hisaabi_kmp.reports.domain.usecase.GenerateCustomerReportUseCase
 import com.hisaabi.hisaabi_kmp.reports.domain.usecase.GenerateProductReportUseCase
 import com.hisaabi.hisaabi_kmp.reports.domain.usecase.GenerateProfitLossByAvgPriceUseCase
 import com.hisaabi.hisaabi_kmp.reports.domain.usecase.GeneratePurchaseReportUseCase
@@ -100,7 +101,17 @@ val reportsModule = module {
             preferencesManager = get()
         )
     }
-    single { GenerateReportUseCase(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single {
+        GenerateCustomerReportUseCase(
+            transactionDao = get(),
+            transactionDetailDao = get(),
+            partyDao = get(),
+            productDao = get(),
+            businessPreferences = get(),
+            preferencesManager = get()
+        )
+    }
+    single { GenerateReportUseCase(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     
     // Platform-specific utilities are defined in platformModule
     

@@ -20,6 +20,7 @@ class GenerateReportUseCase(
     private val generateTopProductsReportUseCase: GenerateTopProductsReportUseCase,
     private val generateTopCustomersReportUseCase: GenerateTopCustomersReportUseCase,
     private val generateProductReportUseCase: GenerateProductReportUseCase,
+    private val generateCustomerReportUseCase: GenerateCustomerReportUseCase,
     private val preferencesManager: PreferencesManager
 ) {
 
@@ -37,7 +38,7 @@ class GenerateReportUseCase(
             ReportType.TOP_CUSTOMERS -> generateTopCustomersReportUseCase.execute(filters)
             ReportType.STOCK_REPORT -> generateStockReportUseCase.execute(filters)
             ReportType.PRODUCT_REPORT -> generateProductReportUseCase.execute(filters)
-            ReportType.CUSTOMER_REPORT -> generateCustomerReport(filters, currencySymbol)
+            ReportType.CUSTOMER_REPORT -> generateCustomerReportUseCase.execute(filters)
             ReportType.VENDOR_REPORT -> generateVendorReport(filters, currencySymbol)
             ReportType.PROFIT_LOSS_REPORT -> generateProfitLossByAvgPriceUseCase.execute(filters)
             ReportType.CASH_IN_HAND -> generateCashInHandReport(filters, currencySymbol)
@@ -193,56 +194,6 @@ class GenerateReportUseCase(
 
 
 
-    private fun generateCustomerReport(
-        filters: ReportFilters,
-        currencySymbol: String
-    ): ReportResult {
-        val columns = listOf("Date", "Transaction", "Type", "Amount", "Balance")
-        val rows = listOf(
-            ReportRow(
-                "1",
-                listOf(
-                    "2024-01-15",
-                    "INV-001",
-                    "Sale",
-                    "$currencySymbol 15,000",
-                    "$currencySymbol 15,000"
-                )
-            ),
-            ReportRow(
-                "2",
-                listOf(
-                    "2024-01-16",
-                    "PAY-001",
-                    "Payment",
-                    "$currencySymbol -10,000",
-                    "$currencySymbol 5,000"
-                )
-            ),
-            ReportRow(
-                "3",
-                listOf(
-                    "2024-01-17",
-                    "INV-002",
-                    "Sale",
-                    "$currencySymbol 25,000",
-                    "$currencySymbol 30,000"
-                )
-            )
-        )
-
-        return ReportResult(
-            reportType = ReportType.CUSTOMER_REPORT,
-            filters = filters,
-            columns = columns,
-            rows = rows,
-            summary = ReportSummary(
-                totalAmount = 30000.0,
-                recordCount = 3,
-                additionalInfo = mapOf("Current Balance" to "$currencySymbol 30,000")
-            )
-        )
-    }
 
     private fun generateVendorReport(filters: ReportFilters, currencySymbol: String): ReportResult {
         val columns = listOf("Date", "Transaction", "Type", "Amount", "Balance")

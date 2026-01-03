@@ -237,6 +237,20 @@ object ReportFiltersFactory {
                 }
             }
 
+            ReportType.CUSTOMER_REPORT -> {
+                when (selectedReportType) {
+                    ReportAdditionalFilter.CASH_FLOW,
+                    ReportAdditionalFilter.LEDGER,
+                         -> {
+                        listOf(
+                            ReportSortBy.DATE_ASC,
+                            ReportSortBy.DATE_DESC
+                        )
+                    }
+                    else -> emptyList()
+                }
+            }
+
             ReportType.BALANCE_SHEET -> {
                 // No sort option for Balance Sheet
                 emptyList()
