@@ -2154,7 +2154,17 @@ fun App() {
                                         }
                                     } else {
                                         // No entity selection needed, go directly to filters
-                                        selectedReportFilters = defaultFilters
+                                        // Clear any previously selected entity since this report doesn't need it
+                                        selectedEntityForReport = null
+                                        selectingEntityForReport = false
+                                        // Ensure defaultFilters doesn't have entity IDs from previous reports
+                                        val cleanFilters = defaultFilters.copy(
+                                            selectedPartyId = null,
+                                            selectedProductId = null,
+                                            selectedWarehouseId = null,
+                                            selectedInvestorId = null
+                                        )
+                                        selectedReportFilters = cleanFilters
                                         navigateTo(AppScreen.REPORT_FILTERS)
                                     }
                                 }

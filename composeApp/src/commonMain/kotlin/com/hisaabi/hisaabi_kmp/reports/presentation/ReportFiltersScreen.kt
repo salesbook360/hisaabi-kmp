@@ -131,8 +131,9 @@ fun ReportFiltersScreen(
                     .padding(horizontal = horizontalPadding, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-            // Selected Entity Section
-            if (selectedEntity != null) {
+            // Selected Entity Section - only show if entity is relevant to current report type
+            val shouldShowEntity = selectedEntity != null && filters.requiresEntitySelection()
+            if (shouldShowEntity) {
                 item {
                     SelectedEntityCard(
                         entity = selectedEntity,
