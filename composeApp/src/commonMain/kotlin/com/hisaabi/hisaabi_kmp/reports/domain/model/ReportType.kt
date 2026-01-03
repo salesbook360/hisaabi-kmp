@@ -14,7 +14,7 @@ enum class ReportType(
     PURCHASE_REPORT(2, "Purchase Report", Icons.Default.ShoppingBag, "View purchase analytics"),
     STOCK_REPORT(3, "Stock Report", Icons.Default.Inventory, "Current stock levels"),
     WAREHOUSE_REPORT(4, "Warehouse Report", Icons.Default.Warehouse, "Warehouse analytics"),
-    PROFIT_LOSS_REPORT(5, "Profit & Loss", Icons.Default.TrendingUp, "P&L statement"),
+    PROFIT_LOSS_REPORT(5, "P&L by Avg Price", Icons.Default.TrendingUp, "P&L statement by average purchase price"),
     PROFIT_LOSS_BY_PURCHASE(6, "P&L by Purchase Cost", Icons.Default.Calculate, "P&L based on purchase cost"),
     TOP_PRODUCTS(7, "Top Products", Icons.Default.Star, "Best performing products"),
     TOP_CUSTOMERS(8, "Top Customers", Icons.Default.People, "Best customers"),
