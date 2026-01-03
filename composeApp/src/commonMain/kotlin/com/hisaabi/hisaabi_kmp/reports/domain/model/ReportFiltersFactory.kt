@@ -161,7 +161,8 @@ object ReportFiltersFactory {
                     }
                 }
             }
-            ReportType.STOCK_REPORT -> {
+            ReportType.STOCK_REPORT,
+            ReportType.WAREHOUSE_REPORT -> {
                 // Stock In/Out Report (default, when no additional filter) needs date filters
                 // Stock Worth and Out of Stock reports don't need date filters
                 when (selectedReportType) {

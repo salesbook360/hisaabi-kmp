@@ -15,6 +15,7 @@ class GenerateReportUseCase(
     private val generateBalanceSheetReportUseCase: GenerateBalanceSheetReportUseCase,
     private val generatePurchaseReportUseCase: GeneratePurchaseReportUseCase,
     private val generateStockReportUseCase: GenerateStockReportUseCase,
+    private val generateWarehouseReportUseCase: GenerateWarehouseReportUseCase,
     private val preferencesManager: PreferencesManager
 ) {
 
@@ -44,7 +45,7 @@ class GenerateReportUseCase(
 
             ReportType.BALANCE_SHEET -> generateBalanceSheetReportUseCase.execute(filters)
             ReportType.INVESTOR_REPORT -> generateInvestorReport(filters, currencySymbol)
-            ReportType.WAREHOUSE_REPORT -> generateWarehouseReport(filters, currencySymbol)
+            ReportType.WAREHOUSE_REPORT -> generateWarehouseReportUseCase.execute(filters)
         }
     }
 
@@ -553,28 +554,5 @@ class GenerateReportUseCase(
         )
     }
 
-    private fun generateWarehouseReport(
-        filters: ReportFilters,
-        currencySymbol: String
-    ): ReportResult {
-        val columns = listOf("Product", "Warehouse", "Stock", "Value")
-        val rows = listOf(
-            ReportRow("1", listOf("Product A", "Main Warehouse", "100", "$currencySymbol 50,000")),
-            ReportRow("2", listOf("Product B", "Main Warehouse", "200", "$currencySymbol 40,000")),
-            ReportRow("3", listOf("Product A", "Branch Warehouse", "50", "$currencySymbol 25,000"))
-        )
-
-        return ReportResult(
-            reportType = ReportType.WAREHOUSE_REPORT,
-            filters = filters,
-            columns = columns,
-            rows = rows,
-            summary = ReportSummary(
-                totalAmount = 115000.0,
-                totalQuantity = 350.0,
-                recordCount = 3
-            )
-        )
-    }
 }
 

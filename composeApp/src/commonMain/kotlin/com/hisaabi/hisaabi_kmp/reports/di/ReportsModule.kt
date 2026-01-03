@@ -5,6 +5,7 @@ import com.hisaabi.hisaabi_kmp.reports.domain.usecase.GeneratePurchaseReportUseC
 import com.hisaabi.hisaabi_kmp.reports.domain.usecase.GenerateReportUseCase
 import com.hisaabi.hisaabi_kmp.reports.domain.usecase.GenerateSalesReportUseCase
 import com.hisaabi.hisaabi_kmp.reports.domain.usecase.GenerateStockReportUseCase
+import com.hisaabi.hisaabi_kmp.reports.domain.usecase.GenerateWarehouseReportUseCase
 import com.hisaabi.hisaabi_kmp.reports.presentation.viewmodel.ReportViewModel
 import org.koin.compose.viewmodel.dsl.viewModel
 import org.koin.core.module.dsl.singleOf
@@ -46,7 +47,18 @@ val reportsModule = module {
             preferencesManager = get()
         )
     }
-    single { GenerateReportUseCase(get(), get(), get(), get(), get()) }
+    single {
+        GenerateWarehouseReportUseCase(
+            transactionDao = get(),
+            transactionDetailDao = get(),
+            productDao = get(),
+            productQuantitiesDao = get(),
+            productsRepository = get(),
+            businessPreferences = get(),
+            preferencesManager = get()
+        )
+    }
+    single { GenerateReportUseCase(get(), get(), get(), get(), get(), get()) }
     
     // Platform-specific utilities are defined in platformModule
     
