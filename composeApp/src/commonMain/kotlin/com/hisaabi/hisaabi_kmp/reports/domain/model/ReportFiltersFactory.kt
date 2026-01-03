@@ -226,6 +226,11 @@ object ReportFiltersFactory {
                 }
             }
 
+            ReportType.BALANCE_REPORT -> {
+                // No date filter for Balance Report (deals with parties, not transactions)
+                emptyList()
+            }
+
             ReportType.BALANCE_SHEET -> {
                 // No date filter for Balance Sheet
                 emptyList()
@@ -290,6 +295,16 @@ object ReportFiltersFactory {
                 }
             }
 
+            ReportType.BALANCE_REPORT -> {
+                // Sort options for Balance Report
+                listOf(
+                    ReportSortBy.TITLE_ASC,
+                    ReportSortBy.TITLE_DESC,
+                    ReportSortBy.BALANCE_ASC,
+                    ReportSortBy.BALANCE_DESC
+                )
+            }
+
             ReportType.BALANCE_SHEET -> {
                 // No sort option for Balance Sheet
                 emptyList()
@@ -327,6 +342,14 @@ object ReportFiltersFactory {
                 } else emptyList()
                 // Same values for Sale Report, Purchase Report, and Profit Loss Report
 
+            }
+
+            ReportType.BALANCE_REPORT -> {
+                // Group by options for Balance Report
+                listOf(
+                    ReportGroupBy.PARTY_AREA,
+                    ReportGroupBy.PARTY_CATEGORY
+                )
             }
 
             ReportType.BALANCE_SHEET -> {

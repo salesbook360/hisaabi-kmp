@@ -21,6 +21,7 @@ class GenerateReportUseCase(
     private val generateTopCustomersReportUseCase: GenerateTopCustomersReportUseCase,
     private val generateProductReportUseCase: GenerateProductReportUseCase,
     private val generatePartyReportUseCase: GeneratePartyReportUseCase,
+    private val generateBalanceReportUseCase: GenerateBalanceReportUseCase,
     private val preferencesManager: PreferencesManager
 ) {
 
@@ -42,7 +43,7 @@ class GenerateReportUseCase(
             ReportType.VENDOR_REPORT -> generatePartyReportUseCase.execute(filters)
             ReportType.PROFIT_LOSS_REPORT -> generateProfitLossByAvgPriceUseCase.execute(filters)
             ReportType.CASH_IN_HAND -> generateCashInHandReport(filters, currencySymbol)
-            ReportType.BALANCE_REPORT -> generateBalanceReport(filters, currencySymbol)
+            ReportType.BALANCE_REPORT -> generateBalanceReportUseCase.execute(filters)
             ReportType.PROFIT_LOSS_BY_PURCHASE -> generateProfitLossByPurchaseReport(
                 filters,
                 currencySymbol
@@ -261,55 +262,6 @@ class GenerateReportUseCase(
         )
     }
 
-    private fun generateBalanceReport(
-        filters: ReportFilters,
-        currencySymbol: String
-    ): ReportResult {
-        val columns = listOf("Party", "Type", "Total Sales", "Total Paid", "Balance")
-        val rows = listOf(
-            ReportRow(
-                "1",
-                listOf(
-                    "John Doe",
-                    "Customer",
-                    "$currencySymbol 100,000",
-                    "$currencySymbol 80,000",
-                    "$currencySymbol 20,000"
-                )
-            ),
-            ReportRow(
-                "2",
-                listOf(
-                    "Jane Smith",
-                    "Customer",
-                    "$currencySymbol 75,000",
-                    "$currencySymbol 75,000",
-                    "$currencySymbol 0"
-                )
-            ),
-            ReportRow(
-                "3",
-                listOf(
-                    "ABC Suppliers",
-                    "Vendor",
-                    "$currencySymbol 150,000",
-                    "$currencySymbol 100,000",
-                    "$currencySymbol -50,000"
-                )
-            )
-        )
-
-        return ReportResult(
-            reportType = ReportType.BALANCE_REPORT,
-            filters = filters,
-            columns = columns,
-            rows = rows,
-            summary = ReportSummary(
-                totalAmount = -30000.0,
-                recordCount = 3
-            )
-        )
-    }
 
     private fun generateProfitLossByPurchaseReport(
         filters: ReportFilters,
