@@ -17,6 +17,7 @@ class GenerateReportUseCase(
     private val generateStockReportUseCase: GenerateStockReportUseCase,
     private val generateWarehouseReportUseCase: GenerateWarehouseReportUseCase,
     private val generateProfitLossByAvgPriceUseCase: GenerateProfitLossByAvgPriceUseCase,
+    private val generateTopProductsReportUseCase: GenerateTopProductsReportUseCase,
     private val preferencesManager: PreferencesManager
 ) {
 
@@ -30,7 +31,7 @@ class GenerateReportUseCase(
             ReportType.PURCHASE_REPORT -> generatePurchaseReport(filters)
             ReportType.EXPENSE_REPORT -> generateExpenseReport(filters, currencySymbol)
             ReportType.EXTRA_INCOME_REPORT -> generateExtraIncomeReport(filters, currencySymbol)
-            ReportType.TOP_PRODUCTS -> generateTopProductsReport(filters, currencySymbol)
+            ReportType.TOP_PRODUCTS -> generateTopProductsReportUseCase.execute(filters)
             ReportType.TOP_CUSTOMERS -> generateTopCustomersReport(filters, currencySymbol)
             ReportType.STOCK_REPORT -> generateStockReportUseCase.execute(filters)
             ReportType.PRODUCT_REPORT -> generateProductReport(filters, currencySymbol)
@@ -186,47 +187,6 @@ class GenerateReportUseCase(
         )
     }
 
-    private fun generateTopProductsReport(
-        filters: ReportFilters,
-        currencySymbol: String
-    ): ReportResult {
-        val columns = listOf("Rank", "Product", "Quantity Sold", "Revenue", "Profit")
-        val rows = listOf(
-            ReportRow(
-                "1",
-                listOf("#1", "Product A", "150", "$currencySymbol 75,000", "$currencySymbol 15,000")
-            ),
-            ReportRow(
-                "2",
-                listOf("#2", "Product B", "120", "$currencySymbol 60,000", "$currencySymbol 13,500")
-            ),
-            ReportRow(
-                "3",
-                listOf("#3", "Product C", "100", "$currencySymbol 50,000", "$currencySymbol 12,000")
-            ),
-            ReportRow(
-                "4",
-                listOf("#4", "Product D", "85", "$currencySymbol 42,500", "$currencySymbol 9,500")
-            ),
-            ReportRow(
-                "5",
-                listOf("#5", "Product E", "75", "$currencySymbol 37,500", "$currencySymbol 8,000")
-            )
-        )
-
-        return ReportResult(
-            reportType = ReportType.TOP_PRODUCTS,
-            filters = filters,
-            columns = columns,
-            rows = rows,
-            summary = ReportSummary(
-                totalAmount = 265000.0,
-                totalProfit = 58000.0,
-                totalQuantity = 530.0,
-                recordCount = 5
-            )
-        )
-    }
 
     private fun generateTopCustomersReport(
         filters: ReportFilters,
