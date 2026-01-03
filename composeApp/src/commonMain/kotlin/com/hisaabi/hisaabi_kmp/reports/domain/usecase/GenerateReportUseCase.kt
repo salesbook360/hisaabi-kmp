@@ -23,6 +23,7 @@ class GenerateReportUseCase(
     private val generatePartyReportUseCase: GeneratePartyReportUseCase,
     private val generateBalanceReportUseCase: GenerateBalanceReportUseCase,
     private val generateExpenseIncomeReportUseCase: GenerateExpenseIncomeReportUseCase,
+    private val generateCashInHandReportUseCase: GenerateCashInHandReportUseCase,
     private val preferencesManager: PreferencesManager
 ) {
 
@@ -43,7 +44,7 @@ class GenerateReportUseCase(
             ReportType.CUSTOMER_REPORT -> generatePartyReportUseCase.execute(filters)
             ReportType.VENDOR_REPORT -> generatePartyReportUseCase.execute(filters)
             ReportType.PROFIT_LOSS_REPORT -> generateProfitLossByAvgPriceUseCase.execute(filters)
-            ReportType.CASH_IN_HAND -> generateCashInHandReport(filters, currencySymbol)
+            ReportType.CASH_IN_HAND -> generateCashInHandReportUseCase.execute(filters)
             ReportType.BALANCE_REPORT -> generateBalanceReportUseCase.execute(filters)
             ReportType.PROFIT_LOSS_BY_PURCHASE -> generateProfitLossByPurchaseReport(
                 filters,
@@ -160,45 +161,6 @@ class GenerateReportUseCase(
         )
     }
 
-    private fun generateCashInHandReport(
-        filters: ReportFilters,
-        currencySymbol: String
-    ): ReportResult {
-        val columns = listOf("Payment Method", "Opening", "Received", "Paid", "Closing")
-        val rows = listOf(
-            ReportRow(
-                "1",
-                listOf(
-                    "Cash",
-                    "$currencySymbol 50,000",
-                    "$currencySymbol 200,000",
-                    "$currencySymbol 150,000",
-                    "$currencySymbol 100,000"
-                )
-            ),
-            ReportRow(
-                "2",
-                listOf(
-                    "Bank Account",
-                    "$currencySymbol 100,000",
-                    "$currencySymbol 300,000",
-                    "$currencySymbol 250,000",
-                    "$currencySymbol 150,000"
-                )
-            )
-        )
-
-        return ReportResult(
-            reportType = ReportType.CASH_IN_HAND,
-            filters = filters,
-            columns = columns,
-            rows = rows,
-            summary = ReportSummary(
-                totalAmount = 250000.0,
-                recordCount = 2
-            )
-        )
-    }
 
 
     private fun generateProfitLossByPurchaseReport(

@@ -342,6 +342,7 @@ fun App() {
                 )
             }
             var selectingEntityForReport by remember { mutableStateOf(false) }
+            var selectingPaymentMethodForReport by remember { mutableStateOf(false) }
             var selectedEntityForReport by remember {
                 mutableStateOf<Any?>(null) // Can be Party, Product, Warehouse
             }
@@ -1443,7 +1444,16 @@ fun App() {
                             PaymentMethodsScreen(
                                 viewModel = koinInject(),
                                 onPaymentMethodClick = { paymentMethod ->
-                                    if (selectingPaymentMethodForTransaction) {
+                                    if (selectingPaymentMethodForReport) {
+                                        // Store selected payment method for report and generate report
+                                        selectingPaymentMethodForReport = false
+                                        val filters = selectedReportFilters?.copy(
+                                            selectedPaymentMethodId = paymentMethod.slug
+                                        ) ?: ReportFilters(reportType = selectedReportType)
+                                        selectedReportFilters = filters
+                                        reportViewModel.generateReport(filters)
+                                        navigateTo(AppScreen.REPORT_RESULT)
+                                    } else if (selectingPaymentMethodForTransaction) {
                                         // Store selected payment method and return to appropriate screen
                                         selectedPaymentMethodForTransaction = paymentMethod
                                         // Don't reset selectingPaymentMethodForTransaction here - let the target screen handle it
@@ -1460,7 +1470,11 @@ fun App() {
                                     currentScreen = AppScreen.ADD_PAYMENT_METHOD
                                 },
                                 onNavigateBack = {
-                                    if (selectingPaymentMethodForTransaction) {
+                                    if (selectingPaymentMethodForReport) {
+                                        // User cancelled payment method selection - go back to report filters
+                                        selectingPaymentMethodForReport = false
+                                        currentScreen = AppScreen.REPORT_FILTERS
+                                    } else if (selectingPaymentMethodForTransaction) {
                                         // Navigate back without selecting - clear the selection state
                                         val targetScreen = returnToScreenAfterPartySelection
                                             ?: AppScreen.ADD_TRANSACTION_STEP2
@@ -2123,11 +2137,15 @@ fun App() {
                                 },
                                 onReportSelected = { reportType ->
                                     selectedReportType = reportType
-                                    // Create default filters with OVERALL as default if available
+                                    // Create default filters with appropriate default
                                     val reportTypes = ReportFiltersFactory.getReportTypes(reportType)
                                     val defaultAdditionalFilter = if (reportTypes.isNotEmpty()) {
-                                        // Set OVERALL as default if it's available in report types
-                                        reportTypes.firstOrNull { it == ReportAdditionalFilter.OVERALL } ?: reportTypes.firstOrNull()
+                                        // For CASH_IN_HAND, use HISTORY as default, otherwise use OVERALL if available
+                                        if (reportType == ReportType.CASH_IN_HAND) {
+                                            reportTypes.firstOrNull { it == ReportAdditionalFilter.CASH_IN_HAND_HISTORY } ?: reportTypes.firstOrNull()
+                                        } else {
+                                            reportTypes.firstOrNull { it == ReportAdditionalFilter.OVERALL } ?: reportTypes.firstOrNull()
+                                        }
                                     } else {
                                         null
                                     }
@@ -2183,9 +2201,17 @@ fun App() {
                                         selectedReportFilters = filters
                                     },
                                     onGenerateReport = { filters ->
-                                        // Generate report and navigate to result screen
-                                        reportViewModel.generateReport(filters)
-                                        navigateTo(AppScreen.REPORT_RESULT)
+                                        // Check if payment method selection is required
+                                        if (filters.requiresPaymentMethodSelection() && filters.selectedPaymentMethodId == null) {
+                                            // Navigate to payment methods selection
+                                            selectingPaymentMethodForReport = true
+                                            selectedReportFilters = filters
+                                            navigateTo(AppScreen.PAYMENT_METHODS)
+                                        } else {
+                                            // Generate report and navigate to result screen
+                                            reportViewModel.generateReport(filters)
+                                            navigateTo(AppScreen.REPORT_RESULT)
+                                        }
                                     }
                                 )
                             } ?: run {

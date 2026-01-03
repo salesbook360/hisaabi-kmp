@@ -11,7 +11,8 @@ data class ReportFilters(
     val selectedPartyId: String? = null,
     val selectedProductId: String? = null,
     val selectedWarehouseId: String? = null,
-    val selectedInvestorId: String? = null
+    val selectedInvestorId: String? = null,
+    val selectedPaymentMethodId: String? = null
 ) {
     fun isValid(): Boolean {
         return reportType != null
@@ -24,7 +25,16 @@ data class ReportFilters(
         return requiresPartySelection() || 
                requiresProductSelection() || 
                requiresWarehouseSelection() || 
-               requiresInvestorSelection()
+               requiresInvestorSelection() ||
+               requiresPaymentMethodSelection()
+    }
+    
+    /**
+     * Checks if the report requires payment method selection
+     */
+    fun requiresPaymentMethodSelection(): Boolean {
+        return reportType == ReportType.CASH_IN_HAND && 
+               additionalFilter == ReportAdditionalFilter.CASH_IN_HAND_HISTORY
     }
     
     /**

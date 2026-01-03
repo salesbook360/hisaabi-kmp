@@ -41,11 +41,15 @@ fun ReportFiltersScreen(
     // Get report types (Overall, Daily, Weekly, etc.) using the factory
     val reportTypes = ReportFiltersFactory.getReportTypes(reportType)
     
-    // Initialize filters with default OVERALL report type if available and not already set
+    // Initialize filters with default report type if available and not already set
     var currentFilters by remember(reportType, filters) {
         val defaultAdditionalFilter = if (reportTypes.isNotEmpty() && filters.additionalFilter == null) {
-            // Set OVERALL as default if it's available in report types
-            reportTypes.firstOrNull { it == ReportAdditionalFilter.OVERALL } ?: reportTypes.firstOrNull()
+            // For CASH_IN_HAND, use HISTORY as default, otherwise use OVERALL if available
+            if (reportType == ReportType.CASH_IN_HAND) {
+                reportTypes.firstOrNull { it == ReportAdditionalFilter.CASH_IN_HAND_HISTORY } ?: reportTypes.firstOrNull()
+            } else {
+                reportTypes.firstOrNull { it == ReportAdditionalFilter.OVERALL } ?: reportTypes.firstOrNull()
+            }
         } else {
             filters.additionalFilter
         }
@@ -95,7 +99,15 @@ fun ReportFiltersScreen(
             ) {
                 val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
                 Button(
-                    onClick = { onGenerateReport(currentFilters) },
+                    onClick = { 
+                        // Check if payment method selection is required
+                        if (currentFilters.requiresPaymentMethodSelection() && currentFilters.selectedPaymentMethodId == null) {
+                            // This will be handled by App.kt - navigate to payment methods
+                            onGenerateReport(currentFilters)
+                        } else {
+                            onGenerateReport(currentFilters)
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 16.dp + bottomInset),
