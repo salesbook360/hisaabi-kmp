@@ -22,8 +22,7 @@ object ReportFiltersFactory {
             ReportType.PURCHASE_REPORT,
             ReportType.EXPENSE_REPORT,
             ReportType.EXTRA_INCOME_REPORT,
-            ReportType.PROFIT_LOSS_REPORT,
-            ReportType.CASH_IN_HAND -> {
+            ReportType.PROFIT_LOSS_REPORT -> {
                 // Same values for Sale Report and Purchase Report
                 listOf(
                     ReportAdditionalFilter.OVERALL,

@@ -197,7 +197,7 @@ class GenerateCashInHandReportUseCase(
         currentCashInHand: Double,
         cashPaymentMethodSlugs: Set<String>
     ): Triple<List<String>, List<ReportRow>, ReportSummary> {
-        val columns = listOf("Name", "Transaction ID", "Date", "Type", "Debit/Credit", "Balance", "Description")
+        val columns = listOf("Name", "Transaction ID", "Date", "Type", "Debit/Credit", "Balance")
         val rows = mutableListOf<ReportRow>()
         
         // Sort transactions by date (newest first for history calculation)
@@ -233,11 +233,11 @@ class GenerateCashInHandReportUseCase(
             // Format date
             val dateStr = formatTransactionDateTime(transaction.timestamp)
             
-            // Format debit/credit
+            // Format debit/credit with + for credit (money in) and - for debit (money out)
             val debitCreditStr = if (isCredit) {
-                "$currencySymbol ${String.format("%,.2f", amount)}"
+                "+$currencySymbol ${String.format("%,.2f", amount)}"
             } else {
-                "$currencySymbol ${String.format("%,.2f", amount)}"
+                "-$currencySymbol ${String.format("%,.2f", amount)}"
             }
             
             // Format balance
@@ -252,8 +252,7 @@ class GenerateCashInHandReportUseCase(
                         dateStr,
                         transactionTypeName,
                         debitCreditStr,
-                        balanceStr,
-                        transaction.description ?: ""
+                        balanceStr
                     )
                 )
             )
