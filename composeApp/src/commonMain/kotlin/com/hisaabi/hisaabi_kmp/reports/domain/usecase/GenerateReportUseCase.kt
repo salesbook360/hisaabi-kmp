@@ -20,7 +20,7 @@ class GenerateReportUseCase(
     private val generateTopProductsReportUseCase: GenerateTopProductsReportUseCase,
     private val generateTopCustomersReportUseCase: GenerateTopCustomersReportUseCase,
     private val generateProductReportUseCase: GenerateProductReportUseCase,
-    private val generateCustomerReportUseCase: GenerateCustomerReportUseCase,
+    private val generatePartyReportUseCase: GeneratePartyReportUseCase,
     private val preferencesManager: PreferencesManager
 ) {
 
@@ -38,8 +38,8 @@ class GenerateReportUseCase(
             ReportType.TOP_CUSTOMERS -> generateTopCustomersReportUseCase.execute(filters)
             ReportType.STOCK_REPORT -> generateStockReportUseCase.execute(filters)
             ReportType.PRODUCT_REPORT -> generateProductReportUseCase.execute(filters)
-            ReportType.CUSTOMER_REPORT -> generateCustomerReportUseCase.execute(filters)
-            ReportType.VENDOR_REPORT -> generateVendorReport(filters, currencySymbol)
+            ReportType.CUSTOMER_REPORT -> generatePartyReportUseCase.execute(filters)
+            ReportType.VENDOR_REPORT -> generatePartyReportUseCase.execute(filters)
             ReportType.PROFIT_LOSS_REPORT -> generateProfitLossByAvgPriceUseCase.execute(filters)
             ReportType.CASH_IN_HAND -> generateCashInHandReport(filters, currencySymbol)
             ReportType.BALANCE_REPORT -> generateBalanceReport(filters, currencySymbol)
@@ -49,7 +49,7 @@ class GenerateReportUseCase(
             )
 
             ReportType.BALANCE_SHEET -> generateBalanceSheetReportUseCase.execute(filters)
-            ReportType.INVESTOR_REPORT -> generateInvestorReport(filters, currencySymbol)
+            ReportType.INVESTOR_REPORT -> generatePartyReportUseCase.execute(filters)
             ReportType.WAREHOUSE_REPORT -> generateWarehouseReportUseCase.execute(filters)
         }
     }
@@ -195,43 +195,6 @@ class GenerateReportUseCase(
 
 
 
-    private fun generateVendorReport(filters: ReportFilters, currencySymbol: String): ReportResult {
-        val columns = listOf("Date", "Transaction", "Type", "Amount", "Balance")
-        val rows = listOf(
-            ReportRow(
-                "1",
-                listOf(
-                    "2024-01-15",
-                    "BILL-001",
-                    "Purchase",
-                    "$currencySymbol 50,000",
-                    "$currencySymbol -50,000"
-                )
-            ),
-            ReportRow(
-                "2",
-                listOf(
-                    "2024-01-16",
-                    "PAY-001",
-                    "Payment",
-                    "$currencySymbol 30,000",
-                    "$currencySymbol -20,000"
-                )
-            )
-        )
-
-        return ReportResult(
-            reportType = ReportType.VENDOR_REPORT,
-            filters = filters,
-            columns = columns,
-            rows = rows,
-            summary = ReportSummary(
-                totalAmount = -20000.0,
-                recordCount = 2,
-                additionalInfo = mapOf("Outstanding Balance" to "$currencySymbol -20,000")
-            )
-        )
-    }
 
     private fun generateProfitLossReport(
         filters: ReportFilters,
@@ -354,47 +317,6 @@ class GenerateReportUseCase(
     ): ReportResult {
         return generateProfitLossReport(filters, currencySymbol).copy(
             reportType = ReportType.PROFIT_LOSS_BY_PURCHASE
-        )
-    }
-
-
-    private fun generateInvestorReport(
-        filters: ReportFilters,
-        currencySymbol: String
-    ): ReportResult {
-        val columns = listOf("Date", "Transaction", "Type", "Amount", "Balance")
-        val rows = listOf(
-            ReportRow(
-                "1",
-                listOf(
-                    "2024-01-01",
-                    "Initial Investment",
-                    "Investment",
-                    "$currencySymbol 500,000",
-                    "$currencySymbol 500,000"
-                )
-            ),
-            ReportRow(
-                "2",
-                listOf(
-                    "2024-01-15",
-                    "Profit Share",
-                    "Withdrawal",
-                    "$currencySymbol -50,000",
-                    "$currencySymbol 450,000"
-                )
-            )
-        )
-
-        return ReportResult(
-            reportType = ReportType.INVESTOR_REPORT,
-            filters = filters,
-            columns = columns,
-            rows = rows,
-            summary = ReportSummary(
-                totalAmount = 450000.0,
-                recordCount = 2
-            )
         )
     }
 

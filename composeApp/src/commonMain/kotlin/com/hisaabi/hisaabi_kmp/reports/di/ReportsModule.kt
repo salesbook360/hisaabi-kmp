@@ -1,7 +1,7 @@
 package com.hisaabi.hisaabi_kmp.reports.di
 
 import com.hisaabi.hisaabi_kmp.reports.domain.usecase.GenerateBalanceSheetReportUseCase
-import com.hisaabi.hisaabi_kmp.reports.domain.usecase.GenerateCustomerReportUseCase
+import com.hisaabi.hisaabi_kmp.reports.domain.usecase.GeneratePartyReportUseCase
 import com.hisaabi.hisaabi_kmp.reports.domain.usecase.GenerateProductReportUseCase
 import com.hisaabi.hisaabi_kmp.reports.domain.usecase.GenerateProfitLossByAvgPriceUseCase
 import com.hisaabi.hisaabi_kmp.reports.domain.usecase.GeneratePurchaseReportUseCase
@@ -102,7 +102,7 @@ val reportsModule = module {
         )
     }
     single {
-        GenerateCustomerReportUseCase(
+        GeneratePartyReportUseCase(
             transactionDao = get(),
             transactionDetailDao = get(),
             partyDao = get(),

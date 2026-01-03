@@ -90,6 +90,11 @@ object ReportFiltersFactory {
                 listOf(
                     ReportAdditionalFilter.LEDGER,
                     ReportAdditionalFilter.CASH_FLOW,
+//                    ReportAdditionalFilter.OVERALL, Columns names to adjust
+//                    ReportAdditionalFilter.DAILY,
+//                    ReportAdditionalFilter.WEEKLY,
+//                    ReportAdditionalFilter.MONTHLY,
+//                    ReportAdditionalFilter.YEARLY,
                 )
             }
 
@@ -97,7 +102,11 @@ object ReportFiltersFactory {
                 listOf(
                     ReportAdditionalFilter.LEDGER,
                     ReportAdditionalFilter.CASH_FLOW,
-                    ReportAdditionalFilter.OVERALL
+//                    ReportAdditionalFilter.OVERALL, Columns names to adjust
+//                    ReportAdditionalFilter.DAILY,
+//                    ReportAdditionalFilter.WEEKLY,
+//                    ReportAdditionalFilter.MONTHLY,
+//                    ReportAdditionalFilter.YEARLY,
                 )
             }
 
@@ -189,6 +198,34 @@ object ReportFiltersFactory {
                 }
             }
 
+            ReportType.CUSTOMER_REPORT,
+            ReportType.VENDOR_REPORT,
+            ReportType.INVESTOR_REPORT -> {
+                // Same date filters for Customer, Vendor, and Investor reports
+                when (selectedReportType) {
+                    ReportAdditionalFilter.LEDGER,
+                    ReportAdditionalFilter.CASH_FLOW,
+                    ReportAdditionalFilter.OVERALL,
+                    ReportAdditionalFilter.DAILY,
+                    ReportAdditionalFilter.WEEKLY,
+                    ReportAdditionalFilter.MONTHLY,
+                    ReportAdditionalFilter.YEARLY -> {
+                        listOf(
+                            ReportDateFilter.TODAY,
+                            ReportDateFilter.YESTERDAY,
+                            ReportDateFilter.LAST_7_DAYS,
+                            ReportDateFilter.THIS_MONTH,
+                            ReportDateFilter.LAST_MONTH,
+                            ReportDateFilter.THIS_YEAR,
+                            ReportDateFilter.LAST_YEAR,
+                            ReportDateFilter.ALL_TIME,
+                            ReportDateFilter.CUSTOM_DATE
+                        )
+                    }
+                    else -> emptyList()
+                }
+            }
+
             ReportType.BALANCE_SHEET -> {
                 // No date filter for Balance Sheet
                 emptyList()
@@ -237,11 +274,13 @@ object ReportFiltersFactory {
                 }
             }
 
-            ReportType.CUSTOMER_REPORT -> {
+            ReportType.CUSTOMER_REPORT,
+            ReportType.VENDOR_REPORT,
+            ReportType.INVESTOR_REPORT -> {
+                // Same sort options for Customer, Vendor, and Investor reports
                 when (selectedReportType) {
                     ReportAdditionalFilter.CASH_FLOW,
-                    ReportAdditionalFilter.LEDGER,
-                         -> {
+                    ReportAdditionalFilter.LEDGER -> {
                         listOf(
                             ReportSortBy.DATE_ASC,
                             ReportSortBy.DATE_DESC
