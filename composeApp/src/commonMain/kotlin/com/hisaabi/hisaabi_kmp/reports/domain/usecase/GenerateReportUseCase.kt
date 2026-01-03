@@ -16,6 +16,7 @@ class GenerateReportUseCase(
     private val generatePurchaseReportUseCase: GeneratePurchaseReportUseCase,
     private val generateStockReportUseCase: GenerateStockReportUseCase,
     private val generateWarehouseReportUseCase: GenerateWarehouseReportUseCase,
+    private val generateProfitLossByAvgPriceUseCase: GenerateProfitLossByAvgPriceUseCase,
     private val preferencesManager: PreferencesManager
 ) {
 
@@ -35,7 +36,7 @@ class GenerateReportUseCase(
             ReportType.PRODUCT_REPORT -> generateProductReport(filters, currencySymbol)
             ReportType.CUSTOMER_REPORT -> generateCustomerReport(filters, currencySymbol)
             ReportType.VENDOR_REPORT -> generateVendorReport(filters, currencySymbol)
-            ReportType.PROFIT_LOSS_REPORT -> generateProfitLossReport(filters, currencySymbol)
+            ReportType.PROFIT_LOSS_REPORT -> generateProfitLossByAvgPriceUseCase.execute(filters)
             ReportType.CASH_IN_HAND -> generateCashInHandReport(filters, currencySymbol)
             ReportType.BALANCE_REPORT -> generateBalanceReport(filters, currencySymbol)
             ReportType.PROFIT_LOSS_BY_PURCHASE -> generateProfitLossByPurchaseReport(

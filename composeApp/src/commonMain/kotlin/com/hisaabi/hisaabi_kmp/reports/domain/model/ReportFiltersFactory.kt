@@ -141,8 +141,9 @@ object ReportFiltersFactory {
     ): List<ReportDateFilter> {
         return when (report) {
             ReportType.SALE_REPORT,
-            ReportType.PURCHASE_REPORT -> {
-                // Same values for Sale Report and Purchase Report
+            ReportType.PURCHASE_REPORT,
+            ReportType.PROFIT_LOSS_REPORT -> {
+                // Same values for Sale Report, Purchase Report, and Profit Loss Report
                 // Date filters can vary based on selected report type
                 when (selectedReportType) {
                     else -> {
@@ -217,8 +218,9 @@ object ReportFiltersFactory {
     ): List<ReportSortBy> {
         return when (report) {
             ReportType.SALE_REPORT,
-            ReportType.PURCHASE_REPORT -> {
-                // Same values for Sale Report and Purchase Report
+            ReportType.PURCHASE_REPORT,
+            ReportType.PROFIT_LOSS_REPORT -> {
+                // Same values for Sale Report, Purchase Report, and Profit Loss Report
                 when (selectedReportType) {
                     ReportAdditionalFilter.OVERALL -> {
                         listOf(
@@ -259,7 +261,8 @@ object ReportFiltersFactory {
     ): List<ReportGroupBy> {
         return when (report) {
             ReportType.SALE_REPORT,
-            ReportType.PURCHASE_REPORT -> {
+            ReportType.PURCHASE_REPORT,
+            ReportType.PROFIT_LOSS_REPORT -> {
                 if (selectedReportType == ReportAdditionalFilter.OVERALL) {
                     listOf(
                         ReportGroupBy.PRODUCT,
@@ -269,7 +272,7 @@ object ReportFiltersFactory {
                         ReportGroupBy.PARTY_CATEGORY,
                     )
                 } else emptyList()
-                // Same values for Sale Report and Purchase Report
+                // Same values for Sale Report, Purchase Report, and Profit Loss Report
 
             }
 
