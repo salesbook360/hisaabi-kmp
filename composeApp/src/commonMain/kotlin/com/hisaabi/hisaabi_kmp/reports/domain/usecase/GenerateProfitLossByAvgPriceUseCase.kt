@@ -672,7 +672,7 @@ class GenerateProfitLossByAvgPriceUseCase(
         val intervalMap = mutableMapOf<String, IntervalStats>()
         
         transactions.forEach { transaction ->
-            val dateKey = getDateKey(transaction.created_at, intervalType)
+            val dateKey = getDateKey(transaction.timestamp, intervalType)
             val stats = intervalMap.getOrPut(dateKey) {
                 IntervalStats(dateKey)
             }
@@ -756,7 +756,10 @@ class GenerateProfitLossByAvgPriceUseCase(
         if (timestamp == null) return "Unknown"
         
         return try {
-            val instant = Instant.parse(timestamp)
+            // timestamp is in milliseconds format (as String), convert to Long first
+            val timestampMillis = timestamp.toLongOrNull()
+                ?: return "Unknown"
+            val instant = Instant.fromEpochMilliseconds(timestampMillis)
             val dateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
             
             when (intervalType) {
