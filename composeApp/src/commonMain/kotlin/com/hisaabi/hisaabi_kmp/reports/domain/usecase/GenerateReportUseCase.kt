@@ -19,6 +19,7 @@ class GenerateReportUseCase(
     private val generateProfitLossByAvgPriceUseCase: GenerateProfitLossByAvgPriceUseCase,
     private val generateTopProductsReportUseCase: GenerateTopProductsReportUseCase,
     private val generateTopCustomersReportUseCase: GenerateTopCustomersReportUseCase,
+    private val generateProductReportUseCase: GenerateProductReportUseCase,
     private val preferencesManager: PreferencesManager
 ) {
 
@@ -35,7 +36,7 @@ class GenerateReportUseCase(
             ReportType.TOP_PRODUCTS -> generateTopProductsReportUseCase.execute(filters)
             ReportType.TOP_CUSTOMERS -> generateTopCustomersReportUseCase.execute(filters)
             ReportType.STOCK_REPORT -> generateStockReportUseCase.execute(filters)
-            ReportType.PRODUCT_REPORT -> generateProductReport(filters, currencySymbol)
+            ReportType.PRODUCT_REPORT -> generateProductReportUseCase.execute(filters)
             ReportType.CUSTOMER_REPORT -> generateCustomerReport(filters, currencySymbol)
             ReportType.VENDOR_REPORT -> generateVendorReport(filters, currencySymbol)
             ReportType.PROFIT_LOSS_REPORT -> generateProfitLossByAvgPriceUseCase.execute(filters)
@@ -191,12 +192,6 @@ class GenerateReportUseCase(
 
 
 
-    private fun generateProductReport(
-        filters: ReportFilters,
-        currencySymbol: String
-    ): ReportResult {
-        TODO("Not yet implemented.")
-    }
 
     private fun generateCustomerReport(
         filters: ReportFilters,
