@@ -131,6 +131,17 @@ object ReportFiltersFactory {
                 )
             }
 
+            ReportType.EXPENSE_REPORT,
+            ReportType.EXTRA_INCOME_REPORT -> {
+                listOf(
+                    ReportAdditionalFilter.OVERALL,
+                    ReportAdditionalFilter.DAILY,
+                    ReportAdditionalFilter.WEEKLY,
+                    ReportAdditionalFilter.MONTHLY,
+                    ReportAdditionalFilter.YEARLY,
+                )
+            }
+
             // Rest of reports left empty for now
             else -> emptyList()
         }
@@ -151,8 +162,10 @@ object ReportFiltersFactory {
         return when (report) {
             ReportType.SALE_REPORT,
             ReportType.PURCHASE_REPORT,
-            ReportType.PROFIT_LOSS_REPORT -> {
-                // Same values for Sale Report, Purchase Report, and Profit Loss Report
+            ReportType.PROFIT_LOSS_REPORT,
+            ReportType.EXPENSE_REPORT,
+            ReportType.EXTRA_INCOME_REPORT -> {
+                // Same values for Sale Report, Purchase Report, Profit Loss Report, Expense Report, and Extra Income Report
                 // Date filters can vary based on selected report type
                 when (selectedReportType) {
                     else -> {
@@ -171,6 +184,7 @@ object ReportFiltersFactory {
                     }
                 }
             }
+
             ReportType.STOCK_REPORT,
             ReportType.WAREHOUSE_REPORT -> {
                 // Stock In/Out Report (default, when no additional filter) needs date filters
@@ -181,6 +195,7 @@ object ReportFiltersFactory {
                         // Stock Worth and Out of Stock don't use date filters
                         emptyList()
                     }
+
                     else -> {
                         // Default Stock In/Out Report (null or any other value) uses date filters
                         listOf(
@@ -222,6 +237,7 @@ object ReportFiltersFactory {
                             ReportDateFilter.CUSTOM_DATE
                         )
                     }
+
                     else -> emptyList()
                 }
             }
@@ -291,6 +307,7 @@ object ReportFiltersFactory {
                             ReportSortBy.DATE_DESC
                         )
                     }
+
                     else -> emptyList()
                 }
             }

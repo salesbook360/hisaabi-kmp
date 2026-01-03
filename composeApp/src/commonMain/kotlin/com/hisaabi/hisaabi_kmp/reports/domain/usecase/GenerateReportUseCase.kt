@@ -22,6 +22,7 @@ class GenerateReportUseCase(
     private val generateProductReportUseCase: GenerateProductReportUseCase,
     private val generatePartyReportUseCase: GeneratePartyReportUseCase,
     private val generateBalanceReportUseCase: GenerateBalanceReportUseCase,
+    private val generateExpenseIncomeReportUseCase: GenerateExpenseIncomeReportUseCase,
     private val preferencesManager: PreferencesManager
 ) {
 
@@ -33,8 +34,8 @@ class GenerateReportUseCase(
         return when (reportType) {
             ReportType.SALE_REPORT -> generateSalesReportUseCase.execute(filters)
             ReportType.PURCHASE_REPORT -> generatePurchaseReport(filters)
-            ReportType.EXPENSE_REPORT -> generateExpenseReport(filters, currencySymbol)
-            ReportType.EXTRA_INCOME_REPORT -> generateExtraIncomeReport(filters, currencySymbol)
+            ReportType.EXPENSE_REPORT -> generateExpenseIncomeReportUseCase.execute(filters)
+            ReportType.EXTRA_INCOME_REPORT -> generateExpenseIncomeReportUseCase.execute(filters)
             ReportType.TOP_PRODUCTS -> generateTopProductsReportUseCase.execute(filters)
             ReportType.TOP_CUSTOMERS -> generateTopCustomersReportUseCase.execute(filters)
             ReportType.STOCK_REPORT -> generateStockReportUseCase.execute(filters)
@@ -127,69 +128,6 @@ class GenerateReportUseCase(
         return generatePurchaseReportUseCase.execute(filters)
     }
 
-    private fun generateExpenseReport(
-        filters: ReportFilters,
-        currencySymbol: String
-    ): ReportResult {
-        val columns = listOf("Date", "Category", "Description", "Amount")
-        val rows = listOf(
-            ReportRow(
-                "1",
-                listOf("2024-01-15", "Rent", "Office Rent - Jan", "$currencySymbol 50,000")
-            ),
-            ReportRow(
-                "2",
-                listOf("2024-01-16", "Utilities", "Electricity Bill", "$currencySymbol 8,500")
-            ),
-            ReportRow(
-                "3",
-                listOf("2024-01-17", "Salaries", "Staff Salary", "$currencySymbol 150,000")
-            ),
-            ReportRow(
-                "4",
-                listOf("2024-01-18", "Marketing", "Social Media Ads", "$currencySymbol 12,000")
-            )
-        )
-
-        return ReportResult(
-            reportType = ReportType.EXPENSE_REPORT,
-            filters = filters,
-            columns = columns,
-            rows = rows,
-            summary = ReportSummary(
-                totalAmount = 220500.0,
-                recordCount = 4
-            )
-        )
-    }
-
-    private fun generateExtraIncomeReport(
-        filters: ReportFilters,
-        currencySymbol: String
-    ): ReportResult {
-        val columns = listOf("Date", "Source", "Description", "Amount")
-        val rows = listOf(
-            ReportRow(
-                "1",
-                listOf("2024-01-15", "Commission", "Sale Commission", "$currencySymbol 5,000")
-            ),
-            ReportRow(
-                "2",
-                listOf("2024-01-18", "Interest", "Bank Interest", "$currencySymbol 2,500")
-            )
-        )
-
-        return ReportResult(
-            reportType = ReportType.EXTRA_INCOME_REPORT,
-            filters = filters,
-            columns = columns,
-            rows = rows,
-            summary = ReportSummary(
-                totalAmount = 7500.0,
-                recordCount = 2
-            )
-        )
-    }
 
 
 
